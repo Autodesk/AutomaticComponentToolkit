@@ -641,6 +641,7 @@ func checkComponentHeader(component ComponentDefinition) (error) {
 	return nil
 }
 
+
 // CheckComponentDefinition checks a component and returns an error, if it fails
 func CheckComponentDefinition (component ComponentDefinition) (error) {
 	err := checkComponentHeader(component)

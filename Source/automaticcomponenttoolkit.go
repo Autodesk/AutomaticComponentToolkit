@@ -55,9 +55,18 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 		return component, err
 	}
 
-	bytes, err := ioutil.ReadAll (file);
+	bytes, err := ioutil.ReadAll(file);
 	if (err != nil) {
 		return component, err
+	}
+
+	err = ValidateDocument(bytes)
+	if (err != nil) {
+		log.Println("")
+		log.Println("Document is not a valid instance of ACT's schema")
+		log.Println(err)
+		log.Println("")
+		log.Println("")
 	}
 	
 	component.ACTVersion = ACTVersion
@@ -101,13 +110,13 @@ func main () {
 	if (mode == eACTModeGenerate) {
 		log.Printf("Output directory: " + outfolderBase)
 	}
-	
+
 	log.Printf ("Loading Component Description File" );
 	component, err := readComponentDefinition(os.Args[1], ACTVersion)
 	if (err != nil) {
 		log.Fatal (err);
 	}
-	
+
 	log.Printf ("Checking Component Description", );
 	err = CheckComponentDefinition (component);
 	if (err != nil) {
