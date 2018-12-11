@@ -13,6 +13,7 @@
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Pascal" indentation="4spaces" />
 		<binding language="Python" indentation="tabs" />
+		<binding language="Go" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs" classidentifier="" stubidentifier=""/>
@@ -27,8 +28,9 @@
 		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
 		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
-		<error name="NORESULTAVAILABLE" code="8" description="no result is available" />
-		<error name="CALCULATIONABORTED" code="9" description="a calculation has been aborted" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
+		<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
+		<error name="CALCULATIONABORTED" code="10" description="a calculation has been aborted" />
 	</errors>
 	
 	<struct name="PrimeFactor">

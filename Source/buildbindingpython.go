@@ -109,6 +109,15 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    return '%sException ' + str(self._code)", NameSpace)
 	w.Writeln("")
 
+
+	w.Writeln("'''Definition of binding API version")
+	w.Writeln("'''")
+	w.Writeln("class %sBindingVersion(enum.IntEnum):", NameSpace)
+	w.Writeln("  MAJOR = %d", majorVersion(componentdefinition.Version))
+	w.Writeln("  MINOR = %d", minorVersion(componentdefinition.Version))
+	w.Writeln("  MICRO = %d", microVersion(componentdefinition.Version))
+	w.Writeln("")
+
 	w.Writeln("'''Definition Error Codes")
 	w.Writeln("'''")
 	w.Writeln("class %sErrorCodes(enum.IntEnum):", NameSpace)
@@ -234,6 +243,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace, NameSpace )
 	w.Writeln("    ")
 	w.Writeln("    self._loadFunctionTable()")
+	w.Writeln("    ")
+	w.Writeln("    self._checkBinaryVersion()")
 	w.Writeln("  ")
 
 	w.Writeln("  def _loadFunctionTable(self):")
@@ -245,6 +256,13 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    except AttributeError as ae:")
 	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])", NameSpace, NameSpace)
 	w.Writeln("  ")
+
+	w.Writeln("  def _checkBinaryVersion(self):")
+	w.Writeln("    nMajor, nMinor, _ = self.%s()", componentdefinition.Global.VersionMethod)
+	w.Writeln("    if (nMajor != %sBindingVersion.MAJOR) or (nMinor < %sBindingVersion.MINOR):", NameSpace, NameSpace)
+	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
+	w.Writeln("  ")
+
 	w.Writeln("  def checkError(self, instance, errorCode):")
 	w.Writeln("    if instance:")
 	w.Writeln("      if instance._wrapper != self:")

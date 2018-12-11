@@ -755,7 +755,7 @@ func buildCppExample(componentdefinition ComponentDefinition, w LanguageWriter, 
 	w.Writeln("  try")
 	w.Writeln("  {")
 	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
-	w.Writeln("    %s::C%sWrapper::GetLibraryVersion(nMajor, nMinor, nMicro);", NameSpace, NameSpace)
+	w.Writeln("    %s::C%sWrapper::%s(nMajor, nMinor, nMicro);", NameSpace, NameSpace, componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro << std::endl;", NameSpace);
 	w.Writeln("  }")
 	w.Writeln("  catch (std::exception &e)")

@@ -721,6 +721,8 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  {")
 	w.Writeln("    CheckError (nullptr, initWrapperTable (&m_WrapperTable));")
 	w.Writeln("    CheckError (nullptr, loadWrapperTable (&m_WrapperTable, sFileName.c_str ()));")
+	w.Writeln("    ")
+	w.Writeln("    CheckError(nullptr, checkBinaryVersion());")
 	w.Writeln("  }")
 	w.Writeln("  ")
 	
@@ -754,11 +756,22 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 			return err
 		}
 	}
-		
+	
 	w.Writeln("")
 	w.Writeln("private:")
 	w.Writeln("  s%sDynamicWrapperTable m_WrapperTable;", NameSpace)
 	w.Writeln("")
+
+	w.Writeln("  %sResult checkBinaryVersion()", NameSpace)
+	w.Writeln("  {")
+	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
+	w.Writeln("    %s(nMajor, nMinor, nMicro);", global.VersionMethod)
+	w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace) )
+	w.Writeln("      return %s_ERROR_INCOMPATIBLEBINARYVERSION;", strings.ToUpper(NameSpace))
+	w.Writeln("    }")
+	w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
+	w.Writeln("  }")
+
 	w.Writeln("  %sResult initWrapperTable (s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
 	w.Writeln("  %sResult releaseWrapperTable (s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
 	w.Writeln("  %sResult loadWrapperTable (s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);", NameSpace, NameSpace)
@@ -1023,7 +1036,7 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 	w.Writeln("    std::string libpath = (\"\"); // TODO: put the location of the %s-library file here.", NameSpace)
 	w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, NameSpace, BaseName)
 	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
-	w.Writeln("    wrapper->GetLibraryVersion(nMajor, nMinor, nMicro);")
+	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro);", componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro << std::endl;", NameSpace);
 	w.Writeln("  }")
 	w.Writeln("  catch (std::exception &e)")

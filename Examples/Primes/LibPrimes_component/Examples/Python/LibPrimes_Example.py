@@ -13,7 +13,7 @@ Interface version: 1.0.0
 def progressCallback(progress, shouldAbort):
 	print("Progress = {:d}%".format(round(progress*100)))
 	if (shouldAbort is not None):
-		shouldAbort[0] = progress > 0.5;
+		shouldAbort[0] = progress > 0.5
 
 
 import os
