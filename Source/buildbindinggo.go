@@ -39,6 +39,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"errors"
 	"strings"
 )
 
@@ -508,6 +509,27 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 }
 
 
+
+func getGoBasicType (paramType string) (string, error) {
+	
+	switch (paramType) {
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool":
+			return paramType, nil;
+	
+		case "single":
+			return "float32", nil;
+			
+		case "double":
+			return "float64", nil;
+		
+			
+	}
+		
+	return "", errors.New ("Invalid basic type: " + paramType);
+		
+}
+
+
 func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writer, NameSpace string, ClassName string, isGlobal bool, classdefinitions * string) (error) {
 
 	parameters := "";
@@ -541,11 +563,19 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					errorreturn = errorreturn + fmt.Sprintf ("s%s, ", param.ParamName)
 				case "handle":
 					errorreturn = errorreturn + fmt.Sprintf ("h%s, ", param.ParamName)
+				case "functiontype":
+					errorreturn = errorreturn + fmt.Sprintf ("0, ")
+				
 				case "basicarray":
-					return fmt.Errorf("can not return basicarray \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
-
+					basicType, err := getGoBasicType (param.ParamClass);
+					if (err != nil) {
+						return err;
+					}
+					
+					errorreturn = errorreturn + fmt.Sprintf ("make ([]%s, 0), ", basicType);
+					
 				case "structarray":
-					return fmt.Errorf("can not return structarray \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+					errorreturn = errorreturn + fmt.Sprintf ("make ([]s%s%s, 0), ", NameSpace, param.ParamClass);
 					
 				default:
 					return fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName);
@@ -675,8 +705,29 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					callparameters = callparameters + "s" + param.ParamName;
 
 				case "basicarray":
-				case "structarray":
+					basicType, err := getGoBasicType (param.ParamClass);
+					if (err != nil) {
+						return err;
+					}
+					
+					comments = comments + fmt.Sprintf("    * @param[in] %s - %s\n", param.ParamName, param.ParamDescription);
+					parameters = parameters + fmt.Sprintf ("%s []%s", param.ParamName, basicType)
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0, 0");
+					callparameters = callparameters + param.ParamName;
 
+
+				case "structarray":					
+					comments = comments + fmt.Sprintf("    * @param[in] %s - %s\n", param.ParamName, param.ParamDescription);
+					parameters = parameters + fmt.Sprintf ("%s []s%s%s", param.ParamName, NameSpace, param.ParamClass)
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0, 0");
+					callparameters = callparameters + param.ParamName;
+
+				case "functiontype":
+					comments = comments + fmt.Sprintf("    * @param[in] p%s - %s\n", param.ParamName, param.ParamDescription);
+					parameters = parameters + fmt.Sprintf ("p%s int64", param.ParamName)
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0");
+					callparameters = callparameters + "p" + param.ParamName;
+				
 				case "handle":
 					comments = comments + fmt.Sprintf("    * @param[in] %s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("%s %sHandle", param.ParamName, NameSpace)
@@ -849,15 +900,51 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					classreturnstring = classreturnstring + "e" + param.ParamName + ", ";
 					classreturntypes = classreturntypes + fmt.Sprintf ("E%s%s, ", NameSpace, param.ParamClass);
 
+
+				case "basicarray":
+					basicType, err := getGoBasicType (param.ParamClass);
+					if (err != nil) {
+						return err;
+					}
+					
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					returnvalues = returnvalues + fmt.Sprintf ("[]%s, ", basicType)
+					impldeclarations = impldeclarations + fmt.Sprintf ("%sarray%s := make ([]%s, 0);\n", spacing, param.ParamName, basicType);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("array%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0, 0, 0");
+					classreturnvariables = classreturnvariables + "array" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "array" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("[]%s, ", basicType);
+
+				case "structarray":					
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					returnvalues = returnvalues + fmt.Sprintf ("[]s%s%s, ", NameSpace, param.ParamClass)
+					impldeclarations = impldeclarations + fmt.Sprintf ("%sarray%s := make ([]s%s%s, 0);\n", spacing, param.ParamName, NameSpace, param.ParamClass);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("array%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0, 0, 0");
+					classreturnvariables = classreturnvariables + "array" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "array" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("[]s%s%s, ", NameSpace, param.ParamClass);
+					
+				case "functiontype":
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					returnvalues = returnvalues + fmt.Sprintf ("uint64, ")
+					impldeclarations = impldeclarations + fmt.Sprintf ("%svar p%s uint64 = 0;\n", spacing, param.ParamName);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("p%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64OutValue (&p%s)", param.ParamName);
+					classreturnvariables = classreturnvariables + "p" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "p" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("uint64, ");
+
 				case "struct":
-					/*comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
 					returnvalues = returnvalues + fmt.Sprintf ("s%s%s, ", NameSpace, param.ParamClass)
-					impldeclarations = impldeclarations + fmt.Sprintf ("%svar s%s uint64 = 0;\n", spacing, param.ParamName);
-					implreturnvalues = implreturnvalues + fmt.Sprintf ("E%s%s (e%s), ", NameSpace, param.ParamClass, param.ParamName);
-					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64OutValue (&e%s)", param.ParamName);
-					classreturnvariables = classreturnvariables + "e" + param.ParamName + ", ";
-					classreturnstring = classreturnstring + "e" + param.ParamName + ", ";
-					classreturntypes = classreturntypes + fmt.Sprintf ("E%s%s, ", NameSpace, param.ParamClass);*/
+					impldeclarations = impldeclarations + fmt.Sprintf ("%svar s%s s%s%s;\n", spacing, param.ParamName, NameSpace, param.ParamClass);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("s%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0");
+					classreturnvariables = classreturnvariables + "s" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "s" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("s%s%s, ", NameSpace, param.ParamClass);
 					
 				case "handle":
 					comments = comments + fmt.Sprintf("    * @return %s\n", param.ParamDescription);

@@ -514,7 +514,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 			preCallCPPFunctionCode
 	}
 
-	w.Writeln("%s_DECLSPEC %sResult %s (%s)", strings.ToUpper(BaseName), NameSpace, CMethodName, cparameters)
+	w.Writeln("%sResult %s (%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
 
 	if (doJournal) {

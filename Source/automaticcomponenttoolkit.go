@@ -69,7 +69,7 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 }
 
 func main () {
-	ACTVersion := "1.3.1"
+	ACTVersion := "1.3.2"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the Interface Description XML as command line parameter.");

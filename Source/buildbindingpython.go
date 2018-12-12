@@ -626,6 +626,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			}
 			switch param.ParamType {
 			case "handle": {
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
 				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = %s()", param.ParamName, cParams[0].ParamCallType))
 				newArgument := fmt.Sprintf("%sHandle", param.ParamName)
 				cArguments = cArguments + newArgument
@@ -636,6 +639,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
 			case "string": {
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[0].ParamName, cParams[0].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(None)", cParams[2].ParamName, cParams[2].ParamCallType))
@@ -648,6 +654,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				retVals = retVals + cParams[2].ParamName + ".value.decode()"
 			}
 			case "basicarray": {
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[0].ParamName, cParams[0].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*0)()", cParams[2].ParamName, cParams[2].ParamCallType))
@@ -661,6 +670,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				retVals = retVals + fmt.Sprintf("[%s[i] for i in range(%s.value)]", cParams[2].ParamName, cParams[1].ParamName)
 			}
 			case "structarray": {
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[0].ParamName, cParams[0].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*0)()", cParams[2].ParamName, cParams[2].ParamCallType))

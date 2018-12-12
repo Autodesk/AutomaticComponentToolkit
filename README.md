@@ -22,7 +22,7 @@ calling the functions exported by your component via the thin C89-API.
 A consumer of your component only needs to include the language binding relevant for them and not worry about the C89 interface or the underlying implementation.
 
 ## How to use ACT:
-1) Download the precompiled binaries of from one of the [releases](https://github.com/Autodesk/AutomaticComponentToolkit/releases)
+1) Download the precompiled binaries of from one of the [releases](../../releases)
 2) Write an interface description file `idl_file.xml` for your desired component
 3) Generate implementation stubs and language bindings for your component:
 <br/>`act.exe idl_file.xml`
@@ -30,7 +30,7 @@ A consumer of your component only needs to include the language binding relevant
 
 You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
 
-Alternatively to 1) build act from source:
+Alternatively to 1) build ACT from source ([master](../../tree/master) for a released vesion, [develop](../../tree/develop) for the latest developments):
 1. Install go https://golang.org/doc/install
 2. Build automaticcomponenttoolkit.go:
 <br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix

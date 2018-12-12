@@ -186,6 +186,8 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 		w.Writeln (" Declaration of function types");
 		w.Writeln ("**************************************************************************************************************************)");
 		w.Writeln ("");
+		w.Writeln ("type");
+		w.Writeln ("");
 		for i := 0; i < len(componentdefinition.Functions); i++ {
 			funcinfo := componentdefinition.Functions[i];
 			arguments := ""
@@ -201,7 +203,7 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 				arguments = arguments + cParams[0].ParamConvention + cParams[0].ParamName + ": " + cParams[0].ParamType
 			}
 
-			w.Writeln ("  P%s_%s = function(%s): Integer;", NameSpace, funcinfo.FunctionName, arguments);
+			w.Writeln ("  P%s_%s = function(%s): Integer; cdecl;", NameSpace, funcinfo.FunctionName, arguments);
 		}
 	}
 	

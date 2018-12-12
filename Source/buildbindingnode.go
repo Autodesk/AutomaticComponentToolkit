@@ -209,6 +209,18 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "s" + param.ParamName + ".c_str()"
 				initCallParameter = callParameter;
 
+			case "basicarray":
+				callParameter = "nullptr, 0";
+				initCallParameter = callParameter;
+
+			case "structarray":
+				callParameter = "nullptr, 0";
+				initCallParameter = callParameter;
+
+			case "functiontype":
+				callParameter = "nullptr";
+				initCallParameter = callParameter;
+				
 			case "bool":
 				inputcheckfunction = "IsBoolean"
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sbool b%s = args[%d]->BooleanValue ();\n", spacing, param.ParamName, k)
@@ -234,7 +246,9 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 			case "struct":
-				return fmt.Errorf("parameter type \"%s\" not yet supported for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
+				callParameter = "nullptr";
+				initCallParameter = callParameter;
+				//return fmt.Errorf("parameter type \"%s\" not yet supported for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 
 			case "handle":
 				inputcheckfunction = "IsObject"
@@ -368,8 +382,20 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "&sReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				return fmt.Errorf("can not return struct \"%s\" for %s.%s (%s) yet in nodejs", param.ParamType, ClassName, method.MethodName, param.ParamName)
+				//return fmt.Errorf("can not return struct \"%s\" for %s.%s (%s) yet in nodejs", param.ParamType, ClassName, method.MethodName, param.ParamName)
 
+			case "basicarray":
+				callParameter = "nullptr, 0, nullptr";
+				initCallParameter = callParameter;
+
+			case "structarray":
+				callParameter = "nullptr, 0, nullptr";
+				initCallParameter = callParameter;
+
+			case "functiontype":
+				callParameter = "nullptr";
+				initCallParameter = callParameter;
+				
 			case "handle":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s%sHandle hReturn%s = nullptr;\n", spacing, NameSpace, param.ParamName)
 				callParameter = "&hReturn" + param.ParamName

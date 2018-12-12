@@ -324,7 +324,7 @@ func buildDynamicCppImplementation(component ComponentDefinition, w LanguageWrit
 }
 
 
-func writeDynamicCPPMethodDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
 	parameters := ""
 	returntype := "void"
 
@@ -381,7 +381,7 @@ func writeDynamicCPPMethodDefinition(method ComponentDefinitionMethod, w Languag
 
 
 
-func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, includeComments bool) error {
 
 	CMethodName := ""
 	requiresInitCall := false;
@@ -574,15 +574,17 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	}
 
 	w.Writeln("  ")
-	w.Writeln("  /**")
-	w.Writeln("  * %s::%s - %s", cppClassName, method.MethodName, method.MethodDescription)
-	w.Writelns("  ", commentcodeLines)
-	w.Writeln("  */")
+	if (includeComments) {
+		w.Writeln("  /**")
+		w.Writeln("  * %s::%s - %s", cppClassName, method.MethodName, method.MethodDescription)
+		w.Writelns("  ", commentcodeLines)
+		w.Writeln("  */")
+	}
 	
 	if (isGlobal) {	
 		w.Writeln("  inline %s %s::%s (%s)", returntype, cppClassName, method.MethodName, parameters)
 	} else {
-		w.Writeln("  %s %s (%s)", returntype, method.MethodName, parameters)
+		w.Writeln("  %s %s::%s (%s)", returntype, cppClassName, method.MethodName, parameters)
 	}
 
 	w.Writeln("  {")
@@ -747,7 +749,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writeDynamicCPPMethodDefinition(method, w, NameSpace, "Wrapper", true)
+		err := writeDynamicCPPMethodDeclaration(method, w, NameSpace, "Wrapper", true)
 		if err != nil {
 			return err
 		}
@@ -853,7 +855,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 
-			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false)
+			err := writeDynamicCPPMethodDeclaration(method, w, NameSpace, cppClassName, true)
 			if err != nil {
 				return err
 			}
@@ -865,7 +867,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true)
+		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true, true)
 		if err != nil {
 			return err
 		}
@@ -900,6 +902,25 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.AddIndentationLevel(-2)
 
 	w.Writeln("  }")
+
+	w.Writeln("  ")
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		cppClassName := cppClassPrefix + class.ClassName
+		w.Writeln("  ")
+		w.Writeln("  /**")
+		w.Writeln("   * Method definitions for class %s", cppClassName )
+		w.Writeln("   */")
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+		
 	w.Writeln("")
 	
 	w.Writeln("} // namespace %s", NameSpace)

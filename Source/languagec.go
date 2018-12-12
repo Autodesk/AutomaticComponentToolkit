@@ -454,7 +454,7 @@ func WriteCMethod (method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	if (writeCallbacks) {
 		w.Writeln("typedef %sResult (*%s) (%s);", NameSpace, CCallbackName, parameters);
 	} else {
-		w.Writeln("%s_DECLSPEC %sResult %s (%s);", strings.ToUpper(NameSpace), NameSpace, CMethodName, parameters);
+		w.Writeln("%s_DECLSPEC %sResult %s(%s);", strings.ToUpper(NameSpace), NameSpace, CMethodName, parameters);
 	}
 	
 	return nil;

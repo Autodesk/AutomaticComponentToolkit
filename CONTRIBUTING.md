@@ -3,7 +3,7 @@ The Automatic Component Toolkit is an open source project.
 
 Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs.
 
-You can also contribute by reporting bugs in the [Issue tracker](https://git.autodesk.com/netfabb/AutomaticComponentToolkit/issues), helping review pull requests, participate in discussions about issues and more.
+You can also contribute by reporting bugs in the [Issue tracker](../../issues), helping review pull requests, participate in discussions about issues and more.
 
 ## Filing issues
 1. When filing an issue to report errors or problems, make sure to answer these five questions:
@@ -19,7 +19,9 @@ You can also contribute by reporting bugs in the [Issue tracker](https://git.aut
 ## Submitting a pull request
 When ready to contribute, fork this repository and submit a pull request that references the issue it resolves. Be sure to include a clear and detailed description of the changes you've made so that we can verify them and eventually merge.
 
-__NOTE__ _Before your code can be accepted into the project you must also sign the Contributor License Agreement (CLA). Please contact Martin Weismann martin.weismann@autodesk.com for a copy of the CLA._
+ACT follows the [git-flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) branching model. New developments are integrated into the [develop](../../tree/develop)-branch. ACT's maintainers will create releases from the develop-branch when appropriate.
+
+__NOTE__ _Before your code can be accepted into the project you must also sign the Contributor License Agreement (CLA). Please contact the maintainers via automatic-component-toolkit.contributor.agreements@autodesk.com for a copy of the CLA._
 
 
 ## Maintainers
