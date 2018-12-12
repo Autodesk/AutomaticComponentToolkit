@@ -62,7 +62,7 @@ func (writer *LanguageWriter) Writeln (format string, a ...interface{}) (int, er
 	leadingIndents := leadingSpaces / 2;
 	
 	indentedFormat := strings.Repeat (writer.IndentString, leadingIndents) + format[leadingIndents * 2:];
-	return fmt.Fprintf (writer.Writer, indentedFormat + "\n", a...);	
+	return fmt.Fprintf (writer.Writer, indentedFormat + "\n", a...);
 }
 
 // Writelns writes multiple lines and processes indentation

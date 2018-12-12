@@ -26,6 +26,15 @@ void CLibPrimesFactorizationCalculator::Calculate()
 
 	unsigned long long nValue = m_value;
 	for (unsigned long long i = 2; i <= nValue; i++) {
+
+		if (m_Callback) {
+			bool shouldAbort = false;
+			(*m_Callback)(1 - float(nValue) / m_value, &shouldAbort);
+			if (shouldAbort) {
+				throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_CALCULATIONABORTED);
+			}
+		}
+
 		sLibPrimesPrimeFactor primeFactor;
 		primeFactor.m_Prime = i;
 		primeFactor.m_Multiplicity = 0;

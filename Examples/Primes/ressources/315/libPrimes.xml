@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
 	libraryname="Prime Numbers Interface" namespace="LibPrimes" copyright="Automatic Component Toolkit Developers" year="2018" basename="libprimes"
-	version="1.2.0">
+	version="1.0.0">
 	<license>
 		<line value="All rights reserved." />
 	</license>
@@ -28,18 +28,12 @@
 		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
 		<error name="NORESULTAVAILABLE" code="8" description="no result is available" />
-		<error name="CALCULATIONABORTED" code="9" description="a calculation has been aborted" />
 	</errors>
 	
 	<struct name="PrimeFactor">
 		<member name="Prime" type="uint64" />
 		<member name="Multiplicity" type="uint32" />
 	</struct>
-	
-	<functiontype name="ProgressCallback">
-		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
-		<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
-	</functiontype>
 	
 	<class name="Calculator">
 		<method name="GetValue" description="Returns the current value of this Calculator">
@@ -48,10 +42,6 @@
 		
 		<method name="SetValue" description="Sets the value to be factorized">
 			<param name="Value" type="uint64" pass="in" description="The value to be factorized" />
-		</method>
-
-		<method name="SetProgressCallback" description="Sets the progress callback function">
-			<param name="ProgressCallback" type="functiontype" class="ProgressCallback" pass="in" description="The progress callback" />
 		</method>
 		
 		<method name="Calculate" description="Performs the specific calculation of this Calculator">
@@ -70,7 +60,7 @@
 		</method>
 	</class>
 	
-	<global releasemethod="ReleaseInstance" journalmethod="SetJournal" versionmethod="GetLibraryVersion">
+	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
 			<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
 		</method>
@@ -87,10 +77,6 @@
 			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
-		</method>
-		
-		<method name="SetJournal" description="Handles Library Journaling">
-			<param name="FileName" type="string" pass="in" description="Journal FileName" />
 		</method>
 	</global>
 		

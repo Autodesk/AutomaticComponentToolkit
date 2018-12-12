@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
 	libraryname="Prime Numbers Interface" namespace="LibPrimes" copyright="Automatic Component Toolkit Developers" year="2018" basename="libprimes"
-	version="1.2.0">
+	version="1.1.0">
 	<license>
 		<line value="All rights reserved." />
 	</license>
@@ -70,7 +70,7 @@
 		</method>
 	</class>
 	
-	<global releasemethod="ReleaseInstance" journalmethod="SetJournal" versionmethod="GetLibraryVersion">
+	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
 			<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
 		</method>
@@ -87,10 +87,6 @@
 			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
-		</method>
-		
-		<method name="SetJournal" description="Handles Library Journaling">
-			<param name="FileName" type="string" pass="in" description="Journal FileName" />
 		</method>
 	</global>
 		

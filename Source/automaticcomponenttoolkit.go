@@ -44,7 +44,7 @@ import (
 
 func main () {
 
-	log.Printf ("Automatic Component Toolkit v1.0\n");
+	log.Printf ("Automatic Component Toolkit v1.2.0\n");
 	log.Printf ("---------------------------------------\n");
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the configuration XML as command line parameter.");
@@ -86,6 +86,7 @@ func main () {
 
 	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
+	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
 	
 	err = CheckComponentDefinition (component);
@@ -146,19 +147,23 @@ func main () {
 
 			case "CppDynamic": {
 				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic";
-
 				err  = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm);
 				if (err != nil) {
 					log.Fatal (err);
 				}
-				
+				outputFolderExampleCppDynamic := outputFolderExamples + "/CppDynamic";
+				err  = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+
 				CTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName + "_types.h");
 				err = CreateCTypesHeader (component, CTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
 				
-				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic);
+				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -231,13 +236,18 @@ func main () {
 			
 			case "Pascal": {
 				outputFolderBindingPascal := outputFolderBindings + "/Pascal";
-				
 				err  = os.MkdirAll(outputFolderBindingPascal, os.ModePerm);
 				if (err != nil) {
 					log.Fatal (err);
 				}
+
+				outputFolderExamplePascal := outputFolderExamples + "/Pascal";
+				err  = os.MkdirAll(outputFolderExamplePascal, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
 								
-				err = BuildBindingPascalDynamic(component, outputFolderBindingPascal, indentString);
+				err = BuildBindingPascalDynamic(component, outputFolderBindingPascal, outputFolderExamplePascal, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -245,13 +255,18 @@ func main () {
 
 			case "Python": {
 				outputFolderBindingPython := outputFolderBindings + "/Python";
-				
 				err  = os.MkdirAll(outputFolderBindingPython, os.ModePerm);
 				if (err != nil) {
 					log.Fatal (err);
 				}
-								
-				err = BuildBindingPythonDynamic(component, outputFolderBindingPython, indentString);
+
+				outputFolderExamplePython := outputFolderExamples + "/Python";
+				err  = os.MkdirAll(outputFolderExamplePython, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+				
+				err = BuildBindingPythonDynamic(component, outputFolderBindingPython, outputFolderExamplePython, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}

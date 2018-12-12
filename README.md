@@ -29,12 +29,12 @@ A consumer of your component only needs to include the language binding relevant
         <br/>`.\build.bat`
     <br/>OR
      2) Download the precompiled binaries from one of the [releases](https://github.com/Autodesk/AutomaticComponentToolkit/releases) 
-2) Write an interface description file for your desired API
-3) Generate implementation stubs and language bindings for your API:
-<br/>`act.exe Examples/Numbers/libnumbers.xml`
+2) Write an interface description file `idl_file.xml` for your desired component
+3) Generate implementation stubs and language bindings for your component:
+<br/>`act.exe idl_file.xml`
 4) Integrate the generated code in your project
 
-You are probably best of starting of with an [Example](#example).
+You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
 
 ## Language Support
 ACT supports generation of bindings and implementation stubs for C++, C, Pascal, Golang, NodeJS and Python. However, not all features of the IDL are yet supported by the individual export language:
@@ -55,11 +55,12 @@ ACT supports generation of bindings and implementation stubs for C++, C, Pascal,
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling |
 |:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|
 | C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          |
-| Pascal         | ![](Documentation/images/X.png) in development        |                   |           |               |               |               |               |            |             |           |            |
+| Pascal         | ![](Documentation/images/X.png) in development        | Win, Linux, MacOS |           |               |               |               |               |            |             |           |            |
 
 
 ## Example
-TODO: Annotation of an example project
+A complete example of the implementation and usage of an ACT component can be found in [Examples/Primes](Examples/Primes).
+This folder also contains a complete [Tutorial](Examples/Primes/Tutorial.md) to set up this example project.
 
 ## Background: the hourglass pattern-API for shared software components
 A very clean approach to creating software components is the hourglass pattern for APIs.
