@@ -197,24 +197,32 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wHeader.Writeln("**************************************************************************************************************************/");
 	wHeader.Writeln("");
 	wHeader.Writeln("");
-	wHeader.Writeln("class E%sInterfaceException : public std::runtime_error {", NameSpace);
+	wHeader.Writeln("class E%sInterfaceException : public std::exception {", NameSpace);
 	wHeader.Writeln("protected:");
 	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Error code for the Exception.");
 	wHeader.Writeln("  */");
-	wHeader.Writeln("  %sResult m_errorcode;", NameSpace);
+	wHeader.Writeln("  %sResult m_errorCode;", NameSpace);
+	wHeader.Writeln("  /**");
+	wHeader.Writeln("  * Error message for the Exception.");
+	wHeader.Writeln("  */");
+	wHeader.Writeln("  std::string m_errorMessage;");
 	wHeader.Writeln("")
 	wHeader.Writeln("public:");
 	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Exception Constructor.");
 	wHeader.Writeln("  */"); 
-	wHeader.Writeln("  E%sInterfaceException (%sResult errorcode);", NameSpace, NameSpace);
+	wHeader.Writeln("  E%sInterfaceException (%sResult errorCode);", NameSpace, NameSpace);
 	wHeader.Writeln("");
 	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Returns error code");
-	wHeader.Writeln("  */"); 
+	wHeader.Writeln("  */");
 	wHeader.Writeln("  %sResult getErrorCode ();", NameSpace);
-	wHeader.Writeln("};");	
+	wHeader.Writeln("  /**");
+	wHeader.Writeln("  * Returns error message");
+	wHeader.Writeln("  */");
+	wHeader.Writeln("  const char* what () const;");
+	wHeader.Writeln("};");
 	wHeader.Writeln("");
 	
 	wHeader.Writeln("#endif // __%s_INTERFACEEXCEPTION_HEADER", strings.ToUpper (NameSpace));
@@ -229,15 +237,20 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wImpl.Writeln("/*************************************************************************************************************************");
 	wImpl.Writeln(" Class E%sInterfaceException", NameSpace);
 	wImpl.Writeln("**************************************************************************************************************************/");
-	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorcode)", NameSpace, NameSpace, NameSpace);
-	wImpl.Writeln("  : std::runtime_error (\"%s Error \" + std::to_string (errorcode))", NameSpace);
+	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode)", NameSpace, NameSpace, NameSpace);
+	wImpl.Writeln("  : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace);
 	wImpl.Writeln("{");
-	wImpl.Writeln("  m_errorcode = errorcode;");
+	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
 	wImpl.Writeln("%sResult E%sInterfaceException::getErrorCode ()", NameSpace, NameSpace);
 	wImpl.Writeln("{");
-	wImpl.Writeln("  return m_errorcode;");
+	wImpl.Writeln("  return m_errorCode;");
+	wImpl.Writeln("}");
+	wImpl.Writeln("");
+	wImpl.Writeln("const char * E%sInterfaceException::what () const", NameSpace);
+	wImpl.Writeln("{");
+	wImpl.Writeln("  return m_errorMessage.c_str();");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
 
@@ -395,7 +408,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeCImplementationMethod(method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, false, doJournal, eSpecialMethod_None)
+			err := writeCImplementationMethod(method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, false, doJournal, eSpecialMethodNone)
 			if err != nil {
 				return err
 			}
@@ -418,7 +431,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		
 		// Do not self-journal Journal special method
 		doMethodJournal := doJournal;
-		if (isSpecialFunction == eSpecialMethod_JournalMethod) {
+		if (isSpecialFunction == eSpecialMethodJournal) {
 			doMethodJournal = false;
 		}
 
@@ -469,14 +482,14 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	}
 	
 	
-	if (isSpecialFunction == eSpecialMethod_None || isSpecialFunction == eSpecialMethod_ReleaseMethod || isSpecialFunction == eSpecialMethod_VersionMethod) {
+	if (isSpecialFunction == eSpecialMethodNone || isSpecialFunction == eSpecialMethodRelease || isSpecialFunction == eSpecialMethodVersion) {
 		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
 		if err != nil {
 			return err
 		}
 	}
 	
-	if (isSpecialFunction == eSpecialMethod_JournalMethod) {
+	if (isSpecialFunction == eSpecialMethodJournal) {
 		callCPPFunctionCode = fmt.Sprintf(indentString + indentString + "m_GlobalJournal = nullptr;\n") +
 							  fmt.Sprintf(indentString + indentString + "if (s%s != \"\") {\n", method.Params[0].ParamName) +	
 							  fmt.Sprintf(indentString + indentString + indentString + "m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);\n", NameSpace, method.Params[0].ParamName) + 
@@ -770,12 +783,12 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 			case "basicarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%sBuffer - %s\n", param.ParamName, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("const unsigned int n%sBufferSize, const %s p%sBuffer", param.ParamName, cppParamType, param.ParamName)
+				parameters = parameters + fmt.Sprintf("const %s_uint64 n%sBufferSize, const %s p%sBuffer", NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "structarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%sBuffer - %s\n", param.ParamName, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("const unsigned int n%sBufferSize, const %s p%sBuffer", param.ParamName, cppParamType, param.ParamName)
+				parameters = parameters + fmt.Sprintf("const %s_uint64 n%sBufferSize, const %s p%sBuffer", NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "functiontype":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - callback function\n", param.ParamName)
@@ -826,13 +839,13 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sNeededCount - will be filled with the count of the written structs, or needed buffer size.\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sBuffer - %s buffer of %s\n", param.ParamName, param.ParamClass, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("unsigned int n%sBufferSize, unsigned int * p%sNeededCount, %s p%sBuffer", param.ParamName, param.ParamName, cppParamType, param.ParamName)
+				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "structarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sNeededCount - will be filled with the count of the written structs, or needed buffer size.\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sBuffer - %s buffer of %s\n", param.ParamName, param.ParamClass, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("unsigned int n%sBufferSize, unsigned int * p%sNeededCount, %s p%sBuffer", param.ParamName, param.ParamName, cppParamType, param.ParamName)
+				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "handle":
 				parameters = parameters + fmt.Sprintf("I%s%s%s * p%s", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName)
@@ -896,21 +909,21 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 	cppClassPrefix := "C" + NameSpace;
 	switch (param.ParamType) {
 		case "uint8":
-			return fmt.Sprintf ("unsigned char");
+			return fmt.Sprintf ("%s_uint8", NameSpace);
 		case "uint16":
-			return fmt.Sprintf ("unsigned short");
+			return fmt.Sprintf ("%s_uint16", NameSpace);
 		case "uint32":
-			return fmt.Sprintf ("unsigned int");
+			return fmt.Sprintf ("%s_uint32", NameSpace);
 		case "uint64":
-			return fmt.Sprintf ("unsigned long long");
+			return fmt.Sprintf ("%s_uint64", NameSpace);
 		case "int8":
-			return fmt.Sprintf ("char");
+			return fmt.Sprintf ("%s_int8", NameSpace);
 		case "int16":
-			return fmt.Sprintf ("short");
+			return fmt.Sprintf ("%s_int16", NameSpace);
 		case "int32":
-			return fmt.Sprintf ("int");
+			return fmt.Sprintf ("%s_int32", NameSpace);
 		case "int64":
-			return fmt.Sprintf ("long long");
+			return fmt.Sprintf ("%s_int64", NameSpace);
 		case "string":
 			return fmt.Sprintf ("std::string");
 		case "bool":
@@ -921,35 +934,37 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 			cppBasicType := "";
 			switch (param.ParamClass) {
 			case "uint8":
-				cppBasicType = "unsigned char";
+				cppBasicType = fmt.Sprintf ("%s_uint8", NameSpace);
 			case "uint16":
-				cppBasicType = "unsigned short";
+				cppBasicType = fmt.Sprintf ("%s_uint16", NameSpace);
 			case "uint32":
-				cppBasicType = "unsigned int";
+				cppBasicType = fmt.Sprintf ("%s_uint32", NameSpace);
 			case "uint64":
-				cppBasicType = "unsigned long long";
+				cppBasicType = fmt.Sprintf ("%s_uint64", NameSpace);
 			case "int8":
-				cppBasicType = "char";
+				cppBasicType = fmt.Sprintf ("%s_int8", NameSpace);
 			case "int16":
-				cppBasicType = "short";
+				cppBasicType = fmt.Sprintf ("%s_int16", NameSpace);
 			case "int32":
-				cppBasicType = "int";
+				cppBasicType = fmt.Sprintf ("%s_int32", NameSpace);
 			case "int64":
-				cppBasicType = "long long";
+				cppBasicType = fmt.Sprintf ("%s_int64", NameSpace);
 			case "bool":
 				cppBasicType = "bool";
 			case "single":
-				cppBasicType = "float";
+				cppBasicType = fmt.Sprintf ("%s_single", NameSpace);
 			case "double":
-				cppBasicType = "double";
+				cppBasicType = fmt.Sprintf ("%s_double", NameSpace);
 			default:
 				log.Fatal ("Invalid parameter type: ", param.ParamClass);
 			}
 			return fmt.Sprintf ("%s *", cppBasicType);
 		case "structarray":
 			return fmt.Sprintf ("s%s%s *", NameSpace, param.ParamClass);
+		case "float":
+			return fmt.Sprintf ("%s_single", NameSpace);
 		case "double":
-			return fmt.Sprintf ("double");
+			return fmt.Sprintf ("%s_double", NameSpace);
 		case "enum":
 			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
 		case "struct":
@@ -1048,7 +1063,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				callParameters = callParameters + variableName
 
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (unsigned int) %s.size();\n", param.ParamName, variableName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) %s.size();\n", param.ParamName, NameSpace, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
@@ -1084,7 +1099,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				returnVariable = variableName
 
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (unsigned int) %s.size();\n", param.ParamName, variableName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) %s.size();\n", param.ParamName, NameSpace, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
@@ -1313,7 +1328,11 @@ func buildCMakeForCPPImplementation(component ComponentDefinition, w LanguageWri
 
 	targetName := strings.ToLower(NameSpace)
 	w.Writeln("add_library(%s SHARED ${%s_SRC})", targetName, strings.ToUpper(NameSpace))
-	w.Writeln("target_compile_options(%s PRIVATE \"-D__%s_DLL\")", targetName, strings.ToUpper(NameSpace))
+	w.Writeln("# The following two properties are crucial to reduce the number of undesirably exported symbols")
+	w.Writeln("set_target_properties(%s PROPERTIES CXX_VISIBILITY_PRESET hidden)", targetName)
+	w.Writeln("set_target_properties(%s PROPERTIES VISIBILITY_INLINES_HIDDEN ON)", targetName)
+	w.Writeln("# This makes sure symbols are exported")
+	w.Writeln("target_compile_options(%s PRIVATE \"-D__%s_EXPORTS\")", targetName, strings.ToUpper(NameSpace))
 	w.Writeln("target_include_directories(%s PRIVATE ${CMAKE_CURRENT_AUTOGENERATED_DIR})", targetName)
 	w.Writeln("target_include_directories(%s PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Stub)", targetName)
 }
@@ -1350,8 +1369,8 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    std::string m_sClassName;");
 	headerw.Writeln("    std::string m_sMethodName;");
 	headerw.Writeln("    std::string m_sInstanceHandle;");
-	headerw.Writeln("    unsigned long long m_nInitTimeStamp;");
-	headerw.Writeln("    unsigned long long m_nFinishTimeStamp;");
+	headerw.Writeln("    %s_uint64 m_nInitTimeStamp;", NameSpace);
+	headerw.Writeln("    %s_uint64 m_nFinishTimeStamp;", NameSpace);
 	headerw.Writeln("    std::list<std::pair<std::pair<std::string, std::string>, std::string>> m_sParameters;");
 	headerw.Writeln("    std::list<std::pair<std::pair<std::string, std::string>, std::string>> m_sResultValues;");
 	headerw.Writeln("");
@@ -1368,34 +1387,34 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void writeError (%sResult nErrorCode);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void addBooleanParameter(const std::string & sName, const bool bValue);");
-	headerw.Writeln("    void addUInt8Parameter(const std::string & sName, const unsigned char nValue);");
-	headerw.Writeln("    void addUInt16Parameter(const std::string & sName, const unsigned short nValue);");
-	headerw.Writeln("    void addUInt32Parameter(const std::string & sName, const unsigned int nValue);");
-	headerw.Writeln("    void addUInt64Parameter(const std::string & sName, const unsigned long long nValue);");
-	headerw.Writeln("    void addInt8Parameter(const std::string & sName, const char nValue);");
-	headerw.Writeln("    void addInt16Parameter(const std::string & sName, const short nValue);");
-	headerw.Writeln("    void addInt32Parameter(const std::string & sName, const int nValue);");
-	headerw.Writeln("    void addInt64Parameter(const std::string & sName, const long long nValue);");
-	headerw.Writeln("    void addSingleParameter(const std::string & sName, const float fValue);");
-	headerw.Writeln("    void addDoubleParameter(const std::string & sName, const double dValue);");
+	headerw.Writeln("    void addUInt8Parameter(const std::string & sName, const %s_uint8 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt16Parameter(const std::string & sName, const %s_uint16 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt32Parameter(const std::string & sName, const %s_uint32 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt64Parameter(const std::string & sName, const %s_uint64 nValue);", NameSpace);
+	headerw.Writeln("    void addInt8Parameter(const std::string & sName, const %s_int8 nValue);", NameSpace);
+	headerw.Writeln("    void addInt16Parameter(const std::string & sName, const %s_int16 nValue);", NameSpace);
+	headerw.Writeln("    void addInt32Parameter(const std::string & sName, const %s_int32 nValue);", NameSpace);
+	headerw.Writeln("    void addInt64Parameter(const std::string & sName, const %s_int64 nValue);", NameSpace);
+	headerw.Writeln("    void addSingleParameter(const std::string & sName, const %s_single fValue);", NameSpace);
+	headerw.Writeln("    void addDoubleParameter(const std::string & sName, const %s_double dValue);", NameSpace);
 	headerw.Writeln("    void addStringParameter(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleParameter(const std::string & sName, const %sHandle pHandle);", NameSpace);
-	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, unsigned int nValue);");
+	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void addBooleanResult(const std::string & sName, const bool bValue);");
-	headerw.Writeln("    void addUInt8Result(const std::string & sName, const unsigned char nValue);");
-	headerw.Writeln("    void addUInt16Result(const std::string & sName, const unsigned short nValue);");
-	headerw.Writeln("    void addUInt32Result(const std::string & sName, const unsigned int nValue);");
-	headerw.Writeln("    void addUInt64Result(const std::string & sName, const unsigned long long nValue);");
-	headerw.Writeln("    void addInt8Result(const std::string & sName, const char nValue);");
-	headerw.Writeln("    void addInt16Result(const std::string & sName, const short nValue);");
-	headerw.Writeln("    void addInt32Result(const std::string & sName, const int nValue);");
-	headerw.Writeln("    void addInt64Result(const std::string & sName, const long long nValue);");
-	headerw.Writeln("    void addSingleResult(const std::string & sName, const float fValue);");
-	headerw.Writeln("    void addDoubleResult(const std::string & sName, const double dValue);");
+	headerw.Writeln("    void addUInt8Result(const std::string & sName, const %s_uint8 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt16Result(const std::string & sName, const %s_uint16 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt32Result(const std::string & sName, const %s_uint32 nValue);", NameSpace);
+	headerw.Writeln("    void addUInt64Result(const std::string & sName, const %s_uint64 nValue);", NameSpace);
+	headerw.Writeln("    void addInt8Result(const std::string & sName, const %s_int8 nValue);", NameSpace);
+	headerw.Writeln("    void addInt16Result(const std::string & sName, const %s_int16 nValue);", NameSpace);
+	headerw.Writeln("    void addInt32Result(const std::string & sName, const %s_int32 nValue);", NameSpace);
+	headerw.Writeln("    void addInt64Result(const std::string & sName, const %s_int64 nValue);", NameSpace);
+	headerw.Writeln("    void addSingleResult(const std::string & sName, const %s_single fValue);", NameSpace);
+	headerw.Writeln("    void addDoubleResult(const std::string & sName, const %s_double dValue);", NameSpace);
 	headerw.Writeln("    void addStringResult(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleResult(const std::string & sName, const %sHandle pHandle);", NameSpace);
-	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, unsigned int nValue);");
+	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("friend class C%sInterfaceJournal;", NameSpace);
 	headerw.Writeln("");
@@ -1416,7 +1435,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    std::ofstream m_Stream;");
 	headerw.Writeln("    std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;");
 	headerw.Writeln("    void writeEntry (C%sInterfaceJournalEntry * pEntry);", NameSpace);
-	headerw.Writeln("    unsigned long long getTimeStamp ();");
+	headerw.Writeln("    %s_uint64 getTimeStamp ();", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("  public:");
 	headerw.Writeln("");
@@ -1442,12 +1461,12 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("#include \"%s_interfaceexception.hpp\"", BaseName);
 	implw.Writeln("");
 	implw.Writeln("");
-		
+	
 	implw.Writeln("std::string %sHandleToHex (%sHandle pHandle)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  std::stringstream stream;");
-	implw.Writeln("  stream << std::setfill('0') << std::setw(sizeof(unsigned long long) * 2)");
-	implw.Writeln("    << std::hex << (unsigned long long) pHandle;");
+	implw.Writeln("  stream << std::setfill('0') << std::setw(sizeof(%s_uint64) * 2)", NameSpace);
+	implw.Writeln("    << std::hex << (%s_uint64) pHandle;", NameSpace);
 	implw.Writeln("  return stream.str();");
 	implw.Writeln("}");
 	implw.Writeln("");
@@ -1478,7 +1497,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("std::string C%sInterfaceJournalEntry::getXMLString()", NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  std::stringstream sStream;");
-	implw.Writeln("  unsigned long long nDuration = 0;");
+	implw.Writeln("  %s_uint64 nDuration = 0;", NameSpace);
 	implw.Writeln("");
 	implw.Writeln("  if (m_nFinishTimeStamp > m_nInitTimeStamp)");
 	implw.Writeln("    nDuration = m_nFinishTimeStamp - m_nInitTimeStamp;");
@@ -1527,52 +1546,52 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addParameter (sName, \"bool\", std::to_string((int)bValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt8Parameter(const std::string & sName, const unsigned char nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt8Parameter(const std::string & sName, const %s_uint8 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"uint8\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt16Parameter(const std::string & sName, const unsigned short nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt16Parameter(const std::string & sName, const %s_uint16 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"uint16\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt32Parameter(const std::string & sName, const unsigned int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt32Parameter(const std::string & sName, const %s_uint32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"uint32\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt64Parameter(const std::string & sName, const unsigned long long nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt64Parameter(const std::string & sName, const %s_uint64 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"uint64\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt8Parameter(const std::string & sName, const char nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt8Parameter(const std::string & sName, const %s_int8 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"int8\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt16Parameter(const std::string & sName, const short nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt16Parameter(const std::string & sName, const %s_int16 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"int16\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt32Parameter(const std::string & sName, const int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt32Parameter(const std::string & sName, const %s_int32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"uint32\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt64Parameter(const std::string & sName, const long long nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt64Parameter(const std::string & sName, const %s_int64 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"int64\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addSingleParameter(const std::string & sName, const float fValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addSingleParameter(const std::string & sName,  const %s_single fValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"single\", std::to_string(fValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addDoubleParameter(const std::string & sName, const double dValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addDoubleParameter(const std::string & sName, const %s_double dValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"double\", std::to_string(dValue));");
 	implw.Writeln("}");
@@ -1592,7 +1611,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addParameter(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, unsigned int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"enum\" + sEnumType, std::to_string(nValue));");
 	implw.Writeln("}");
@@ -1602,52 +1621,52 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addResult(sName, \"bool\", std::to_string((int)bValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt8Result(const std::string & sName, const unsigned char nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt8Result(const std::string & sName, const %s_uint8 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"uint8\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt16Result(const std::string & sName, const unsigned short nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt16Result(const std::string & sName, const %s_uint16 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"uint16\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt32Result(const std::string & sName, const unsigned int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt32Result(const std::string & sName, const %s_uint32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"uint32\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addUInt64Result(const std::string & sName, const unsigned long long nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addUInt64Result(const std::string & sName, const %s_uint64 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"uint64\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt8Result(const std::string & sName, const char nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt8Result(const std::string & sName, const %s_int8 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"int8\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt16Result(const std::string & sName, const short nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt16Result(const std::string & sName, const %s_int16 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"int16\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt32Result(const std::string & sName, const int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt32Result(const std::string & sName, const %s_int32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"uint32\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addInt64Result(const std::string & sName, const long long nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addInt64Result(const std::string & sName, const %s_int64 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"int64\", std::to_string(nValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addSingleResult(const std::string & sName, const float fValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addSingleResult(const std::string & sName,  const %s_single fValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"single\", std::to_string(fValue));");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addDoubleResult(const std::string & sName, const double dValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addDoubleResult(const std::string & sName, const %s_double dValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"double\", std::to_string(dValue));");
 	implw.Writeln("}");
@@ -1667,7 +1686,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addResult(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, unsigned int nValue)", NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"enum\" + sEnumType, std::to_string(nValue));");
 	implw.Writeln("}");
@@ -1720,14 +1739,14 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  }");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("unsigned long long C%sInterfaceJournal::getTimeStamp ()", NameSpace);
+	implw.Writeln("%s_uint64 C%sInterfaceJournal::getTimeStamp ()", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  auto currentTime = std::chrono::high_resolution_clock::now();");
 	implw.Writeln("  if (m_StartTime < currentTime) {");
 	implw.Writeln("    auto duration = currentTime - m_StartTime;");	
 	implw.Writeln("    auto milliSeconds = std::chrono::duration_cast<std::chrono::milliseconds> (duration);");
 	implw.Writeln("");
-	implw.Writeln("    return (unsigned long long) milliSeconds.count();");
+	implw.Writeln("    return (%s_uint64) milliSeconds.count();", NameSpace);
 	implw.Writeln("  }");
 	implw.Writeln("  else {");
 	implw.Writeln("    return 0;");

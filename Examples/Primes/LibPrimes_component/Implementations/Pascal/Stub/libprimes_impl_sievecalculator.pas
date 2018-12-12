@@ -28,7 +28,7 @@ type
 		protected
 
 		public
-			procedure GetPrimes(const APrimesCount: Cardinal; PPrimesNeededCount: PCardinal; APrimes: PQWord);
+			procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
 			procedure Calculate(); override;
 	end;
 
@@ -76,7 +76,7 @@ begin
 
 end;
 
-procedure TLibPrimesSieveCalculator.GetPrimes(const APrimesCount: Cardinal; PPrimesNeededCount: PCardinal; APrimes: PQWord);
+procedure TLibPrimesSieveCalculator.GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
 var
   i : QWord;
 begin

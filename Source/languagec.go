@@ -78,12 +78,48 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("#define __%s_TYPES_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("");
 
+
+	w.Writeln("/*************************************************************************************************************************");
+	w.Writeln(" Scalar types definition");
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("#ifdef %s_USELEGACYINTEGERTYPES", strings.ToUpper(NameSpace));
+	w.Writeln("")
+	w.Writeln("typedef unsigned char %s_uint8;", NameSpace);
+	w.Writeln("typedef unsigned short %s_uint16 ;", NameSpace);
+	w.Writeln("typedef unsigned int %s_uint32;", NameSpace);
+	w.Writeln("typedef unsigned long long %s_uint64;", NameSpace);
+	w.Writeln("typedef char %s_int8;", NameSpace);
+	w.Writeln("typedef short %s_int16;", NameSpace);
+	w.Writeln("typedef int %s_int32;", NameSpace);
+	w.Writeln("typedef long long %s_int64;", NameSpace);
+	w.Writeln("")
+	w.Writeln("#else // %s_USELEGACYINTEGERTYPES", strings.ToUpper(NameSpace));
+	w.Writeln("")
+	w.Writeln("#include <stdint.h>")
+	w.Writeln("")
+	w.Writeln("typedef uint8_t %s_uint8;", NameSpace);
+	w.Writeln("typedef uint16_t %s_uint16;", NameSpace);
+	w.Writeln("typedef uint32_t %s_uint32;", NameSpace);
+	w.Writeln("typedef uint64_t %s_uint64;", NameSpace);
+	w.Writeln("typedef int8_t %s_int8;", NameSpace);
+	w.Writeln("typedef int16_t %s_int16;", NameSpace);
+	w.Writeln("typedef int32_t %s_int32;", NameSpace);
+	w.Writeln("typedef int64_t %s_int64 ;", NameSpace);
+	w.Writeln("")
+	w.Writeln("#endif // %s_USELEGACYINTEGERTYPES", strings.ToUpper(NameSpace));
+	w.Writeln("")
+	w.Writeln("typedef float %s_single;", NameSpace);
+	w.Writeln("typedef double %s_double;", NameSpace);
+	w.Writeln("")
+
+
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" General type definitions");
 	w.Writeln("**************************************************************************************************************************/");
 
 	w.Writeln("");
-	w.Writeln("typedef int %sResult;", NameSpace);
+	w.Writeln("typedef %s_int32 %sResult;", NameSpace, NameSpace);
 	w.Writeln("typedef void * %sHandle;", NameSpace);
 	
 	w.Writeln("");
@@ -158,8 +194,8 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 		for i := 0; i < len(component.Enums); i++ {
 			enum := component.Enums[i];
 			w.Writeln("typedef union {");
-			w.Writeln("  e%s%s m_enum;", NameSpace, enum.Name);				
-			w.Writeln("  int m_code;");				
+			w.Writeln("  e%s%s m_enum;", NameSpace, enum.Name);
+			w.Writeln("  int m_code;");
 			w.Writeln("} structEnum%s%s;", NameSpace, enum.Name);
 			w.Writeln("");
 		}
@@ -194,27 +230,27 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 			
 				switch (member.Type) {
 					case "uint8":
-						w.Writeln("    unsigned char m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_uint8 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "uint16":
-						w.Writeln("    unsigned short m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_uint16 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "uint32":
-						w.Writeln("    unsigned int m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_uint32 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "uint64":
-						w.Writeln("    unsigned long long m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_uint64 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "int8":
-						w.Writeln("    char m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_int8 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "int16":
-						w.Writeln("    short m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_int16 m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "int32":
-						w.Writeln("    int m_%s%s;", member.Name, arraysuffix);
-					case "int64":				
-						w.Writeln("    long long m_%s%s;", member.Name, arraysuffix);
-					case "bool":				
+						w.Writeln("    %s_int32 m_%s%s;", NameSpace, member.Name, arraysuffix);
+					case "int64":
+						w.Writeln("    %s_int64 m_%s%s;", NameSpace, member.Name, arraysuffix);
+					case "bool":
 						w.Writeln("    bool m_%s%s;", member.Name, arraysuffix);
 					case "single":
-						w.Writeln("    float m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_single m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "double":
-						w.Writeln("    double m_%s%s;", member.Name, arraysuffix);
+						w.Writeln("    %s_double m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -300,7 +336,7 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 	w.Writeln("#ifndef __%s_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("#define __%s_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("");
-	w.Writeln("#ifdef __%s_DLL", strings.ToUpper (NameSpace));
+	w.Writeln("#ifdef __%s_EXPORTS", strings.ToUpper (NameSpace));
 	
 	w.Writeln("#ifdef WIN32");
 	w.Writeln("#define %s_DECLSPEC __declspec (dllexport)", strings.ToUpper (NameSpace));
@@ -308,9 +344,9 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 	w.Writeln("#define %s_DECLSPEC __attribute__((visibility(\"default\")))", strings.ToUpper (NameSpace));
 	w.Writeln("#endif // WIN32");
 	
-	w.Writeln("#else // __%s_DLL", strings.ToUpper (NameSpace));
+	w.Writeln("#else // __%s_EXPORTS", strings.ToUpper (NameSpace));
 	w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
-	w.Writeln("#endif // __%s_DLL", strings.ToUpper (NameSpace));
+	w.Writeln("#endif // __%s_EXPORTS", strings.ToUpper (NameSpace));
 	w.Writeln("");
 
 	w.Writeln("#include \"%s_types.h\"", BaseName);
@@ -429,38 +465,38 @@ func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass st
 	cParamTypeName := "";
 	switch (ParamTypeName) {
 		case "uint8":
-			cParamTypeName = "unsigned char";
+			cParamTypeName = fmt.Sprintf ("%s_uint8", NameSpace);
 
 		case "uint16":
-			cParamTypeName = "unsigned short";
+			cParamTypeName = fmt.Sprintf ("%s_uint16", NameSpace);
 
 		case "uint32":
-			cParamTypeName = "unsigned int";
-			
+			cParamTypeName = fmt.Sprintf ("%s_uint32", NameSpace);
+		
 		case "uint64":
-			cParamTypeName = "unsigned long long";
+			cParamTypeName = fmt.Sprintf ("%s_uint64", NameSpace);
 		
 		case "int8":
-			cParamTypeName = "char";
+			cParamTypeName = fmt.Sprintf ("%s_int8", NameSpace);
 
 		case "int16":
-			cParamTypeName = "short";
+			cParamTypeName = fmt.Sprintf ("%s_int16", NameSpace);
 
 		case "int32":
-			cParamTypeName = "int";
-			
+			cParamTypeName =  fmt.Sprintf ("%s_int32", NameSpace);
+		
 		case "int64":
-			cParamTypeName = "long long";
+			cParamTypeName = fmt.Sprintf ("%s_int64", NameSpace);
 
 		case "bool":
 			cParamTypeName = "bool";
-			
+		
 		case "single":
-			cParamTypeName = "float";
+			cParamTypeName = fmt.Sprintf ("%s_single", NameSpace);
 
 		case "double":
-			cParamTypeName = "double";
-			
+			cParamTypeName = fmt.Sprintf ("%s_double", NameSpace);
+		
 		case "string":
 			cParamTypeName = "char *";
 
@@ -548,7 +584,7 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 
 			case "basicarray", "structarray":
 				cParams = make([]CParameter,2)
-				cParams[0].ParamType = "const unsigned int";
+				cParams[0].ParamType = fmt.Sprintf ("%s_uint64", NameSpace);
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 
@@ -586,11 +622,11 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 				
 			case "basicarray", "structarray":
 				cParams = make([]CParameter,3)
-				cParams[0].ParamType = "const unsigned int";
+				cParams[0].ParamType = fmt.Sprintf("const %s_uint64", NameSpace)
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 
-				cParams[1].ParamType = "unsigned int *";
+				cParams[1].ParamType = fmt.Sprintf("%s_uint64*", NameSpace)
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
 
@@ -600,11 +636,11 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 
 			case "string":
 				cParams = make([]CParameter,3)
-				cParams[0].ParamType = "const unsigned int";
+				cParams[0].ParamType = fmt.Sprintf("const %s_uint32", NameSpace)
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", cParams[0].ParamName);
 
-				cParams[1].ParamType = "unsigned int *";
+				cParams[1].ParamType = fmt.Sprintf("%s_uint32*", NameSpace)
 				cParams[1].ParamName = "p" + param.ParamName + "NeededChars";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", cParams[1].ParamName);
 

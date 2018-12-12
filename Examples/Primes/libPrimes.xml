@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
 	libraryname="Prime Numbers Interface" namespace="LibPrimes" copyright="Automatic Component Toolkit Developers" year="2018" basename="libprimes"
-	version="1.2.0">
+	version="1.3.0">
 	<license>
 		<line value="All rights reserved." />
 	</license>
@@ -59,8 +59,12 @@
 	</class>
 	
 	<class name="FactorizationCalculator" parent="Calculator">
-		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
+		<method name="GetPrimeFactors" description="Returns the prime factors of this number (with multiplicity)">
 			<param name="PrimeFactors" type="structarray" class="PrimeFactor" pass="out" description="The prime factors of this number" />
+		</method>
+		<method name="CheckPrimeFactors" description="Checks, whether a list of prime factors (with multiplicity) is the prime factor decomposistion of the calculator's value">
+			<param name="PrimeFactors" type="structarray" class="PrimeFactor" pass="in" description="" />
+			<param name="AreEqual" type="bool" pass="return" description="Do the prime factors decompose this calculator's value" />
 		</method>
 	</class>
 	

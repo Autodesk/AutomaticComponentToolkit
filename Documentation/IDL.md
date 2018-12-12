@@ -311,6 +311,8 @@ For now, please look the up in the [ACT.xsd](../Source/ACT.xsd).
 TODO: add all simple types here.
 
 ### 17.1 Type
+ST_Type `string` denotes a null-terminated string. If a component requires arbitrary strings that can contain null-characters, on should use the type `basicarray` of class `uint8`.
+
 ### 17.2 ScalarType
 ### 17.3 ComposedType
 ### 17.4 Name

@@ -1,4 +1,4 @@
-To build the libNumbers-test project
+To build the libUnitTest-test project
 
 `mkdir _build`
 

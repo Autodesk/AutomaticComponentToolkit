@@ -730,8 +730,8 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCommands = append (initCommands, fmt.Sprintf ("    Ptr%s := nil;", param.ParamName));
 						initCommands = append (initCommands, "");
 						
-						callFunctionParameters = callFunctionParameters + "Cardinal (Len" + param.ParamName + "), Ptr" + param.ParamName;						
-						initCallParameters = initCallParameters + "Cardinal (Len" + param.ParamName + "), Ptr" + param.ParamName;						
+						callFunctionParameters = callFunctionParameters + "QWord (Len" + param.ParamName + "), Ptr" + param.ParamName;						
+						initCallParameters = initCallParameters + "QWord (Len" + param.ParamName + "), Ptr" + param.ParamName;						
 
 					case "structarray":
 
@@ -746,8 +746,8 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCommands = append (initCommands, fmt.Sprintf ("    Ptr%s := nil;", param.ParamName));
 						initCommands = append (initCommands, "");
 						
-						callFunctionParameters = callFunctionParameters + "Cardinal (Len" + param.ParamName + "), Ptr" + param.ParamName;						
-						initCallParameters = initCallParameters + "Cardinal (Len" + param.ParamName + "), Ptr" + param.ParamName;						
+						callFunctionParameters = callFunctionParameters + "QWord (Len" + param.ParamName + "), Ptr" + param.ParamName;						
+						initCallParameters = initCallParameters + "QWord (Len" + param.ParamName + "), Ptr" + param.ParamName;						
 
 					case "functiontype":
 						initCommands = append (initCommands, fmt.Sprintf ("  if not Assigned (A%s) then", param.ParamName));
@@ -811,9 +811,9 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCallParameters = initCallParameters + "@A" + param.ParamName;
 						
 					case "basicarray", "structarray":
-										
-						defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": Cardinal;");
+						
+						defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
+						defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": QWord;");
 						initCommands = append (initCommands, "  countNeeded" + param.ParamName + ":= 0;");
 						initCommands = append (initCommands, "  countWritten" + param.ParamName + ":= 0;");
 						
@@ -884,8 +884,8 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						callFunctionParameters = callFunctionParameters + "@A" + param.ParamName;
 
 					case "basicarray", "structarray":
-						defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": Cardinal;");
+						defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
+						defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": QWord;");
 						initCommands = append (initCommands, "  countNeeded" + param.ParamName + ":= 0;");
 						initCommands = append (initCommands, "  countWritten" + param.ParamName + ":= 0;");
 						

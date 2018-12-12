@@ -33,7 +33,7 @@ namespace LibPrimes {
 class CLibPrimesSieveCalculator : public virtual ILibPrimesSieveCalculator, public virtual CLibPrimesCalculator {
 private:
 
-	std::vector<unsigned long long> primes;
+	std::vector<LibPrimes_uint64> primes;
 
 protected:
 
@@ -49,7 +49,7 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimes (unsigned int nPrimesBufferSize, unsigned int * pPrimesNeededCount, unsigned long long * pPrimesBuffer);
+	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
 
 };
 

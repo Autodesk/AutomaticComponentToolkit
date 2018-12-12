@@ -1063,7 +1063,7 @@ func getPascalImplClassParameters(method ComponentDefinitionMethod, NameSpace st
 						if (parameters != "") {
 							parameters = parameters + "; ";
 						}
-						parameters = parameters + "const A" + param.ParamName  + "Count: Cardinal"
+						parameters = parameters + "const A" + param.ParamName  + "Count: QWord"
 						parameters = parameters + "; const A" + param.ParamName + ": " + ParamTypeName
 					case "handle":
 						if (parameters != "") {
@@ -1084,8 +1084,8 @@ func getPascalImplClassParameters(method ComponentDefinitionMethod, NameSpace st
 						if (parameters != "") {
 							parameters = parameters + "; ";
 						}
-						parameters = parameters + "const A" + param.ParamName  + "Count: Cardinal"
-						parameters = parameters + "; P" + param.ParamName  + "NeededCount: PCardinal"
+						parameters = parameters + "const A" + param.ParamName  + "Count: QWord"
+						parameters = parameters + "; P" + param.ParamName  + "NeededCount: PQWord"
 						parameters = parameters + "; A" + param.ParamName + ": " + ParamTypeName
 					default:
 						if (parameters != "") {

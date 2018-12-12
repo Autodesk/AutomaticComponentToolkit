@@ -45,15 +45,15 @@ import (
 )
 
 const (
-    eSpecialMethod_None = 0
-	eSpecialMethod_ReleaseMethod = 1
-	eSpecialMethod_VersionMethod = 2
-    eSpecialMethod_JournalMethod = 3
+	eSpecialMethodNone = 0
+	eSpecialMethodRelease = 1
+	eSpecialMethodVersion = 2
+	eSpecialMethodJournal = 3
 )
-
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
 type ComponentDefinitionParam struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"param"`
 	ParamName string `xml:"name,attr"`
 	ParamType string `xml:"type,attr"`
@@ -64,52 +64,58 @@ type ComponentDefinitionParam struct {
 
 // ComponentDefinitionMethod definition of a method provided by the component's API
 type ComponentDefinitionMethod struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"method"`
 	MethodName string `xml:"name,attr"`
 	MethodDescription string `xml:"description,attr"`
 	DLLSuffix string `xml:"dllsuffix,attr"`
-	Params   []ComponentDefinitionParam   `xml:"param"`
+	Params   []ComponentDefinitionParam `xml:"param"`
 }
 
 // ComponentDefinitionClass definition of a class provided by the component's API
 type ComponentDefinitionClass struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"class"`
 	ClassName string `xml:"name,attr"`
-	ClassDescription string `xml:"name"`
+	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
-	Methods   []ComponentDefinitionMethod   `xml:"method"`
+	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
 // ComponentDefinitionFunctionType definition of a function interface provided by the component's API
 type ComponentDefinitionFunctionType struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"functiontype"`
 	FunctionName string `xml:"name,attr"`
 	FunctionDescription string `xml:"description,attr"`
-	Params   []ComponentDefinitionParam   `xml:"param"`
+	Params   []ComponentDefinitionParam `xml:"param"`
 }
-
 
 // ComponentDefinitionBindingList definition of the language bindings to be generated for the component's API
 type ComponentDefinitionBindingList struct {
-	Bindings []ComponentDefinitionBinding   `xml:"binding"`
+	ComponentDiffableElement
+	Bindings []ComponentDefinitionBinding `xml:"binding"`
 }
 
 // ComponentDefinitionImplementationList definition of the implementation interfaces or stubs to be generated for the component's API
 type ComponentDefinitionImplementationList struct {
-	Implementations []ComponentDefinitionImplementation   `xml:"implementation"`
+	ComponentDiffableElement
+	Implementations []ComponentDefinitionImplementation `xml:"implementation"`
 }
 
 // ComponentDefinitionGlobal definition of global functions provided the component's API
 type ComponentDefinitionGlobal struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"global"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
-	Methods   []ComponentDefinitionMethod   `xml:"method"`
+	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
 // ComponentDefinitionBinding definition of a specific languages for which bindings to the component's API will be generated
 type ComponentDefinitionBinding struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"binding"`
 	Language string `xml:"language,attr"`
 	Indentation string `xml:"indentation,attr"`
@@ -117,6 +123,7 @@ type ComponentDefinitionBinding struct {
 
 // ComponentDefinitionImplementation definition of a specific languages for which bindings to the component's API will be generated
 type ComponentDefinitionImplementation struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"implementation"`
 	Language string `xml:"language,attr"`
 	Indentation string `xml:"indentation,attr"`
@@ -126,6 +133,7 @@ type ComponentDefinitionImplementation struct {
 
 // ComponentDefinitionEnumOption definition of an enum used in the component's API
 type ComponentDefinitionEnumOption struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"option"`
 	Name string `xml:"name,attr"`
 	Value int `xml:"value,attr"`
@@ -133,6 +141,7 @@ type ComponentDefinitionEnumOption struct {
 
 // ComponentDefinitionEnum definition of all enums used in the component's API
 type ComponentDefinitionEnum struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"enum"`
 	Name string `xml:"name,attr"`
 	Options []ComponentDefinitionEnumOption `xml:"option"`
@@ -140,6 +149,7 @@ type ComponentDefinitionEnum struct {
 
 // ComponentDefinitionError definition of an error used in the component's API
 type ComponentDefinitionError struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"error"`
 	Name string `xml:"name,attr"`
 	Code int `xml:"code,attr"`
@@ -148,12 +158,14 @@ type ComponentDefinitionError struct {
 
 // ComponentDefinitionErrors definition of errors in the component's API
 type ComponentDefinitionErrors struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"errors"`
 	Errors []ComponentDefinitionError `xml:"error"`
 }
 
 // ComponentDefinitionMember definition of a single struct provided by the component's API
 type ComponentDefinitionMember struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"member"`
 	Name string `xml:"name,attr"`
 	Type string `xml:"type,attr"`
@@ -164,6 +176,7 @@ type ComponentDefinitionMember struct {
 
 // ComponentDefinitionStruct definition of all structs provided by the component's API
 type ComponentDefinitionStruct struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"struct"`
 	Name string `xml:"name,attr"`
 	Members []ComponentDefinitionMember `xml:"member"`
@@ -171,12 +184,14 @@ type ComponentDefinitionStruct struct {
 
 // ComponentDefinitionLicenseLine a single line of the component's license
 type ComponentDefinitionLicenseLine struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"line"`
 	Value string `xml:"value,attr"`
 }
 
 // ComponentDefinitionLicense the component's license
 type ComponentDefinitionLicense struct {
+	ComponentDiffableElement
 	XMLName xml.Name `xml:"license"`
 	Lines   []ComponentDefinitionLicenseLine `xml:"line"`
 }
@@ -192,12 +207,12 @@ type ComponentDefinition struct {
 	LibraryName string `xml:"libraryname,attr"`
 	BaseName string `xml:"basename,attr"`
 	License ComponentDefinitionLicense `xml:"license"`
-	Classes []ComponentDefinitionClass   `xml:"class"`
-	Functions []ComponentDefinitionFunctionType   `xml:"functiontype"`
-	BindingList ComponentDefinitionBindingList   `xml:"bindings"`
-	ImplementationList ComponentDefinitionImplementationList   `xml:"implementations"`
-	Enums []ComponentDefinitionEnum   `xml:"enum"`
-	Structs []ComponentDefinitionStruct   `xml:"struct"`
+	Classes []ComponentDefinitionClass `xml:"class"`
+	Functions []ComponentDefinitionFunctionType `xml:"functiontype"`
+	BindingList ComponentDefinitionBindingList `xml:"bindings"`
+	ImplementationList ComponentDefinitionImplementationList `xml:"implementations"`
+	Enums []ComponentDefinitionEnum `xml:"enum"`
+	Structs []ComponentDefinitionStruct `xml:"struct"`
 	Global ComponentDefinitionGlobal `xml:"global"`
 	Errors ComponentDefinitionErrors `xml:"errors"`
 }
@@ -599,6 +614,9 @@ func checkComponentHeader(component ComponentDefinition) (error) {
 	if !libraryNameIsValid(component.LibraryName) {
 		return errors.New ("Invalid LilbraryName");
 	}
+	if component.BaseName == "" {
+		log.Fatal ("Invalid export basename");
+	}
 	if !baseNameIsValid(component.BaseName) {
 		return errors.New ("Invalid BaseName");
 	}
@@ -664,62 +682,64 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
 
 	if (global.ReleaseMethod == "") {
-		return eSpecialMethod_None, errors.New ("No release method specified");
+		return eSpecialMethodNone, errors.New ("No release method specified");
 	}
 
 	if (global.VersionMethod == "") {
-		return eSpecialMethod_None, errors.New ("No version method specified");
+		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
 
 	if (global.ReleaseMethod == global.JournalMethod) {
-		return eSpecialMethod_None, errors.New ("Release method can not be the same as the Journal method");
+		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Journal method");
 	}
 
 	if (global.ReleaseMethod == global.VersionMethod) {
-		return eSpecialMethod_None, errors.New ("Release method can not be the same as the Version method");
+		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Version method");
 	}
 
 	if (global.JournalMethod == global.VersionMethod) {
-		return eSpecialMethod_None, errors.New ("Journal method can not be the same as the Version method");
+		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
 	}
 	
 	if (method.MethodName == global.ReleaseMethod) {
 		if (len (method.Params) != 1) {
-			return eSpecialMethod_None, errors.New ("Release method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != "BaseClass") || (method.Params[0].ParamPass != "in") {
-			return eSpecialMethod_None, errors.New ("Release method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 
-		return eSpecialMethod_ReleaseMethod, nil;
+		return eSpecialMethodRelease, nil;
 	}
 
 	if (method.MethodName == global.JournalMethod) {
 		if (len (method.Params) != 1) {
-			return eSpecialMethod_None, errors.New ("Journal method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Journal method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "in") {
-			return eSpecialMethod_None, errors.New ("Journal method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Journal method does not match the expected function template");
 		}
 		
-		return eSpecialMethod_JournalMethod, nil;
+		return eSpecialMethodJournal, nil;
 	}
 
 	if (method.MethodName == global.VersionMethod) {
 		if (len (method.Params) != 3) {
-			return eSpecialMethod_None, errors.New ("Version method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "uint32") || (method.Params[0].ParamPass != "out") || 
 			(method.Params[1].ParamType != "uint32") || (method.Params[1].ParamPass != "out") || 
 			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out")  {
-			return eSpecialMethod_None, errors.New ("Version method does not match the expected function template");
+			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
-		return eSpecialMethod_VersionMethod, nil;
+		return eSpecialMethodVersion, nil;
 	}
 	
-	return eSpecialMethod_None, nil;
+	return eSpecialMethodNone, nil;
 }
+
+

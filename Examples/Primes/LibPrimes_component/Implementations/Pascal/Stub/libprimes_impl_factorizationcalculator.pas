@@ -24,13 +24,14 @@ uses
 type
 	TLibPrimesFactorizationCalculator = class (TLibPrimesCalculator, ILibPrimesFactorizationCalculator)
 		private
-      FPrimeFactors : Array Of TLibPrimesPrimeFactor;
+			FPrimeFactors : Array Of TLibPrimesPrimeFactor;
 		protected
 
 		public
-			procedure GetPrimeFactors(const APrimeFactorsCount: Cardinal; PPrimeFactorsNeededCount: PCardinal; APrimeFactors: PLibPrimesPrimeFactor);
-      procedure Calculate(); override;
-      destructor Destroy(); override;
+			procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
+			function CheckPrimeFactors(const APrimeFactorsCount: QWord; const APrimeFactors: PLibPrimesPrimeFactor): Boolean;
+			procedure Calculate(); override;
+			destructor Destroy(); override;
 	end;
 
 implementation
@@ -40,7 +41,7 @@ begin
   SetLength(FPrimeFactors, 0);
 end;
 
-procedure TLibPrimesFactorizationCalculator.GetPrimeFactors(const APrimeFactorsCount: Cardinal; PPrimeFactorsNeededCount: PCardinal; APrimeFactors: PLibPrimesPrimeFactor);
+procedure TLibPrimesFactorizationCalculator.GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
 var
   i : QWord;
 begin
@@ -57,6 +58,11 @@ begin
       inc(APrimeFactors);
     end;
   end;
+end;
+
+function TLibPrimesFactorizationCalculator.CheckPrimeFactors(const APrimeFactorsCount: QWord; const APrimeFactors: PLibPrimesPrimeFactor): Boolean;
+begin
+  raise ELibPrimesException.Create(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 procedure TLibPrimesFactorizationCalculator.Calculate();

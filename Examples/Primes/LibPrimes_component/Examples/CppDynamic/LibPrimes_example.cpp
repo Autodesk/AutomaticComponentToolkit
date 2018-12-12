@@ -27,7 +27,7 @@ int main()
   try
   {
     std::string libpath = ""; // TODO: put the location of the LibPrimes-library file here.
-    auto wrapper = LibPrimes::CLibPrimesWrapper::loadLibrary(libpath + "/libprimes");
+    auto wrapper = LibPrimes::CLibPrimesWrapper::loadLibrary(libpath + "/libprimes.");	// TODO: add correct suffix of the library
     wrapper->SetJournal("journal_cppdynamic.xml");
 
     unsigned int nMajor, nMinor, nMicro;
@@ -47,6 +47,11 @@ int main()
 		std::cout << pF.m_Prime << "^" << pF.m_Multiplicity << ((i < (primeFactors.size() - 1)) ? " * " : "");
 	}
 	std::cout << std::endl;
+
+	bool areEqual = factorization->CheckPrimeFactors(primeFactors);
+	if (!areEqual) {
+		std::cout << "Calculated prime factors are incorrect!"<< std::endl;
+	}
   }
   catch (std::exception &e)
   {

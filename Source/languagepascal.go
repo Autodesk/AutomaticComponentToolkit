@@ -393,7 +393,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 
 			case "basicarray", "structarray":
 				cParams = make([]pascalParameter,2)
-				cParams[0].ParamType = "Cardinal";
+				cParams[0].ParamType = "QWord";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 				cParams[0].ParamConvention = "const ";
@@ -443,17 +443,17 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				
 			case "basicarray":
 				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
+				cParams[0].ParamType = "QWord";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
 
-				cParams[1].ParamType = "Cardinal";
+				cParams[1].ParamType = "QWord";
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
 				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
+				cParams[1].ParamTypeNoConvention = "PQWord";
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
@@ -463,17 +463,17 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 
 			case "structarray":
 				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
+				cParams[0].ParamType = "QWord";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
 
-				cParams[1].ParamType = "Cardinal";
+				cParams[1].ParamType = "QWord";
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
 				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
+				cParams[1].ParamTypeNoConvention = "PQWord";
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
@@ -532,17 +532,17 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				
 			case "basicarray":
 				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
+				cParams[0].ParamType = "QWord";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
 
-				cParams[1].ParamType = "Cardinal";
+				cParams[1].ParamType = "QWord";
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
 				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
+				cParams[1].ParamTypeNoConvention = "PQWord";
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
@@ -552,17 +552,17 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 
 			case "structarray":
 				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
+				cParams[0].ParamType = "QWord";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
 
-				cParams[1].ParamType = "Cardinal";
+				cParams[1].ParamType = "QWord";
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
 				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
+				cParams[1].ParamTypeNoConvention = "PQWord";
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";

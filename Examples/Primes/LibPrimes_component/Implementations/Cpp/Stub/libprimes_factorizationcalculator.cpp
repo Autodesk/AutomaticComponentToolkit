@@ -49,7 +49,7 @@ void CLibPrimesFactorizationCalculator::Calculate()
 }
 
 
-void CLibPrimesFactorizationCalculator::GetPrimeFactors (unsigned int nPrimeFactorsBufferSize, unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+void CLibPrimesFactorizationCalculator::GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
 {
 	if (primeFactors.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
@@ -59,11 +59,15 @@ void CLibPrimesFactorizationCalculator::GetPrimeFactors (unsigned int nPrimeFact
 
 	if (nPrimeFactorsBufferSize >= primeFactors.size() && pPrimeFactorsBuffer)
 	{
-		for (int i = 0; i < primeFactors.size(); i++)
+		for (size_t i = 0; i < primeFactors.size(); i++)
 		{
 			pPrimeFactorsBuffer[i] = primeFactors[i];
 		}
 	}
-	
+}
+
+bool CLibPrimesFactorizationCalculator::CheckPrimeFactors(const LibPrimes_uint64 nPrimeFactorsBufferSize, const sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+{
+	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 

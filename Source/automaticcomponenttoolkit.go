@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"fmt"
 	"path"
 	"log"
 	"io/ioutil"
@@ -41,60 +42,115 @@ import (
 	"encoding/xml"
 )
 
+const (
+	eACTModeGenerate = 0
+	eACTModeDiff = 1
+)
 
-func main () {
-	ACTVersion := "1.2.4"
-	log.Printf ("Automatic Component Toolkit v%s\n", ACTVersion);
-	log.Printf ("---------------------------------------\n");
-	if (len (os.Args) < 2) {
-		log.Fatal ("Please run with the configuration XML as command line parameter.");
-		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
-	}
-	
-	outfolderBase, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if (len (os.Args) >= 4) {
-		if os.Args[2] == "-o" {
-			outfolderBase = os.Args[3]
-		}
-	}
-	log.Printf("Output directory: " + outfolderBase)
+func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
+	var component ComponentDefinition
 
-	log.Printf ("Loading %s", os.Args[1]);
-	file, err := os.Open(os.Args[1]);
+	file, err := os.Open(FileName);
 	if (err != nil) {
-		log.Fatal (err);
+		return component, err
 	}
 
 	bytes, err := ioutil.ReadAll (file);
 	if (err != nil) {
+		return component, err
+	}
+	
+	component.ACTVersion = ACTVersion
+	err = xml.Unmarshal(bytes, &component)
+	if (err != nil) {
+		return component, err
+	}
+	return component, nil
+}
+
+func main () {
+	ACTVersion := "1.3.0"
+	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
+	if (len (os.Args) < 2) {
+		log.Fatal ("Please run with the configuration XML as command line parameter.");
+		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
+	}
+	if os.Args[1] == "-v" {
+		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)
+		return
+	}
+	log.Printf ("---------------------------------------\n");
+
+	mode := eACTModeGenerate
+	outfolderBase, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	diffFile := ""
+	if (len (os.Args) >= 4) {
+		if os.Args[2] == "-o" {
+			outfolderBase = os.Args[3]
+		}
+
+		if os.Args[2] == "-d" {
+			diffFile = os.Args[3]
+			mode = eACTModeDiff
+		}
+	}
+	if (mode == eACTModeGenerate) {
+		log.Printf("Output directory: " + outfolderBase)
+	}
+	
+	log.Printf ("Loading Component Description File" );
+	component, err := readComponentDefinition(os.Args[1], ACTVersion)
+	if (err != nil) {
 		log.Fatal (err);
 	}
 	
-	log.Printf ("Parsing Component Description File ");
-	var component ComponentDefinition
-	component.ACTVersion = ACTVersion
-	err = xml.Unmarshal(bytes, &component)
+	log.Printf ("Checking Component Description", );
+	err = CheckComponentDefinition (component);
 	if (err != nil) {
 		log.Fatal (err);
 	}
 
-	if component.BaseName == "" {
-		log.Fatal ("Invalid export basename");
+	if (mode == eACTModeDiff) {
+		log.Printf ("Loading Component Description File to compare to" );
+		componentB, err := readComponentDefinition(diffFile, ACTVersion)
+		if (err != nil) {
+			log.Fatal (err);
+		}
+		log.Printf ("Checking Component Description B", );
+		err = CheckComponentDefinition (componentB);
+		if (err != nil) {
+			log.Fatal (err);
+		}
+		diff, err := DiffComponentDefinitions(component, componentB)
+		if (err != nil) {
+			log.Fatal (err);
+		}
+
+		output, err := xml.MarshalIndent(diff, "", "\t")
+		if (err != nil) {
+			log.Fatal (err);
+		}
+
+		writer, err := os.Create("diff.xml")
+		if err != nil {
+			log.Fatal (err);
+		}
+		os.Stdout.Write(output)
+		writer.Write(output)
+		
+		return
 	}
+
+
 
 	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
 	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
 	
-	err = CheckComponentDefinition (component);
-	if (err != nil) {
-		log.Fatal (err);
-	}
-
 	err  = os.MkdirAll(outputFolder, os.ModePerm);
 	if (err != nil) {
 		log.Fatal (err);
@@ -172,8 +228,13 @@ func main () {
 
 			case "Cpp": {
 				outputFolderBindingCpp := outputFolderBindings + "/Cpp";
-
 				err  = os.MkdirAll(outputFolderBindingCpp, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+
+				outputFolderExampleCPP := outputFolderExamples + "/CPP";
+				err  = os.MkdirAll(outputFolderExampleCPP, os.ModePerm);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -190,7 +251,7 @@ func main () {
 					log.Fatal (err);
 				}
 				
-				err = BuildBindingCPP(component, outputFolderBindingCpp);
+				err = BuildBindingCPP(component, outputFolderBindingCpp, outputFolderExampleCPP, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -247,7 +308,7 @@ func main () {
 				if (err != nil) {
 					log.Fatal (err);
 				}
-								
+				
 				err = BuildBindingPascalDynamic(component, outputFolderBindingPascal, outputFolderExamplePascal, indentString);
 				if (err != nil) {
 					log.Fatal (err);

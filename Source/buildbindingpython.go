@@ -463,8 +463,8 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 			case "basicarray", "structarray":
 				cParams = make([]ctypesParameter,2)
-				cParams[0].ParamType = "ctypes.c_int64";
-				cParams[0].ParamCallType = "ctypes.c_int64";
+				cParams[0].ParamType = "ctypes.c_uint64";
+				cParams[0].ParamCallType = "ctypes.c_uint64";
 				cParams[0].ParamName = "n" + param.ParamName + "Count";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
 

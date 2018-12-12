@@ -442,14 +442,14 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
 			case "structarray", "basicarray":
-				callParameter = fmt.Sprintf("(unsigned int)%s.size(), %s.data()", variableName, variableName);
+				callParameter = fmt.Sprintf("(%s_uint64)%s.size(), %s.data()", NameSpace, variableName, variableName);
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
 			case "handle":
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("};\n"))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("};"))
 				callParameter = "h" + param.ParamName;
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
@@ -473,8 +473,8 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 			case "string":
 				requiresInitCall = true;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int bytesNeeded%s = 0;", param.ParamName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int bytesWritten%s = 0;", param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesNeeded%s = 0;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName);
 				
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
@@ -494,8 +494,8 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 			case "structarray", "basicarray":
 				requiresInitCall = true;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int elementsNeeded%s = 0;", param.ParamName) )
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int elementsWritten%s = 0;", param.ParamName) )
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsNeeded%s = 0;", NameSpace, param.ParamName) )
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsWritten%s = 0;", NameSpace, param.ParamName) )
 				initCallParameter = fmt.Sprintf("0, &elementsNeeded%s, nullptr", param.ParamName);
 
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%s.resize(elementsNeeded%s);", variableName, param.ParamName));
@@ -514,13 +514,13 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s result%s = 0;\n", returntype, param.ParamName) )
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s result%s = 0;", returntype, param.ParamName) )
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "string":
 				requiresInitCall = true;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int bytesNeeded%s = 0;", param.ParamName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("unsigned int bytesWritten%s = 0;", param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesNeeded%s = 0;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName);
 
 				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
@@ -600,7 +600,6 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 }
 
 
-
 func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 
 	global := component.Global
@@ -660,21 +659,25 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Class E%sException ", NameSpace)
 	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("class E%sException : public std::runtime_error {", NameSpace)
+	w.Writeln("class E%sException : public std::exception {", NameSpace)
 	w.Writeln("protected:")
 	w.Writeln("  /**")
 	w.Writeln("  * Error code for the Exception.")
 	w.Writeln("  */")
-	w.Writeln("  %sResult m_errorcode;", NameSpace)
+	w.Writeln("  %sResult m_errorCode;", NameSpace)
+	w.Writeln("  /**")
+	w.Writeln("  * Error message for the Exception.")
+	w.Writeln("  */")
+	w.Writeln("  std::string m_errorMessage;")
 	w.Writeln("")
 	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
-	w.Writeln("  E%sException (%sResult errorcode)", NameSpace, NameSpace)
-	w.Writeln("    : std::runtime_error (\"%s Error \" + std::to_string (errorcode))", NameSpace)
+	w.Writeln("  E%sException (%sResult errorCode)", NameSpace, NameSpace)
+	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace)
 	w.Writeln("  {")
-	w.Writeln("    m_errorcode = errorcode;")
+	w.Writeln("    m_errorCode = errorCode;")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
@@ -682,15 +685,28 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  */")
 	w.Writeln("  %sResult getErrorCode ()", NameSpace)
 	w.Writeln("  {")
-	w.Writeln("    return m_errorcode;")
+	w.Writeln("    return m_errorCode;")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * Returns error message")
+	w.Writeln("  */")
+	w.Writeln("  const char* what () const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")
 	w.Writeln("")
 
 	w.Writeln("};")
 
 	w.Writeln("")
-	
-	
+
+	err := writeCPPInputVector(w, NameSpace)
+	if err != nil {
+		return err
+	}
+	w.Writeln("")
+
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Class %sWrapper ", cppClassPrefix)
 	w.Writeln("**************************************************************************************************************************/")
@@ -842,7 +858,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 				return err
 			}
 		}
-		w.Writeln("};\n")
+		w.Writeln("};")
 	}
 	
 
@@ -945,7 +961,7 @@ func BuildBindingCppDynamic(component ComponentDefinition, outputFolder string, 
 			dyncppexamplefile.WriteCLicenseHeader(component,
 				fmt.Sprintf("This is an autogenerated C++ application that demonstrates the\n usage of the Dynamic C++ bindings of %s", libraryname),
 				true)
-			buildBDynamicCppExample(component, dyncppexamplefile, outputFolder)
+			buildDynamicCppExample(component, dyncppexamplefile, outputFolder)
 		} else {
 			log.Printf("Omitting recreation of C++Dynamic example file \"%s\"", DynamicCPPExample)
 		}
@@ -960,7 +976,7 @@ func BuildBindingCppDynamic(component ComponentDefinition, outputFolder string, 
 			dyncppcmake.WriteCMakeLicenseHeader(component,
 				fmt.Sprintf("This is an autogenerated CMake Project that demonstrates the\n usage of the Dynamic C++ bindings of %s", libraryname),
 				true)
-			buildBDynamicCppExampleCMake(component, dyncppcmake, outputFolder)
+			buildDynamicCppExampleCMake(component, dyncppcmake, outputFolder)
 		} else {
 			log.Printf("Omitting recreation of C++Dynamic example file \"%s\"", DynamicCPPCMake)
 		}
@@ -970,7 +986,7 @@ func BuildBindingCppDynamic(component ComponentDefinition, outputFolder string, 
 }
 
 
-func buildBDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) error {
+func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) error {
 	NameSpace := componentdefinition.NameSpace
 	BaseName := componentdefinition.BaseName
 
@@ -984,7 +1000,7 @@ func buildBDynamicCppExample(componentdefinition ComponentDefinition, w Language
 	w.Writeln("  try")
 	w.Writeln("  {")
 	w.Writeln("    std::string libpath = (\"\"); // TODO: put the location of the %s-library file here.", NameSpace)
-	w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s\");", NameSpace, NameSpace, BaseName)
+	w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, NameSpace, BaseName)
 	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
 	w.Writeln("    wrapper->GetLibraryVersion(nMajor, nMinor, nMicro);")
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro << std::endl;", NameSpace);
@@ -1001,7 +1017,7 @@ func buildBDynamicCppExample(componentdefinition ComponentDefinition, w Language
 	return nil
 }
 
-func buildBDynamicCppExampleCMake(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) error {
+func buildDynamicCppExampleCMake(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) error {
 	NameSpace := componentdefinition.NameSpace
 
 	w.Writeln("cmake_minimum_required(VERSION 3.5)")

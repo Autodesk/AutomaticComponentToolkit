@@ -1,13 +1,13 @@
 # Automatic Component Toolkit
 The Automatic Component Toolkit (ACT) is a code generator that takes an instance of an [Interface Description Language](#interface-description-language-idl) file and generates 
-a [thin C89 API](#thin-c89-api), [implementation stubs](#implementation-stubs) and [language bindings](#language-bindings) of your desired software component.
+a [thin C89-API](#thin-c89-api), [implementation stubs](#implementation-stubs) and [language bindings](#language-bindings) of your desired software component.
 
 ### Interface Description Language (IDL)
 The IDL file defines the types and functions of your API and serves as the source for the automatically generated Code.
 The exact schema of the IDL and explanation of each element is described in [Documentation/IDL.md](Documentation/IDL.md).
 
 ### Thin C89-API
-A thin C89-API is a C header file that declares all functions, structs, enums and constants exported by your software component.
+A thin C89-API is a C header file that declares all functions, structs, enums and constants exported by your software component. The C89-API unambiguously defines the binary interface (ABI) of the component.
 
 ### Implementation Stubs
 An implementation stub is a collection of source files in a certain programming language *L*
@@ -18,17 +18,11 @@ Such an implementation stub fulfills the interface and compiles by itself, howev
 
 ### Language Bindings
 A language binding of the component for programming language *C* implements the classes, enums, methods, ... defined by the IDL by
-calling the functions exported by your component via the thin C89 API.
+calling the functions exported by your component via the thin C89-API.
 A consumer of your component only needs to include the language binding relevant for them and not worry about the C89 interface or the underlying implementation.
 
 ## How to use ACT:
-1) Get ACT:
-     1) From Source:
-        1. Install go https://golang.org/doc/install
-        2. Build automaticcomponenttoolkit.go:
-        <br/>`.\build.bat`
-    <br/>OR
-     2) Download the precompiled binaries from one of the [releases](https://github.com/Autodesk/AutomaticComponentToolkit/releases) 
+1) Download the precompiled binaries of from one of the [releases](https://github.com/Autodesk/AutomaticComponentToolkit/releases)
 2) Write an interface description file `idl_file.xml` for your desired component
 3) Generate implementation stubs and language bindings for your component:
 <br/>`act.exe idl_file.xml`
@@ -36,9 +30,19 @@ A consumer of your component only needs to include the language binding relevant
 
 You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
 
-## Language Support
-ACT supports generation of bindings and implementation stubs for C++, C, Pascal, Golang, NodeJS and Python. However, not all features of the IDL are yet supported by the individual export language:
+Alternatively to 1) build act from source:
+1. Install go https://golang.org/doc/install
+2. Build automaticcomponenttoolkit.go:
+<br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
 
+## Contributing
+The Automatic Component Toolkit is an open source project.
+
+Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs. Have a look the [contributor's guide](CONTRIBUTING.md) for details.
+
+## Language Support
+ACT supports generation of bindings or implementation stubs for C++, C, Pascal, Golang, NodeJS and Python. However, not all features of the IDL are yet supported by the individual binding or implementation language:
+  
 #### Feature Matrix: Bindings
 | Binding     |         Status                                             | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks |
 |:-----------:|:----------------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|
@@ -55,7 +59,7 @@ ACT supports generation of bindings and implementation stubs for C++, C, Pascal,
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling |
 |:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|
 | C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          |
-| Pascal         | ![](Documentation/images/O.png) incomplete, untested  | Win, Linux, MacOS | in,return | in,out,return | in,out,return |      ???      | in,out,return |   in,out   |    in,out   | in        |            |
+| Pascal         | ![](Documentation/images/O.png) complete (but unstable)  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        |            |
 
 
 ## Example
@@ -64,7 +68,8 @@ This folder also contains a complete [Tutorial](Examples/Primes/Tutorial.md) to 
 
 ## Background: the hourglass pattern-API for shared software components
 A very clean approach to creating software components is the hourglass pattern for APIs.
-The rationale is to pipe any domain code with a thick API through a C89-interface, thereby catching all exceptions.
+The rationale is to pipe any domain code with a thick API through a C89-interface, narrowing exported types
+and functions to C89-types and methods, and thereby also catching all exceptions.
 
             Domain-Code with thick API
       \ (templates, complex classes, custom  /
@@ -83,8 +88,7 @@ The rationale is to pipe any domain code with a thick API through a C89-interfac
 This enables producers of libraries to use their own programming paradigms and styles, without affecting their consumer and results in a great isolation of code (and responsibility) between library-producer and -consumer.
 Due to the very clear interface, such libraries are very easy to integrate in existing projects.
 
-A much more detailed introduction the topic is this presentation: https://www.youtube.com/watch?v=PVYdHDm0q6Y
+A very detailed introduction the topic this presentation: https://www.youtube.com/watch?v=PVYdHDm0q6Y
 
-### Difficulty of this approach:
-Generating (and maintaining!) the required layers of interfaces (language bindings, thin API and domain code-API) and their consistency is error prone _if_ it is not automated.
-
+### Difficulty of the hourglass pattern:
+Generating (and maintaining!) the required layers of interfaces (language bindings, thin API and domain code-API) and their consistency is labor-intensive and error prone _if_ it is not automated. That's what ACT is here for.

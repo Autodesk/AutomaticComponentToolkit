@@ -52,8 +52,9 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors (unsigned int nPrimeFactorsBufferSize, unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 
+	bool CheckPrimeFactors (const LibPrimes_uint64 nPrimeFactorsBufferSize, const sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 };
 
 }

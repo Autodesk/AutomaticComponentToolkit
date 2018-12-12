@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="Version Testing Interface" namespace="LibVersion" copyright="Automatic Component Toolkit Developers" year="2018" basename="libversion"
+	version="1.2.0">
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
+	<bindings>
+		<binding language="C" indentation="tabs" />
+		<binding language="CDynamic" indentation="tabs" />
+		<binding language="Cpp" indentation="tabs" />
+		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Pascal" indentation="4spaces" />
+		<binding language="Python" indentation="tabs" />
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs" classidentifier="" stubidentifier=""/>
+		<implementation language="Pascal" indentation="tabs" classidentifier="" stubidentifier="impl"/>
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+	</errors>
+	
+	<class name="MyClass">
+		<method name="Calculate" description="Performs the specific calculation of this Calculator">
+		</method>
+		
+		<method name="NewMethod" description="That one was added in 1.2.0">
+		</method>
+	</class>
+	
+	
+	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+			<param name="Instance" type="handle" class="BaseClass" pass="in" description="Instance Handle" />
+		</method>
+
+		<method name="GetLibraryVersion" description = "retrieves the current version of the library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
+		</method>
+	</global>
+		
+</component>

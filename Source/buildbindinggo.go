@@ -583,33 +583,33 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 			if (callparameters != "") {
 				callparameters = callparameters + ", ";
 			}
-								
+			
 			switch (param.ParamType) {
-				case "uint8":				
+				case "uint8":
 					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("n%s uint8", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt8InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "n" + param.ParamName;
 
-				case "uint16":	
+				case "uint16":
 					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("n%s uint16", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt16InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "n" + param.ParamName;
-					
-				case "uint32":				
+				
+				case "uint32":
 					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("n%s uint32", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt32InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "n" + param.ParamName;
-					
+				
 				case "uint64":
 					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("n%s uint64", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "n" + param.ParamName;
 				
-				case "int8":				
+				case "int8":
 					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("n%s int8", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", Int8InValue (n%s)", param.ParamName);
@@ -668,14 +668,14 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", uintptr (e%s)", param.ParamName);
 					callparameters = callparameters + "e" + param.ParamName;
 
-				case "struct":				
+				case "struct":
 					comments = comments + fmt.Sprintf("    * @param[in] s%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("s%s s%s%s", param.ParamName, NameSpace, param.ParamClass)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", uintptr (unsafe.Pointer (&s%s))", param.ParamName);
 					callparameters = callparameters + "s" + param.ParamName;
 
-				case "basicarray":				
-				case "structarray":				
+				case "basicarray":
+				case "structarray":
 
 				case "handle":
 					comments = comments + fmt.Sprintf("    * @param[in] %s - %s\n", param.ParamName, param.ParamDescription);
