@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="ACT UnitTest FrameWork" namespace="LibUnitTest" copyright="Autodesk" year="2018" basename="libunittest"
+	version="1.0.0">
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
+	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
+		<binding language="Cpp" indentation="tabs" />
+		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Pascal" indentation="4spaces" />
+		<binding language="Python" indentation="tabs" />
+		<binding language="Go" indentation="4spaces" />
+		<!--<binding language="Node" indentation="4spaces" />-->
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs" />
+		<!--<implementation language="Pascal" indentation="4spaces" />
+		<implementation language="Fortran" indentation="4spaces" />  -->
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+	</errors>
+
+	<enum name="TestEnum" >
+		<option name="Option1" value="1"/>
+		<option name="Option20" value="20"/>
+		<option name="Option55" value="55"/>
+	</enum>	
+
+	<struct name="TestStruct">
+		<member name="X" type="uint32"/>
+		<member name="Y" type="double"/>
+		<member name="Z" type="double"/>
+	</struct>	
+	
+	
+	<class name="TestClass">
+		<method name="Value" description="Returns the value of the number">
+			<param name="Value" type="double" pass="return" description="Returns the new value of this number" />
+		</method>
+		
+		<method name="SetValue" description="Sets the value of the number">
+			<param name="Value" type="double" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="SetValueInt" description="Sets the value of the number">
+			<param name="Value" type="int64" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="SetValueString" description="Sets the value of the number by a specified string">
+			<param name="Value" type="string" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="UnitTest1" description="Passes basic types and outputs them again">
+			<param name="Value1" type="uint8" pass="in" description="param1" />
+			<param name="Value2" type="uint16" pass="in" description="param2" />
+			<param name="Value3" type="uint32" pass="in" description="param3" />
+			<param name="Value4" type="uint64" pass="in" description="param4" />
+			<param name="OutValue1" type="uint8" pass="out" description="returns param1" />
+			<param name="OutValue2" type="uint16" pass="out" description="returns param2" />
+			<param name="OutValue3" type="uint32" pass="out" description="returns param3" />
+			<param name="OutValue4" type="uint64" pass="out" description="returns param4" />
+		</method>
+
+		<method name="UnitTest2" description="Passes basic types and outputs them again">
+			<param name="Value1" type="int8" pass="in" description="param1" />
+			<param name="Value2" type="int16" pass="in" description="param2" />
+			<param name="Value3" type="int32" pass="in" description="param3" />
+			<param name="Value4" type="int64" pass="in" description="param4" />
+			<param name="OutValue1" type="int8" pass="out" description="returns param1" />
+			<param name="OutValue2" type="int16" pass="out" description="returns param2" />
+			<param name="OutValue3" type="int32" pass="out" description="returns param3" />
+			<param name="OutValue4" type="int64" pass="out" description="returns param4" />
+		</method>
+		
+		<method name="UnitTest3" description="Passes basic types and outputs them again">
+			<param name="Value1" type="bool" pass="in" description="param1" />
+			<param name="Value2" type="single" pass="in" description="param2" />
+			<param name="Value3" type="double" pass="in" description="param3" />
+			<param name="Value4" type="enum" class="TestEnum" pass="in" description="param4" />
+			<param name="OutValue1" type="bool" pass="out" description="returns param1" />
+			<param name="OutValue2" type="single" pass="out" description="returns param2" />
+			<param name="OutValue3" type="double" pass="out" description="returns param3" />
+			<param name="OutValue4" type="enum" class="TestEnum" pass="out" description="returns param4" />
+		</method>
+
+		<method name="UnitTest4" description="Passes a string and outputs it again">
+			<param name="Value" type="string" pass="in" description="param" />
+			<param name="OutValue" type="string" pass="out" description="returns param" />
+			<param name="ReturnValue" type="string" pass="return" description="returns param" />
+		</method>
+		
+		<method name="UnitTest5" description="Passes in a basicarray">
+			<param name="Value1" type="basicarray" class="uint8" pass="in" description="param1" />
+			<param name="Value2" type="basicarray" class="uint16" pass="in" description="param2" />
+			<param name="Value3" type="basicarray" class="uint32" pass="in" description="param3" />
+			<param name="Value4" type="basicarray" class="uint64" pass="in" description="param4" />
+		</method>
+		
+	</class>
+		
+	<global releasemethod="ReleaseInstance" journalmethod="SetJournal" versionmethod="GetLibraryVersion">
+		<method name="CreateTestClass" description="Creates a new Test Class instance">
+			<param name="Instance" type="handle" class="TestClass" pass="return" description="New TestClass instance" />
+		</method>
+				
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+			<param name="Instance" type="handle" class="BaseClass" pass="in" description="Instance Handle" />
+		</method>
+
+		<method name="GetLibraryVersion" description = "retrieves the current version of the library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
+		</method>
+		
+		<method name="SetJournal" description="Handles Library Journaling">
+			<param name="FileName" type="string" pass="in" description="Journal FileName" />
+		</method>
+	</global>
+		
+</component>

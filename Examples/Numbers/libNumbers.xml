@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="Number Interface" namespace="LibNumbers" copyright="Autodesk" year="2018" basename="libnumbers"
+	version="1.0.0">
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
+	<bindings>
+		<binding language="C" indentation="tabs" />
+		<binding language="CDynamic" indentation="tabs" />
+		<binding language="Cpp" indentation="tabs" />
+		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Pascal" indentation="4spaces" />
+		<binding language="Python" indentation="tabs" />
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs" claasidentifier="" stubidentifier=""/>
+		<implementation language="Pascal" indentation="2spaces" claasidentifier="" stubidentifier=""/> />
+		<!--
+		<implementation language="Pascal" indentation="4spaces" />
+		<implementation language="Fortran" indentation="4spaces" />
+		-->
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="CALCULATIONABORTED" code="8" description="a calculation has been aborted" />
+		<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
+	</errors>
+	
+	
+	<functiontype name="ProgressCallback">
+		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
+		<param name="Abort" type="bool" pass="out" description="Should the calculation be aborted?"/>
+	</functiontype>
+	
+	<enum name="OperationType">
+		<option name="Addition" value="0" />
+		<option name="Subtraction" value="1" />
+		<option name="Multiplication" value="2" />
+		<option name="Division" value="3" />
+	</enum>
+	
+	<struct name="SomeStruct">
+		<member name="EnumMember" type="enum" class="OperationType"/>
+		<member name="Age" type="uint32"/>
+		<member name="Infos" type="single" rows="3" columns="5"/>
+	</struct>
+	
+	
+	<class name="Number">
+		<method name="Value" description="Returns the value of the number">
+			<param name="Value" type="double" pass="return" description="Returns the new value of this number" />
+		</method>
+		
+		<method name="IsTrue" description="Returns a boolean value">
+			<param name="Value" type="bool" pass="out" description="Returns a boolean value" />
+		</method>
+		
+		<method name="SetTrue" description="Sets a boolean value">
+			<param name="Value" type="bool" pass="in" description="Sets a boolean value" />
+		</method>
+		
+		<method name="SetValue" description="Sets the value of the number">
+			<param name="Value" type="double" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="SetValueInt" description="Sets the value of the number">
+			<param name="Value" type="int64" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="SetValueString" description="Sets the value of the number by a specified string">
+			<param name="Value" type="string" pass="in" description="The new value of this number" />
+		</method>
+		
+		<method name="ValueString" description="Get the value of the number as string">
+			<param name="Value" type="string" pass="return" description="The value of the number as string" />
+		</method>
+		
+		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
+			<param name="PrimeFactors" type="basicarray" class="int64" pass="out" description="The prime factors of this number" />
+		</method>
+	</class>
+	
+	<class name="PrimeFactoriser">
+		<method name="SetValue" description="Sets the value to be factorized">
+			<param name="Value" type="uint64" pass="in" description="The value to be factorized" />
+		</method>
+		
+		<method name="SetProgressCallback" description="Sets the callback function">
+			<param name="ProgressCallback" type="functiontype" class="ProgressCallback" pass="in" description="The progress callback" />
+		</method>
+		
+		<method name="Calculate" description="Performs the prime factor factorisation of the value (without multiplicity)">
+		</method>
+		
+		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
+			<param name="PrimeFactors" type="basicarray" class="int64" pass="out" description="The prime factors of this number" />
+		</method>
+	</class>
+	
+	<class name="Calculator">
+		<method name="AddNumbers" description="Adds two numbers">
+			<param name="Value1" type="handle" class="Number" pass="in" description="First value" />
+			<param name="Value2" type="handle" class="Number" pass="in" description="Second value" />
+			<param name="Sum" type="handle" class="Number" pass="return" description="Sum of the two numbers" />
+		</method>
+		
+		<method name="AddSingles" description="Adds an array of singles">
+			<param name="Values" type="basicarray" class="single" pass="in" description="Values to add" />
+			<param name="Sum" type="handle" class="Number" pass="return" description="Sum of the singles" />
+		</method>
+		
+		<method name="SetOperation" description="Sets the operation type of this calculation">
+			<param name="Operation" type="enum" class="OperationType" pass="in" description="The new operation type" />
+		</method>
+		
+		<method name="GetOperation" description="Gets the operation type of this calculation">
+			<param name="Operation" type="enum" class="OperationType" pass="return" description="The operation type" />
+		</method>
+
+		<method name="SetSomeStruct" description="Sets a some strut">
+			<param name="TheStruct" type="struct" class="SomeStruct" pass="in" description="Sets a some struct" />
+		</method>
+		
+		<method name="GetSomeStruct" description="Gets a some strut">
+			<param name="TheStruct" type="struct" class="SomeStruct" pass="out" description="Gets a some struct" />
+		</method>
+		
+		<method name="SetSomeStructs" description="Sets multiple some structs">
+			<param name="TheStructs" type="structarray" class="SomeStruct" pass="in" description="Sets multiple some struct" />
+		</method>
+		
+		<method name="GetSomeStructs" description="Gets multiple some structs">
+			<param name="TheStructs" type="structarray" class="SomeStruct" pass="out" description="Gets multiple some struct" />
+		</method>
+	</class>
+		
+	<global releasemethod="ReleaseInstance" journalmethod="SetJournal" versionmethod="GetLibraryVersion">
+		<method name="CreateNumber" description="Creates a new Number instance">
+			<param name="Instance" type="handle" class="Number" pass="return" description="New Number instance" />
+		</method>
+		
+		<method name="CreateCalculator" description="Creates a new Calculator instance">
+			<param name="Instance" type="handle" class="Calculator" pass="return" description="New Calculator instance" />
+		</method>
+		
+		<method name="CreatePrimeFactoriser" description="Creates a new CreatePrimeFactoriser instance">
+			<param name="Instance" type="handle" class="PrimeFactoriser" pass="return" description="New PrimeFactoriser instance" />
+		</method>
+		
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+			<param name="Instance" type="handle" class="BaseClass" pass="in" description="Instance Handle" />
+		</method>
+
+		<method name="GetLibraryVersion" description = "retrieves the current version of the library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
+		</method>
+		
+		<method name="SetJournal" description="Handles Library Journaling">
+			<param name="FileName" type="string" pass="in" description="Journal FileName" />
+		</method>
+	</global>
+		
+</component>

@@ -1,0 +1,17 @@
+*.cpp
+*.hpp
+*.h
+*.exe
+*.linux
+*.darwin
+*.exe
+*.c
+*.go
+
+# Visual Studio Code
+debug
+.vscode
+
+*_headers
+
+Examples/*.xml
