@@ -380,6 +380,24 @@ func checkClasses(classes[] ComponentDefinitionClass) (map[string]bool, error) {
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		classNameList[class.ClassName] = true
 	}
+
+	for i := 0; i < len(classes); i++ {
+		class := classes[i];
+		parentClass := class.ParentClass;
+		if (len(parentClass) > 0) {
+			if !nameIsValidIdentifier(parentClass) {
+				return nil, fmt.Errorf ("invalid class parent name \"%s\"", parentClass);
+			}
+			if (classNameList[parentClass] == false) {
+				return nil, fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
+			}
+			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
+				return nil, fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
+			}
+
+		}
+	}
+
 	return classNameList, nil
 }
 

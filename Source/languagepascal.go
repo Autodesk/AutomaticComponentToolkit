@@ -168,33 +168,6 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 		
 		w.Writeln ( "");
 
-		if len(componentdefinition.Functions) > 0 {
-			w.Writeln ("(*************************************************************************************************************************");
-			w.Writeln (" Declaration of function types");
-			w.Writeln ("**************************************************************************************************************************)");
-			w.Writeln ("");
-			for i := 0; i < len(componentdefinition.Functions); i++ {
-				funcinfo := componentdefinition.Functions[i];
-				arguments := ""
-				for j := 0; j<len(funcinfo.Params); j++ {
-					param := funcinfo.Params[j]
-					if (arguments != "") {
-					 	arguments = arguments + "; "
-					}
-					cParams, err := generatePlainPascalParameter(param, "", funcinfo.FunctionName, NameSpace)
-					if (err != nil) {
-						return err
-					}
-					arguments = arguments + cParams[0].ParamConvention + cParams[0].ParamName + ": " + cParams[0].ParamType
-				}
-
-				w.Writeln ("  P%s_%s = function(%s): Integer;", NameSpace, funcinfo.FunctionName, arguments);
-			}
-		}
-		
-		w.Writeln ( "");
-		
-
 		w.Writeln ("(*************************************************************************************************************************");
 		w.Writeln (" Declaration of struct arrays");
 		w.Writeln ("**************************************************************************************************************************)");
@@ -207,6 +180,33 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 
 		w.Writeln ("");
 	}
+
+	if len(componentdefinition.Functions) > 0 {
+		w.Writeln ("(*************************************************************************************************************************");
+		w.Writeln (" Declaration of function types");
+		w.Writeln ("**************************************************************************************************************************)");
+		w.Writeln ("");
+		for i := 0; i < len(componentdefinition.Functions); i++ {
+			funcinfo := componentdefinition.Functions[i];
+			arguments := ""
+			for j := 0; j<len(funcinfo.Params); j++ {
+				param := funcinfo.Params[j]
+				if (arguments != "") {
+					arguments = arguments + "; "
+				}
+				cParams, err := generatePlainPascalParameter(param, "", funcinfo.FunctionName, NameSpace)
+				if (err != nil) {
+					return err
+				}
+				arguments = arguments + cParams[0].ParamConvention + cParams[0].ParamName + ": " + cParams[0].ParamType
+			}
+
+			w.Writeln ("  P%s_%s = function(%s): Integer;", NameSpace, funcinfo.FunctionName, arguments);
+		}
+	}
+	
+	w.Writeln ( "");
+
 	return nil;
 }
 

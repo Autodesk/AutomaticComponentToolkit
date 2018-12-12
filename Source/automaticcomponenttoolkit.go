@@ -69,11 +69,12 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 }
 
 func main () {
-	ACTVersion := "1.3.0"
+	ACTVersion := "1.3.1"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
-		log.Fatal ("Please run with the configuration XML as command line parameter.");
+		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
 		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
+		log.Fatal ("To create a diff between two versions of an Interface Description XML use the optional flagg \"-d OTHER_IDL_FILE\"");
 	}
 	if os.Args[1] == "-v" {
 		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)
@@ -156,11 +157,20 @@ func main () {
 		log.Fatal (err);
 	}
 
+
+	licenseFileName := path.Join(outputFolder, "license.txt");
+	log.Printf("Creating \"%s\"", licenseFileName)
+	licenseFile, err :=  CreateLanguageFile (licenseFileName, "")
+	if err != nil {
+		log.Fatal (err);
+	}
+	licenseFile.WritePlainLicenseHeader(component, "", false);
+
 	if (len(component.BindingList.Bindings) > 0) {
 		err  = os.MkdirAll(outputFolderBindings, os.ModePerm);
 		if (err != nil) {
 			log.Fatal (err);
-		}	
+		}
 	}
 	for bindingindex := 0; bindingindex < len(component.BindingList.Bindings); bindingindex++ {
 		binding := component.BindingList.Bindings[bindingindex];
