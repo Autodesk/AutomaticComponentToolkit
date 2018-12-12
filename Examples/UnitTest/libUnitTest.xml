@@ -17,8 +17,8 @@
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs" />
-		<!--<implementation language="Pascal" indentation="4spaces" />
-		<implementation language="Fortran" indentation="4spaces" />  -->
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="implementation" />
+		<!--<implementation language="Fortran" indentation="4spaces" />  -->
 	</implementations>
 	
 	<errors>
@@ -100,12 +100,12 @@
 			<param name="ReturnValue" type="string" pass="return" description="returns param" />
 		</method>
 		
-		<method name="UnitTest5" description="Passes in a basicarray">
+<!--		<method name="UnitTest5" description="Passes in a basicarray">
 			<param name="Value1" type="basicarray" class="uint8" pass="in" description="param1" />
 			<param name="Value2" type="basicarray" class="uint16" pass="in" description="param2" />
 			<param name="Value3" type="basicarray" class="uint32" pass="in" description="param3" />
 			<param name="Value4" type="basicarray" class="uint64" pass="in" description="param4" />
-		</method>
+		</method> -->
 		
 	</class>
 		

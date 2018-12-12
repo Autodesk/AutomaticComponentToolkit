@@ -102,178 +102,73 @@ func BuildBindingPascalDynamic(componentdefinition ComponentDefinition, outputFo
 }
 
 
+func writeEnumConversionInterface(componentdefinition ComponentDefinition, w LanguageWriter, NameSpace string) error {
 
-func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
-
-	w.Writeln ("(*************************************************************************************************************************");
-	w.Writeln (" General type definitions");
-	w.Writeln ("**************************************************************************************************************************)");
-	w.Writeln ("")
-	
-	w.Writeln ("type");
-	w.Writeln ("  T%sResult = Cardinal;", NameSpace);
-	w.Writeln ("  T%sHandle = Pointer;", NameSpace);
-	w.Writeln ("")
-	
-	w.Writeln ("  P%sResult = ^T%sResult;", NameSpace, NameSpace);
-	w.Writeln ("  P%sHandle = ^T%sHandle;", NameSpace, NameSpace);
-	w.Writeln ("")
-
-	w.Writeln ("(*************************************************************************************************************************");
-	w.Writeln (" Error Constants for %s", NameSpace);
-	w.Writeln ("**************************************************************************************************************************)");
-	w.Writeln ("");
-	w.Writeln ("const");
-	w.Writeln ("  %s_SUCCESS = 0;", strings.ToUpper (NameSpace));
-		
-	for i := 0; i < len(componentdefinition.Errors.Errors); i++ {
-		errorcode := componentdefinition.Errors.Errors[i];
-		w.Writeln ("  %s_ERROR_%s = %d;", strings.ToUpper (NameSpace), errorcode.Name, errorcode.Code);
-	}
-
-	w.Writeln ("");
-	
-	
 	if (len(componentdefinition.Enums) > 0) {
 		w.Writeln ("(*************************************************************************************************************************");
-		w.Writeln (" Declaration of enums");
+		w.Writeln (" Enum conversion");
 		w.Writeln ("**************************************************************************************************************************)");
-		w.Writeln ("");
-		w.Writeln ("type");	
 		w.Writeln ("");
 
 		for i := 0; i < len(componentdefinition.Enums); i++ {
 			enum := componentdefinition.Enums[i];
-			w.Writeln ("  T%s%s = (", NameSpace, enum.Name);
-			
-			for j := 0; j < len(enum.Options); j++ {			
-			
-				comma := "";
-				if (j < len(enum.Options) - 1) {
-					comma = ",";
-				}
-				
-			
-				option := enum.Options[j];
-				w.Writeln ("    e%s%s%s", enum.Name, option.Name, comma);
-			}
-			
-			w.Writeln ( "  );");
-			w.Writeln ( "");
+			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
 		}
+		
+		w.Writeln ("");
 	}
-	
-	if len(componentdefinition.Structs) > 0 {
 
-		w.Writeln ("(*************************************************************************************************************************");
-		w.Writeln (" Declaration of structs");
-		w.Writeln ("**************************************************************************************************************************)");
-		w.Writeln ("");
-		w.Writeln ("type");	
-		w.Writeln ("");
-			
-		for i := 0; i < len(componentdefinition.Structs); i++ {
-			structinfo := componentdefinition.Structs[i];
-			w.Writeln ( "  P%s%s = ^T%s%s;", NameSpace, structinfo.Name, NameSpace, structinfo.Name);
-			w.Writeln ( "  T%s%s = packed record", NameSpace, structinfo.Name);
-			
-			for j := 0; j < len(structinfo.Members); j++ {			
-
-			element := structinfo.Members[j];
-			
-				arrayprefix := "";
-				if (element.Rows > 0) {
-					if (element.Columns > 0) {
-						arrayprefix = fmt.Sprintf ("array [0..%d, 0..%d] of ", element.Columns - 1, element.Rows - 1)
-					} else {
-						arrayprefix = fmt.Sprintf ("array [0..%d] of ",element.Rows - 1)
-					}
-				}
-			
-				switch (element.Type) {
-					case "uint8":
-						w.Writeln ( "    F%s: %sByte;", element.Name, arrayprefix);
-					case "uint16":
-						w.Writeln ( "    F%s: %sWord;", element.Name, arrayprefix);
-					case "uint32":
-						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
-					case "uint64":				
-						w.Writeln ( "    F%s: %sQWord;", element.Name, arrayprefix);
-					case "int8":
-						w.Writeln ( "    F%s: %sSmallInt;", element.Name, arrayprefix);
-					case "int16":
-						w.Writeln ( "    F%s: %sShortInt;", element.Name, arrayprefix);
-					case "int32":
-						w.Writeln ( "    F%s: %sInteger;", element.Name, arrayprefix);
-					case "int64":				
-						w.Writeln ( "    F%s: %sInt64;", element.Name, arrayprefix);
-					case "bool":				
-						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
-					case "single":
-						w.Writeln ( "    F%s: %sSingle;", element.Name, arrayprefix);
-					case "double":
-						w.Writeln ( "    F%s: %sDouble;", element.Name, arrayprefix);
-					case "string":
-						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
-					case "handle":
-						return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
-					case "enum":
-						w.Writeln ( "    F%s: %sInteger;", element.Name, arrayprefix);
-				}
-				
-				
-			}
-			
-			w.Writeln ("  end;");
-			w.Writeln ("");
-		}
-		
-		w.Writeln ( "");
-
-		if len(componentdefinition.Functions) > 0 {
-			w.Writeln ("(*************************************************************************************************************************");
-			w.Writeln (" Declaration of function types");
-			w.Writeln ("**************************************************************************************************************************)");
-			w.Writeln ("");
-			for i := 0; i < len(componentdefinition.Functions); i++ {
-				funcinfo := componentdefinition.Functions[i];
-				arguments := ""
-				for j := 0; j<len(funcinfo.Params); j++ {
-					param := funcinfo.Params[j]
-					if (arguments != "") {
-					 	arguments = arguments + "; "
-					}
-					cParams, err := generatePlainPascalParameter(param, "", funcinfo.FunctionName, NameSpace)
-					if (err != nil) {
-						return err
-					}
-					arguments = arguments + cParams[0].ParamConvention + cParams[0].ParamName + ": " + cParams[0].ParamType
-				}
-
-				w.Writeln ("  P%s_%s = function(%s): Integer;", NameSpace, funcinfo.FunctionName, arguments);
-			}
-		}
-		
-		w.Writeln ( "");
-		
-
-		w.Writeln ("(*************************************************************************************************************************");
-		w.Writeln (" Declaration of struct arrays");
-		w.Writeln ("**************************************************************************************************************************)");
-		w.Writeln ("");
-			
-		for i := 0; i < len(componentdefinition.Structs); i++ {
-			structinfo := componentdefinition.Structs[i];
-			w.Writeln ("  ArrayOf%s%s = array of T%s%s;", NameSpace, structinfo.Name, NameSpace, structinfo.Name);
-		}
-
-		w.Writeln ("");
-
-	}
-	
 	return nil;
+}
 
 
+func writeEnumConversionImplementation(componentdefinition ComponentDefinition, w LanguageWriter, NameSpace string) error {
+
+
+	if (len(componentdefinition.Enums) > 0) {
+		w.Writeln ("(*************************************************************************************************************************");
+		w.Writeln (" Enum conversion");
+		w.Writeln ("**************************************************************************************************************************)");
+		w.Writeln ("");
+
+		for i := 0; i < len(componentdefinition.Enums); i++ {
+			enum := componentdefinition.Enums[i];
+			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  begin");
+			w.Writeln ("    case AValue of");
+			
+			for j := 0; j < len(enum.Options); j++ {						
+				option := enum.Options[j];
+				w.Writeln ("      e%s%s: Result := %d;", enum.Name, option.Name, option.Value);
+			}
+			
+			w.Writeln ("      else ");
+			w.Writeln ("        raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDPARAM, 'invalid enum value');", NameSpace, strings.ToUpper (NameSpace));
+			w.Writeln ("    end;");
+			w.Writeln ("  end;");
+			w.Writeln ("  ");
+			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  begin");
+			w.Writeln ("    case AValue of");
+			
+			for j := 0; j < len(enum.Options); j++ {						
+				option := enum.Options[j];
+				w.Writeln ("      %d: Result := e%s%s;", option.Value, enum.Name, option.Name);
+			}
+			
+			w.Writeln ("      else ");
+			w.Writeln ("        raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDPARAM, 'invalid enum constant');", NameSpace, strings.ToUpper (NameSpace));
+			w.Writeln ("    end;");
+			w.Writeln ("  end;");
+			w.Writeln ("  ");
+			w.Writeln ("  ");
+		}
+		
+		w.Writeln ("");
+	}
+
+	return nil;
 }
 
 
@@ -347,10 +242,8 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 		if err != nil {
 			return err;
 		}
-				
 	}
 	
-
 
 	w.Writeln ("(*************************************************************************************************************************");
 	w.Writeln (" Exception definition");
@@ -415,7 +308,6 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 		
 		w.Writeln ("  end;");	
 		w.Writeln ("")
-
 	}
 	
 
@@ -426,7 +318,6 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("  T%sWrapper = class (TObject)", NameSpace);	
 	w.Writeln ("  private");	
 	w.Writeln ("    FModule: HMODULE;");	
-      
 	
 	for i := 0; i < len(componentdefinition.Classes); i++ {
 		class := componentdefinition.Classes[i]
@@ -436,14 +327,12 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 			
 			w.Writeln ("    F%s%s_%sFunc: T%s%s_%sFunc;", NameSpace, class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName);
 		}
-
 	}
 
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
-				
+		
 		w.Writeln ("    F%s%sFunc: T%s%sFunc;", NameSpace, method.MethodName, NameSpace, method.MethodName);
-				
 	}
 
 	w.Writeln ("")
@@ -496,67 +385,15 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("")
 
 	
-	if (len(componentdefinition.Enums) > 0) {
-		w.Writeln ("(*************************************************************************************************************************");
-		w.Writeln (" Enum conversion");
-		w.Writeln ("**************************************************************************************************************************)");
-		w.Writeln ("");
-
-		for i := 0; i < len(componentdefinition.Enums); i++ {
-			enum := componentdefinition.Enums[i];
-			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
-			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
-		}
-		
-		w.Writeln ("");
-	}
+	writeEnumConversionInterface (componentdefinition, w, NameSpace);
+	
 	
 	w.Writeln ("")
 	w.Writeln ("implementation")
 	w.Writeln ("")
-	
-	if (len(componentdefinition.Enums) > 0) {
-		w.Writeln ("(*************************************************************************************************************************");
-		w.Writeln (" Enum conversion");
-		w.Writeln ("**************************************************************************************************************************)");
-		w.Writeln ("");
 
-		for i := 0; i < len(componentdefinition.Enums); i++ {
-			enum := componentdefinition.Enums[i];
-			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
-			w.Writeln ("  begin");
-			w.Writeln ("    case AValue of");
-			
-			for j := 0; j < len(enum.Options); j++ {						
-				option := enum.Options[j];
-				w.Writeln ("      e%s%s: Result := %d;", enum.Name, option.Name, option.Value);
-			}
-			
-			w.Writeln ("      else ");
-			w.Writeln ("        raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDPARAM, 'invalid enum value');", NameSpace, strings.ToUpper (NameSpace));
-			w.Writeln ("    end;");
-			w.Writeln ("  end;");
-			w.Writeln ("  ");
-			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
-			w.Writeln ("  begin");
-			w.Writeln ("    case AValue of");
-			
-			for j := 0; j < len(enum.Options); j++ {						
-				option := enum.Options[j];
-				w.Writeln ("      %d: Result := e%s%s;", option.Value, enum.Name, option.Name);
-			}
-			
-			w.Writeln ("      else ");
-			w.Writeln ("        raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDPARAM, 'invalid enum constant');", NameSpace, strings.ToUpper (NameSpace));
-			w.Writeln ("    end;");
-			w.Writeln ("  end;");
-			w.Writeln ("  ");
-			w.Writeln ("  ");
-		}
+	writeEnumConversionImplementation (componentdefinition, w, NameSpace);
 		
-		w.Writeln ("");
-	}
-	
 	w.Writeln ("")
 	w.Writeln ("(*************************************************************************************************************************");
 	w.Writeln (" Exception implementation");
@@ -740,125 +577,13 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	return nil
 }
 
-
-
-func getPascalParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string, isPlain bool, isImplementation bool)(string, error) {
-	PascalParamTypeName := "";
-	switch (ParamTypeName) {
-		case "uint8":
-			PascalParamTypeName = "Byte";
-
-		case "uint16":
-			PascalParamTypeName = "Word";
-
-		case "uint32":
-			PascalParamTypeName = "Cardinal";
-			
-		case "uint64":
-			PascalParamTypeName = "QWord";
-
-		case "int8":
-			PascalParamTypeName = "ShortInt";
-
-		case "int16":
-			PascalParamTypeName = "SmallInt";
-
-		case "int32":
-			PascalParamTypeName = "Integer";
-			
-		case "int64":
-			PascalParamTypeName = "Int64";
-			
-		case "bool":
-			if isPlain {
-				PascalParamTypeName = "Cardinal";
-			} else {
-				PascalParamTypeName = "Boolean";
-			}
-			
-		case "single":
-			PascalParamTypeName = "Single";
-
-		case "double":
-			PascalParamTypeName = "Double";
-			
-		case "string":
-			if isPlain {
-				PascalParamTypeName = "PAnsiChar";
-			} else {
-				PascalParamTypeName = "String";
-			}
-
-		case "enum":
-			if isPlain {
-				PascalParamTypeName = fmt.Sprintf ("Integer");
-			} else {
-				PascalParamTypeName = fmt.Sprintf ("T%s%s", NameSpace, ParamClass);
-			}
-		
-		case "functiontype":
-			if isPlain {				
-				PascalParamTypeName = fmt.Sprintf ("P%s_%s", NameSpace, ParamClass);
-			} else {
-				PascalParamTypeName = fmt.Sprintf ("P%s_%s", NameSpace, ParamClass);
-			}
-
-		case "struct":
-			PascalParamTypeName = fmt.Sprintf ("P%s%s", NameSpace, ParamClass);
-
-		case "basicarray":
-			basicTypeName, err := getPascalParameterTypeName(ParamClass, NameSpace, "", isPlain, isImplementation);
-			if (err != nil) {
-				return "", err;
-			}
-			
-			if isPlain {				
-				PascalParamTypeName = fmt.Sprintf ("P%s", basicTypeName);
-			} else {
-				if isImplementation {
-					PascalParamTypeName = fmt.Sprintf ("P%s", basicTypeName);
-				} else {			
-					PascalParamTypeName = fmt.Sprintf ("T%sDynArray", basicTypeName);
-				}
-			}
-
-		case "structarray":
-			if isPlain {				
-				PascalParamTypeName = fmt.Sprintf ("P%s%s", NameSpace, ParamClass)
-			} else {
-				if isImplementation {
-					PascalParamTypeName = fmt.Sprintf ("P%s%s", NameSpace, ParamClass)
-				} else {			
-					PascalParamTypeName = fmt.Sprintf ("ArrayOf%s%s", NameSpace, ParamClass);
-				}
-			}
-			
-		case "handle":
-			if isPlain {				
-				PascalParamTypeName = fmt.Sprintf ("T%sHandle", NameSpace)
-			} else {
-				if isImplementation {
-					PascalParamTypeName = "TObject";
-				} else {
-					PascalParamTypeName = fmt.Sprintf ("T%s%s", NameSpace, ParamClass);
-				}
-			}
-		
-		default:
-			return "", fmt.Errorf ("invalid parameter type \"%s\" for Pascal parameter", ParamTypeName);
-	}
-	
-	return PascalParamTypeName, nil;
-}
-
 func getPascalClassParameters(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool, isImplementation bool) (string, string, error) {
-
 	parameters := "";
 	returnType := "";
 	
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
-		ParamTypeName, err := getPascalParameterTypeName (param.ParamType, NameSpace, param.ParamClass, false, isImplementation);
+		ParamTypeName, err := getPascalParameterType(param.ParamType, NameSpace, param.ParamClass, false, isImplementation);
 		if err != nil {
 			return "", "", err;
 		}
@@ -868,27 +593,21 @@ func getPascalClassParameters(method ComponentDefinitionMethod, NameSpace string
 				if (parameters != "") {
 					parameters = parameters + "; ";
 				}			
-			
 				parameters = parameters + "const A" + param.ParamName + ": " + ParamTypeName;
 				
 			case "out":
 				if (parameters != "") {
 					parameters = parameters + "; ";
 				}			
-			
 				parameters = parameters + "out A" + param.ParamName + ": " + ParamTypeName;
-
 
 			case "return":
 				if (returnType != "") {
 					return "", "", fmt.Errorf ("duplicate return value \"%s\" for Pascal method \"%s\"", param.ParamName, method.MethodName);
 				}
-			
 				returnType = ParamTypeName;
-				
 		}
 	}
-
 
 	return parameters, returnType, nil;
 }
@@ -901,11 +620,16 @@ func writePascalClassMethodDefinition (method ComponentDefinitionMethod, w Langu
 	if (err != nil) {
 		return err;
 	}
+	
+	classPrefix := "";
+	if (isImplementation && isGlobal) {
+		classPrefix = "class ";
+	}
 
 	if (returnType == "") {
-		w.Writeln ( spacing + "procedure %s(%s);", method.MethodName, parameters);
+		w.Writeln ( spacing + "%sprocedure %s(%s);", classPrefix, method.MethodName, parameters);
 	} else {
-		w.Writeln ( spacing + "function %s(%s): %s;", method.MethodName, parameters, returnType);
+		w.Writeln ( spacing + "%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType);
 	}
 	
 	return nil;
@@ -952,7 +676,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 	
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
-		PlainParamTypeName, err := getPascalParameterTypeName (param.ParamType, NameSpace, param.ParamClass, true, false);
+		PlainParamTypeName, err := getPascalParameterType(param.ParamType, NameSpace, param.ParamClass, true, false);
 		if err != nil {
 			return err;
 		}
@@ -990,7 +714,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCallParameters = initCallParameters + "@A" + param.ParamName;
 
 					case "basicarray":
-						basicPlainTypeName, err := getPascalParameterTypeName(param.ParamClass, NameSpace, "", true, false);
+						basicPlainTypeName, err := getPascalParameterType(param.ParamClass, NameSpace, "", true, false);
 						if err != nil {
 							return err;
 						}
@@ -1272,291 +996,6 @@ func writePascalFunctionType (method ComponentDefinitionMethod, w LanguageWriter
 
 
 
-
-type pascalParameter struct {
-	ParamType string
-	ParamName string
-	ParamComment string
-	ParamConvention string
-	ParamTypeNoConvention string
-}
-
-
-func generatePlainPascalParameter(param ComponentDefinitionParam, className string, methodName string, NameSpace string) ([]pascalParameter, error) {
-	cParams := make([]pascalParameter,1)
-	cParamTypeName, err := getPascalParameterTypeName(param.ParamType, NameSpace, param.ParamClass, true, false);
-	if (err != nil) {
-		return nil, err;
-	}
-
-	switch (param.ParamPass) {
-	case "in":
-		switch (param.ParamType) {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "n" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "bool":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "b" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-				
-			case "single":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "f" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "double":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "d" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-				
-			case "string":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "enum":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "e" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "struct":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "basicarray", "structarray":
-				cParams = make([]pascalParameter,2)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "Count";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = cParamTypeName;
-				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[1].ParamConvention = "const ";
-				cParams[1].ParamTypeNoConvention = cParams[1].ParamType;
-
-			case "functiontype":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			case "handle":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-			default:
-				return nil, fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, methodName, param.ParamName);
-		}
-	
-	case "out":
-	
-		switch (param.ParamType) {
-		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName;
-
-			case "struct":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
-				
-			case "basicarray":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "Count";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = cParamTypeName;
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-
-			case "structarray":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "Count";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = cParamTypeName;
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-				
-			case "string":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededChars";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = "PAnsiChar";
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-
-			case "handle":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
-	
-			default:
-				return nil, fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, methodName, param.ParamName);
-		}
-
-	case "return":
-	
-		switch (param.ParamType) {
-		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName;
-
-			case "struct":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
-				
-			case "basicarray":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "Count";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = cParamTypeName;
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-
-			case "structarray":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "Count";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = cParamTypeName;
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-				
-			case "string":
-				cParams = make([]pascalParameter,3)
-				cParams[0].ParamType = "Cardinal";
-				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", cParams[0].ParamName);
-				cParams[0].ParamConvention = "const ";
-				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-
-				cParams[1].ParamType = "Cardinal";
-				cParams[1].ParamName = "p" + param.ParamName + "NeededChars";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", cParams[1].ParamName);
-				cParams[1].ParamConvention = "out ";
-				cParams[1].ParamTypeNoConvention = "PCardinal";
-
-				cParams[2].ParamType = "PAnsiChar";
-				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
-				cParams[2].ParamConvention = "";
-				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
-
-			case "handle":
-				cParams[0].ParamType = cParamTypeName;
-				cParams[0].ParamName = "p" + param.ParamName;
-				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
-				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
-	
-			default:
-				return nil, fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, methodName, param.ParamName);
-		}
-		
-	default:
-		return nil, fmt.Errorf ("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, className, methodName, param.ParamName);
-	}
-
-	return cParams, nil;
-}
 
 func generatePlainPascalParameters(method ComponentDefinitionMethod, className string, NameSpace string) ([]pascalParameter, error) {
 	parameters := []pascalParameter{};

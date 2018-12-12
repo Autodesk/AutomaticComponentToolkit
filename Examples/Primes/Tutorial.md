@@ -691,7 +691,7 @@ time consuming calculation method of the calculators.
 # 5.1 IDL
 Open the IDL-file `libPrimes.xml` and add a new `functiontype` element within the `\<component>`-element.
 ```xml
-<functiontype name="ProgressCallback">
+<functiontype name="ProgressCallback" description="Callback to report calculation progress and query whether it should be aborted">
 	<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
 	<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
 </functiontype>

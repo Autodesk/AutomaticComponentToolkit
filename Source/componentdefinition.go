@@ -183,6 +183,7 @@ type ComponentDefinitionLicense struct {
 
 // ComponentDefinition the complete definition of the component's API
 type ComponentDefinition struct {
+	ACTVersion string
 	XMLName xml.Name `xml:"component"`
 	Version string `xml:"version,attr"`
 	Copyright string `xml:"copyright,attr"`
@@ -207,8 +208,8 @@ func getIndentationString (str string) string {
 	}
 	index := strings.Index(str, "spaces");
 	if (index < 1) {
-		log.Printf ("invalid indentation: \"%s\". Using \"4spaces\" instead\n", str);
-		return "    ";
+		log.Printf ("invalid indentation: \"%s\". Using \"tabs\" instead\n", str);
+		return "\t";
 	}
 	numSpaces, err := strconv.ParseUint(str[0:index], 10, 64);
 	if err!=nil {

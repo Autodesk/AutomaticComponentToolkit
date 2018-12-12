@@ -29,7 +29,18 @@ def main():
 	
 	major, minor, micro = wrapper.GetLibraryVersion()
 	print("LibPrimes version: {:d}.{:d}.{:d}".format(major, minor, micro))
-
+	sieve = wrapper.CreateSieveCalculator()
+	sieve.SetValue(105)
+	sieve.Calculate()
+	primes = sieve.GetPrimes()
+	print("Primes <= {:d} = [".format(sieve.GetValue()), end="")
+	commaString = ", "
+	for i in range(0, len(primes)):
+		if i == len(primes) - 1:
+			commaString = ""
+		print("{:d}".format(primes[i]), end=commaString)
+	print("]")
+        
 	factorization = wrapper.CreateFactorizationCalculator()
 	factorization.SetValue(735)
 	cTypesCallback = LibPrimes.LibPrimesProgressCallback(progressCallback)
@@ -43,6 +54,8 @@ def main():
 		if i == len(primeFactors) - 1:
 			productString = "\n"
 		print(" {:d}^{:d} ".format(pF.Prime, pF.Multiplicity), end=productString)
+
+	
 
 if __name__ == "__main__":
 	try:

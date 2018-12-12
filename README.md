@@ -43,9 +43,9 @@ ACT supports generation of bindings and implementation stubs for C++, C, Pascal,
 | Binding     |         Status                                             | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks |
 |:-----------:|:----------------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|
 | C++         | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
-| C++ Dynamic | ![](Documentation/images/Tick.png) mature                  | Win               | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
+| C++ Dynamic | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
 | C           | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
-| C   Dynamic | ![](Documentation/images/Tick.png) mature                  | Win               | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
+| C   Dynamic | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
 | Pascal      | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
 | Python      | ![](Documentation/images/Tick.png) complete (but unstable) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |
 | Golang      | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |
@@ -55,7 +55,7 @@ ACT supports generation of bindings and implementation stubs for C++, C, Pascal,
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling |
 |:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|
 | C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          |
-| Pascal         | ![](Documentation/images/X.png) in development        | Win, Linux, MacOS |           |               |               |               |               |            |             |           |            |
+| Pascal         | ![](Documentation/images/O.png) incomplete, untested  | Win, Linux, MacOS | in,return | in,out,return | in,out,return |      ???      | in,out,return |   in,out   |    in,out   | in        |            |
 
 
 ## Example

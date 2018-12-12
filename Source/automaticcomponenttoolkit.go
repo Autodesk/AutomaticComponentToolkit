@@ -43,8 +43,8 @@ import (
 
 
 func main () {
-
-	log.Printf ("Automatic Component Toolkit v1.2.0\n");
+	ACTVersion := "1.2.4"
+	log.Printf ("Automatic Component Toolkit v%s\n", ACTVersion);
 	log.Printf ("---------------------------------------\n");
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the configuration XML as command line parameter.");
@@ -74,7 +74,8 @@ func main () {
 	}
 	
 	log.Printf ("Parsing Component Description File ");
-	var component ComponentDefinition;
+	var component ComponentDefinition
+	component.ACTVersion = ACTVersion
 	err = xml.Unmarshal(bytes, &component)
 	if (err != nil) {
 		log.Fatal (err);
@@ -137,9 +138,9 @@ func main () {
 				err = CreateCTypesHeader (component, CTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
-				}				
+				}
 				
-				err = BuildBindingCDynamic(component, outputFolderBindingCDynamic);
+				err = BuildBindingCDynamic(component, outputFolderBindingCDynamic, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -163,7 +164,7 @@ func main () {
 					log.Fatal (err);
 				}
 				
-				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic);
+				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -223,7 +224,7 @@ func main () {
 					log.Fatal (err);
 				}
 				
-				err = BuildBindingCDynamic(component, outputFolderBindingNode);
+				err = BuildBindingCDynamic(component, outputFolderBindingNode, indentString);
 				if (err != nil) {
 					log.Fatal (err);
 				}

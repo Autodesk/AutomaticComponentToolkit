@@ -12,6 +12,7 @@ Abstract: This is a stub class definition of CLibPrimesSieveCalculator
 #include "libprimes_interfaceexception.hpp"
 
 // Include custom headers here.
+#include <cmath>
 
 
 using namespace LibPrimes;
@@ -29,9 +30,9 @@ void CLibPrimesSieveCalculator::Calculate()
 		strikenOut[i] = i < 2;
 	}
 
-	unsigned long sqrtValue = (unsigned long)(sqrt(m_value));
+	unsigned long sqrtValue = (unsigned long)(std::sqrt(m_value));
 
-	int progressStep = (int)ceil(sqrtValue / 20.0f);
+	int progressStep = (int)std::ceil(sqrtValue / 20.0f);
 	
 	for (unsigned long long i = 2; i <= sqrtValue; i++) {
 

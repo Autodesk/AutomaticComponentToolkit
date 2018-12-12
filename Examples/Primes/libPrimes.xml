@@ -16,7 +16,7 @@
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs" classidentifier="" stubidentifier=""/>
-		<implementation language="Pascal" indentation="tabs" classidentifier="" stubidentifier=""/>
+		<implementation language="Pascal" indentation="tabs" classidentifier="" stubidentifier="impl"/>
 	</implementations>
 	
 	<errors>
@@ -36,7 +36,7 @@
 		<member name="Multiplicity" type="uint32" />
 	</struct>
 	
-	<functiontype name="ProgressCallback">
+	<functiontype name="ProgressCallback" description="Callback to report calculation progress and query whether it should be aborted">
 		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
 		<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
 	</functiontype>
