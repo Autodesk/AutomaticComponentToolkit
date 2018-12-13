@@ -4,7 +4,7 @@
 
 
 
-| **Version** | 0.1.0 |
+| **Version** | 1.3.2 |
 | --- | --- |
 
 ## Disclaimer
@@ -76,6 +76,7 @@ Element **\<component>** of type **CT\_Component**
 | namespace | **ST\_NameSpace** | required | | Specifies the namespace for the components's functionality. |
 | copyright | **xs:string** | required | | The legal copyright holder. |
 | basename | **ST\_BaseName** | required | | The basename will be used as prefix for generated filenames and all sorts of identifiers in the generated source code. |
+| version | **ST\_Version** | required | | The three digit vesion of this component. |
 | year | **ST\_Year** | optional | the current year | The year associcated with the copyright. |
 | @anyAttribute | | | | |
 
@@ -97,13 +98,13 @@ Element **\<license>** of type **CT\_License**
 
 ![element license](images/element_license.png)
 
-The \<license> element contains a list of at least one child [license line](#3-license-line) element.
+The \<license> element contains a list of at least one child [line](#3-line) element.
 The license lines will be included as comments at the start of all generated source code files.
 
-## 3. License Line
-Element **\<licenseline>** of type **CT\_LicenseLine**
+## 3. Line
+Element **\<line>** of type **CT\_LicenseLine**
 
-![element licenseline](images/element_licenseline.png)
+![element line](images/element_line.png)
 
 ##### Attributes
 | Name | Type | Use | Default | Annotation |
@@ -163,7 +164,10 @@ Element **\<global>** of type **CT\_Global**
 The \<global> element contains a list of [method](#9-function-type) elements that define the exported global functions of the component.
 The names of the \<method> elements MUST be unique within the \<global> element.
 
-TODO: explanation of siganture of release and version method.
+The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="handle"`, `class="BaseClass"` and `pass="in"`.
+The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters with `type="uint32"` and `pass="out"`.
+
+If the `journalmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="string"` and `pass="in"`.
 
 ## 8. Class
 Element **\<class>** of type **CT\_Class**
@@ -332,8 +336,7 @@ ST_Type `string` denotes a null-terminated string. If a component requires arbit
 
 
 # Appendix A. XSD Schema of ACT-IDL
-See [ACT.xsd](../Source/ACT.xsd).
-TODO: include the .xsds content here.
+See [ACT.xsd](../Source/ACT.xsd)
 
 # Appendix B. Example of ACT-IDL
-dolor sit amen
+See [libPrimes.xml](../Examples/Primes/libPrimes.xml)

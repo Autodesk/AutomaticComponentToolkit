@@ -38,7 +38,7 @@ Alternatively to 1) build ACT from source ([master](../../tree/master) for a rel
 ## Contributing
 The Automatic Component Toolkit is an open source project.
 
-Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs. Have a look the [contributor's guide](CONTRIBUTING.md) for details.
+Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs. Have a look at the [contributor's guide](CONTRIBUTING.md) for details.
 
 ## Language Support
 ACT supports generation of bindings or implementation stubs for C++, C, Pascal, Golang, NodeJS and Python. However, not all features of the IDL are yet supported by the individual binding or implementation language:
