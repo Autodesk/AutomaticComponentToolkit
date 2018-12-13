@@ -10,17 +10,15 @@ Interface version: 1.0.0
 
 '''
 
-def progressCallback(progress, shouldAbort):
-	print("Progress = {:d}%".format(round(progress*100)))
-	if (shouldAbort is not None):
-		shouldAbort[0] = progress > 0.5
-
-
 import os
 import sys
 sys.path.append(os.path.join(os.path.realpath(__file__),"..", "..", "..", "Bindings", "Python"))
 import LibPrimes
 
+def progressCallback(progress, shouldAbort):
+	print("Progress = {:d}%".format(round(progress*100)))
+	if (shouldAbort is not None):
+		shouldAbort[0] = progress > 0.5
 
 def main():
 	libpath = '' # TODO add the location of the shared library binary here
@@ -40,7 +38,7 @@ def main():
 			commaString = ""
 		print("{:d}".format(primes[i]), end=commaString)
 	print("]")
-        
+	
 	factorization = wrapper.CreateFactorizationCalculator()
 	factorization.SetValue(735)
 	cTypesCallback = LibPrimes.LibPrimesProgressCallback(progressCallback)
@@ -54,8 +52,6 @@ def main():
 		if i == len(primeFactors) - 1:
 			productString = "\n"
 		print(" {:d}^{:d} ".format(pF.Prime, pF.Multiplicity), end=productString)
-
-	
 
 if __name__ == "__main__":
 	try:

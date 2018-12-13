@@ -29,7 +29,6 @@ type
 
 		public
 			procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
-			function CheckPrimeFactors(const APrimeFactorsCount: QWord; const APrimeFactors: PLibPrimesPrimeFactor): Boolean;
 			procedure Calculate(); override;
 			destructor Destroy(); override;
 	end;
@@ -58,11 +57,6 @@ begin
       inc(APrimeFactors);
     end;
   end;
-end;
-
-function TLibPrimesFactorizationCalculator.CheckPrimeFactors(const APrimeFactorsCount: QWord; const APrimeFactors: PLibPrimesPrimeFactor): Boolean;
-begin
-  raise ELibPrimesException.Create(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 procedure TLibPrimesFactorizationCalculator.Calculate();

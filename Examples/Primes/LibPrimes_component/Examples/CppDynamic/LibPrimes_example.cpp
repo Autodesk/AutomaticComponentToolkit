@@ -47,11 +47,6 @@ int main()
 		std::cout << pF.m_Prime << "^" << pF.m_Multiplicity << ((i < (primeFactors.size() - 1)) ? " * " : "");
 	}
 	std::cout << std::endl;
-
-	bool areEqual = factorization->CheckPrimeFactors(primeFactors);
-	if (!areEqual) {
-		std::cout << "Calculated prime factors are incorrect!"<< std::endl;
-	}
   }
   catch (std::exception &e)
   {

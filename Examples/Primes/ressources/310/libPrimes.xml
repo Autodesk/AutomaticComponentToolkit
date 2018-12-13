@@ -26,38 +26,7 @@
 		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
 		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
-		<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
 	</errors>
-	
-	<struct name="PrimeFactor">
-		<member name="Prime" type="uint64" />
-		<member name="Multiplicity" type="uint32" />
-	</struct>
-	
-	<class name="Calculator">
-		<method name="GetValue" description="Returns the current value of this Calculator">
-			<param name="Value" type="uint64" pass="return" description="The current value of this Calculator" />
-		</method>
-		
-		<method name="SetValue" description="Sets the value to be factorized">
-			<param name="Value" type="uint64" pass="in" description="The value to be factorized" />
-		</method>
-		
-		<method name="Calculate" description="Performs the specific calculation of this Calculator">
-		</method>
-	</class>
-	
-	<class name="FactorizationCalculator" parent="Calculator">
-		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
-			<param name="PrimeFactors" type="structarray" class="PrimeFactor" pass="out" description="The prime factors of this number" />
-		</method>
-	</class>
-	
-	<class name="SieveCalculator" parent="Calculator">	
-		<method name="GetPrimes" description="Returns all prime numbers lower or equal to the sieve's value">
-			<param name="Primes" type="basicarray" class="uint64" pass="out" description="The primes lower or equal to the sieve's value" />
-		</method>
-	</class>
 	
 	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
 		<method name="ReleaseInstance" description="Releases the memory of an Instance">
@@ -68,14 +37,6 @@
 			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
-		</method>
-		
-		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
-			<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
-		</method>
-		
-		<method name="CreateSieveCalculator" description="Creates a new SieveCalculator instance">
-			<param name="Instance" type="handle" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
 		</method>
 	</global>
 </component>
