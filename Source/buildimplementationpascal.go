@@ -314,6 +314,10 @@ func buildPascalInterfaceDefinition(componentdefinition ComponentDefinition, w L
 	w.Writeln ("uses");
 
 	w.Writeln ("  %s_types,", BaseName);
+	if (len(componentdefinition.Enums) > 0) {
+		// Unit contains enums conversion that may raise exceptions
+		w.Writeln ("  %s_exception,", BaseName);
+	}
 	w.Writeln ("  Classes,");
 	w.Writeln ("  sysutils;");
 	w.Writeln ("");
