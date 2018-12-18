@@ -605,7 +605,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if not Assigned (%s) then", pascalParams[0].ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("  raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append (variableDefinitions, fmt.Sprintf ("  Result%s: %s;", param.ParamName, pascalParams[0].ParamType));
+				variableDefinitions = append (variableDefinitions, fmt.Sprintf ("  Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass));
 
 				postCallCode = append (postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
 				
