@@ -241,7 +241,7 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 			
 		case "bool":
 			if isPlain {
-				PascalParamTypeName = "Cardinal";
+				PascalParamTypeName = "Byte";
 			} else {
 				PascalParamTypeName = "Boolean";
 			}
