@@ -4,7 +4,22 @@ startingpath="$(pwd)"
 basepath="$(cd "$(dirname "$0")" && pwd)"
 cd "$basepath/../Source"
 
-Sources="actutils.go automaticcomponenttoolkit.go buildbindingcdynamic.go buildbindingcpp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildimplementationcpp.go buildimplementationpascal.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagepascal.go schemavalidation.go"
+Sources="actutils.go
+  automaticcomponenttoolkit.go
+  buildbindingcdynamic.go
+  buildbindingcpp.go
+  buildbindinggo.go
+  buildbindingnode.go
+  buildbindingpascal.go
+  buildbindingpython.go
+  buildimplementationcpp.go
+  buildimplementationpascal.go
+  componentdefinition.go
+  componentdiff.go
+  languagewriter.go
+  languagec.go
+  languagepascal.go
+  schemavalidation.go"
 GOARCH="amd64"
 LDFLAGS1=-ldflags
 LDFLAGS2="-s -w"

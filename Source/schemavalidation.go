@@ -64,7 +64,8 @@ func ValidateDocument(documentBytes []byte) error {
 	return nil
 }
 
-var actXSDSchema = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+var actXSDSchema = []byte(
+`<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema"
 	xmlns:xml="http://www.w3.org/XML/1998/namespace" targetNamespace="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018"
