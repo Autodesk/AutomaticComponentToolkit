@@ -137,7 +137,7 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sWord;", element.Name, arrayprefix);
 					case "uint32":
 						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
-					case "uint64":				
+					case "uint64":
 						w.Writeln ( "    F%s: %sQWord;", element.Name, arrayprefix);
 					case "int8":
 						w.Writeln ( "    F%s: %sSmallInt;", element.Name, arrayprefix);
@@ -145,10 +145,10 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sShortInt;", element.Name, arrayprefix);
 					case "int32":
 						w.Writeln ( "    F%s: %sInteger;", element.Name, arrayprefix);
-					case "int64":				
+					case "int64":
 						w.Writeln ( "    F%s: %sInt64;", element.Name, arrayprefix);
-					case "bool":				
-						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
+					case "bool":
+						w.Writeln ( "    F%s: %sByte;", element.Name, arrayprefix);
 					case "single":
 						w.Writeln ( "    F%s: %sSingle;", element.Name, arrayprefix);
 					case "double":
