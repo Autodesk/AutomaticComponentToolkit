@@ -221,7 +221,7 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Returns error message");
 	wHeader.Writeln("  */");
-	wHeader.Writeln("  const char* what () const;");
+	wHeader.Writeln("  const char* what () const noexcept override;");
 	wHeader.Writeln("};");
 	wHeader.Writeln("");
 	
@@ -248,7 +248,7 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wImpl.Writeln("  return m_errorCode;");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
-	wImpl.Writeln("const char * E%sInterfaceException::what () const", NameSpace);
+	wImpl.Writeln("const char * E%sInterfaceException::what () const noexcept", NameSpace);
 	wImpl.Writeln("{");
 	wImpl.Writeln("  return m_errorMessage.c_str();");
 	wImpl.Writeln("}");
