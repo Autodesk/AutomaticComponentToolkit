@@ -74,13 +74,10 @@ var actXSDSchema = []byte(
 	<xs:annotation>
 		<xs:documentation><![CDATA[
 		Schema notes:
-
 		Items within this schema follow a simple naming convention of appending a prefix indicating the type of element for references:
-
 		Unprefixed: Element names
 		CT_: Complex types
 		ST_: Simple types
-		
 		]]></xs:documentation>
 	</xs:annotation>
 	
