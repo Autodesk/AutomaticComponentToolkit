@@ -61,13 +61,16 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 	}
 
 	err = ValidateDocument(bytes)
+	log.Println("")
 	if (err != nil) {
-		log.Println("")
-		log.Println("Document is not a valid instance of ACT's schema")
+		log.Println("Document is not a valid instance of ACT's schema!")
+		log.Println("Issues found:")
 		log.Println(err)
 		log.Println("")
-		log.Println("")
+	} else {
+		log.Println("Document is a valid instance of ACT's schema.")
 	}
+	log.Println("")
 	
 	component.ACTVersion = ACTVersion
 	err = xml.Unmarshal(bytes, &component)
