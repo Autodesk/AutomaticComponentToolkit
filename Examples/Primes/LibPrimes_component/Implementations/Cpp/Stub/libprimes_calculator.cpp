@@ -27,12 +27,12 @@ CLibPrimesCalculator::CLibPrimesCalculator()
 }
 
 
-unsigned long long CLibPrimesCalculator::GetValue()
+LibPrimes_uint64  CLibPrimesCalculator::GetValue()
 {
 	return m_value;
 }
 
-void CLibPrimesCalculator::SetValue(const unsigned long long nValue)
+void CLibPrimesCalculator::SetValue(const LibPrimes_uint64  nValue)
 {
 	m_value = nValue;
 }

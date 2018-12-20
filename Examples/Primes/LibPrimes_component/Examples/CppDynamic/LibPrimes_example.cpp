@@ -12,11 +12,12 @@ Interface version: 1.0.0
 
 #include <iostream>
 #include "libprimes_dynamic.hpp"
+#include <cmath>
 
 
 void progressCallback(float progress, bool* shouldAbort)
 {
-	std::cout << "Progress = " << round(progress * 100) << "%" << std::endl;
+	std::cout << "Progress = " << std::round(progress * 100) << "%" << std::endl;
 	if (shouldAbort) {
 		*shouldAbort = progress > 0.5;
 	}

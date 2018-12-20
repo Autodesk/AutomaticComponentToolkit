@@ -49,7 +49,7 @@ public:
 	/**
 	* Returns error message
 	*/
-	const char* what () const;
+	const char* what () const noexcept override;
 };
 
 #endif // __LIBPRIMES_INTERFACEEXCEPTION_HEADER

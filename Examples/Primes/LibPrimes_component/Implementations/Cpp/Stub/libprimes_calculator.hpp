@@ -30,7 +30,7 @@ private:
 
 protected:
 
-	unsigned long long m_value;
+	LibPrimes_uint64  m_value;
 	LibPrimesProgressCallback m_Callback;
 
 public:
@@ -43,9 +43,9 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
-	unsigned long long GetValue();
+	LibPrimes_uint64 GetValue();
 
-	void SetValue(const unsigned long long nValue);
+	void SetValue(const LibPrimes_uint64 nValue);
 
 	void SetProgressCallback (const LibPrimesProgressCallback pProgressCallback);
 

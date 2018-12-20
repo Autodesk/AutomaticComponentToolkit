@@ -32,7 +32,7 @@ LibPrimesResult ELibPrimesInterfaceException::getErrorCode ()
 	return m_errorCode;
 }
 
-const char * ELibPrimesInterfaceException::what () const
+const char * ELibPrimesInterfaceException::what () const noexcept
 {
 	return m_errorMessage.c_str();
 }
