@@ -94,3 +94,7 @@ A very detailed introduction the topic this presentation: https://www.youtube.co
 
 ### Difficulty of the hourglass pattern:
 Generating (and maintaining!) the required layers of interfaces (language bindings, thin API and domain code-API) and their consistency is labor-intensive and error prone _if_ it is not automated. That's what ACT is here for.
+
+## Dependencies
+ACT depends on the third party go-package https://github.com/lestrrat-go/libxml2 for XML schema validation.
+Go's package manager should automatically install that during building ACT.
