@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -41,5 +41,4 @@ void CLibPrimesCalculator::SetProgressCallback (const LibPrimesProgressCallback 
 {
 	m_Callback = pProgressCallback;
 }
-
 
