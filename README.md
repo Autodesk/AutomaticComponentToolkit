@@ -35,11 +35,6 @@ A consumer of your component only needs to include the language binding relevant
 
 You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
 
-Alternatively to 1) build ACT from source ([master](../../tree/master) for a released vesion, [develop](../../tree/develop) for the latest developments):
-1. Install go https://golang.org/doc/install
-2. Build automaticcomponenttoolkit.go:
-<br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
-
 ## Contributing
 The Automatic Component Toolkit is an open source project.
 
