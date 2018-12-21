@@ -18,6 +18,7 @@ set Sources=actutils.go^
   languagewriter.go^
   languagec.go^
   languagepascal.go^
+  license.go^
   schemavalidation.go
 set GOARCH=amd64
 

@@ -32,3 +32,30 @@ We currently have two maintainers:
 - Martin Weismann martin.weismann@autodesk.com
 
 If you've established yourself as an impactful contributor to the project, and are willing take on the extra work, we'd love to have your help maintaining it! Email the current maintainers for details.
+
+
+
+Alternatively to 1) build ACT from source ([master](../../tree/master) for a released vesion, [develop](../../tree/develop) for the latest developments):
+1. Install go https://golang.org/doc/install
+2. Build automaticcomponenttoolkit.go:
+<br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
+
+
+## Building ACT from source
+1. Install go https://golang.org/doc/install
+2. Clone this repo
+
+	```git clone https://github.com/Autodesk/AutomaticComponentToolkit```
+3. Check out the develop [develop](../../tree/develop) branch:
+
+	```git checkout develop```
+
+4. Prepare ACT's dependencies:
+	1. [lestrrat-go/libxml2](https://github.com/lestrrat-go/libxml2) for XML schema validation:
+
+		1. Install `libxml2` and `libxml2-dev` (e.g. `sudo apt-get install libxml2 libxml2-dev` for Ubuntu, or look at http://xmlsoft.org/index.html for more info)
+		2. `go get https://github.com/lestrrat-go/libxml2`
+
+5. Build ACT: 
+	- `Build\build.bat` on Windows or
+	- `Build\build.sh` on Unix systems

@@ -19,6 +19,7 @@ Sources="actutils.go
   languagewriter.go
   languagec.go
   languagepascal.go
+  license.go
   schemavalidation.go"
 GOARCH="amd64"
 LDFLAGS1=-ldflags
