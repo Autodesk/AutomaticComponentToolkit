@@ -38,4 +38,3 @@ GOOS="darwin"
 go build $LDFLAGS1 "$LDFLAGS2" -o ../act.darwin $Sources || exit 1
 
 cd "$startingpath"
-ls -ahl ..
