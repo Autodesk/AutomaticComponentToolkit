@@ -23,10 +23,11 @@ Abstract: This is the class declaration of CLibPrimesFactorizationCalculator
 #include <vector>
 
 namespace LibPrimes {
+namespace Impl {
 
 
 /*************************************************************************************************************************
- Class declaration of CLibPrimesFactorizationCalculator 
+	Class declaration of CLibPrimesFactorizationCalculator
 **************************************************************************************************************************/
 
 class CLibPrimesFactorizationCalculator : public virtual ILibPrimesFactorizationCalculator, public virtual CLibPrimesCalculator {
@@ -52,10 +53,11 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #pragma warning( pop )
 #endif // __LIBPRIMES_LIBPRIMESFACTORIZATIONCALCULATOR

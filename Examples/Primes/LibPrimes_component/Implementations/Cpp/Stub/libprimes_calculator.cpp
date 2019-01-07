@@ -14,7 +14,7 @@ Abstract: This is a stub class definition of CLibPrimesCalculator
 // Include custom headers here.
 
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
  Class definition of CLibPrimesCalculator 

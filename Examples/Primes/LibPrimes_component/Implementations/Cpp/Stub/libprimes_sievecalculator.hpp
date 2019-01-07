@@ -24,7 +24,7 @@ Abstract: This is the class declaration of CLibPrimesSieveCalculator
 #include <vector>
 
 namespace LibPrimes {
-
+namespace Impl {
 
 /*************************************************************************************************************************
  Class declaration of CLibPrimesSieveCalculator 
@@ -53,7 +53,8 @@ public:
 
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #pragma warning( pop )
 #endif // __LIBPRIMES_LIBPRIMESSIEVECALCULATOR
