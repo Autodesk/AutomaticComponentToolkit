@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpython.go
-// functions to generate dynamic Python-bindings of a library's API in form of dynamically loaded functions
+// functions to generate dynamic Python3-bindings of a library's API in form of dynamically loaded functions
 // handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
