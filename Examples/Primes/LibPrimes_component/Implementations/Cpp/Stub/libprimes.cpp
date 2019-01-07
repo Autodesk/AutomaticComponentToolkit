@@ -16,7 +16,7 @@ development of Prime Numbers Interface. It needs to be generated only once.
 #include "libprimes_factorizationcalculator.hpp"
 #include "libprimes_sievecalculator.hpp"
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 ILibPrimesFactorizationCalculator * CLibPrimesWrapper::CreateFactorizationCalculator ()
 {

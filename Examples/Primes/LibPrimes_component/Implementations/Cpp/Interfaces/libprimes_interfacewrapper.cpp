@@ -18,7 +18,7 @@ Interface version: 1.2.0
 #include "libprimes_interfaceexception.hpp"
 #include "libprimes_interfacejournal.hpp"
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 PLibPrimesInterfaceJournal m_GlobalJournal;
 

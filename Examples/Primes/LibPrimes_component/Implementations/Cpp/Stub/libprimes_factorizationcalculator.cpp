@@ -14,7 +14,7 @@ Abstract: This is a stub class definition of CLibPrimesFactorizationCalculator
 // Include custom headers here.
 
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
  Class definition of CLibPrimesFactorizationCalculator 

@@ -19,6 +19,7 @@ Abstract: This is the class declaration of CLibPrimesCalculator
 
 
 namespace LibPrimes {
+namespace Impl {
 
 
 /*************************************************************************************************************************
@@ -52,6 +53,7 @@ public:
 	virtual void Calculate () = 0;
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #endif // __LIBPRIMES_LIBPRIMESCALCULATOR

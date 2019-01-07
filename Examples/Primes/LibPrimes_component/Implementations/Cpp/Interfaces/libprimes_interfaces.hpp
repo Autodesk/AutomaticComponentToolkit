@@ -23,6 +23,7 @@ Interface version: 1.2.0
 #include "libprimes_types.h"
 
 namespace LibPrimes {
+namespace Impl {
 
 /**
  Forward declarations of class interfaces
@@ -147,6 +148,7 @@ public:
 
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #endif // __LIBPRIMES_CPPINTERFACES

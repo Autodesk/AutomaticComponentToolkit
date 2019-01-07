@@ -15,7 +15,7 @@ Abstract: This is a stub class definition of CLibPrimesSieveCalculator
 #include <cmath>
 
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
  Class definition of CLibPrimesSieveCalculator 
