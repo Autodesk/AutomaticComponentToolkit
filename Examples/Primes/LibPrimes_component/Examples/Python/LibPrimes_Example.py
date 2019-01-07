@@ -12,7 +12,7 @@ Interface version: 1.0.0
 
 import os
 import sys
-sys.path.append(os.path.join(os.path.realpath(__file__),"..", "..", "..", "Bindings", "Python"))
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "Bindings", "Python"))
 import LibPrimes
 
 def progressCallback(progress, shouldAbort):

@@ -818,8 +818,8 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("")
 	w.Writeln("import os")
-	w.Writeln("import sys")	
-	w.Writeln("sys.path.append(os.path.join(os.path.realpath(__file__),\"..\", \"..\", \"..\", \"Bindings\", \"Python\"))")
+	w.Writeln("import sys")
+	w.Writeln("sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), \"..\", \"..\", \"Bindings\", \"Python\"))")
 	w.Writeln("import %s",NameSpace )
 	w.Writeln("")
 	w.Writeln("")
