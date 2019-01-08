@@ -1130,7 +1130,7 @@ func writePascalClassMethodDummyStub (method ComponentDefinitionMethod, w Langua
 	}
 	
 	w.Writeln("begin");
-	w.Writeln("  raise E%sException (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper (NameSpace));
+	w.Writeln("  raise E%sException.Create (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper (NameSpace));
 	w.Writeln("end;");
 	w.Writeln("");
 	
