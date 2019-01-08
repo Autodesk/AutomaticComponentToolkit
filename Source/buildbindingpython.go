@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpython.go
-// functions to generate dynamic Python-bindings of a library's API in form of dynamically loaded functions
+// functions to generate dynamic Python3-bindings of a library's API in form of dynamically loaded functions
 // handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -818,8 +818,8 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("")
 	w.Writeln("import os")
-	w.Writeln("import sys")	
-	w.Writeln("sys.path.append(os.path.join(os.path.realpath(__file__),\"..\", \"..\", \"..\", \"Bindings\", \"Python\"))")
+	w.Writeln("import sys")
+	w.Writeln("sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), \"..\", \"..\", \"Bindings\", \"Python\"))")
 	w.Writeln("import %s",NameSpace )
 	w.Writeln("")
 	w.Writeln("")
