@@ -895,7 +895,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := (Result%s <> 0);", param.ParamName));
 						
 					case "struct":
-						callFunctionParameters = callFunctionParameters + "@A" + param.ParamName;
+						callFunctionParameters = callFunctionParameters + "@Result";
 
 					case "basicarray", "structarray":
 						defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
