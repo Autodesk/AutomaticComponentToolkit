@@ -137,7 +137,7 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sWord;", element.Name, arrayprefix);
 					case "uint32":
 						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
-					case "uint64":				
+					case "uint64":
 						w.Writeln ( "    F%s: %sQWord;", element.Name, arrayprefix);
 					case "int8":
 						w.Writeln ( "    F%s: %sSmallInt;", element.Name, arrayprefix);
@@ -145,10 +145,10 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sShortInt;", element.Name, arrayprefix);
 					case "int32":
 						w.Writeln ( "    F%s: %sInteger;", element.Name, arrayprefix);
-					case "int64":				
+					case "int64":
 						w.Writeln ( "    F%s: %sInt64;", element.Name, arrayprefix);
-					case "bool":				
-						w.Writeln ( "    F%s: %sCardinal;", element.Name, arrayprefix);
+					case "bool":
+						w.Writeln ( "    F%s: %sByte;", element.Name, arrayprefix);
 					case "single":
 						w.Writeln ( "    F%s: %sSingle;", element.Name, arrayprefix);
 					case "double":
@@ -241,7 +241,7 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 			
 		case "bool":
 			if isPlain {
-				PascalParamTypeName = "Cardinal";
+				PascalParamTypeName = "Byte";
 			} else {
 				PascalParamTypeName = "Boolean";
 			}
@@ -529,7 +529,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
+				cParams[0].ParamConvention = "";
 				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
 				
 			case "basicarray":

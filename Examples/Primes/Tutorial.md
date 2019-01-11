@@ -37,15 +37,15 @@ _There are much more efficient algorithms and more suitable software packages to
 
 # 2. Requirements
  - CMake
- - A C++ compiler / development environment. This tutorial was tested with Visual Studio 2017, but should also work with GCC and make
- - ACT: This tutorial is tested to work with release 1.1.0 of ACT. You can get it from [the release page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
-Decide on a location for your tutorial's component to live in, and download the binary for your platform into this folder.
+ - A C++ compiler / development environment. This tutorial was tested with Visual Studio 2017, but should also work with `GCC` and `make` or other development tools.
+ - ACT: This tutorial is tested to work with release 1.4.0 of ACT. You can get it from [the releases page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
+Decide on a location for your tutorial's component to live in, and download the binary for your platform into this folder. Alternatively, stick it somwhere in your `$PATH`.
 
 
 # 3. The Library's Implementation
 ## 3.1. The definition of the component
 An ACT component's interface is fully described by its IDL file.
-This section sets up a IDL-file for LibPrimes.
+This section sets up an IDL-file for LibPrimes.
 
 First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in your component's folder.
 ```xml
@@ -64,8 +64,8 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 		<binding language="Python" indentation="tabs" />
 	</bindings>
 	<implementations>
-		<implementation language="Cpp" indentation="tabs" classidentifier="" stubidentifier=""/>
-		<implementation language="Pascal" indentation="tabs" classidentifier="" stubidentifier=""/>
+		<implementation language="Cpp" indentation="tabs"/>
+		<implementation language="Pascal" indentation="tabs" stubidentifier="impl"/>
 	</implementations>
 	
 	<errors>
@@ -76,6 +76,7 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
 		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
 	</errors>
 	
 	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
@@ -98,7 +99,7 @@ It's elements define the following:
 The errors listed in this snippet are required.
 -`\<global>` defines the global functions that can be used as entry points into the component.
 It must contain a `versionmethod` and a `releasemethod` with the signatures in this snippet.
-They will be explained in []().
+They will be explained in [this section](#331-required-steps-for-every-act-component).
 The syntax for methods will be explained when we add new classes and functions to the IDL-file now.
 
 
@@ -158,7 +159,7 @@ Again, we will implement the actual calculation of primes by overwriting the the
 We want to use the error `LIBPRIMES_ERROR_NORESULTAVAILABLE` when a user tries to retrieve
 results from a calculator without having performed a calculation before. Thus add a new error
 ```xml
-<error name="NORESULTAVAILABLE" code="8" description="no result is available" />
+<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
 ```
 
 
@@ -203,14 +204,14 @@ the interfaces `ILibPrimesCalculator` and `ILibPrimesFactorizationCalculator`:
 /*...*/
 class ILibPrimesCalculator : public virtual ILibPrimesBaseClass {
 public:
-	virtual unsigned long long GetValue () = 0;
-	virtual void SetValue (const unsigned long long nValue) = 0;
+	virtual LibPrimes_uint64 long GetValue () = 0;
+	virtual void SetValue (const LibPrimes_uint64 nValue) = 0;
 	virtual void Calculate () = 0;
 };
 
 class ILibPrimesFactorizationCalculator : public virtual ILibPrimesBaseClass, public virtual ILibPrimesCalculator {
 public:
-	virtual void GetPrimeFactors (unsigned int nPrimeFactorsBufferSize, unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer) = 0;
+	virtual void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer) = 0;
 };
 /*...*/
 ```
@@ -220,7 +221,7 @@ The `libprimes_interfaceexception.hpp` and `libprimes_interfaceexception.cpp` fi
 The `libprimes_interfacewrapper.cpp` file implements the forwarding of the C89-interface functions to the classes you will implement.
 It also translates all exceptions into error codes.
 ```cpp
-LIBPRIMES_DECLSPEC LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator, unsigned long long * pValue)
+LIBPRIMES_DECLSPEC LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator, LibPrimes_uint64 * pValue)
 {
 	try {
 		if (pValue == nullptr)
@@ -254,14 +255,14 @@ They contain a concrete class definition derived from the corresponding interfac
 class CLibPrimesFactorizationCalculator : public virtual ILibPrimesFactorizationCalculator, public virtual CLibPrimesCalculator {
 public:
 	void Calculate();
-	void GetPrimeFactors (unsigned int nPrimeFactorsBufferSize, unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 };
 ```
 
 The autogenerated implementation of each of a class's methods throws a `NOTIMPLEMENTED` exception:
 ```cpp
-void CLibPrimesFactorizationCalculator::GetPrimeFactors (unsigned int nPrimeFactorsBufferSize,
-	unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+void CLibPrimesFactorizationCalculator::GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize,
+	LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
 {
 	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
@@ -275,7 +276,7 @@ The following code snipped sets up a Visual Studio solution:
 cd LibPrimes_component/Implementation/
 mkdir _build
 cd _build
-cmake .. -G "Visual Studio 14 Win64"
+cmake .. -G "Visual Studio 15 Win64"
 cmake --build .
 ```
 Adjust the CMake-Generator for your development environment, if required.
@@ -285,7 +286,7 @@ Now we can start actually implementing the library.
 ### 3.3.1. Required steps for every ACT component
 #### GetVersion function
 ```cpp
-void CLibPrimesWrapper::GetLibraryVersion (unsigned int & nMajor, unsigned int & nMinor, unsigned int & nMicro)
+void CLibPrimesWrapper::GetLibraryVersion (LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro)
 {
 	nMajor = LIBPRIMES_VERSION_MAJOR;
 	nMinor = LIBPRIMES_VERSION_MINOR;
@@ -336,18 +337,18 @@ Add a protected member `m_value` to the `CLibPrimesCalculator`
 ```cpp
 class CLibPrimesCalculator : public virtual ILibPrimesCalculator {
 protected:
-	unsined long long m_value;
+	LibPrimes_uint64 m_value;
 /*...*/
 }
 ```
 The `GetValue`/`SetValue` methods of the `Calculator` are straight-forward:
 ```cpp
-unsigned long long CLibPrimesCalculator::GetValue()
+LibPrimes_uint64 CLibPrimesCalculator::GetValue()
 {
 	return m_value;
 }
 
-void CLibPrimesCalculator::SetValue(const unsigned long long nValue)
+void CLibPrimesCalculator::SetValue(const LibPrimes_uint64 nValue)
 {
 	m_value = nValue;
 }
@@ -372,8 +373,8 @@ public:
 
 A valid implementation of `GetPrimes` is the following
 ```cpp
-void CLibPrimesFactorizationCalculator::GetPrimeFactors (unsigned int nPrimeFactorsBufferSize,
-	unsigned int * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+void CLibPrimesFactorizationCalculator::GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize,
+	LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
 {
 	if (primeFactors.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
@@ -397,8 +398,8 @@ void CLibPrimesFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
 
-	unsigned long long nValue = m_value;
-	for (unsigned long long i = 2; i <= nValue; i++) {
+	LibPrimes_uint64 nValue = m_value;
+	for (LibPrimes_uint64 i = 2; i <= nValue; i++) {
 		sLibPrimesPrimeFactor primeFactor;
 		primeFactor.m_Prime = i;
 		primeFactor.m_Multiplicity = 0;
@@ -419,7 +420,7 @@ and a public `Calculate` method:
 ```cpp
 class CLibPrimesSieveCalculator : public virtual ILibPrimesSieveCalculator, public virtual CLibPrimesCalculator {
 private:
-	std::vector<unsigned long long> primes;
+	std::vector<LibPrimes_uint64> primes;
 public:
 	void Calculate();
 /*...*/
@@ -429,12 +430,12 @@ public:
 The `GetPrimes` method is analogous to the above `GetPrimeFactors`
 ```cpp
 void CLibPrimesSieveCalculator::GetPrimes (unsigned int nPrimesBufferSize,
-	unsigned int * pPrimesNeededCount, unsigned long long * pPrimesBuffer)
+	LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
 {
 	if (primes.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
 	if (pPrimesNeededCount)
-		*pPrimesNeededCount = (unsigned int)primes.size();
+		*pPrimesNeededCount = (LibPrimes_uint64)primes.size();
 	if (nPrimesBufferSize >= primes.size() && pPrimesBuffer)
 	{
 		for (int i = 0; i < primes.size(); i++)
@@ -452,19 +453,19 @@ void CLibPrimesSieveCalculator::Calculate()
 	primes.clear();
 
 	std::vector<bool> strikenOut(m_value + 1);
-	for (unsigned long long i = 0; i <= m_value; i++) {
+	for (LibPrimes_uint64 i = 0; i <= m_value; i++) {
 		strikenOut[i] = i < 2;
 	}
-	unsigned long sqrtValue = (unsigned long)(sqrt(m_value));
-	for (unsigned long long i = 2; i <= sqrtValue; i++) {
+	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(sqrt(m_value));
+	for (LibPrimes_uint64 i = 2; i <= sqrtValue; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
-			for (unsigned long long j = i * i; j < m_value; j += i) {
+			for (LibPrimes_uint64 j = i * i; j < m_value; j += i) {
 				strikenOut[j] = true;
 			}
 		}
 	}
-	for (unsigned long long i = sqrtValue; i <= m_value; i++) {
+	for (LibPrimes_uint64 i = sqrtValue; i <= m_value; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
 		}
@@ -489,7 +490,7 @@ Generate a solution and build it
 cd LibPrimes_component/Examples/CppDynamic
 mkdir _build
 cd _build
-cmake .. -G "Visual Studio 14 Win64"
+cmake .. -G "Visual Studio 15 Win64"
 ```
 You will have to modify the path to the binary library file we created in section [3. The Library's Implementation](#3-the-librarys-implementation).
 ```cpp
@@ -498,20 +499,20 @@ You will have to modify the path to the binary library file we created in sectio
 
 int main()
 {
-	try
-	{
-		std::string libpath = (""); // TODO: put the location of the LibPrimes-library file here.
-		auto wrapper = LibPrimes::CLibPrimesWrapper::loadLibrary(libpath + "/libprimes");
-		unsigned int nMajor, nMinor, nMicro;
-		wrapper->GetLibraryVersion(nMajor, nMinor, nMicro);
-		std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro << std::endl;
-	}
-	catch (std::exception &e)
-	{
-		std::cout << e.what() << std::endl;
-		return 1;
-	}
-	return 0;
+  try
+  {
+    std::string libpath = (""); // TODO: put the location of the LibPrimes-library file here.
+    auto wrapper = LibPrimes::CLibPrimesWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
+    unsigned int nMajor, nMinor, nMicro;
+    wrapper->GetLibraryVersion(nMajor, nMinor, nMicro);
+    std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro << std::endl;
+  }
+  catch (std::exception &e)
+  {
+    std::cout << e.what() << std::endl;
+    return 1;
+  }
+  return 0;
 }
 ```
 Now build the solution
@@ -550,8 +551,8 @@ e.g. a C++ function call is forwarded to the C-interface as follows
 ```cpp
 void GetPrimeFactors (std::vector<sLibPrimesPrimeFactor> & PrimeFactorsBuffer)
 {
-	unsigned int elementsNeededPrimeFactors = 0;
-	unsigned int elementsWrittenPrimeFactors = 0;
+	LibPrimes_uint64 elementsNeededPrimeFactors = 0;
+	LibPrimes_uint64 elementsWrittenPrimeFactors = 0;
 	CheckError ( m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors (m_pHandle, 0, &elementsNeededPrimeFactors, nullptr) );
 	PrimeFactorsBuffer.resize(elementsNeededPrimeFactors);
 	CheckError ( m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors (m_pHandle, elementsNeededPrimeFactors, &elementsWrittenPrimeFactors, PrimeFactorsBuffer.data()) );
@@ -711,7 +712,7 @@ Then add a method to the `Calculator` class that sets the progress callback:
 We will handle aborted calculations via a new exceptions, which a client can handle.
 Thus, add a new `\<error>`:
 ```xml
-<error name="CALCULATIONABORTED" code="9" description="a calculation has been aborted" />
+<error name="CALCULATIONABORTED" code="10" description="a calculation has been aborted" />
 ```
 
 In the [semantic versioning scheme](https://semver.org/), which is advocated by ACT, adding a new function to a components class
@@ -736,7 +737,7 @@ function type and their usage is declared:
 /*************************************************************************************************************************
  Declaration of function pointers 
 **************************************************************************************************************************/
-typedef void(*LibPrimesProgressCallback)(float, bool*);
+typedef void(*LibPrimesProgressCallback)(LibPrimes_single, bool*);
 ```
 ```cpp
 class ILibPrimesCalculator : public virtual ILibPrimesBaseClass {
@@ -784,8 +785,8 @@ void CLibPrimesFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
 
-	unsigned long long nValue = m_value;
-	for (unsigned long long i = 2; i <= nValue; i++) {
+	LibPrimes_uint64 nValue = m_value;
+	for (LibPrimes_uint64 i = 2; i <= nValue; i++) {
 
 		if (m_Callback) {
 			bool shouldAbort = false;
@@ -824,7 +825,7 @@ as their respective language bindings have already been updated at the end of st
 Open the solution from [Section 4.1](#41-cpp-dynamic), and add a concrete implementation of the
 "LibPrimesProgressCallback" function-type:
 ```cpp
-void progressCallback(float progress, bool* shouldAbort)
+void progressCallback(LibPrimes_single progress, bool* shouldAbort)
 {
 	std::cout << "Progress = " << round(progress * 100) << "%" << std::endl;
 	if (shouldAbort) {
@@ -851,9 +852,9 @@ LibPrimes.Version = 1.1.0
 Progress = 0%
 Progress = 0%
 Progress = 67%
-LibPrimes Error 9
+LibPrimes Error 10
 ```
-Error 9 (`CALCULATIONABORTED`) notifies us that a calculation has been aborted, as we expected.
+Error 10 (`CALCULATIONABORTED`) notifies us that a calculation has been aborted, as we expected.
 
 ## 5.3.2 Python Application with a callback
 Open the Python example from [Section 4.2](42-python), and add an implementation of the
@@ -862,7 +863,7 @@ a Python function:
 def progressCallback(progress, shouldAbort):
 	print("Progress = {:d}%".format(round(progress*100)))
 	if (shouldAbort is not None):
-		shouldAbort[0] = progress > 0.5;
+		shouldAbort[0] = progress > 0.5
 ```
 
 Using it in `main` requires one to first create a CTypes function pointer `cTypesCallback` to the Python function.
@@ -883,7 +884,7 @@ LibPrimes version: 1.1.0
 Progress = 0%
 Progress = 0%
 Progress = 67%
-LibPrimesException 9
+LibPrimesException 10
 ```
 
 # 6. Enable journaling
@@ -944,7 +945,7 @@ in the wrapper itself._
 
 This is how the journal is filled by other methods:
 ```cpp
-LIBPRIMES_DECLSPEC LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator, unsigned long long * pValue)
+LIBPRIMES_DECLSPEC LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator, LibPrimes_uint64 * pValue)
 {
 	PLibPrimesInterfaceJournalEntry pJournalEntry;
 	try {

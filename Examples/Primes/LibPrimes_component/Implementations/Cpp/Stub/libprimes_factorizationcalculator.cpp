@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -14,7 +14,7 @@ Abstract: This is a stub class definition of CLibPrimesFactorizationCalculator
 // Include custom headers here.
 
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
  Class definition of CLibPrimesFactorizationCalculator 
@@ -24,8 +24,8 @@ void CLibPrimesFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
 
-	unsigned long long nValue = m_value;
-	for (unsigned long long i = 2; i <= nValue; i++) {
+	LibPrimes_uint64 nValue = m_value;
+	for (LibPrimes_uint64 i = 2; i <= nValue; i++) {
 
 		if (m_Callback) {
 			bool shouldAbort = false;
@@ -64,10 +64,5 @@ void CLibPrimesFactorizationCalculator::GetPrimeFactors (LibPrimes_uint64 nPrime
 			pPrimeFactorsBuffer[i] = primeFactors[i];
 		}
 	}
-}
-
-bool CLibPrimesFactorizationCalculator::CheckPrimeFactors(const LibPrimes_uint64 nPrimeFactorsBufferSize, const sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
-{
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 

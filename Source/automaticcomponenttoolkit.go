@@ -69,12 +69,12 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 }
 
 func main () {
-	ACTVersion := "1.3.2"
+	ACTVersion := "1.4.0"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
 		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
-		log.Fatal ("To create a diff between two versions of an Interface Description XML use the optional flagg \"-d OTHER_IDL_FILE\"");
+		log.Fatal ("To create a diff between two versions of an Interface Description XML use the optional flag \"-d OTHER_IDL_FILE\"");
 	}
 	if os.Args[1] == "-v" {
 		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)

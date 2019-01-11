@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -19,6 +19,7 @@ Abstract: This is the class declaration of CLibPrimesCalculator
 
 
 namespace LibPrimes {
+namespace Impl {
 
 
 /*************************************************************************************************************************
@@ -30,7 +31,7 @@ private:
 
 protected:
 
-	unsigned long long m_value;
+	LibPrimes_uint64  m_value;
 	LibPrimesProgressCallback m_Callback;
 
 public:
@@ -43,15 +44,16 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
-	unsigned long long GetValue();
+	LibPrimes_uint64 GetValue();
 
-	void SetValue(const unsigned long long nValue);
+	void SetValue(const LibPrimes_uint64 nValue);
 
 	void SetProgressCallback (const LibPrimesProgressCallback pProgressCallback);
 
 	virtual void Calculate () = 0;
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #endif // __LIBPRIMES_LIBPRIMESCALCULATOR

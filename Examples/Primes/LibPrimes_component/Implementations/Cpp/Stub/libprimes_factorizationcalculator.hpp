@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -23,10 +23,11 @@ Abstract: This is the class declaration of CLibPrimesFactorizationCalculator
 #include <vector>
 
 namespace LibPrimes {
+namespace Impl {
 
 
 /*************************************************************************************************************************
- Class declaration of CLibPrimesFactorizationCalculator 
+	Class declaration of CLibPrimesFactorizationCalculator
 **************************************************************************************************************************/
 
 class CLibPrimesFactorizationCalculator : public virtual ILibPrimesFactorizationCalculator, public virtual CLibPrimesCalculator {
@@ -52,12 +53,12 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor* pPrimeFactorsBuffer);
 
-	bool CheckPrimeFactors (const LibPrimes_uint64 nPrimeFactorsBufferSize, const sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #pragma warning( pop )
 #endif // __LIBPRIMES_LIBPRIMESFACTORIZATIONCALCULATOR

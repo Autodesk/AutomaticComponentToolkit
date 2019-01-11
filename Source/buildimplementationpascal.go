@@ -314,6 +314,10 @@ func buildPascalInterfaceDefinition(componentdefinition ComponentDefinition, w L
 	w.Writeln ("uses");
 
 	w.Writeln ("  %s_types,", BaseName);
+	if (len(componentdefinition.Enums) > 0) {
+		// Unit contains enums conversion that may raise exceptions
+		w.Writeln ("  %s_exception,", BaseName);
+	}
 	w.Writeln ("  Classes,");
 	w.Writeln ("  sysutils;");
 	w.Writeln ("");
@@ -601,7 +605,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if not Assigned (%s) then", pascalParams[0].ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("  raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append (variableDefinitions, fmt.Sprintf ("  Result%s: %s;", param.ParamName, pascalParams[0].ParamType));
+				variableDefinitions = append (variableDefinitions, fmt.Sprintf ("  Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass));
 
 				postCallCode = append (postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
 				
@@ -1126,7 +1130,7 @@ func writePascalClassMethodDummyStub (method ComponentDefinitionMethod, w Langua
 	}
 	
 	w.Writeln("begin");
-	w.Writeln("  raise E%sException (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper (NameSpace));
+	w.Writeln("  raise E%sException.Create (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper (NameSpace));
 	w.Writeln("end;");
 	w.Writeln("");
 	

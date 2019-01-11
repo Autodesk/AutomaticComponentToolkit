@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -24,7 +24,7 @@ Abstract: This is the class declaration of CLibPrimesSieveCalculator
 #include <vector>
 
 namespace LibPrimes {
-
+namespace Impl {
 
 /*************************************************************************************************************************
  Class declaration of CLibPrimesSieveCalculator 
@@ -49,11 +49,12 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
+	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
 
 };
 
-}
+} // namespace Impl
+} // namespace LibPrimes
 
 #pragma warning( pop )
 #endif // __LIBPRIMES_LIBPRIMESSIEVECALCULATOR

@@ -290,7 +290,7 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 	fmt.Fprintf (implw, "    return uintptr (value);\n");
 	fmt.Fprintf (implw, "}\n");
 	fmt.Fprintf (implw, "\n");
-	fmt.Fprintf (implw, "func Uint64InValue (value uint64) uintptr {\n");
+	fmt.Fprintf (implw, "func UInt64InValue (value uint64) uintptr {\n");
 	fmt.Fprintf (implw, "    return uintptr (value);\n");
 	fmt.Fprintf (implw, "}\n");
 	fmt.Fprintf (implw, "\n");
@@ -488,19 +488,40 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 	fmt.Fprintf (w, "\n");
 	
 	fmt.Fprintf (w, classdefinitions);
-	
+
+	fmt.Fprintf (implw, "\n");
+	fmt.Fprintf (implw, "func (implementation *%sImplementation) checkBinaryVersion() (error) {\n", NameSpace)
+	fmt.Fprintf (implw, "  var nBindingMajor uint32 = %d;\n", majorVersion(component.Version))
+	fmt.Fprintf (implw, "  var nBindingMinor uint32 = %d;\n", minorVersion(component.Version))
+	fmt.Fprintf (implw, "  nMajor, nMinor, _, err := implementation.%s()\n", global.VersionMethod);
+	fmt.Fprintf (implw, "  if (err != nil) {\n");
+	fmt.Fprintf (implw, "      return err;\n");
+	fmt.Fprintf (implw, "  }\n");
+	fmt.Fprintf (implw, "  if ( (nMajor != nBindingMajor) || (nMinor < nBindingMinor) ) {\n" )
+	fmt.Fprintf (implw, "    return fmt.Errorf (\"%s Error: %.04x (%s)\", int(0), Get%sErrorMessage (uint32(0)));", NameSpace, "%", "%s", NameSpace)
+	fmt.Fprintf (implw, "  }\n")
+	fmt.Fprintf (implw, "  return nil\n")
+	fmt.Fprintf (implw, "}\n");
+	fmt.Fprintf (implw, "\n");
+
 	fmt.Fprintf (implw, "func %sLoadWrapper (DllFileName string) (%sWrapper, error) {\n", NameSpace, NameSpace);
-	fmt.Fprintf (implw, "    var Wrapper %sWrapper;\n", NameSpace);
-	fmt.Fprintf (implw, "    var Instance %sImplementation;\n", NameSpace);
-	fmt.Fprintf (implw, "    \n");
-	fmt.Fprintf (implw, "    err := Instance.Initialize (DllFileName);\n");
-	fmt.Fprintf (implw, "    if (err != nil) {\n");
-	fmt.Fprintf (implw, "        return Wrapper, err;\n");
-	fmt.Fprintf (implw, "    }\n");
-	fmt.Fprintf (implw, "    \n");
-	fmt.Fprintf (implw, "    Wrapper.Interface = &Instance;\n");
-	fmt.Fprintf (implw, "    \n");
-	fmt.Fprintf (implw, "    return Wrapper, nil;\n");
+	fmt.Fprintf (implw, "  var Wrapper %sWrapper;\n", NameSpace);
+	fmt.Fprintf (implw, "  var Instance %sImplementation;\n", NameSpace);
+	fmt.Fprintf (implw, "  \n");
+	fmt.Fprintf (implw, "  err := Instance.Initialize (DllFileName);\n");
+	fmt.Fprintf (implw, "  if (err != nil) {\n");
+	fmt.Fprintf (implw, "      return Wrapper, err;\n");
+	fmt.Fprintf (implw, "  }\n");
+
+	fmt.Fprintf (implw, "  err = Instance.checkBinaryVersion()\n")
+	fmt.Fprintf (implw, "  if (err != nil) {\n");
+	fmt.Fprintf (implw, "      return Wrapper, err;\n");
+	fmt.Fprintf (implw, "  }\n");
+
+	fmt.Fprintf (implw, "  Wrapper.Interface = &Instance;\n");
+	fmt.Fprintf (implw, "  \n");
+
+	fmt.Fprintf (implw, "  return Wrapper, nil;\n");
 	fmt.Fprintf (implw, "}\n");
 	fmt.Fprintf (implw, "\n");
 		

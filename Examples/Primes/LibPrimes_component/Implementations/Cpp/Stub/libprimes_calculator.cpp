@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -14,7 +14,7 @@ Abstract: This is a stub class definition of CLibPrimesCalculator
 // Include custom headers here.
 
 
-using namespace LibPrimes;
+using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
  Class definition of CLibPrimesCalculator 
@@ -27,12 +27,12 @@ CLibPrimesCalculator::CLibPrimesCalculator()
 }
 
 
-unsigned long long CLibPrimesCalculator::GetValue()
+LibPrimes_uint64  CLibPrimesCalculator::GetValue()
 {
 	return m_value;
 }
 
-void CLibPrimesCalculator::SetValue(const unsigned long long nValue)
+void CLibPrimesCalculator::SetValue(const LibPrimes_uint64  nValue)
 {
 	m_value = nValue;
 }
@@ -41,5 +41,4 @@ void CLibPrimesCalculator::SetProgressCallback (const LibPrimesProgressCallback 
 {
 	m_Callback = pProgressCallback;
 }
-
 

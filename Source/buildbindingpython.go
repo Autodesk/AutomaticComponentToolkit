@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpython.go
-// functions to generate dynamic Python-bindings of a library's API in form of dynamically loaded functions
+// functions to generate dynamic Python3-bindings of a library's API in form of dynamically loaded functions
 // handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -107,6 +107,15 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    if self._message:")
 	w.Writeln("      return '%sException ' + str(self._code) + ': '+ str(self._message)", NameSpace)
 	w.Writeln("    return '%sException ' + str(self._code)", NameSpace)
+	w.Writeln("")
+
+
+	w.Writeln("'''Definition of binding API version")
+	w.Writeln("'''")
+	w.Writeln("class %sBindingVersion(enum.IntEnum):", NameSpace)
+	w.Writeln("  MAJOR = %d", majorVersion(componentdefinition.Version))
+	w.Writeln("  MINOR = %d", minorVersion(componentdefinition.Version))
+	w.Writeln("  MICRO = %d", microVersion(componentdefinition.Version))
 	w.Writeln("")
 
 	w.Writeln("'''Definition Error Codes")
@@ -234,6 +243,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace, NameSpace )
 	w.Writeln("    ")
 	w.Writeln("    self._loadFunctionTable()")
+	w.Writeln("    ")
+	w.Writeln("    self._checkBinaryVersion()")
 	w.Writeln("  ")
 
 	w.Writeln("  def _loadFunctionTable(self):")
@@ -245,6 +256,13 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    except AttributeError as ae:")
 	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])", NameSpace, NameSpace)
 	w.Writeln("  ")
+
+	w.Writeln("  def _checkBinaryVersion(self):")
+	w.Writeln("    nMajor, nMinor, _ = self.%s()", componentdefinition.Global.VersionMethod)
+	w.Writeln("    if (nMajor != %sBindingVersion.MAJOR) or (nMinor < %sBindingVersion.MINOR):", NameSpace, NameSpace)
+	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
+	w.Writeln("  ")
+
 	w.Writeln("  def checkError(self, instance, errorCode):")
 	w.Writeln("    if instance:")
 	w.Writeln("      if instance._wrapper != self:")
@@ -800,8 +818,8 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("")
 	w.Writeln("import os")
-	w.Writeln("import sys")	
-	w.Writeln("sys.path.append(os.path.join(os.path.realpath(__file__),\"..\", \"..\", \"..\", \"Bindings\", \"Python\"))")
+	w.Writeln("import sys")
+	w.Writeln("sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), \"..\", \"..\", \"Bindings\", \"Python\"))")
 	w.Writeln("import %s",NameSpace )
 	w.Writeln("")
 	w.Writeln("")
