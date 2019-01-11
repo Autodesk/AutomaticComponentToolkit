@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 Automatic Component Toolkit Developers
+Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
@@ -49,7 +49,7 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
+	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
 
 };
 
