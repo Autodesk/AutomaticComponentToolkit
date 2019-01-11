@@ -55,10 +55,22 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 		return component, err
 	}
 
-	bytes, err := ioutil.ReadAll (file);
+	bytes, err := ioutil.ReadAll(file);
 	if (err != nil) {
 		return component, err
 	}
+
+	err = ValidateDocument(bytes)
+	log.Println("")
+	if (err != nil) {
+		log.Println("Document is not a valid instance of ACT's schema!")
+		log.Println("Issues found:")
+		log.Println(err)
+		log.Println("")
+	} else {
+		log.Println("Document is a valid instance of ACT's schema.")
+	}
+	log.Println("")
 	
 	component.ACTVersion = ACTVersion
 	err = xml.Unmarshal(bytes, &component)
@@ -72,14 +84,23 @@ func main () {
 	ACTVersion := "1.3.3"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
-		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
-		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
-		log.Fatal ("To create a diff between two versions of an Interface Description XML use the optional flagg \"-d OTHER_IDL_FILE\"");
+		log.Println ("Please run with the Interface Description XML as command line parameter.");
+		log.Println ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
+		log.Println ("To create a diff between two versions of an Interface Description XML use the optional flag \"-d OTHER_IDL_FILE\"");
+		log.Println ("To print license information about ACT, use the flag \"-l\"");
+		return
 	}
 	if os.Args[1] == "-v" {
 		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)
 		return
 	}
+	if os.Args[1] == "-l" {
+		credits,  _ := AssembleCredits()
+		fmt.Fprintln(os.Stdout, credits)
+		return
+	}
+	
+
 	log.Printf ("---------------------------------------\n");
 
 	mode := eACTModeGenerate
@@ -101,13 +122,13 @@ func main () {
 	if (mode == eACTModeGenerate) {
 		log.Printf("Output directory: " + outfolderBase)
 	}
-	
+
 	log.Printf ("Loading Component Description File" );
 	component, err := readComponentDefinition(os.Args[1], ACTVersion)
 	if (err != nil) {
 		log.Fatal (err);
 	}
-	
+
 	log.Printf ("Checking Component Description", );
 	err = CheckComponentDefinition (component);
 	if (err != nil) {

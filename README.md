@@ -25,17 +25,15 @@ A consumer of your component only needs to include the language binding relevant
 
 ## How to use ACT:
 1) Download the precompiled binaries of from one of the [releases](../../releases)
+   - Linux/MAC only:
+
+      install `libxml` (e.g. `sudo apt-get install libxml2 libxml2-dev` for Ubuntu)
 2) Write an interface description file `idl_file.xml` for your desired component
 3) Generate implementation stubs and language bindings for your component:
 <br/>`act.exe idl_file.xml`
 4) Integrate the generated code in your project
 
 You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
-
-Alternatively to 1) build ACT from source ([master](../../tree/master) for a released vesion, [develop](../../tree/develop) for the latest developments):
-1. Install go https://golang.org/doc/install
-2. Build automaticcomponenttoolkit.go:
-<br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
 
 ## Contributing
 The Automatic Component Toolkit is an open source project.
@@ -68,6 +66,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 A complete example of the implementation and usage of an ACT component can be found in [Examples/Primes](Examples/Primes).
 This folder also contains a complete [Tutorial](Examples/Primes/Tutorial.md) to set up this example project.
 
+
 ## Background: the hourglass pattern-API for shared software components
 A very clean approach to creating software components is the hourglass pattern for APIs.
 The rationale is to pipe any domain code with a thick API through a C89-interface, narrowing exported types
@@ -94,3 +93,4 @@ A very detailed introduction the topic this presentation: https://www.youtube.co
 
 ### Difficulty of the hourglass pattern:
 Generating (and maintaining!) the required layers of interfaces (language bindings, thin API and domain code-API) and their consistency is labor-intensive and error prone _if_ it is not automated. That's what ACT is here for.
+
