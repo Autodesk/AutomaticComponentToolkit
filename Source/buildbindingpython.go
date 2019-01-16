@@ -474,7 +474,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 
 			case "struct":
-				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamType = "ctypes.POINTER("+cParamTypeName+")";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
