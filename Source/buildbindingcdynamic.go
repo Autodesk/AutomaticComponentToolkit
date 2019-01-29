@@ -228,7 +228,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 	w.Writeln("#ifdef WIN32")
 	// TODO: Unicode
-	w.Writeln("HMODULE hLibrary = LoadLibraryA (pLibraryFileName);")
+	w.Writeln("HMODULE hLibrary = LoadLibraryExA(pLibraryFileName, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);")
 	w.Writeln("if (hLibrary == 0) ")
 	w.Writeln("  return %s_ERROR_COULDNOTLOADLIBRARY;", strings.ToUpper(NameSpace))
 	w.Writeln("#else // WIN32")

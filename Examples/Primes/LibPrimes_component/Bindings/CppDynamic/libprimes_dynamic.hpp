@@ -389,7 +389,7 @@ public:
 			return LIBPRIMES_ERROR_INVALIDPARAM;
 		
 		#ifdef WIN32
-		HMODULE hLibrary = LoadLibraryA (pLibraryFileName);
+		HMODULE hLibrary = LoadLibraryExA(pLibraryFileName, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
 		if (hLibrary == 0) 
 			return LIBPRIMES_ERROR_COULDNOTLOADLIBRARY;
 		#else // WIN32
