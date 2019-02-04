@@ -244,7 +244,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	cppimplw.Writeln("    m_errorCode = errorCode;")
 	cppimplw.Writeln("  }")
 	cppimplw.Writeln("")
-	cppimplw.Writeln("  %sResult E%sException::getErrorCode ()", NameSpace, NameSpace)
+	cppimplw.Writeln("  %sResult E%sException::getErrorCode () const noexcept", NameSpace, NameSpace)
 	cppimplw.Writeln("  {")
 	cppimplw.Writeln("    return m_errorCode;")
 	cppimplw.Writeln("  }")

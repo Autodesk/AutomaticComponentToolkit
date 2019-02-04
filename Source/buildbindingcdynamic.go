@@ -685,7 +685,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  /**")
 	w.Writeln("  * Returns error code")
 	w.Writeln("  */")
-	w.Writeln("  %sResult getErrorCode ()", NameSpace)
+	w.Writeln("  %sResult getErrorCode () const noexcept", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    return m_errorCode;")
 	w.Writeln("  }")
