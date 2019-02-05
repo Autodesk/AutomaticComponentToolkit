@@ -179,7 +179,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("    /**")
 	w.Writeln("    * Returns error code")
 	w.Writeln("    */")
-	w.Writeln("    %sResult getErrorCode ();", NameSpace)
+	w.Writeln("    %sResult getErrorCode () const noexcept;", NameSpace)
 	w.Writeln("")
 	w.Writeln("    /**")
 	w.Writeln("    * Returns error message")
