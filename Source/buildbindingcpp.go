@@ -584,10 +584,10 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
 			case "handle":
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("};"))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
 				callParameter = "h" + param.ParamName;
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
