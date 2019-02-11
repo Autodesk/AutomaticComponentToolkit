@@ -49,6 +49,7 @@ const (
 	eSpecialMethodRelease = 1
 	eSpecialMethodVersion = 2
 	eSpecialMethodJournal = 3
+	eSpecialMethodError = 4
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -110,6 +111,7 @@ type ComponentDefinitionGlobal struct {
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
+	ErrorMethod string `xml:"errormethod,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -743,6 +745,26 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodJournal, nil;
 	}
 
+	if (method.MethodName == global.ErrorMethod) {
+		if (len (method.Params) != 3) {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+
+		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != "BaseClass") || (method.Params[0].ParamPass != "in") {
+			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
+		}
+		
+		if (method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+
+		if (method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+		
+		return eSpecialMethodError, nil;
+	}
+	
 	if (method.MethodName == global.VersionMethod) {
 		if (len (method.Params) != 3) {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
