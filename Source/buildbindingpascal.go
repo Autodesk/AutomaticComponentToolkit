@@ -447,7 +447,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("")
 	w.Writeln ("  destructor T%sBaseClass.Destroy;", NameSpace);
 	w.Writeln ("  begin");
-	w.Writeln ("    FWrapper.ReleaseInstance(self);");
+	w.Writeln ("    FWrapper.%s(self);", componentdefinition.Global.ReleaseMethod);
 	w.Writeln ("    inherited;");
 	w.Writeln ("  end;");
 	w.Writeln ("")
