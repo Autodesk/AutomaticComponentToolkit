@@ -676,8 +676,8 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
-	w.Writeln("  E%sException (%sResult errorCode)", NameSpace, NameSpace)
-	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace)
+	w.Writeln("  E%sException (%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
+	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    m_errorCode = errorCode;")
 	w.Writeln("  }")
@@ -741,8 +741,13 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	
 	w.Writeln("  void CheckError(%sHandle handle, %sResult nResult)", NameSpace, NameSpace)
 	w.Writeln("  {")
+	w.Writeln("    std::string sErrorMessage;")
+
+	if (len (component.Global.ErrorMethod) > 0) {
+		w.Writeln("  %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
+	}
 	w.Writeln("    if (nResult != 0) ")
-	w.Writeln("      throw E%sException (nResult);", NameSpace)
+	w.Writeln("      throw E%sException (nResult, sErrorMessage);", NameSpace)
 	w.Writeln("  }")
 	w.Writeln("  ")
 	

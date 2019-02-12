@@ -174,7 +174,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("    /**")
 	w.Writeln("    * Exception Constructor.")
 	w.Writeln("    */")
-	w.Writeln("    E%sException (%sResult errorCode);", NameSpace, NameSpace)
+	w.Writeln("    E%sException (%sResult errorCode, const std::string & sErrorMessage);", NameSpace, NameSpace)
 	w.Writeln("")
 	w.Writeln("    /**")
 	w.Writeln("    * Returns error code")
@@ -238,8 +238,8 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	cppimplw.Writeln("/*************************************************************************************************************************")
 	cppimplw.Writeln(" Class E%sException ", NameSpace)
 	cppimplw.Writeln("**************************************************************************************************************************/")
-	cppimplw.Writeln("  E%sException::E%sException(%sResult errorCode)", NameSpace, NameSpace, NameSpace)
-	cppimplw.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace)
+	cppimplw.Writeln("  E%sException::E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace, NameSpace)	
+	cppimplw.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
 	cppimplw.Writeln("  {")
 	cppimplw.Writeln("    m_errorCode = errorCode;")
 	cppimplw.Writeln("  }")
@@ -272,7 +272,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	cppimplw.Writeln("")
 	cppimplw.Writeln("void %sBaseClass::CheckError(%sResult nResult)", cppClassPrefix, NameSpace)
 	cppimplw.Writeln("{")
-	cppimplw.Writeln("  %sWrapper::CheckError(m_pHandle, nResult);", cppClassPrefix)
+	cppimplw.Writeln("  %sWrapper::CheckError(this, nResult);", cppClassPrefix)
 	cppimplw.Writeln("}")
 	cppimplw.Writeln("")
 	cppimplw.Writeln("%sHandle %sBaseClass::GetHandle()", NameSpace, cppClassPrefix)
@@ -338,7 +338,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("class %sWrapper {", cppClassPrefix)
 	w.Writeln("public:")
 
-	w.Writeln("  static void CheckError(%sHandle handle, %sResult nResult);", NameSpace, NameSpace)
+	w.Writeln("  static void CheckError(%sBaseClass * pBaseClass, %sResult nResult);", cppClassPrefix, NameSpace)
 
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
@@ -359,10 +359,15 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("")
 
 	cppimplw.Writeln("")
-	cppimplw.Writeln("void %sWrapper::CheckError(%sHandle handle, %sResult nResult)", cppClassPrefix, NameSpace, NameSpace)
-	cppimplw.Writeln("{")
+	cppimplw.Writeln("void %sWrapper::CheckError(%sBaseClass * pBaseClass, %sResult nResult)", cppClassPrefix, cppClassPrefix, NameSpace)
+	cppimplw.Writeln("{")	
+	cppimplw.Writeln("  std::string sErrorMessage;")
+
+	if (len (component.Global.ErrorMethod) > 0) {
+		cppimplw.Writeln("  %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
+	}
 	cppimplw.Writeln("  if (nResult != 0) ")
-	cppimplw.Writeln("    throw E%sException (nResult);", NameSpace)
+	cppimplw.Writeln("    throw E%sException (nResult, sErrorMessage);", NameSpace)
 	cppimplw.Writeln("}")
 	cppimplw.Writeln("")
 
