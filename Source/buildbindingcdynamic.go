@@ -446,10 +446,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
 			case "handle":
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("};"))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
 				callParameter = "h" + param.ParamName;
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
@@ -739,7 +739,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  }")
 	w.Writeln("  ")
 	
-	w.Writeln("  void CheckError(%sHandle handle, %sResult nResult)", NameSpace, NameSpace)
+	w.Writeln("  void CheckError(%sBaseClass * pBaseClass, %sResult nResult)", cppClassPrefix, NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      std::string sErrorMessage;")
@@ -809,7 +809,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  void CheckError(%sResult nResult)", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (m_pWrapper != nullptr)")
-	w.Writeln("      m_pWrapper->CheckError (m_pHandle, nResult);")
+	w.Writeln("      m_pWrapper->CheckError (this, nResult);")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("public:")
