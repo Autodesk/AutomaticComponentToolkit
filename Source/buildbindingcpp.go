@@ -361,13 +361,15 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	cppimplw.Writeln("")
 	cppimplw.Writeln("void %sWrapper::CheckError(%sBaseClass * pBaseClass, %sResult nResult)", cppClassPrefix, cppClassPrefix, NameSpace)
 	cppimplw.Writeln("{")	
-	cppimplw.Writeln("  std::string sErrorMessage;")
+	cppimplw.Writeln("  if (nResult != 0) {")
+	cppimplw.Writeln("    std::string sErrorMessage;")
 
 	if (len (component.Global.ErrorMethod) > 0) {
-		cppimplw.Writeln("  %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
+		cppimplw.Writeln("    if (pBaseClass != nullptr)");
+		cppimplw.Writeln("      %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
 	}
-	cppimplw.Writeln("  if (nResult != 0) ")
 	cppimplw.Writeln("    throw E%sException (nResult, sErrorMessage);", NameSpace)
+	cppimplw.Writeln("  }")
 	cppimplw.Writeln("}")
 	cppimplw.Writeln("")
 
