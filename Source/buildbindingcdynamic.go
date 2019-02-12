@@ -741,13 +741,14 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	
 	w.Writeln("  void CheckError(%sHandle handle, %sResult nResult)", NameSpace, NameSpace)
 	w.Writeln("  {")
-	w.Writeln("    std::string sErrorMessage;")
-
-	if (len (component.Global.ErrorMethod) > 0) {
-		w.Writeln("  %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
+	w.Writeln("    if (nResult != 0) {")
+	w.Writeln("      std::string sErrorMessage;")
+	if (len (component.Global.ErrorMethod) > 0) {	
+		w.Writeln("    if (pBaseClass != nullptr)");
+		w.Writeln("      %s (pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
 	}
-	w.Writeln("    if (nResult != 0) ")
 	w.Writeln("      throw E%sException (nResult, sErrorMessage);", NameSpace)
+	w.Writeln("    }")
 	w.Writeln("  }")
 	w.Writeln("  ")
 	

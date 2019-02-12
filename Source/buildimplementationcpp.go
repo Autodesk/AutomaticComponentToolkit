@@ -421,8 +421,10 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		w.Writeln("    pJournalEntry->writeError(errorCode);")
 		w.Writeln("")
 	}
-	w.Writeln("  if (pIBaseClass != nullptr)")
-	w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	if (doErrorPropagation) {	
+		w.Writeln("  if (pIBaseClass != nullptr)")
+		w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	}
 	w.Writeln("")
 	w.Writeln("  return errorCode;")
 	w.Writeln("}")
@@ -437,8 +439,10 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		w.Writeln("    pJournalEntry->writeError(errorCode);")
 		w.Writeln("")
 	}
-	w.Writeln("  if (pIBaseClass != nullptr)")
-	w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	if (doErrorPropagation) {	
+		w.Writeln("  if (pIBaseClass != nullptr)")
+		w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	}
 	w.Writeln("")
 	w.Writeln("  return errorCode;")
 	w.Writeln("}")
@@ -453,8 +457,11 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		w.Writeln("    pJournalEntry->writeError(errorCode);")
 		w.Writeln("")
 	}
-	w.Writeln("  if (pIBaseClass != nullptr)")
-	w.Writeln("    pIBaseClass->addLastError(\"Unhandled Exception\");")
+	
+	if (doErrorPropagation) {	
+		w.Writeln("  if (pIBaseClass != nullptr)")
+		w.Writeln("    pIBaseClass->addLastError(\"Unhandled Exception\");")
+	}
 	w.Writeln("")
 	w.Writeln("  return errorCode;")
 	w.Writeln("}")
@@ -548,7 +555,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	}
 	
 	
-	if (isSpecialFunction == eSpecialMethodNone || isSpecialFunction == eSpecialMethodRelease || isSpecialFunction == eSpecialMethodVersion) {
+	if (isSpecialFunction == eSpecialMethodNone || isSpecialFunction == eSpecialMethodRelease || isSpecialFunction == eSpecialMethodVersion || isSpecialFunction == eSpecialMethodError) {
 		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
 		if err != nil {
 			return err
