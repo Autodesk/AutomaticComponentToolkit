@@ -406,62 +406,60 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		w.Writeln("")
 	}
 
-	if (doErrorPropagation) {
 	
-		journalParameter := "";
-		if (doJournal) {
-			journalParameter = fmt.Sprintf (", C%sInterfaceJournalEntry * pJournalEntry", NameSpace);
-		}
-	
-		w.Writeln("%sResult handle%sException(I%sBaseClass * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, NameSpace, NameSpace, journalParameter)
-		w.Writeln("{")
-		w.Writeln("  %sResult errorCode = Exception.getErrorCode();", NameSpace)
-		w.Writeln("")
-		if (doJournal) {
-			w.Writeln("  if (pJournalEntry != nullptr)")
-			w.Writeln("    pJournalEntry->writeError(errorCode);")
-			w.Writeln("")
-		}
-		w.Writeln("  if (pIBaseClass != nullptr)")
-		w.Writeln("    pIBaseClass->addLastError(Exception.what());")
-		w.Writeln("")
-		w.Writeln("  return errorCode;")
-		w.Writeln("}")
-		w.Writeln("")
-
-		w.Writeln("%sResult handleStdException(I%sBaseClass * pIBaseClass, std::exception & Exception%s)", NameSpace, NameSpace, journalParameter)
-		w.Writeln("{")
-		w.Writeln("  %sResult errorCode = LIB3MF_ERROR_GENERICEXCEPTION;", NameSpace)
-		w.Writeln("")
-		if (doJournal) {
-			w.Writeln("  if (pJournalEntry != nullptr)")
-			w.Writeln("    pJournalEntry->writeError(errorCode);")
-			w.Writeln("")
-		}
-		w.Writeln("  if (pIBaseClass != nullptr)")
-		w.Writeln("    pIBaseClass->addLastError(Exception.what());")
-		w.Writeln("")
-		w.Writeln("  return errorCode;")
-		w.Writeln("}")
-		w.Writeln("")
-
-		w.Writeln("%sResult handleUnhandledException(I%sBaseClass * pIBaseClass%s)", NameSpace, NameSpace, journalParameter)
-		w.Writeln("{")
-		w.Writeln("  %sResult errorCode = LIB3MF_ERROR_GENERICEXCEPTION;", NameSpace)
-		w.Writeln("")
-		if (doJournal) {
-			w.Writeln("  if (pJournalEntry != nullptr)")
-			w.Writeln("    pJournalEntry->writeError(errorCode);")
-			w.Writeln("")
-		}
-		w.Writeln("  if (pIBaseClass != nullptr)")
-		w.Writeln("    pIBaseClass->addLastError(\"Unhandled Exception\");")
-		w.Writeln("")
-		w.Writeln("  return errorCode;")
-		w.Writeln("}")
-		w.Writeln("")
-		
+	journalParameter := "";
+	if (doJournal) {
+		journalParameter = fmt.Sprintf (", C%sInterfaceJournalEntry * pJournalEntry = nullptr", NameSpace);
 	}
+
+	w.Writeln("%sResult handle%sException(I%sBaseClass * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, NameSpace, NameSpace, journalParameter)
+	w.Writeln("{")
+	w.Writeln("  %sResult errorCode = Exception.getErrorCode();", NameSpace)
+	w.Writeln("")
+	if (doJournal) {
+		w.Writeln("  if (pJournalEntry != nullptr)")
+		w.Writeln("    pJournalEntry->writeError(errorCode);")
+		w.Writeln("")
+	}
+	w.Writeln("  if (pIBaseClass != nullptr)")
+	w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	w.Writeln("")
+	w.Writeln("  return errorCode;")
+	w.Writeln("}")
+	w.Writeln("")
+
+	w.Writeln("%sResult handleStdException(I%sBaseClass * pIBaseClass, std::exception & Exception%s)", NameSpace, NameSpace, journalParameter)
+	w.Writeln("{")
+	w.Writeln("  %sResult errorCode = LIB3MF_ERROR_GENERICEXCEPTION;", NameSpace)
+	w.Writeln("")
+	if (doJournal) {
+		w.Writeln("  if (pJournalEntry != nullptr)")
+		w.Writeln("    pJournalEntry->writeError(errorCode);")
+		w.Writeln("")
+	}
+	w.Writeln("  if (pIBaseClass != nullptr)")
+	w.Writeln("    pIBaseClass->addLastError(Exception.what());")
+	w.Writeln("")
+	w.Writeln("  return errorCode;")
+	w.Writeln("}")
+	w.Writeln("")
+
+	w.Writeln("%sResult handleUnhandledException(I%sBaseClass * pIBaseClass%s)", NameSpace, NameSpace, journalParameter)
+	w.Writeln("{")
+	w.Writeln("  %sResult errorCode = LIB3MF_ERROR_GENERICEXCEPTION;", NameSpace)
+	w.Writeln("")
+	if (doJournal) {
+		w.Writeln("  if (pJournalEntry != nullptr)")
+		w.Writeln("    pJournalEntry->writeError(errorCode);")
+		w.Writeln("")
+	}
+	w.Writeln("  if (pIBaseClass != nullptr)")
+	w.Writeln("    pIBaseClass->addLastError(\"Unhandled Exception\");")
+	w.Writeln("")
+	w.Writeln("  return errorCode;")
+	w.Writeln("}")
+	w.Writeln("")
+		
 	
 	w.Writeln("extern \"C\" {")
 	w.Writeln("")
@@ -575,8 +573,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	
 
 	if !isGlobal {
-		preCallCPPFunctionCode = fmt.Sprintf(indentString + indentString + "I%s%sBaseClass* pIBaseClass = (I%s%sBaseClass *)p%s;\n", ClassIdentifier, NameSpace, ClassIdentifier, NameSpace, ClassName) +
-			fmt.Sprintf(indentString + indentString + "I%s%s%s* pI%s = dynamic_cast<I%s%s%s*>(pIBaseClass);\n", ClassIdentifier, NameSpace, ClassName, ClassName, ClassIdentifier, NameSpace, ClassName) +
+		preCallCPPFunctionCode =  fmt.Sprintf(indentString + indentString + "I%s%s%s* pI%s = dynamic_cast<I%s%s%s*>(pIBaseClass);\n", ClassIdentifier, NameSpace, ClassName, ClassName, ClassIdentifier, NameSpace, ClassName) +
 			fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", ClassName) +
 			fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException(%s_ERROR_INVALIDCAST);\n\n", NameSpace, strings.ToUpper(NameSpace)) +
 			preCallCPPFunctionCode
@@ -585,6 +582,13 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	w.Writeln("%sResult %s (%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
 
+	if !isGlobal {
+		w.Writeln ("  I%s%sBaseClass* pIBaseClass = (I%s%sBaseClass *)p%s;\n", ClassIdentifier, NameSpace, ClassIdentifier, NameSpace, ClassName);
+	} else {
+		w.Writeln ("  I%s%sBaseClass* pIBaseClass = nullptr;\n", ClassIdentifier, NameSpace);
+	}
+	
+	
 	if (doJournal) {
 		w.Writeln("  P%sInterfaceJournalEntry pJournalEntry;", NameSpace);
 	}
@@ -600,27 +604,23 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	w.Writeln("%s", callCPPFunctionCode)
 	w.Writeln("%s", postCallCPPFunctionCode)
 
+	journalHandleParam := "";
+	
 	if (doJournal) {
 		w.Writeln("%s", journalSuccessFunctionCode)
+		journalHandleParam = ", pJournalEntry.get()";
 	}
 	
 	w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
 	w.Writeln("  }")
-	w.Writeln("  catch (E%sInterfaceException & E) {", NameSpace)
-
-	if (doJournal) {
-		w.Writeln("    if (pJournalEntry.get() != nullptr)");
-		w.Writeln("      pJournalEntry->writeError(E.getErrorCode());");
-	}
-	w.Writeln("    return E.getErrorCode();")
+	w.Writeln("  catch (E%sInterfaceException & Exception) {", NameSpace)
+	w.Writeln("    return handle%sException (pIBaseClass, Exception%s);", NameSpace, journalHandleParam)
+	w.Writeln("  }")
+	w.Writeln("  catch (std::exception & StdException) {")
+	w.Writeln("    return handleStdException (pIBaseClass, StdException%s);", journalHandleParam)
 	w.Writeln("  }")
 	w.Writeln("  catch (...) {")
-	if (doJournal) {
-		w.Writeln("    if (pJournalEntry.get() != nullptr)");
-		w.Writeln("      pJournalEntry->writeError(%s_ERROR_GENERICEXCEPTION);", strings.ToUpper(NameSpace));
-	}
-	
-	w.Writeln("    return %s_ERROR_GENERICEXCEPTION;", strings.ToUpper(NameSpace))
+	w.Writeln("    return handleUnhandledException (pIBaseClass%s);", journalHandleParam)
 	w.Writeln("  }")
 
 	w.Writeln("}")

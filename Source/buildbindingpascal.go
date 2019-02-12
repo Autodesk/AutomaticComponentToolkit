@@ -256,7 +256,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("  public");	
 	w.Writeln ("    property ErrorCode: T%sResult read FErrorCode;", NameSpace);	
 	w.Writeln ("    property CustomMessage: String read FCustomMessage;");	
-	w.Writeln ("    constructor Create (AErrorCode: T%sResult);", NameSpace);	
+	w.Writeln ("    constructor Create (AErrorCode: T%sResult; AMessage: String);", NameSpace);	
 	w.Writeln ("    constructor CreateCustomMessage (AErrorCode: T%sResult; AMessage: String);", NameSpace);	
 	w.Writeln ("  end;");	
 	w.Writeln ("")
@@ -401,7 +401,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln (" Exception implementation");
 	w.Writeln ("**************************************************************************************************************************)");
 	w.Writeln ("")
-	w.Writeln ("  constructor E%sException.Create (AErrorCode: T%sResult);", NameSpace, NameSpace);	
+	w.Writeln ("  constructor E%sException.Create (AErrorCode: T%sResult; AMessage: String);", NameSpace, NameSpace);	
 	w.Writeln ("  var");	
 	w.Writeln ("    ADescription: String;");	
 	w.Writeln ("  begin");	
@@ -418,7 +418,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	
 	
 	w.Writeln ("")
-	w.Writeln ("    inherited Create (Format ('%s Error - %%s (#%%d)', [ ADescription, AErrorCode ]));", componentdefinition.LibraryName);	
+	w.Writeln ("    inherited Create (Format ('%s Error - %%s (#%%d, %%s)', [ ADescription, AErrorCode, AMessage ]));", componentdefinition.LibraryName);	
 	w.Writeln ("  end;");	
 	w.Writeln ("")
 	w.Writeln ("  constructor E%sException.CreateCustomMessage (AErrorCode: T%sResult; AMessage: String);", NameSpace, NameSpace);	
@@ -436,9 +436,9 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("  constructor T%sBaseClass.Create (AWrapper: T%sWrapper; AHandle: T%sHandle);", NameSpace, NameSpace, NameSpace);	
 	w.Writeln ("  begin");	
 	w.Writeln ("    if not Assigned (AWrapper) then");	
-	w.Writeln ("      raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));	
+	w.Writeln ("      raise E%sException.Create (%s_ERROR_INVALIDPARAM, '');", NameSpace, strings.ToUpper (NameSpace));	
 	w.Writeln ("    if not Assigned (AHandle) then");	
-	w.Writeln ("      raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));	
+	w.Writeln ("      raise E%sException.Create (%s_ERROR_INVALIDPARAM, '');", NameSpace, strings.ToUpper (NameSpace));	
 	w.Writeln ("")
 	w.Writeln ("    inherited Create ();");
 	w.Writeln ("    FWrapper := AWrapper;");
@@ -502,7 +502,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("      FModule := dynlibs.LoadLibrary (ADLLName);");	
 	w.Writeln ("    {$ENDIF MSWINDOWS}");	
 	w.Writeln ("    if FModule = 0 then");	
-	w.Writeln ("      raise E%sException.Create (%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper (NameSpace));	
+	w.Writeln ("      raise E%sException.Create (%s_ERROR_COULDNOTLOADLIBRARY, '');", NameSpace, strings.ToUpper (NameSpace));	
 	w.Writeln ("")
 
 	for i := 0; i < len(componentdefinition.Classes); i++ {
@@ -538,13 +538,21 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("  end;");	
 	w.Writeln ("")
 	w.Writeln ("  procedure T%sWrapper.CheckError (AInstance: T%sBaseClass; AErrorCode: T%sResult);", NameSpace, NameSpace, NameSpace);	
+	w.Writeln ("  var")
+	w.Writeln ("    AErrorMessage: String;")
 	w.Writeln ("  begin")
     w.Writeln ("    if AInstance <> nil then begin");
     w.Writeln ("      if AInstance.FWrapper <> Self then");
     w.Writeln ("        raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDCAST, 'invalid wrapper call');", NameSpace, strings.ToUpper (NameSpace));
     w.Writeln ("    end;");
+
+	w.Writeln ("    AErrorMessage := '';");
+	if (len (componentdefinition.Global.ErrorMethod) > 0) {
+		w.Writeln ("    %s (AInstance, AErrorMessage);", componentdefinition.Global.ErrorMethod);
+	}
+	
 	w.Writeln ("    if AErrorCode <> %s_SUCCESS then", strings.ToUpper (NameSpace));
-	w.Writeln ("      raise E%sException.Create (AErrorCode);", NameSpace);
+	w.Writeln ("      raise E%sException.Create (AErrorCode, AErrorMessage);", NameSpace);
 	w.Writeln ("  end;")
 	w.Writeln ("")
 	
@@ -572,7 +580,7 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln ("  begin")
 	w.Writeln ("    %s(AMajor, AMinor, AMicro);", global.VersionMethod)
 	w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
-	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION);", NameSpace, strings.ToUpper(NameSpace))
+	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION, '');", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln ("  end;")
 	w.Writeln ("  ")
 
@@ -887,6 +895,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
 						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
+						initCallParameters = initCallParameters + "Result" + param.ParamName;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := convertConstTo%s (Result%s);", param.ParamClass, param.ParamName));
 
 					case "bool":
@@ -894,6 +903,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
 						callFunctionParameters = callFunctionParameters + "PByte (@Result" + param.ParamName + ")^";
+						initCallParameters = initCallParameters + "PByte (@Result" + param.ParamName + ")^";
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := (Result%s <> 0);", param.ParamName));
 						
 					case "struct":
