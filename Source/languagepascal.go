@@ -440,7 +440,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
+				cParams[0].ParamConvention = "";
 				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
 				
 			case "basicarray":
