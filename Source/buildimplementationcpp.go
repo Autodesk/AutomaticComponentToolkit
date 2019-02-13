@@ -1122,10 +1122,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "enum", "struct":
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (!p%s)\n", param.ParamName)
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
-
-				preCallCode = preCallCode + fmt.Sprintf(indentString + indentString + "%s %s;\n", getCppParamType(param, NameSpace, false), variableName)
-				callParameters = callParameters + variableName
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "*p%s = %s;\n", param.ParamName, variableName)
+				callParameters = callParameters + "*p" + param.ParamName
 
 			case "basicarray", "structarray":
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ((!p%sBuffer) && !(p%sNeededCount))\n", param.ParamName, param.ParamName)
