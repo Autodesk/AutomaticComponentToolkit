@@ -43,7 +43,7 @@ import (
 
 // BuildImplementationCPP builds C++ interface classes, implementation stubs and wrapper code that maps to the C-header
 func BuildImplementationCPP(component ComponentDefinition, outputFolder string, stubOutputFolder string, projectOutputFolder string, implementation ComponentDefinitionImplementation) error {
-	forceRecreation := true
+	forceRecreation := false
 
 	doJournal := len (component.Global.JournalMethod) > 0;
 	
