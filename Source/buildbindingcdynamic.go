@@ -392,25 +392,30 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 
 
 
-func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, includeComments bool) error {
+func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, includeComments bool, doNotThrow bool) error {
 
 	CMethodName := ""
 	requiresInitCall := false;
 	initCallParameters := ""	// usually used to check sizes of buffers
 	callParameters := ""
-	checkErrorCode := ""
+	checkErrorCodeBegin := ""
+	checkErrorCodeEnd := ")"
 	makeSharedParameter := "";
 
 	if isGlobal {
 		CMethodName = fmt.Sprintf("m_WrapperTable.m_%s", method.MethodName)
-		checkErrorCode = "CheckError (nullptr,"
+		checkErrorCodeBegin = "CheckError(nullptr,"
 		makeSharedParameter = "this, "
 	} else {
 		CMethodName = fmt.Sprintf("m_pWrapper->m_WrapperTable.m_%s_%s", ClassName, method.MethodName)
 		callParameters = "m_pHandle"
 		initCallParameters = "m_pHandle"
-		checkErrorCode = "CheckError ("
+		checkErrorCodeBegin = "CheckError("
 		makeSharedParameter = "m_pWrapper, "
+	}
+	if (doNotThrow) {
+		checkErrorCodeBegin = ""
+		checkErrorCodeEnd = ""
 	}
 
 	parameters := ""
@@ -603,10 +608,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	w.Writeln("  {")
 	w.Writelns("    ", definitionCodeLines)
 	if (requiresInitCall) {
-		w.Writeln("    %s %s (%s) );", checkErrorCode, CMethodName, initCallParameters)
+		w.Writeln("    %s%s (%s)%s;", checkErrorCodeBegin, CMethodName, initCallParameters, checkErrorCodeEnd)
 	}
 	w.Writelns("    ", functionCodeLines)
-	w.Writeln("    %s %s (%s) );", checkErrorCode, CMethodName, callParameters)
+	w.Writeln("    %s%s (%s)%s;", checkErrorCodeBegin, CMethodName, callParameters, checkErrorCodeEnd)
 	w.Writelns("    ", postCallCodeLines)
 	w.Writelns("    ", returnCodeLines)
 	w.Writeln("  }")
@@ -818,8 +823,6 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("      m_pWrapper->CheckError (this, nResult);")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("public:")
-	w.Writeln("")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - Constructor for Base class.", baseClassCPPName, baseClassCPPName)
 	w.Writeln("  */")
@@ -839,6 +842,8 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
+	w.Writeln("private:")
+
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", baseClassCPPName)
 	w.Writeln("  */")
@@ -851,7 +856,6 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	if (err != nil) {
 		return err
 	}
-	w.Writeln("  ")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - %s.", baseClassCPPName, getLastErrorMethod.MethodName, getLastErrorMethod.MethodDescription)
 	w.Writeln("  */")
@@ -860,9 +864,10 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 		return err
 	}
 
+	w.Writeln("  friend class C%sWrapper;", NameSpace)
 	w.Writeln("};")
 	
-	w.Writeln("  ")
+	w.Writeln("")
 	
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -909,12 +914,13 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true, true)
+		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true, true, false)
 		if err != nil {
 			return err
 		}
 	}
 
+	w.Writeln("  ")
 	w.Writeln("  inline void C%sWrapper::CheckError(%sBaseClass * pBaseClass, %sResult nResult)", NameSpace, cppClassPrefix, NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
@@ -971,7 +977,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 			if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
 				continue;
 			}
-			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false)
+			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false, method.isGetLastErrorMessage())
 			if err != nil {
 				return err
 			}
