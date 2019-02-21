@@ -709,6 +709,10 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
 
+	if (global.ErrorMethod == "") {
+		return eSpecialMethodNone, errors.New ("No error method specified");
+	}
+
 	if (global.ReleaseMethod == global.JournalMethod) {
 		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Journal method");
 	}
@@ -717,8 +721,16 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Version method");
 	}
 
+	if (global.ReleaseMethod == global.ErrorMethod) {
+		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Error method");
+	}
+
 	if (global.JournalMethod == global.VersionMethod) {
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
+	}
+
+	if (global.JournalMethod == global.ErrorMethod) {
+		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Error method");
 	}
 	
 	if (method.MethodName == global.ReleaseMethod) {
@@ -782,4 +794,37 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 	return eSpecialMethodNone, nil;
 }
 
+func setupBaseClassDefinition() (ComponentDefinitionClass, error) {
+	var class ComponentDefinitionClass
 
+	err := xml.Unmarshal([]byte(
+`<class name="BaseClass" description="Base for all classes in this API">
+	<method name="GetLastErrorMessage" description = "Returns the last error registered of this class instance">
+		<param name="ErrorMessage" type="string" pass="out" description="Message of the last error registered" />
+		<param name="HasLastError" type="bool" pass="return" description="Has an error been registered already" />
+	</method>
+	<method name="RegisterErrorMessage" description = "Registers an error message with this class instance">
+		<param name="ErrorMessage" type="string" pass="in" description="Error message to register" />
+	</method>
+	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">
+	</method>
+</class>`),
+	&class)
+	if (err != nil) {
+		return class, err
+	}
+	return class, nil
+}
+
+func (class *ComponentDefinitionClass) isBaseClass() (bool) {
+	return class.ClassName == "BaseClass"
+}
+func (method *ComponentDefinitionMethod) isGetLastErrorMessage() (bool) {
+	return method.MethodName == "GetLastErrorMessage"
+}
+func (method *ComponentDefinitionMethod) isRegisterErrorMessage() (bool) {
+	return method.MethodName == "RegisterErrorMessage"
+}
+func (method *ComponentDefinitionMethod) isClearErrorMessages() (bool) {
+	return method.MethodName == "ClearErrorMessages"
+}

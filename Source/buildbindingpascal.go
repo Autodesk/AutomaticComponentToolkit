@@ -548,10 +548,10 @@ func buildDynamicPascalImplementation(componentdefinition ComponentDefinition, w
 	
 	w.Writeln ("    if AErrorCode <> %s_SUCCESS then begin", strings.ToUpper (NameSpace));
 	w.Writeln ("      AErrorMessage := '';");
-	if (len (componentdefinition.Global.ErrorMethod) > 0) {
-		w.Writeln ("      if Assigned (AInstance) then");
-		w.Writeln ("        %s (AInstance, AErrorMessage);", componentdefinition.Global.ErrorMethod);
-	}
+
+	w.Writeln ("      if Assigned (AInstance) then");
+	w.Writeln ("        %s (AInstance, AErrorMessage);", componentdefinition.Global.ErrorMethod);
+
 	w.Writeln ("      raise E%sException.Create (AErrorCode, AErrorMessage);", NameSpace);
 	w.Writeln ("    end;")
 	w.Writeln ("  end;")
