@@ -145,6 +145,7 @@ func main () {
 		return
 	}
 
+	// This needs to go into a "preparation function"
 	baseClass, err := setupBaseClassDefinition(true)
 	if (err != nil) {
 		log.Fatal (err);
@@ -167,7 +168,6 @@ func main () {
 	if (err != nil) {
 		log.Fatal (err);
 	}
-
 
 	licenseFileName := path.Join(outputFolder, "license.txt");
 	log.Printf("Creating \"%s\"", licenseFileName)
