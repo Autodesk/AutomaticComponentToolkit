@@ -145,13 +145,24 @@ func main () {
 		return
 	}
 
-
+	baseClass, err := setupBaseClassDefinition(true)
+	if (err != nil) {
+		log.Fatal (err);
+	}
+	component.Classes = append([]ComponentDefinitionClass{baseClass}, component.Classes...)
+	for i := 0; i < len(component.Classes); i++ {
+		if (!component.Classes[i].isBaseClass()) {
+			if (component.Classes[i].ParentClass == "") {
+				component.Classes[i].ParentClass = "BaseClass";
+			}
+		}
+	}
 
 	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
 	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
-	
+
 	err  = os.MkdirAll(outputFolder, os.ModePerm);
 	if (err != nil) {
 		log.Fatal (err);
