@@ -824,32 +824,6 @@ func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
 	return method
 }
 
-
-func setupBaseClassDefinition(forImplementation bool) (ComponentDefinitionClass, error) {
-	var class ComponentDefinitionClass
-	source := `<class name="BaseClass" description="Base for all classes in this API">`
-	if (forImplementation) {
-		source = source + `
-	<method name="RegisterErrorMessage" description = "Registers an error message with this class instance">
-		<param name="ErrorMessage" type="string" pass="in" description="Error message to register" />
-	</method>
-	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">
-	</method>
-	`
-	}
-	source = source + "</class>"
-
-	err := xml.Unmarshal([]byte(source),
-	&class)
-	if (err != nil) {
-		return class, err
-	}
-	method := GetLastErrorMessageMethod()
-	class.Methods = append(class.Methods, method)
-	return class, nil
-}
-
-
 func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass) (bool) {
 	return class.ClassName == component.Global.BaseClassName
 }
@@ -863,17 +837,4 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	var out ComponentDefinitionClass
 	log.Fatal("Now base class available")
 	return out
-}
-
-func (method *ComponentDefinitionMethod) isGetLastErrorMessage() (bool) {
-	log.Fatal("isGetLastErrorMessage")
-	return method.MethodName == "GetLastErrorMessage"
-}
-func (method *ComponentDefinitionMethod) isRegisterErrorMessage() (bool) {
-	log.Fatal("isRegisterErrorMessage")
-	return method.MethodName == "RegisterErrorMessage"
-}
-func (method *ComponentDefinitionMethod) isClearErrorMessages() (bool) {
-	log.Fatal("isClearErrorMessages")
-	return method.MethodName == "ClearErrorMessages"
 }
