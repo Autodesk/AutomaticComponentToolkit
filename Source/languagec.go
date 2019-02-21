@@ -340,6 +340,9 @@ func writeClassMethodsIntoCHeader(component ComponentDefinition, class Component
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j];
+		if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
+			continue;
+		}
 		err := WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
 		if (err != nil) {
 			return err;
@@ -370,18 +373,9 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 
 	w.Writeln("extern \"C\" {");
 
-	baseClass, err := setupBaseClassDefinition()
-	if (err != nil) {
-		return err
-	}
-	err = writeClassMethodsIntoCHeader(component, baseClass, w, NameSpace)
-	if (err != nil) {
-		return err;
-	}
-
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i];
-		err = writeClassMethodsIntoCHeader(component, class, w, NameSpace)
+		err := writeClassMethodsIntoCHeader(component, class, w, NameSpace)
 		if (err != nil) {
 			return err;
 		}
