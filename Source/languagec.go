@@ -332,6 +332,22 @@ func CreateCHeader (component ComponentDefinition, CHeaderName string) (error) {
 	return err;
 }
 
+func writeClassMethodsIntoCHeader(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) (error) {
+	w.Writeln("");
+	w.Writeln("/*************************************************************************************************************************");
+	w.Writeln(" Class definition for %s", class.ClassName);
+	w.Writeln("**************************************************************************************************************************/");
+
+	for j := 0; j < len(class.Methods); j++ {
+		method := class.Methods[j];
+		err := WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
+		if (err != nil) {
+			return err;
+		}
+	}
+	return nil
+}
+
 func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) (error) {
 	w.Writeln("#ifndef __%s_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("#define __%s_HEADER", strings.ToUpper (NameSpace));
@@ -354,17 +370,20 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 
 	w.Writeln("extern \"C\" {");
 
+	baseClass, err := setupBaseClassDefinition()
+	if (err != nil) {
+		return err
+	}
+	err = writeClassMethodsIntoCHeader(component, baseClass, w, NameSpace)
+	if (err != nil) {
+		return err;
+	}
+
 	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i];		
-
-		w.Writeln("");
-		w.Writeln("/*************************************************************************************************************************");
-		w.Writeln(" Class definition for %s", class.ClassName);
-		w.Writeln("**************************************************************************************************************************/");
-
-		for j := 0; j < len(class.Methods); j++ {
-			method := class.Methods[j];
-			WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
+		class := component.Classes[i];
+		err = writeClassMethodsIntoCHeader(component, class, w, NameSpace)
+		if (err != nil) {
+			return err;
 		}
 	}
 
