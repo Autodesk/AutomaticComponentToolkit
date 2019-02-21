@@ -100,9 +100,6 @@ func buildDynamicCHeader(component ComponentDefinition, w LanguageWriter, NameSp
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage() ) {
-				continue;
-			}
 			WriteCMethod(method, w, NameSpace, class.ClassName, false, true)
 		}
 
@@ -134,9 +131,6 @@ func buildDynamicCHeader(component ComponentDefinition, w LanguageWriter, NameSp
 		class := component.Classes[i]
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage() ) {
-				continue;
-			}
 			w.Writeln("  P%s%s_%sPtr m_%s_%s;", NameSpace, class.ClassName, method.MethodName, class.ClassName, method.MethodName)
 		}
 	}
@@ -181,9 +175,6 @@ func buildDynamicCInitTableCode(component ComponentDefinition, w LanguageWriter,
 		class := component.Classes[i]
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
-				continue
-			}
 			w.Writeln("pWrapperTable->m_%s_%s = nullptr;", class.ClassName, method.MethodName)
 		}
 	}
@@ -261,9 +252,6 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 		class := component.Classes[i]
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
-				continue
-			}
 			WriteLoadingOfMethod(class, method, w, NameSpace)
 		}
 	}
@@ -667,13 +655,10 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 
 	w.Writeln("")
 
-	w.Writeln("typedef std::shared_ptr<%sBaseClass> P%sBaseClass;", cppClassPrefix, NameSpace)
 	w.Writeln("typedef std::shared_ptr<%sWrapper> P%sWrapper;", cppClassPrefix, NameSpace)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		if (!class.isBaseClass()) {
-			w.Writeln("typedef std::shared_ptr<%s%s> P%s%s;", cppClassPrefix, class.ClassName, NameSpace, class.ClassName)
-		}
+		w.Writeln("typedef std::shared_ptr<%s%s> P%s%s;", cppClassPrefix, class.ClassName, NameSpace, class.ClassName)
 	}
 
 	w.Writeln("")
@@ -787,22 +772,20 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  %sResult releaseWrapperTable (s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
 	w.Writeln("  %sResult loadWrapperTable (s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);", NameSpace, NameSpace)
 	w.Writeln("")
-	var baseClass ComponentDefinitionClass
+
+	
+
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		if (class.isBaseClass()) {
-			baseClass = class
-		}
 		cppClassName := cppClassPrefix + class.ClassName
 		w.Writeln("  friend class %s;", cppClassName)
-	}
-	if (baseClass.ClassName == "") {
-		return fmt.Errorf("no base class component defined")
 	}
 	
 	w.Writeln("")
 	w.Writeln("};")
 	w.Writeln("")
+
+	baseClass := component.baseClass()
 
 	baseClassCPPName := cppClassPrefix + baseClass.ClassName
 	w.Writeln("/*************************************************************************************************************************")
@@ -852,10 +835,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("    return m_pHandle;")
 	w.Writeln("  }")
 
-	getLastErrorMethod, err := setupGetLastErrorMessageMethod()
-	if (err != nil) {
-		return err
-	}
+	getLastErrorMethod := GetLastErrorMessageMethod()
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - %s.", baseClassCPPName, getLastErrorMethod.MethodName, getLastErrorMethod.MethodDescription)
 	w.Writeln("  */")
@@ -871,9 +851,9 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		if (class.isBaseClass()) {
-			continue
-		}
+		// if (class.isBaseClass()) {
+		// 	continue
+		// }
 		cppClassName := cppClassPrefix + class.ClassName
 		parentClassName := class.ParentClass
 		if parentClassName == "" {
@@ -899,9 +879,6 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
-				continue;
-			}
 			err = writeDynamicCPPMethodDeclaration(method, w, NameSpace, cppClassName)
 			if err != nil {
 				return err
@@ -974,10 +951,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
-				continue;
-			}
-			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false, method.isGetLastErrorMessage())
+			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false, false)
 			if err != nil {
 				return err
 			}

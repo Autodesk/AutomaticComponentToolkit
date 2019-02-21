@@ -49,6 +49,7 @@ const (
 	eSpecialMethodRelease = 1
 	eSpecialMethodVersion = 2
 	eSpecialMethodJournal = 3
+	eSpecialMethodError = 4
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -107,6 +108,8 @@ type ComponentDefinitionImplementationList struct {
 type ComponentDefinitionGlobal struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"global"`
+	BaseClassName string `xml:"baseclassname,attr"`
+	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
@@ -647,7 +650,7 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 	if err != nil {
 		return err
 	}
-	
+
 	err = checkErrors(component.Errors)
 	if err != nil {
 		return err
@@ -692,6 +695,21 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 		return err
 	}
 
+
+	if (component.Global.BaseClassName == "") {
+		return errors.New ("No base class name specified");
+	}
+	found := 0
+	for i := 0; i < len(component.Classes); i++ {
+		if (component.Classes[i].ClassName == component.Global.BaseClassName) {
+			found++
+		}
+	}
+	if (found==0) {
+		return errors.New ("Specified base class not found");
+	}	else if (found>1) {
+		return errors.New ("Base clase defined more than once");
+	}
 	return nil
 }
 
@@ -705,6 +723,10 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 
 	if (global.VersionMethod == "") {
 		return eSpecialMethodNone, errors.New ("No version method specified");
+	}
+
+	if (global.ErrorMethod == "") {
+		return eSpecialMethodNone, errors.New ("No error method specified");
 	}
 
 	if (global.ReleaseMethod == global.JournalMethod) {
@@ -724,7 +746,7 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 		
-		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != "BaseClass") || (method.Params[0].ParamPass != "in") {
+		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 
@@ -757,22 +779,52 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodVersion, nil;
 	}
 	
+	if (method.MethodName == global.ErrorMethod) {
+		if (len (method.Params) != 3) {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamPass != "in") || 
+			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") || 
+			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
+			(method.Params[0].ParamClass != global.BaseClassName) {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+		
+		return eSpecialMethodError, nil;
+	}
+
 	return eSpecialMethodNone, nil;
 }
 
-func setupGetLastErrorMessageMethod() (ComponentDefinitionMethod, error) {
+
+
+func GetLastErrorMessageMethod() (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `<method name="GetLastErrorMessage" description = "Returns the last error registered of this class instance">
 		<param name="ErrorMessage" type="string" pass="out" description="Message of the last error registered" />
 		<param name="HasLastError" type="bool" pass="return" description="Has an error been registered already" />
 	</method>`
-	err := xml.Unmarshal([]byte(source),
-	&method)
-	if (err != nil) {
-		return method, err
-	}
-	return method, nil
+	xml.Unmarshal([]byte(source), &method)
+	return method
 }
+func RegisterErrorMessageMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="RegisterErrorMessage" description = "Registers an error message with this class instance">
+		<param name="ErrorMessage" type="string" pass="in" description="Error message to register" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+
 func setupBaseClassDefinition(forImplementation bool) (ComponentDefinitionClass, error) {
 	var class ComponentDefinitionClass
 	source := `<class name="BaseClass" description="Base for all classes in this API">`
@@ -792,20 +844,36 @@ func setupBaseClassDefinition(forImplementation bool) (ComponentDefinitionClass,
 	if (err != nil) {
 		return class, err
 	}
-	method, err := setupGetLastErrorMessageMethod()
+	method := GetLastErrorMessageMethod()
 	class.Methods = append(class.Methods, method)
 	return class, nil
 }
 
-func (class *ComponentDefinitionClass) isBaseClass() (bool) {
-	return class.ClassName == "BaseClass"
+
+func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass) (bool) {
+	return class.ClassName == component.Global.BaseClassName
 }
+
+func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
+	for i := 0; i < len(component.Classes); i++ {
+		if (component.isBaseClass(component.Classes[i])) {
+			return component.Classes[i]
+		}
+	}
+	var out ComponentDefinitionClass
+	log.Fatal("Now base class available")
+	return out
+}
+
 func (method *ComponentDefinitionMethod) isGetLastErrorMessage() (bool) {
+	log.Fatal("isGetLastErrorMessage")
 	return method.MethodName == "GetLastErrorMessage"
 }
 func (method *ComponentDefinitionMethod) isRegisterErrorMessage() (bool) {
+	log.Fatal("isRegisterErrorMessage")
 	return method.MethodName == "RegisterErrorMessage"
 }
 func (method *ComponentDefinitionMethod) isClearErrorMessages() (bool) {
+	log.Fatal("isClearErrorMessages")
 	return method.MethodName == "ClearErrorMessages"
 }

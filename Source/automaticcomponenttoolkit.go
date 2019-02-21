@@ -146,18 +146,18 @@ func main () {
 	}
 
 	// This needs to go into a "preparation function"
-	baseClass, err := setupBaseClassDefinition(true)
-	if (err != nil) {
-		log.Fatal (err);
-	}
-	component.Classes = append([]ComponentDefinitionClass{baseClass}, component.Classes...)
-	for i := 0; i < len(component.Classes); i++ {
-		if (!component.Classes[i].isBaseClass()) {
-			if (component.Classes[i].ParentClass == "") {
-				component.Classes[i].ParentClass = "BaseClass";
-			}
-		}
-	}
+	// baseClass, err := setupBaseClassDefinition(true)
+	// if (err != nil) {
+	// 	log.Fatal (err);
+	// }
+	// component.Classes = append([]ComponentDefinitionClass{baseClass}, component.Classes...)
+	// for i := 0; i < len(component.Classes); i++ {
+	// 	if (!component.Classes[i].isBaseClass()) {
+	// 		if (component.Classes[i].ParentClass == "") {
+	// 			component.Classes[i].ParentClass = "BaseClass";
+	// 		}
+	// 	}
+	// }
 
 	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
