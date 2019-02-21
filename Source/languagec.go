@@ -340,9 +340,6 @@ func writeClassMethodsIntoCHeader(component ComponentDefinition, class Component
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j];
-		if (method.isClearErrorMessages() || method.isRegisterErrorMessage()) {
-			continue;
-		}
 		err := WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
 		if (err != nil) {
 			return err;
