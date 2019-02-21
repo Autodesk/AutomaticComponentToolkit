@@ -207,12 +207,12 @@ func buildDynamicCReleaseTableCode(component ComponentDefinition, w LanguageWrit
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("")
 	w.Writeln("if (pWrapperTable->m_LibraryHandle != nullptr) {")
-	w.Writeln("#ifdef WIN32")
+	w.Writeln("#ifdef _WIN32")
 	w.Writeln("  HMODULE hModule = (HMODULE) pWrapperTable->m_LibraryHandle;")
 	w.Writeln("  FreeLibrary (hModule);")
-	w.Writeln("#else // WIN32")
+	w.Writeln("#else // _WIN32")
 	w.Writeln("  dlclose (pWrapperTable->m_LibraryHandle);")
-	w.Writeln("#endif // WIN32")
+	w.Writeln("#endif // _WIN32")
 	w.Writeln("  return %s (pWrapperTable);", initWrapperFunctionName)
 	w.Writeln("}")
 	w.Writeln("")
@@ -222,12 +222,12 @@ func buildDynamicCReleaseTableCode(component ComponentDefinition, w LanguageWrit
 }
 
 func WriteLoadingOfMethod(class ComponentDefinitionClass, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) {
-	w.Writeln("#ifdef WIN32")
+	w.Writeln("#ifdef _WIN32")
 	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) GetProcAddress (hLibrary, \"%s_%s_%s%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
-	w.Writeln("#else // WIN32")
+	w.Writeln("#else // _WIN32")
 	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) dlsym (hLibrary, \"%s_%s_%s%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
 	w.Writeln("dlerror();")
-	w.Writeln("#endif // WIN32")
+	w.Writeln("#endif // _WIN32")
 	w.Writeln("if (pWrapperTable->m_%s_%s == nullptr)", class.ClassName, method.MethodName)
 	w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
 	w.Writeln("")
@@ -244,17 +244,17 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 	w.Writeln("")
 
 
-	w.Writeln("#ifdef WIN32")
+	w.Writeln("#ifdef _WIN32")
 	// TODO: Unicode
 	w.Writeln("HMODULE hLibrary = LoadLibraryExA(pLibraryFileName, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);")
 	w.Writeln("if (hLibrary == 0) ")
 	w.Writeln("  return %s_ERROR_COULDNOTLOADLIBRARY;", strings.ToUpper(NameSpace))
-	w.Writeln("#else // WIN32")
+	w.Writeln("#else // _WIN32")
 	w.Writeln("void* hLibrary = dlopen (pLibraryFileName, RTLD_LAZY);")
 	w.Writeln("if (hLibrary == 0) ")
 	w.Writeln("  return %s_ERROR_COULDNOTLOADLIBRARY;", strings.ToUpper(NameSpace))
 	w.Writeln("dlerror();");
-	w.Writeln("#endif // WIN32")
+	w.Writeln("#endif // _WIN32")
 	w.Writeln("")
 	
 	for i := 0; i < len(component.Classes); i++ {
@@ -271,12 +271,12 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 	global = component.Global
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
-		w.Writeln("#ifdef WIN32")
+		w.Writeln("#ifdef _WIN32")
 		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) GetProcAddress (hLibrary, \"%s_%s%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
-		w.Writeln("#else // WIN32")
+		w.Writeln("#else // _WIN32")
 		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) dlsym (hLibrary, \"%s_%s%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
 		w.Writeln("dlerror();")
-		w.Writeln("#endif // WIN32")
+		w.Writeln("#endif // _WIN32")
 
 		w.Writeln("if (pWrapperTable->m_%s == nullptr)", method.MethodName)
 		w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
@@ -294,11 +294,11 @@ func buildDynamicCppImplementation(component ComponentDefinition, w LanguageWrit
 	w.Writeln("#include \"%s_types.h\"", BaseName)
 	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
 
-	w.Writeln("#ifdef WIN32")
+	w.Writeln("#ifdef _WIN32")
 	w.Writeln("#include <Windows.h>")
-	w.Writeln("#else // WIN32")
+	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
-	w.Writeln("#endif // WIN32")
+	w.Writeln("#endif // _WIN32")
 
 	w.Writeln("")
 	w.Writeln("%sResult Init%sWrapperTable (s%sDynamicWrapperTable * pWrapperTable)", NameSpace, NameSpace, NameSpace)
@@ -629,11 +629,11 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
 	w.Writeln("")
 
-	w.Writeln("#ifdef WIN32")
+	w.Writeln("#ifdef _WIN32")
 	w.Writeln("#include <Windows.h>")
-	w.Writeln("#else // WIN32")
+	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
-	w.Writeln("#endif // WIN32")
+	w.Writeln("#endif // _WIN32")
 	w.Writeln("#include <string>")
 	w.Writeln("#include <memory>")
 	w.Writeln("#include <vector>")

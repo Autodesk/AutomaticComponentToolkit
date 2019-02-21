@@ -357,11 +357,11 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 	w.Writeln("");
 	w.Writeln("#ifdef __%s_EXPORTS", strings.ToUpper (NameSpace));
 	
-	w.Writeln("#ifdef WIN32");
+	w.Writeln("#ifdef _WIN32");
 	w.Writeln("#define %s_DECLSPEC __declspec (dllexport)", strings.ToUpper (NameSpace));
-	w.Writeln("#else // WIN32");
+	w.Writeln("#else // _WIN32");
 	w.Writeln("#define %s_DECLSPEC __attribute__((visibility(\"default\")))", strings.ToUpper (NameSpace));
-	w.Writeln("#endif // WIN32");
+	w.Writeln("#endif // _WIN32");
 	
 	w.Writeln("#else // __%s_EXPORTS", strings.ToUpper (NameSpace));
 	w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
