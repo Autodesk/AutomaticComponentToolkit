@@ -22,17 +22,36 @@ uses
 	sysutils;
 
 type
-	TLibPrimesSieveCalculator = class (TLibPrimesCalculator, ILibPrimesSieveCalculator)
+	TLibPrimesSieveCalculator = class(TLibPrimesCalculator, ILibPrimesSieveCalculator)
 		private
-			FPrimes: array of QWord;
+      FPrimes: array of QWord;
 		protected
 
 		public
 			procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
-			procedure Calculate(); override;
+      procedure Calculate(); override;
 	end;
 
 implementation
+
+procedure TLibPrimesSieveCalculator.GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
+var
+  i : QWord;
+begin
+  if (Length(FPrimes) = 0) then
+    raise ELibPrimesException.Create(LIBPRIMES_ERROR_NORESULTAVAILABLE);
+
+  if (assigned(PPrimesNeededCount)) then
+     PPrimesNeededCount^ := Length(FPrimes);
+
+  if (APrimesCount >= Length(FPrimes)) then
+  begin
+    for i:=0 to Length(FPrimes) -1 do begin
+      APrimes^ := FPrimes[i];
+      inc(APrimes);
+    end;
+  end;
+end;
 
 procedure TLibPrimesSieveCalculator.Calculate();
 var
@@ -74,25 +93,6 @@ begin
     end;
   end;
 
-end;
-
-procedure TLibPrimesSieveCalculator.GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
-var
-  i : QWord;
-begin
-  if (Length(FPrimes) = 0) then
-    raise ELibPrimesException.Create(LIBPRIMES_ERROR_NORESULTAVAILABLE);
-
-  if (assigned(PPrimesNeededCount)) then
-     PPrimesNeededCount^ := Length(FPrimes);
-
-  if (APrimesCount >= Length(FPrimes)) then
-  begin
-    for i:=0 to Length(FPrimes) -1 do begin
-      APrimes^ := FPrimes[i];
-      inc(APrimes);
-    end;
-  end;
 end;
 
 end.
