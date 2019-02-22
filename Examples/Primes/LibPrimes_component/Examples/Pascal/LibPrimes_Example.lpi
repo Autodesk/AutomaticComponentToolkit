@@ -1,113 +1,110 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-    <ProjectOptions>
-        <Version Value="10"/>
-        <PathDelim Value="\"/>
-        <General>
-            <Flags>
-                <MainUnitHasCreateFormStatements Value="False" />
-                <MainUnitHasTitleStatement Value="False" />
-                <MainUnitHasScaledStatement Value="False" />
-            </Flags>
-            <SessionStorage Value="InProjectDir" />
-            <MainUnit Value="0"/>
-            <Title Value="LibPrimes_Example" />
-            <UseAppBundle Value="False" />
-            <ResourceType Value="res" />
-        </General>
-        <BuildModes Count="2">
-            <Item1 Name="Release" Default="True"/>
-            <Item2 Name="Debug">
-                <CompilerOptions>
-                    <Version Value="11" />
-                    <PathDelim Value="\"/>
-                    <Target>
-                        <Filename Value="bin\$(TargetCPU)-$(TargetOS)\Release\LibPrimes_Example"/>
-                    </Target>
-                    <SearchPaths>
-                        <IncludeFiles Value="$(ProjOutDir)"/>
-                        <OtherUnitFiles Value="..\..\Bindings\Pascal"/>
-                        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
-                    </SearchPaths>
-                    <Parsing>
-                        <SyntaxOptions>
-                            <IncludeAssertionCode Value="True"/>
-                        </SyntaxOptions>
-                    </Parsing>
-                    <CodeGeneration>
-                        <RelocatableUnit Value="True" />
-                    </CodeGeneration>
-                    <Linking>
-                        <Debugging>
-                            <UseExternalDbgSyms Value="True"/>
-                        </Debugging>
-                        <Options>
-                            <ExecutableType Value="Library"/>
-                        </Options>
-                    </Linking>
-                </CompilerOptions>
-            </Item2>
-        </BuildModes>
-        <PublishOptions>
-            <Version Value="2"/>
-        </PublishOptions>
-        <RunParams>
-            <local>
-                <FormatVersion Value="1"/>
-            </local>
-        </RunParams>
-        <Units Count="2">
-            <Unit0>
-                <Filename Value="LibPrimes_Example.lpr"/>
-                <IsPartOfProject Value="True"/>
-            </Unit0>
-            <Unit1>
-                <Filename Value="Unit_LibPrimes.pas"/>
-                <IsPartOfProject Value="True"/>
-            </Unit1>
-        </Units>
-    </ProjectOptions>
-    <CompilerOptions>
-        <Version Value="11"/>
-        <PathDelim Value="\"/>
-        <Target>
+  <ProjectOptions>
+    <Version Value="10"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
+        <MainUnitHasScaledStatement Value="False"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="LibPrimes_Example"/>
+      <UseAppBundle Value="False"/>
+      <ResourceType Value="res"/>
+    </General>
+    <BuildModes Count="2">
+      <Item1 Name="Release" Default="True"/>
+      <Item2 Name="Debug">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
             <Filename Value="bin\$(TargetCPU)-$(TargetOS)\Release\LibPrimes_Example"/>
-        </Target>
-        <SearchPaths>
+          </Target>
+          <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <OtherUnitFiles Value="..\..\Bindings\Pascal"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
-        </SearchPaths>
-        <Parsing>
+          </SearchPaths>
+          <Parsing>
             <SyntaxOptions>
-                <IncludeAssertionCode Value="True"/>
+              <IncludeAssertionCode Value="True"/>
             </SyntaxOptions>
-        </Parsing>
-        <CodeGeneration>
+          </Parsing>
+          <CodeGeneration>
             <RelocatableUnit Value="True"/>
-        </CodeGeneration>
-        <Linking>
+          </CodeGeneration>
+          <Linking>
             <Debugging>
-                <StripSymbols Value="True"/>
-                <UseExternalDbgSyms Value="True"/>
+              <UseExternalDbgSyms Value="True"/>
             </Debugging>
             <Options>
-                <ExecutableType Value="Library"/>
+              <ExecutableType Value="Library"/>
             </Options>
-        </Linking>
-    </CompilerOptions>
-    <Debugging>
-        <Exceptions Count="3">
-            <Item1>
-                <Name Value="EAbort"/>
-            </Item1>
-            <Item2>
-                <Name Value="ECodetoolError"/>
-            </Item2>
-            <Item3>
-                <Name Value="EFOpenError"/>
-            </Item3>
-        </Exceptions>
-    </Debugging>
+          </Linking>
+        </CompilerOptions>
+      </Item2>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+      </local>
+    </RunParams>
+    <Units Count="2">
+      <Unit0>
+        <Filename Value="LibPrimes_Example.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="LibPrimesPascalTest"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="Unit_LibPrimes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit1>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="bin\$(TargetCPU)-$(TargetOS)\Release\LibPrimes_Example"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\Bindings\Pascal"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <RelocatableUnit Value="True"/>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <StripSymbols Value="True"/>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
 </CONFIG>
-
