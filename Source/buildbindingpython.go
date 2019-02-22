@@ -263,12 +263,14 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
 	w.Writeln("  ")
 
+	
 	w.Writeln("  def checkError(self, instance, errorCode):")
-	w.Writeln("    if instance:")
-	w.Writeln("      if instance._wrapper != self:")
-	w.Writeln("        raise E%sException(%sErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace, NameSpace)
 	w.Writeln("    if errorCode != %sErrorCodes.SUCCESS.value:", NameSpace)
-	w.Writeln("      raise E%sException(errorCode)", NameSpace)
+	w.Writeln("      if instance:")
+	w.Writeln("        if instance._wrapper != self:")
+	w.Writeln("          raise E%sException(%sErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace, NameSpace)
+	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
+	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
 	
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
