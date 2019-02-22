@@ -152,10 +152,8 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("**************************************************************************************************************************/");
 	w.Writeln("");
 	
-	// w.Writeln("typedef %sHandle %s_%s;", NameSpace, NameSpace, component.baseClass().ClassName);
-	
 	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i];				
+		class := component.Classes[i];
 		w.Writeln("typedef %sHandle %s_%s;", NameSpace, NameSpace, class.ClassName);
 	}
 	w.Writeln("");
