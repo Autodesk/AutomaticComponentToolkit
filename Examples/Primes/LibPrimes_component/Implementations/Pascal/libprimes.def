@@ -1,4 +1,5 @@
 EXPORTS
+libprimes_getlasterror
 libprimes_releaseinstance
 libprimes_getlibraryversion
 libprimes_createfactorizationcalculator
