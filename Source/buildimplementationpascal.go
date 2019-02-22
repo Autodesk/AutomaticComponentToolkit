@@ -1349,6 +1349,7 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 	w.Writeln ("uses");
 	w.Writeln ("  %s_types,", BaseName);
 	w.Writeln ("  %s_exception,", BaseName);
+	w.Writeln ("  %s_interfaces,", BaseName);
 	w.Writeln ("  Classes,");
 	w.Writeln ("  sysutils;");
 	w.Writeln ("");
