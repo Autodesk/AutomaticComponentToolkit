@@ -20,11 +20,11 @@ Abstract: This is the class declaration of CLibPrimesSieveCalculator
 #pragma warning( disable : 4250)
 
 // Include custom headers here.
-
 #include <vector>
 
 namespace LibPrimes {
 namespace Impl {
+
 
 /*************************************************************************************************************************
  Class declaration of CLibPrimesSieveCalculator 
@@ -42,6 +42,10 @@ protected:
 	*/
 
 public:
+
+	/**
+	* Put additional public members here. They will not be visible in the external API.
+	*/
 
 	void Calculate();
 
