@@ -110,6 +110,63 @@ func BuildBindingCPP(component ComponentDefinition, outputFolder string, outputF
 	return nil
 }
 
+func writeCppBaseClassMethods(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, BaseName string, cppClassPrefix string) {
+	cppBaseClassName := cppClassPrefix + baseClass.ClassName
+	w.Writeln("")
+	w.Writeln("  friend class C%sWrapper;", NameSpace)
+	w.Writeln("protected:")
+	w.Writeln("  /* Handle to Instance in library*/")
+	w.Writeln("  %sHandle m_pHandle;", NameSpace)
+	w.Writeln("")
+	w.Writeln("  /* Checks for an Error code and raises Exceptions */")
+	w.Writeln("  void CheckError(%sResult nResult);", NameSpace)
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::%s - Constructor for Base class.", cppBaseClassName, cppBaseClassName)
+	w.Writeln("  */")
+	w.Writeln("  %s(%sHandle pHandle);", cppBaseClassName, NameSpace)
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::~%s - Destructor for Base class.", cppBaseClassName, cppBaseClassName)
+	w.Writeln("  */")
+	w.Writeln("  virtual ~%s();", cppBaseClassName)
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
+	w.Writeln("  */")
+	w.Writeln("  %sHandle GetHandle();", NameSpace);
+	w.Writeln("  ")
+}
+
+func writeCppBaseClassDefinitions(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, BaseName string, cppClassPrefix string) error {
+	cppBaseClassName := cppClassPrefix + baseClass.ClassName
+
+	w.Writeln("void %s::CheckError(%sResult nResult)", cppBaseClassName, NameSpace)
+	w.Writeln("{")
+	w.Writeln("  %sWrapper::CheckError(this, nResult);", cppClassPrefix)
+	w.Writeln("}")
+	w.Writeln("")
+	w.Writeln("%s::%s(%sHandle pHandle)", cppBaseClassName, cppBaseClassName, NameSpace)
+	w.Writeln("  : m_pHandle (pHandle)")
+	w.Writeln("{")
+	w.Writeln("}")
+	w.Writeln("")
+	w.Writeln("%s::~%s()", cppBaseClassName, cppBaseClassName)
+	w.Writeln("{")
+	w.Writeln("  %sWrapper::%s(this);", cppClassPrefix, component.Global.ReleaseMethod)
+	w.Writeln("}")
+	w.Writeln("")
+
+	w.Writeln("%sHandle %s::GetHandle()", NameSpace, cppBaseClassName)
+	w.Writeln("{")
+	w.Writeln("  return m_pHandle;")
+	w.Writeln("}")
+	w.Writeln("")
+	return nil
+}
+
+
+
 func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWriter, cppimplw LanguageWriter, NameSpace string, BaseName string) error {
 	// Header start code
 	w.Writeln("")
@@ -134,8 +191,8 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("")
 
 	cppClassPrefix := "C" + NameSpace
+	cppBaseClassName := cppClassPrefix + component.Global.BaseClassName
 
-	w.Writeln("class %sBaseClass;", cppClassPrefix)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("class %s%s;", cppClassPrefix, class.ClassName)
@@ -149,7 +206,6 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 
 	w.Writeln("")
 
-	w.Writeln("typedef std::shared_ptr<%sBaseClass> P%sBaseClass;", cppClassPrefix, NameSpace)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("typedef std::shared_ptr<%s%s> P%s%s;", cppClassPrefix, class.ClassName, NameSpace, class.ClassName)
@@ -196,38 +252,6 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	}
 	w.Writeln("")
 
-	w.Writeln("")
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Class %sBaseClass ", cppClassPrefix)
-	w.Writeln("**************************************************************************************************************************/")
-
-	w.Writeln("class %sBaseClass {", cppClassPrefix)
-	w.Writeln("protected:")
-
-	w.Writeln("  /* Handle to Instance in library*/")
-	w.Writeln("  %sHandle m_pHandle;", NameSpace)
-	w.Writeln("")
-	w.Writeln("  /* Checks for an Error code and raises Exceptions */")
-	w.Writeln("  void CheckError(%sResult nResult);", NameSpace)
-	w.Writeln("public:")
-	w.Writeln("")
-	w.Writeln("  /**")
-	w.Writeln("  * %sBaseClass::%sBaseClass - Constructor for Base class.", cppClassPrefix, cppClassPrefix)
-	w.Writeln("  */")
-	w.Writeln("  %sBaseClass(%sHandle pHandle);", cppClassPrefix, NameSpace)
-	w.Writeln("")
-	w.Writeln("  /**")
-	w.Writeln("  * %sBaseClass::~%sBaseClass - Destructor for Base class.", cppClassPrefix, cppClassPrefix)
-	w.Writeln("  */")
-
-	w.Writeln("  virtual ~%sBaseClass();", cppClassPrefix)
-	w.Writeln("")
-	w.Writeln("  /**")
-	w.Writeln("  * %sBaseClass::GetHandle - Returns handle to instance.", cppClassPrefix)
-	w.Writeln("  */")
-	w.Writeln("  %sHandle GetHandle();", NameSpace)
-	w.Writeln("};")
-
 	// Implementation start code
 	cppimplw.Writeln("#include \"%s.hpp\"", BaseName)
 	cppimplw.Writeln("")
@@ -255,54 +279,33 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	cppimplw.Writeln("    return m_errorMessage.c_str();")
 	cppimplw.Writeln("  }")
 
-	cppimplw.Writeln("")
-	cppimplw.Writeln("/*************************************************************************************************************************")
-	cppimplw.Writeln(" Class %sBaseClass ", cppClassPrefix)
-	cppimplw.Writeln("**************************************************************************************************************************/")
-	cppimplw.Writeln("")
-	cppimplw.Writeln("%sBaseClass::%sBaseClass(%sHandle pHandle)", cppClassPrefix, cppClassPrefix, NameSpace)
-	cppimplw.Writeln("{")
-	cppimplw.Writeln("  m_pHandle = pHandle;")
-	cppimplw.Writeln("}")
-	cppimplw.Writeln("")
-	cppimplw.Writeln("%sBaseClass::~%sBaseClass()", cppClassPrefix, cppClassPrefix)
-	cppimplw.Writeln("{")
-	cppimplw.Writeln("  %sWrapper::%s(this);", cppClassPrefix, component.Global.ReleaseMethod)
-	cppimplw.Writeln("}")
-	cppimplw.Writeln("")
-	cppimplw.Writeln("void %sBaseClass::CheckError(%sResult nResult)", cppClassPrefix, NameSpace)
-	cppimplw.Writeln("{")
-	cppimplw.Writeln("  %sWrapper::CheckError(this, nResult);", cppClassPrefix)
-	cppimplw.Writeln("}")
-	cppimplw.Writeln("")
-	cppimplw.Writeln("%sHandle %sBaseClass::GetHandle()", NameSpace, cppClassPrefix)
-	cppimplw.Writeln("{")
-	cppimplw.Writeln("  return m_pHandle;")
-	cppimplw.Writeln("}")
-	cppimplw.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
-
 		class := component.Classes[i]
 		cppClassName := cppClassPrefix + class.ClassName
 
-		parentClassName := class.ParentClass
-		if parentClassName == "" {
-			parentClassName = "BaseClass"
+		cppParentClassName := ""
+		inheritanceSpecifier := ""
+		if (!component.isBaseClass(class)) {
+			cppParentClassName = cppClassPrefix + class.ParentClass
+			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
 		}
-		cppParentClassName := cppClassPrefix + parentClassName
 
 		w.Writeln("     ")
 		w.Writeln("/*************************************************************************************************************************")
 		w.Writeln(" Class %s ", cppClassName)
 		w.Writeln("**************************************************************************************************************************/")
-		w.Writeln("class %s : public %s {", cppClassName, cppParentClassName)
-		w.Writeln("public:")
-		w.Writeln("  ")
-		w.Writeln("  /**")
-		w.Writeln("  * %s::%s - Constructor for %s class.", cppClassName, cppClassName, class.ClassName)
-		w.Writeln("  */")
-		w.Writeln("  %s (%sHandle pHandle);", cppClassName, NameSpace)
+		w.Writeln("class %s %s {", cppClassName, inheritanceSpecifier)
+
+		if (component.isBaseClass(class)) {
+			writeCppBaseClassMethods(component, class, w, NameSpace, BaseName, cppClassPrefix)
+		} else {
+			w.Writeln("public:")
+			w.Writeln("  /**")
+			w.Writeln("  * %s::%s - Constructor for %s class.", cppClassName, cppClassName, class.ClassName)
+			w.Writeln("  */")
+			w.Writeln("  %s (%sHandle pHandle);", cppClassName, NameSpace)
+		}
 
 		cppimplw.Writeln("     ")
 		cppimplw.Writeln("/*************************************************************************************************************************")
@@ -311,18 +314,27 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 		cppimplw.Writeln("/**")
 		cppimplw.Writeln("* %s::%s - Constructor for %s class.", cppClassName, cppClassName, class.ClassName)
 		cppimplw.Writeln("*/")
-		cppimplw.Writeln("%s::%s (%sHandle pHandle)", cppClassName, cppClassName, NameSpace)
-		cppimplw.Writeln("  : %s (pHandle)", cppParentClassName)
-		cppimplw.Writeln("{ }")
+		if (!component.isBaseClass(class)) {
+			cppimplw.Writeln("%s::%s (%sHandle pHandle)", cppClassName, cppClassName, NameSpace)
+			cppimplw.Writeln("  : %s (pHandle)", cppParentClassName)
+			cppimplw.Writeln("{ }")
+		} else {
+			err = writeCppBaseClassDefinitions(component, class, cppimplw, NameSpace, BaseName, cppClassPrefix)
+			if err != nil {
+				return err
+			}
+		}
 
+		if (len(class.Methods) > 0) {
+			w.Writeln("public:")
+			w.Writeln("  ")
+		}
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-
 			err := writeCPPMethod(method, w, cppimplw, NameSpace, class.ClassName, false)
 			if err != nil {
 				return err
 			}
-
 		}
 
 		w.Writeln("};")
@@ -336,11 +348,15 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("**************************************************************************************************************************/")
 
 	w.Writeln("class %sWrapper {", cppClassPrefix)
-	w.Writeln("public:")
+	w.Writeln("  friend class %s;", cppBaseClassName)
 
-	w.Writeln("  static void CheckError(%sBaseClass * pBaseClass, %sResult nResult);", cppClassPrefix, NameSpace)
+	w.Writeln("protected:")
+	w.Writeln("  static void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
 
 	global := component.Global;
+	if (len(global.Methods)>0) {
+		w.Writeln("public:")
+	}
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
@@ -359,14 +375,13 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("")
 
 	cppimplw.Writeln("")
-	cppimplw.Writeln("void %sWrapper::CheckError(%sBaseClass * pBaseClass, %sResult nResult)", cppClassPrefix, cppClassPrefix, NameSpace)
-	cppimplw.Writeln("{")	
+	cppimplw.Writeln("void %sWrapper::CheckError(%s * pBaseClass, %sResult nResult)", cppClassPrefix, cppBaseClassName, NameSpace)
+	cppimplw.Writeln("{")
 	cppimplw.Writeln("  if (nResult != 0) {")
 	cppimplw.Writeln("    std::string sErrorMessage;")
 
-	// TODO
 	cppimplw.Writeln("    if (pBaseClass != nullptr)");
-	cppimplw.Writeln("      pBaseClass->%s(sErrorMessage);", "GetLastErrorMessage");
+	cppimplw.Writeln("      %s(pBaseClass, sErrorMessage);", component.Global.ErrorMethod);
 
 	cppimplw.Writeln("    throw E%sException (nResult, sErrorMessage);", NameSpace)
 	cppimplw.Writeln("  }")
