@@ -47,7 +47,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
   
 #### Feature Matrix: Bindings
 | Binding     |         Status                                             | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Error Message Propagation |
-|:-----------:|:----------------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|
+|:-----------:|:----------------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:---------:|
 | C++         | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | C++ Dynamic | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | C           | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
@@ -59,7 +59,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 
 #### Feature Matrix: Implementation Stubs
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling | Error Message Propagation |
-|:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|
+|:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|:---------:|
 | C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          | +          |
 | Pascal         | ![](Documentation/images/O.png) stable                | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | -          | +          |
 
