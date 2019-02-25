@@ -188,12 +188,14 @@ class LibPrimesWrapper:
 		pFileName = ctypes.c_char_p(str.encode(FileName))
 		self.checkError(None, self.lib.libprimes_setjournal(pFileName))
 	
-'''Base Class Implementation
+
+
+''' Class Implementation for Base
 '''
-class LibPrimesBaseClass():
+class LibPrimesBase:
 	def __init__(self, handle, wrapper):
 		if not handle or not wrapper:
-			raise ELibPrimesException()
+			raise ELibPrimesException(LibPrimesErrorCodes.INVALIDPARAM)
 		self._handle = handle
 		self._wrapper = wrapper
 	
@@ -201,20 +203,11 @@ class LibPrimesBaseClass():
 		self._wrapper.ReleaseInstance(self)
 
 
-'''Base Class Implementation
-'''
-class LibPrimesBase(LibPrimesBaseClass):
-	def __init__(self, handle, wrapper):
-		LibPrimesBaseClass.__init__(self, handle, wrapper)
-	
-
-
-'''Calculator Class Implementation
+''' Class Implementation for Calculator
 '''
 class LibPrimesCalculator(LibPrimesBase):
 	def __init__(self, handle, wrapper):
-		LibPrimesBaseClass.__init__(self, handle, wrapper)
-	
+		LibPrimesBase.__init__(self, handle, wrapper)
 	def GetValue(self):
 		pValue = ctypes.c_uint64()
 		self._wrapper.checkError(self, self._wrapper.lib.libprimes_calculator_getvalue(self._handle, pValue))
@@ -232,12 +225,11 @@ class LibPrimesCalculator(LibPrimesBase):
 	
 
 
-'''FactorizationCalculator Class Implementation
+''' Class Implementation for FactorizationCalculator
 '''
 class LibPrimesFactorizationCalculator(LibPrimesCalculator):
 	def __init__(self, handle, wrapper):
-		LibPrimesBaseClass.__init__(self, handle, wrapper)
-	
+		LibPrimesCalculator.__init__(self, handle, wrapper)
 	def GetPrimeFactors(self):
 		nPrimeFactorsCount = ctypes.c_uint64(0)
 		nPrimeFactorsNeededCount = ctypes.c_uint64(0)
@@ -250,12 +242,11 @@ class LibPrimesFactorizationCalculator(LibPrimesCalculator):
 	
 
 
-'''SieveCalculator Class Implementation
+''' Class Implementation for SieveCalculator
 '''
 class LibPrimesSieveCalculator(LibPrimesCalculator):
 	def __init__(self, handle, wrapper):
-		LibPrimesBaseClass.__init__(self, handle, wrapper)
-	
+		LibPrimesCalculator.__init__(self, handle, wrapper)
 	def GetPrimes(self):
 		nPrimesCount = ctypes.c_uint64(0)
 		nPrimesNeededCount = ctypes.c_uint64(0)
