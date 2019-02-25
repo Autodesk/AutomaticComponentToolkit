@@ -264,6 +264,7 @@ func checkImplementations(implementations[] ComponentDefinitionImplementation) e
 func checkErrors(errors ComponentDefinitionErrors) error {
 	errorNameList := make(map[string]bool, 0);
 	errorCodeList := make(map[int]bool, 0);
+
 	for i := 0; i < len(errors.Errors); i++ {
 		merror := errors.Errors[i];
 		if !nameIsValidIdentifier(merror.Name) {
@@ -283,6 +284,15 @@ func checkErrors(errors ComponentDefinitionErrors) error {
 			return fmt.Errorf( "invalid error description \"%s\" for error \"%s\"", merror.Description, merror.Name);
 		}
 	}
+
+	requiredErrors := []string{"NOTIMPLEMENTED", "INVALIDPARAM",
+			"INVALIDCAST", "BUFFERTOOSMALL", "GENERICEXCEPTION", "COULDNOTLOADLIBRARY", "COULDNOTFINDLIBRARYEXPORT", "INCOMPATIBLEBINARYVERSION"}
+		for _, req := range requiredErrors {
+			if (!errorNameList[strings.ToLower(req)]) {
+				return fmt.Errorf( "component is missing the required error \"%s\"", req);
+			}
+		}
+
 	return nil
 }
 
@@ -427,7 +437,7 @@ func checkFunctionTypes(functions[] ComponentDefinitionFunctionType) (map[string
 
 func checkDuplicateNames(enumList map[string]bool, structList map[string]bool, classList map[string]bool) (error) {
 	allLowerList := make(map[string]string, 0)
-    for k := range structList {
+	for k := range structList {
 		if allLowerList[strings.ToLower(k)] == "struct" {
 			return fmt.Errorf ("duplicate struct name \"%s\"", k)
 		}
