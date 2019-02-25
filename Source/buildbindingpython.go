@@ -281,22 +281,10 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 
-	w.Writeln("'''Base Class Implementation")
-	w.Writeln("'''")
-	w.Writeln("class %sBaseClass():", NameSpace)
-	w.Writeln("  def __init__(self, handle, wrapper):")
-	w.Writeln("    if not handle or not wrapper:")
-	w.Writeln("      raise E%sException()", NameSpace)
-	w.Writeln("    self._handle = handle")
-	w.Writeln("    self._wrapper = wrapper")
-	w.Writeln("  ")
-	w.Writeln("  def __del__(self):")
-	w.Writeln("    self._wrapper.%s(self)", componentdefinition.Global.ReleaseMethod)
-
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		w.Writeln("")
 		w.Writeln("")
-		err = writeClass(componentdefinition.Classes[i], w, NameSpace)
+		err = writePythonClass(componentdefinition, componentdefinition.Classes[i], w, NameSpace)
 		if (err!=nil) {
 			return err
 		}
@@ -582,19 +570,34 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 }
 
 
-func writeClass(class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
-	w.Writeln("'''%s Class Implementation",  class.ClassName)
+func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
+	pythonBaseClassName := fmt.Sprintf("%s%s", NameSpace, component.Global.BaseClassName)
+
+	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
-	parentClass := fmt.Sprintf("%sBaseClass", NameSpace)
-	if (class.ParentClass != "") {
-		parentClass = fmt.Sprintf("%s%s", NameSpace, class.ParentClass)
-	}
+	parentClass := ""
+	if (!component.isBaseClass(class)) {
+		if (class.ParentClass != "") {
+			parentClass = fmt.Sprintf("%s%s", NameSpace, class.ParentClass)
+		} else {
+			parentClass = pythonBaseClassName
+		}
+		w.Writeln("class %s%s(%s):", NameSpace, class.ClassName, parentClass)
+		w.Writeln("  def __init__(self, handle, wrapper):")
+		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
-	w.Writeln("class %s%s(%s):", NameSpace, class.ClassName, parentClass)
-	w.Writeln("  def __init__(self, handle, wrapper):")
-	w.Writeln("    %sBaseClass.__init__(self, handle, wrapper)", NameSpace)
-	w.Writeln("  ")
+	} else {
+		w.Writeln("class %s%s:", NameSpace, class.ClassName)
+		w.Writeln("  def __init__(self, handle, wrapper):")
+		w.Writeln("    if not handle or not wrapper:")
+		w.Writeln("      raise E%sException(%sErrorCodes.INVALIDPARAM)", NameSpace, NameSpace)
+		w.Writeln("    self._handle = handle")
+		w.Writeln("    self._wrapper = wrapper")
+		w.Writeln("  ")
+		w.Writeln("  def __del__(self):")
+		w.Writeln("    self._wrapper.%s(self)", component.Global.ReleaseMethod)
+	}
 
 	for i:=0; i<len(class.Methods); i++ {
 		err := writeMethod(class.Methods[i], w, NameSpace, class.ClassName, false)
