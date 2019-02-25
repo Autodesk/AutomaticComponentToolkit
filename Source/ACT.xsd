@@ -153,6 +153,9 @@
 		<xs:attribute name="versionmethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;versionmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="errormethod" type="ST_Name" use="required">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;errormethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:attribute name="journalmethod" type="ST_Name" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>

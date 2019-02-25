@@ -157,15 +157,25 @@ Element **\<global>** of type **CT\_Global**
 ##### Attributes
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
+| baseclassname | **ST\_Name** | required | | Specifies the name of a class that is the base class for all classes of the generated component. |
 | releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release a class instance owned by the generated component. |
 | versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the semantic version of the component. |
+| errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
 | journalmethod | **ST\_Name** | optional | | Specifies the name of the method used to set the journal file. If ommitted, journalling will not be built into the component. |
 
 The \<global> element contains a list of [method](#9-function-type) elements that define the exported global functions of the component.
 The names of the \<method> elements MUST be unique within the \<global> element.
 
+The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
+This class will be the base class for all classes of the generated component.
+
 The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="handle"`, `class="BaseClass"` and `pass="in"`.
 The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters with `type="uint32"` and `pass="out"`.
+
+The `errormethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters:
+1. `type="handle"`, `class="$BASECLASSNAME"` and `pass="in"`, where `"$BASECLASSNAME"` is the value of the `baseclassname` attribute of the \<global> element.
+2. `type="string"` and `pass="out"`: outputs the last error message
+3. `type="bool"` and `pass="return"`: returns the instance of the baseclass has an error.
 
 If the `journalmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="string"` and `pass="in"`.
 
@@ -183,6 +193,8 @@ Element **\<class>** of type **CT\_Class**
 
 The \<class> element contains a list of [method](#9-function-type) elements that define the exported member functions of this class.
 The names of the \<method> elements MUST be unique in this list.
+
+If the `parent`-attribute is empty, and the name of this class differs from the `baseclassname`-attribute of the \<global> element, `baseclassname` will be considered as the parent class of this class.
 
 ## 9. Function Type
 Element **\<functiontype>**
