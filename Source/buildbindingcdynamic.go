@@ -642,8 +642,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("private:")
-
+	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
@@ -770,7 +769,6 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 
 	w.Writeln("class %sWrapper {", cppClassPrefix)
 	w.Writeln("public:")
-	
 	w.Writeln("  ")
 	w.Writeln("  %sWrapper (const std::string &sFileName)", cppClassPrefix)
 	w.Writeln("  {")

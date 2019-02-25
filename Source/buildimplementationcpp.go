@@ -267,7 +267,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	parentClassName := " "
 	if (!component.isBaseClass(class)) {
 		parentClassName = fmt.Sprintf(" : public virtual I%s%s%s", ClassIdentifier, NameSpace, component.Global.BaseClassName)
-		if component.Global.BaseClassName != class.ParentClass {
+		if (class.ParentClass != "") && (component.Global.BaseClassName != class.ParentClass) {
 			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual I%s%s%s", NameSpace, ClassIdentifier, class.ParentClass)
 		}
 	}
@@ -692,6 +692,12 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		}
 		stubheaderw.Writeln("")
 
+		if (!component.isBaseClass(class)) {
+			if (class.ParentClass == "") {
+				class.ParentClass = component.Global.BaseClassName
+			}
+		}
+
 		if class.ParentClass != "" {
 			stubheaderw.Writeln("// Parent classes")
 			stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
@@ -833,7 +839,6 @@ func buildCPPStub(component ComponentDefinition, NameSpace string, NameSpaceImpl
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		log.Println(class.ClassName + ".parent=\"" + class.ParentClass + "\"")
 		err :=  buildCPPStubClass(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString, stubIdentifier, forceRecreation)
 		if err != nil {
 			return err

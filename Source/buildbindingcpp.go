@@ -112,8 +112,6 @@ func BuildBindingCPP(component ComponentDefinition, outputFolder string, outputF
 
 func writeCppBaseClassMethods(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, BaseName string, cppClassPrefix string) {
 	cppBaseClassName := cppClassPrefix + baseClass.ClassName
-	w.Writeln("")
-	w.Writeln("  friend class C%sWrapper;", NameSpace)
 	w.Writeln("protected:")
 	w.Writeln("  /* Handle to Instance in library*/")
 	w.Writeln("  %sHandle m_pHandle;", NameSpace)
@@ -131,6 +129,7 @@ func writeCppBaseClassMethods(component ComponentDefinition, baseClass Component
 	w.Writeln("  */")
 	w.Writeln("  virtual ~%s();", cppBaseClassName)
 	w.Writeln("")
+	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
@@ -287,7 +286,11 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 		cppParentClassName := ""
 		inheritanceSpecifier := ""
 		if (!component.isBaseClass(class)) {
-			cppParentClassName = cppClassPrefix + class.ParentClass
+			if (class.ParentClass == "") {
+				cppParentClassName = cppClassPrefix + component.Global.BaseClassName
+			} else {
+				cppParentClassName = cppClassPrefix + class.ParentClass
+			}
 			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
 		}
 
@@ -348,15 +351,10 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("**************************************************************************************************************************/")
 
 	w.Writeln("class %sWrapper {", cppClassPrefix)
-	w.Writeln("  friend class %s;", cppBaseClassName)
-
-	w.Writeln("protected:")
+	w.Writeln("public:")
 	w.Writeln("  static void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
 
 	global := component.Global;
-	if (len(global.Methods)>0) {
-		w.Writeln("public:")
-	}
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
