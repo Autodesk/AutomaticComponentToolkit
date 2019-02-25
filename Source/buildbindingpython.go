@@ -385,6 +385,8 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 			CTypesParamTypeName = "ctypes.c_float";
 		case "double":
 			CTypesParamTypeName = "ctypes.c_double";
+		case "pointer":
+			CTypesParamTypeName = "ctypes.c_void_p";
 		case "string":
 			CTypesParamTypeName = "ctypes.c_char_p";
 		case "basicarray":
@@ -450,6 +452,12 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "d" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+			
+			case "pointer":
+				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamCallType = cParamTypeName;
+				cParams[0].ParamName = "p" + param.ParamName;
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 				
 			case "string":
 				cParams[0].ParamType = cParamTypeName;
@@ -500,7 +508,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 				cParams[0].ParamType = "ctypes.POINTER("+cParamTypeName+")";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
@@ -717,7 +725,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName
 				retVals = retVals + fmt.Sprintf("%s(%s.value)", cParams[0].ParamCallType, cParams[0].ParamName)
 			}
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 				if (retVals != "") {
 					retVals = retVals + ", ";
 				}
@@ -747,7 +755,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			pythonInParams = pythonInParams + ", ";
 			
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
 				pythonInParams = pythonInParams + param.ParamName
 				cArguments = cArguments + cParams[0].ParamName

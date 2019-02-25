@@ -541,7 +541,7 @@ func descriptionIsValid (description string) bool {
 
 func isScalarType(typeStr string) bool {
 	switch (typeStr) {
-		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 			return true
 	}
 	return false

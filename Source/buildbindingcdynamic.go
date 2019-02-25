@@ -515,7 +515,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 			returntype = getBindingCppParamType(param, NameSpace, false)
 
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter;
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s result%s = 0;", returntype, param.ParamName) )

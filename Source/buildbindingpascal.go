@@ -717,7 +717,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 			case "in":
 
 				switch (param.ParamType) {
-					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
 						initCallParameters = initCallParameters + "A" + param.ParamName;
 
@@ -794,7 +794,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 			case "out":
 			
 				switch (param.ParamType) {
-					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
 						initCallParameters = initCallParameters + "A" + param.ParamName;
 
@@ -870,7 +870,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 			case "return":
 
 				switch (param.ParamType) {
-					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 						callFunctionParameters = callFunctionParameters + "Result";
 
 					case "string":

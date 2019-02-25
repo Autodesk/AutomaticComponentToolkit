@@ -514,7 +514,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				callParameters = callParameters + ", "
 			}
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 				callParameters = callParameters + pascalParams[0].ParamName
 			case "bool":
 				callParameters = callParameters + pascalParams[0].ParamName + " <> 0"
@@ -561,7 +561,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 
 			switch param.ParamType {
 
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "struct":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer", "struct":
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if (not Assigned (%s)) then", pascalParams[0].ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("  raise E%sException.Create (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace)))
 
@@ -620,7 +620,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 
 			switch param.ParamType {
 
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if not Assigned (%s) then", pascalParams[0].ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("  raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 

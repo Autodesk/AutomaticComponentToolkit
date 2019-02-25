@@ -121,6 +121,7 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("");
 	w.Writeln("typedef %s_int32 %sResult;", NameSpace, NameSpace);
 	w.Writeln("typedef void * %sHandle;", NameSpace);
+	w.Writeln("typedef void * %s_pvoid;", NameSpace);
 	
 	w.Writeln("");
 	w.Writeln("/*************************************************************************************************************************");
@@ -249,6 +250,8 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 						w.Writeln("    %s_single m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "double":
 						w.Writeln("    %s_double m_%s%s;", NameSpace, member.Name, arraysuffix);
+					case "pointer":
+						w.Writeln("    %s_pvoid m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -505,6 +508,9 @@ func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass st
 		case "double":
 			cParamTypeName = fmt.Sprintf ("%s_double", NameSpace);
 		
+		case "pointer":
+			cParamTypeName = fmt.Sprintf ("%s_pvoid", NameSpace);
+		
 		case "string":
 			cParamTypeName = "char *";
 
@@ -574,6 +580,11 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "d" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+
+			case "pointer":
+				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamName = "p" + param.ParamName;
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 				
 			case "string":
 				cParams[0].ParamType = "const " + cParamTypeName;
@@ -618,7 +629,7 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64",  "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
+			case "uint8", "uint16", "uint32", "uint64",  "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer", "enum":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);

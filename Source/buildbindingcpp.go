@@ -456,7 +456,11 @@ func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, i
 		case "bool":
 			return fmt.Sprintf ("bool");
 		case "single":
-			return fmt.Sprintf ("float");
+			return fmt.Sprintf ("%s_single", NameSpace);
+		case "double":
+			return fmt.Sprintf ("%s_double", NameSpace);
+		case "pointer":
+			return fmt.Sprintf ("%s_pvoid", NameSpace);
 		case "basicarray":
 			cppBasicType := "";
 			switch (param.ParamClass) {
@@ -482,6 +486,8 @@ func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, i
 				cppBasicType =fmt.Sprintf ("%s_single", NameSpace);
 			case "double":
 				cppBasicType = fmt.Sprintf ("%s_double", NameSpace);
+			case "pointer":
+				cppBasicType = fmt.Sprintf ("%s_pvoid", NameSpace);
 			default:
 				log.Fatal ("Invalid parameter type: ", param.ParamClass);
 			}
@@ -494,8 +500,6 @@ func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, i
 				return fmt.Sprintf ("C%sInputVector<s%s%s>", NameSpace, NameSpace, param.ParamClass);
 			}
 			return fmt.Sprintf ("std::vector<s%s%s>", NameSpace, param.ParamClass);
-		case "double":
-			return fmt.Sprintf ("%s_double", NameSpace);
 		case "enum":
 			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
 		case "struct":
@@ -527,6 +531,8 @@ func getBindingCppVariableName (param ComponentDefinitionParam) (string) {
 			return param.ParamName + "Buffer";
 		case "double":
 			return "d" + param.ParamName;
+		case "pointer":
+			return "p" + param.ParamName;
 		case "enum":
 			return "e" + param.ParamName;
 		case "struct":
@@ -671,7 +677,7 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 			returntype = getBindingCppParamType(param, NameSpace, false)
 
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter;
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s result%s = 0;", returntype, param.ParamName))

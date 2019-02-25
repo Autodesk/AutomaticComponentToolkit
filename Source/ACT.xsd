@@ -259,6 +259,7 @@
 			<xs:enumeration value="int64"/>
 			<xs:enumeration value="single"/>
 			<xs:enumeration value="double"/>
+			<xs:enumeration value="pointer"/>
 			<xs:enumeration value="struct"/>
 			<xs:enumeration value="enum"/>
 			<xs:enumeration value="basicarray"/>
@@ -283,6 +284,7 @@
 			<xs:enumeration value="int64"/>
 			<xs:enumeration value="single"/>
 			<xs:enumeration value="double"/>
+			<xs:enumeration value="pointer"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -328,7 +330,6 @@
 			<xs:pattern value="[A-Za-z0-9_]{0,63}"/>
 		</xs:restriction>
 	</xs:simpleType>
-
 
 	<!-- Elements -->
 	<xs:element name="component" type="CT_Component"/>

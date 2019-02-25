@@ -857,6 +857,8 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 			return "p" + param.ParamName + "Buffer";
 		case "double":
 			return "d" + param.ParamName;
+		case "pointer":
+			return "p" + param.ParamName;
 		case "enum":
 			return "e" + param.ParamName;
 		case "struct":
@@ -911,6 +913,10 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 			case "double":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] d%s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("const %s d%s", cppParamType, param.ParamName)
+
+			case "pointer":
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%s - %s\n", param.ParamName, param.ParamDescription)
+				parameters = parameters + fmt.Sprintf("const %s p%s", cppParamType, param.ParamName)
 
 			case "enum":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] e%s - %s\n", param.ParamName, param.ParamDescription)
@@ -967,6 +973,10 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] d%s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("%s & d%s", cppParamType, param.ParamName)
 
+			case "pointer":
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] d%s - %s\n", param.ParamName, param.ParamDescription)
+				parameters = parameters + fmt.Sprintf("%s & p%s", cppParamType, param.ParamName)
+
 			case "string":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] s%s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("std::string & s%s", param.ParamName)
@@ -1002,7 +1012,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 		case "return":
 			currentReturnType := getCppParamType(param, NameSpace, false)
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "string", "enum", "struct":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer", "string", "enum", "struct":
 				returntype = currentReturnType
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
@@ -1073,7 +1083,12 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 		case "bool":
 			return fmt.Sprintf ("bool");
 		case "single":
-			return fmt.Sprintf ("float");
+			return fmt.Sprintf ("%s_single", NameSpace);
+		case "double":
+			return fmt.Sprintf ("%s_double", NameSpace);
+		case "pointer":
+			return fmt.Sprintf ("%s_pvoid", NameSpace);
+
 		case "basicarray":
 			cppBasicType := "";
 			switch (param.ParamClass) {
@@ -1099,16 +1114,14 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 				cppBasicType = fmt.Sprintf ("%s_single", NameSpace);
 			case "double":
 				cppBasicType = fmt.Sprintf ("%s_double", NameSpace);
+			case "pointer":
+				cppBasicType = fmt.Sprintf ("%s_pvoid", NameSpace);
 			default:
 				log.Fatal ("Invalid parameter type: ", param.ParamClass);
 			}
 			return fmt.Sprintf ("%s *", cppBasicType);
 		case "structarray":
 			return fmt.Sprintf ("s%s%s *", NameSpace, param.ParamClass);
-		case "float":
-			return fmt.Sprintf ("%s_single", NameSpace);
-		case "double":
-			return fmt.Sprintf ("%s_double", NameSpace);
 		case "enum":
 			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
 		case "struct":
@@ -1145,7 +1158,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 			}
 
 			switch param.ParamType {
-			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 				callParameters = callParameters + variableName
 			case "enum":
 				callParameters = callParameters + "e" + param.ParamName
@@ -1187,7 +1200,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 
 			switch param.ParamType {
 
-			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "enum", "struct":
+			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "enum", "struct", "pointer":
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (!p%s)\n", param.ParamName)
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
 				callParameters = callParameters + "*p" + param.ParamName
@@ -1221,7 +1234,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 
 			switch param.ParamType {
 
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum", "pointer":
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr)\n", param.ParamName)
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
 
@@ -1337,6 +1350,9 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 
 				case "double":
 					journalCall = "addDoubleParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+				
+				case "pointer":
+					journalCall = "addPointerParameter (\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "string":
 					journalCall = "addStringParameter (\"" + param.ParamName+ "\", p" + param.ParamName + ")";
@@ -1404,6 +1420,9 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 
 				case "double":
 					journalCall = "addDoubleResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+
+				case "pointer":
+					journalCall = "addPointerResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "string":
 					journalCall = "addStringResult (\"" + param.ParamName+ "\", s" + param.ParamName + ".c_str())";
@@ -1539,6 +1558,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addInt64Parameter(const std::string & sName, const %s_int64 nValue);", NameSpace);
 	headerw.Writeln("    void addSingleParameter(const std::string & sName, const %s_single fValue);", NameSpace);
 	headerw.Writeln("    void addDoubleParameter(const std::string & sName, const %s_double dValue);", NameSpace);
+	headerw.Writeln("    void addPointerParameter(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringParameter(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleParameter(const std::string & sName, const %sHandle pHandle);", NameSpace);
 	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
@@ -1554,6 +1574,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addInt64Result(const std::string & sName, const %s_int64 nValue);", NameSpace);
 	headerw.Writeln("    void addSingleResult(const std::string & sName, const %s_single fValue);", NameSpace);
 	headerw.Writeln("    void addDoubleResult(const std::string & sName, const %s_double dValue);", NameSpace);
+	headerw.Writeln("    void addPointerResult(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringResult(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleResult(const std::string & sName, const %sHandle pHandle);", NameSpace);
 	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
@@ -1737,6 +1758,10 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"double\", std::to_string(dValue));");
 	implw.Writeln("}");
+	implw.Writeln("void C%sInterfaceJournalEntry::addPointerParameter(const std::string & sName, const %s_pvoid pValue)", NameSpace, NameSpace);
+	implw.Writeln("{");
+	implw.Writeln("  addParameter(sName, \"pointer\", std::to_string(reinterpret_cast<const %s_uint64>(pValue)));", NameSpace);
+	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("void C%sInterfaceJournalEntry::addStringParameter(const std::string & sName, const char * pValue)", NameSpace);
 	implw.Writeln("{");
@@ -1811,6 +1836,11 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("void C%sInterfaceJournalEntry::addDoubleResult(const std::string & sName, const %s_double dValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"double\", std::to_string(dValue));");
+	implw.Writeln("}");
+	implw.Writeln("");
+	implw.Writeln("void C%sInterfaceJournalEntry::addPointerResult(const std::string & sName, const %s_pvoid pValue)", NameSpace, NameSpace);
+	implw.Writeln("{");
+	implw.Writeln("  addResult(sName, \"pointer\", std::to_string(reinterpret_cast<const %s_uint64>(pValue)));", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("void C%sInterfaceJournalEntry::addStringResult(const std::string & sName, const char * pValue)", NameSpace);

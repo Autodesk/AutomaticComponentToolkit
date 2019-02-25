@@ -136,7 +136,7 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 						fmt.Fprintf (w, "    %s%s uint16;\n", member.Name, arraysuffix);
 					case "uint32":
 						fmt.Fprintf (w, "    %s%s uint32;\n", member.Name, arraysuffix);
-					case "uint64":				
+					case "uint64":
 						fmt.Fprintf (w, "    %s%s uint64;\n", member.Name, arraysuffix);
 					case "int8":
 						fmt.Fprintf (w, "    %s%s int8;\n", member.Name, arraysuffix);
@@ -152,6 +152,8 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 						fmt.Fprintf (w, "    %s%s float32;\n", member.Name, arraysuffix);
 					case "double":
 						fmt.Fprintf (w, "    %s%s float64;\n", member.Name, arraysuffix);
+					case "pointer":
+						return fmt.Errorf("Basic Type \"pointer\" is not supported in go bindings.")
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -543,7 +545,8 @@ func getGoBasicType (paramType string) (string, error) {
 		case "double":
 			return "float64", nil;
 		
-			
+		case "pointer":
+			return "", fmt.Errorf("Basic Type \"pointer\" is not supported in go bindings.")
 	}
 		
 	return "", errors.New ("Invalid basic type: " + paramType);
