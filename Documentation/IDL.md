@@ -305,6 +305,9 @@ Element **\<errors>** of type **CT\_ErrorList**
 The \<errors> element contains a list of [\<error>](#16-error) elements.
 The names and codes of the \<error> elements in this list MUST be unique within the \<errors> element.
 
+Each ACT-component MUST contain at least the following 8 error codes:
+
+`NOTIMPLEMENTED`, `INVALIDPARAM`, `INVALIDCAST`, `BUFFERTOOSMALL`, `GENERICEXCEPTION`, `COULDNOTLOADLIBRARY`, `COULDNOTFINDLIBRARYEXPORT`, `INCOMPATIBLEBINARYVERSION`
 
 ## 16. Error
 Element **\<error>** of type **CT\_Error**

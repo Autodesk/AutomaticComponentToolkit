@@ -153,7 +153,7 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 					case "double":
 						fmt.Fprintf (w, "    %s%s float64;\n", member.Name, arraysuffix);
 					case "pointer":
-						return fmt.Errorf("Basic Type \"pointer\" is not supported in go bindings.")
+						fmt.Fprintf (w, "    %s%s uint64;\n", member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -537,16 +537,16 @@ func getGoBasicType (paramType string) (string, error) {
 	
 	switch (paramType) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool":
-			return paramType, nil;
+			return paramType, nil
 	
 		case "single":
-			return "float32", nil;
+			return "float32", nil
 			
 		case "double":
-			return "float64", nil;
+			return "float64", nil
 		
 		case "pointer":
-			return "", fmt.Errorf("Basic Type \"pointer\" is not supported in go bindings.")
+			return "uint64", nil
 	}
 		
 	return "", errors.New ("Invalid basic type: " + paramType);
@@ -576,6 +576,8 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 		
 			switch (param.ParamType) {
 				case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+					errorreturn = errorreturn + fmt.Sprintf ("0, ")
+				case "pointer":
 					errorreturn = errorreturn + fmt.Sprintf ("0, ")
 				case "enum":
 					errorreturn = errorreturn + fmt.Sprintf ("0, ")
@@ -698,18 +700,24 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt32InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "b" + param.ParamName;
 					
-				case "single":				
+				case "single":
 					comments = comments + fmt.Sprintf("    * @param[in] f%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("f%s float32", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", Float32InValue (f%s)", param.ParamName);
 					callparameters = callparameters + "f" + param.ParamName;
 
-				case "double":				
+				case "double":
 					comments = comments + fmt.Sprintf("    * @param[in] d%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("d%s float64", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", Float64InValue (d%s)", param.ParamName);
 					callparameters = callparameters + "d" + param.ParamName;
-												
+				
+				case "pointer":
+					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
+					parameters = parameters + fmt.Sprintf ("n%s uint64", param.ParamName)
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64InValue (n%s)", param.ParamName);
+					callparameters = callparameters + "n" + param.ParamName;
+
 				case "string":
 					comments = comments + fmt.Sprintf("    * @param[in] s%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("s%s string", param.ParamName)
@@ -803,6 +811,16 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					classreturntypes = classreturntypes + fmt.Sprintf ("uint32, ");
 					
 				case "uint64":
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					returnvalues = returnvalues + fmt.Sprintf ("uint64, ")
+					impldeclarations = impldeclarations + fmt.Sprintf ("%svar n%s uint64 = 0;\n", spacing, param.ParamName);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("n%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64OutValue (&n%s)", param.ParamName);
+					classreturnvariables = classreturnvariables + "n" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "n" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("uint64, ");
+
+				case "pointer":
 					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
 					returnvalues = returnvalues + fmt.Sprintf ("uint64, ")
 					impldeclarations = impldeclarations + fmt.Sprintf ("%svar n%s uint64 = 0;\n", spacing, param.ParamName);

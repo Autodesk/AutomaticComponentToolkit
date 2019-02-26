@@ -178,7 +178,10 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 			
 			case "pointer":
-				log.Fatal("Basic Type \"pointer\" is not supported in NodeJS bindings.")
+				inputcheckfunction = "IsNumber"
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned long long n%s = (unsigned long long) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				callParameter = "n" + param.ParamName
+				initCallParameter = callParameter;
 
 			case "int8":
 				inputcheckfunction = "IsInt32"
@@ -310,7 +313,11 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
 			
 			case "pointer":
-				log.Fatal("Basic Type \"pointer\" is not supported in NodeJS bindings.")
+				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned long long nReturn%s = 0;\n", spacing, param.ParamName)
+				callParameter = "&nReturn" + param.ParamName
+				initCallParameter = callParameter;
+
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "int8":
 				returndeclaration = returndeclaration + fmt.Sprintf("%schar nReturn%s = 0;\n", spacing, param.ParamName)
