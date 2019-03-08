@@ -833,8 +833,6 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("};")
 	w.Writeln("")
 
-
-
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		cppClassName := cppClassPrefix + class.ClassName
@@ -842,7 +840,11 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 		cppParentClassName := ""
 		inheritanceSpecifier := ""
 		if (!component.isBaseClass(class)) {
-			cppParentClassName = cppClassPrefix + class.ParentClass
+			if (class.ParentClass == "") {
+				cppParentClassName = cppClassPrefix + component.Global.BaseClassName
+			} else {
+				cppParentClassName = cppClassPrefix + class.ParentClass
+			}
 			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
 		}
 		
