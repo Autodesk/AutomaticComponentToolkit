@@ -1494,6 +1494,8 @@ func buildCMakeForCPPImplementation(component ComponentDefinition, w LanguageWri
 
 	targetName := strings.ToLower(NameSpace)
 	w.Writeln("add_library(%s SHARED ${%s_SRC})", targetName, strings.ToUpper(NameSpace))
+	w.Writeln("# Do not prefix the binary's name with \"lib\" on Unix systems:")
+	w.Writeln("set_target_properties(%s PROPERTIES PREFIX \"\" IMPORT_PREFIX \"\" )", targetName)
 	w.Writeln("# The following two properties are crucial to reduce the number of undesirably exported symbols")
 	w.Writeln("set_target_properties(%s PROPERTIES CXX_VISIBILITY_PRESET hidden)", targetName)
 	w.Writeln("set_target_properties(%s PROPERTIES VISIBILITY_INLINES_HIDDEN ON)", targetName)
