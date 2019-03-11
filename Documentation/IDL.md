@@ -196,6 +196,8 @@ The names of the \<method> elements MUST be unique in this list.
 
 If the `parent`-attribute is empty, and the name of this class differs from the `baseclassname`-attribute of the \<global> element, `baseclassname` will be considered as the parent class of this class.
 
+A class MUST be defined in the list of \<class> elements before it is used as parent-class of another class. This restiction rules out circular inheritance. Moreover, the default `baseclassname` MUST be defined as the first \<class> within the IDL-file.
+
 ## 9. Function Type
 Element **\<functiontype>**
 <br/>
