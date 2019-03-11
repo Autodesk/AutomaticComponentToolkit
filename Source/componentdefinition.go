@@ -375,9 +375,10 @@ func checkStructs(structs[] ComponentDefinitionStruct) (map[string]bool, error) 
 	return structNameList, nil
 }
 
-func checkClasses(classes[] ComponentDefinitionClass) (map[string]bool, error) {
+func checkClasses(classes[] ComponentDefinitionClass, baseClassName string) (map[string]bool, error) {
 	classLowerNameList := make(map[string]bool, 0)
 	classNameList := make(map[string]bool, 0)
+	classNameIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		if !nameIsValidIdentifier(class.ClassName) {
@@ -392,22 +393,29 @@ func checkClasses(classes[] ComponentDefinitionClass) (map[string]bool, error) {
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		classNameList[class.ClassName] = true
+		classNameIndex[class.ClassName] = i
 	}
 
+	// Check parent class definitions
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		parentClass := class.ParentClass;
+		if ((baseClassName != class.ClassName) && (len(parentClass) == 0) ) {
+			parentClass = baseClassName
+		}
 		if (len(parentClass) > 0) {
 			if !nameIsValidIdentifier(parentClass) {
-				return nil, fmt.Errorf ("invalid class parent name \"%s\"", parentClass);
+				return nil, fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
 			}
 			if (classNameList[parentClass] == false) {
 				return nil, fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
 			}
+			if (classNameIndex[parentClass] >= i) {
+				return nil, fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
 				return nil, fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
 			}
-
 		}
 	}
 
@@ -684,7 +692,7 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 	}
 
 	var classList = make(map[string]bool, 0)
-	classList, err = checkClasses(component.Classes)
+	classList, err = checkClasses(component.Classes, component.Global.BaseClassName)
 	if err != nil {
 		return err
 	}
