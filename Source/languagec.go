@@ -128,9 +128,11 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln(" Version for %s", NameSpace);
 	w.Writeln("**************************************************************************************************************************/");
 	w.Writeln("");
-	w.Writeln("#define %s_VERSION_MAJOR %d", strings.ToUpper (NameSpace), majorVersion(component.Version));
-	w.Writeln("#define %s_VERSION_MINOR %d", strings.ToUpper (NameSpace), minorVersion(component.Version));
-	w.Writeln("#define %s_VERSION_MICRO %d", strings.ToUpper (NameSpace), microVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MAJOR %d", strings.ToUpper(NameSpace), majorVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MINOR %d", strings.ToUpper(NameSpace), minorVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MICRO %d", strings.ToUpper(NameSpace), microVersion(component.Version));
+	w.Writeln("#define %s_VERSION_PRERELEASEINFO \"%s\"", strings.ToUpper(NameSpace), preReleaseInfo(component.Version));
+	w.Writeln("#define %s_VERSION_BUILDINFO \"%s\"", strings.ToUpper(NameSpace), buildInfo(component.Version));
 
 	w.Writeln("");
 

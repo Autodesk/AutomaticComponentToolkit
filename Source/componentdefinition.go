@@ -566,43 +566,68 @@ func isScalarType(typeStr string) bool {
 }
 
 func majorVersion (version string) int {
-	return versionTriple(version)[0]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[0]
 }
 func minorVersion (version string) int {
-	return versionTriple(version)[1]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[1]
 }
 func microVersion (version string) int {
-	return versionTriple(version)[2]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[2]
+}
+func preReleaseInfo (version string) string {
+	isValid, _, additionalData := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return additionalData[0]
+}
+func buildInfo (version string) string {
+	isValid, _, additionalData := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return additionalData[1]
 }
 
-func versionTriple (version string) [3]int {
-	if !versionIsValidVersion(version) {
-		log.Fatal("invalid version")
-	}
-	
-	versionTripleR, _ := regexp.Compile("([0-9]*)")
-	trip := versionTripleR.FindAllString(version, -1)
-	if len(trip) != 3 {
-		log.Fatal("invalid version")
-	}
+func decomposeVersionString (version string) (bool, [3]int, [2]string) {
+	var IsValidVersion = regexp.MustCompile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(\\-[a-zA-Z0-9.\\-]+)?(\\+[a-zA-Z0-9.\\-]+)?$")
 
 	var vers [3]int;
+	var data [2]string;
+
+	if !(IsValidVersion.MatchString(version)) {
+		return false, vers, data;
+	}
+	slices := IsValidVersion.FindStringSubmatch(version)
+	if (len(slices) != 6) {
+		return false, vers, data;
+	}
 	for i := 0; i < 3; i++ {
-		ver, err := strconv.Atoi(trip[i])
+		ver, err := strconv.Atoi(slices[i+1])
 		if err != nil {
-			log.Fatal("invalid version")
+			return false, vers, data;
 		}
 		vers[i] = ver
 	}
-	return vers
-}
-
-func versionIsValidVersion (version string) bool {
-	var IsValidVersion = regexp.MustCompile("^([0-9]*)\\.([0-9]*)\\.([0-9]*)$").MatchString
-	if (version != "") {
-		return IsValidVersion (version);
+	for i := 0; i < 2; i++ {
+		slice := slices[i+4]
+		if (len(slice)>0) {
+			data[i] = slice[1:]
+		}
 	}
-	return false;
+	return true, vers, data;
 }
 
 func nameSpaceIsValid (namespace string) bool {
@@ -638,7 +663,8 @@ func baseNameIsValid (baseName string) bool {
 }
 
 func checkComponentHeader(component ComponentDefinition) (error) {
-	if !versionIsValidVersion(component.Version) {
+	versionIsValid, _, _ := decomposeVersionString(component.Version)
+	if !versionIsValid {
 		return fmt.Errorf("Version \"%s\" is invalid", component.Version)
 	}
 	if component.Copyright == "" {
@@ -784,13 +810,15 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 	}
 
 	if (method.MethodName == global.VersionMethod) {
-		if (len (method.Params) != 3) {
+		if (len (method.Params) != 5) {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "uint32") || (method.Params[0].ParamPass != "out") || 
 			(method.Params[1].ParamType != "uint32") || (method.Params[1].ParamPass != "out") || 
-			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out")  {
+			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out") ||
+			(method.Params[3].ParamType != "string") || (method.Params[3].ParamPass != "out") || 
+			(method.Params[4].ParamType != "string") || (method.Params[4].ParamPass != "out") {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		

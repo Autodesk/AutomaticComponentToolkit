@@ -781,8 +781,15 @@ func buildCppExample(componentdefinition ComponentDefinition, w LanguageWriter, 
 	w.Writeln("  try")
 	w.Writeln("  {")
 	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
-	w.Writeln("    %s::C%sWrapper::%s(nMajor, nMinor, nMicro);", NameSpace, NameSpace, componentdefinition.Global.VersionMethod)
-	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro << std::endl;", NameSpace);
+	w.Writeln("    std::string sPreReleaseInfo, sBuildInfo;")
+	w.Writeln("    %s::C%sWrapper::%s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", NameSpace, NameSpace, componentdefinition.Global.VersionMethod)
+	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro;", NameSpace)
+	w.Writeln("    if (!sPreReleaseInfo.empty())")
+	w.Writeln("      std::cout << \"-\" << sPreReleaseInfo;")
+	w.Writeln("    if (!sBuildInfo.empty())")
+	w.Writeln("      std::cout << \"+\" << sBuildInfo;")
+	w.Writeln("    std::cout << std::endl;");
+	
 	w.Writeln("  }")
 	w.Writeln("  catch (std::exception &e)")
 	w.Writeln("  {")
