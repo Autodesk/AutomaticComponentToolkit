@@ -47,9 +47,12 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 	w.Writeln ("**************************************************************************************************************************)");
 	w.Writeln ("");
 	w.Writeln ("const");
-	w.Writeln ("  %s_VERSION_MAJOR = %d;", strings.ToUpper (NameSpace), majorVersion(componentdefinition.Version));
-	w.Writeln ("  %s_VERSION_MINOR = %d;", strings.ToUpper (NameSpace), minorVersion(componentdefinition.Version));
-	w.Writeln ("  %s_VERSION_MICRO = %d;", strings.ToUpper (NameSpace), microVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MAJOR = %d;", strings.ToUpper(NameSpace), majorVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MINOR = %d;", strings.ToUpper(NameSpace), minorVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MICRO = %d;", strings.ToUpper(NameSpace), microVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_PRERELEASEINFO = '%s';", strings.ToUpper(NameSpace), preReleaseInfo(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_BUILDINFO = '%s';", strings.ToUpper(NameSpace), buildInfo(componentdefinition.Version));
+
 	w.Writeln ("");
 	w.Writeln ("");
 	

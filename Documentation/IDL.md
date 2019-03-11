@@ -170,7 +170,7 @@ The `baseclassname`-attribute must be the name of a \<class> element within the 
 This class will be the base class for all classes of the generated component.
 
 The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="handle"`, `class="BaseClass"` and `pass="in"`.
-The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters with `type="uint32"` and `pass="out"`.
+The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly five parameters. The first three parameters MUST be of type `type="uint32"` and `pass="out"`, the last two MUST be of type `type="string"` and `pass="out"`.
 
 The `errormethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters:
 1. `type="handle"`, `class="$BASECLASSNAME"` and `pass="in"`, where `"$BASECLASSNAME"` is the value of the `baseclassname` attribute of the \<global> element.
