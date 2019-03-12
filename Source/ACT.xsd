@@ -242,7 +242,7 @@
 
 	<xs:simpleType name="ST_Version">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="[0-9]*\.[0-9]*\.[0-9]*"/>
+			<xs:pattern value="([0-9]+\.[0-9]+\.[0-9])(\-[a-zA-Z0-9.\-]+)?(\+[a-zA-Z0-9.\-]+)?"/>
 		</xs:restriction>
 	</xs:simpleType>
 

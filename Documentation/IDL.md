@@ -76,9 +76,12 @@ Element **\<component>** of type **CT\_Component**
 | namespace | **ST\_NameSpace** | required | | Specifies the namespace for the components's functionality. |
 | copyright | **xs:string** | required | | The legal copyright holder. |
 | basename | **ST\_BaseName** | required | | The basename will be used as prefix for generated filenames and all sorts of identifiers in the generated source code. |
-| version | **ST\_Version** | required | | The three digit vesion of this component. |
+| version | **ST\_Version** | required | | The semantic version of this component. |
 | year | **ST\_Year** | optional | the current year | The year associcated with the copyright. |
 | @anyAttribute | | | | |
+
+It is RECOMMENDED that components generated with ACT follow the [semantic versioning scheme](https://semver.org/).
+The "version" attribute encodes the semantic version of this component. Major, Minor and Micro-version info MUST be included. Pre-release information and build information MAY be included.
 
 The \<component> element is the root element of a ACT-IDL file.
 There MUST be exactly one \<component> element in a ACT-IDL file.
