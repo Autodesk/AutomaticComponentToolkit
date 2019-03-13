@@ -173,14 +173,14 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 
 			case "uint64":
 				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned long long n%s = (unsigned long long) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = (uint64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 			
 			case "pointer":
 				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned long long n%s = (unsigned long long) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
-				callParameter = "n" + param.ParamName
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = (uint64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				callParameter = "(void*) n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "int8":
@@ -203,7 +203,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 
 			case "int64":
 				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%slong long n%s = (long long) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sint64_t n%s = (int64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
@@ -259,7 +259,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			case "handle":
 				inputcheckfunction = "IsObject"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Object> obj%s = args[%d]->ToObject();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Object> obj%s = args[%d]->ToObject(isolate->GetCurrentContext()).ToLocalChecked ();\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sC%s%s * instance%s = ObjectWrap::Unwrap<C%s%s>(obj%s);\n", spacing, NameSpace, param.ParamClass, param.ParamName, NameSpace, param.ParamClass, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sif (instance%s == nullptr)\n", spacing, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%s    throw std::runtime_error(\"Invalid Object parameter %d (%s)\");\n", spacing, k, param.ParamName)
@@ -306,18 +306,18 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "uint64":
-				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned long long nReturn%s = 0;\n", spacing, param.ParamName)
+				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
 				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
 			
 			case "pointer":
-				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned long long nReturn%s = 0;\n", spacing, param.ParamName)
+				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, (void*) nReturn%s));\n", spacing, param.ParamName)
 
 			case "int8":
 				returndeclaration = returndeclaration + fmt.Sprintf("%schar nReturn%s = 0;\n", spacing, param.ParamName)
@@ -341,7 +341,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "int64":
-				returndeclaration = returndeclaration + fmt.Sprintf("%s long long nReturn%s = 0;\n", spacing, param.ParamName)
+				returndeclaration = returndeclaration + fmt.Sprintf("%s int64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
@@ -610,7 +610,6 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "#include <node.h>\n")
 	fmt.Fprintf(implw, "#include \"%s_nodewrapper.h\"\n", BaseName)
 	fmt.Fprintf(implw, "\n")
-	fmt.Fprintf(implw, "#include <Windows.h>\n")
 	fmt.Fprintf(implw, "\n")
 	fmt.Fprintf(implw, "using namespace v8;\n")
 	fmt.Fprintf(implw, "\n")
@@ -734,7 +733,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
 		fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 		fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
-		fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(argc, argv);\n")
+		fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked();\n")
 		fmt.Fprintf(implw, "    instance->SetInternalField (NODEWRAPPER_TABLEINDEX, External::New (isolate, C%sBaseClass::getDynamicWrapperTable (pParent)));\n", NameSpace)
 		fmt.Fprintf(implw, "    instance->SetInternalField (NODEWRAPPER_HANDLEINDEX, External::New (isolate, pHandle));\n")
 		fmt.Fprintf(implw, "    return instance;\n")
@@ -823,7 +822,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "            const int argc = 1;\n")
 	fmt.Fprintf(implw, "            Local<Value> argv[argc] = { args[0] };\n")
 	fmt.Fprintf(implw, "            Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
-	fmt.Fprintf(implw, "            args.GetReturnValue().Set(cons->NewInstance(argc, argv));\n")
+	fmt.Fprintf(implw, "            args.GetReturnValue().Set(cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked());\n")
 	fmt.Fprintf(implw, "        }\n")
 	fmt.Fprintf(implw, "    } catch (std::exception & E) {\n")
 	fmt.Fprintf(implw, "        RaiseError (isolate, E.what());\n")
@@ -837,7 +836,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
 	fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 	fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
-	fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(argc, argv);\n")
+	fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked();\n")
 	fmt.Fprintf(implw, "    return instance;\n")
 	fmt.Fprintf(implw, "}\n")
 
@@ -867,7 +866,9 @@ func buildNodeBindingGyp(component ComponentDefinition, w io.Writer, indentStrin
 	fmt.Fprintf(w, "%s\"targets\": [\n", indentString)
 	fmt.Fprintf(w, "%s%s{\n", indentString, indentString)
 	fmt.Fprintf(w, "%s%s%s\"target_name\": \"%s_nodeaddon\",\n", indentString, indentString, indentString, BaseName)
-	fmt.Fprintf(w, "%s%s%s\"sources\": [ \"%s_nodeaddon.cc\", \"%s_nodewrapper.cc\", \"%s_dynamic.cpp\" ]\n", indentString, indentString, indentString, BaseName, BaseName, BaseName)
+	fmt.Fprintf(w, "%s%s%s\"sources\": [ \"%s_nodeaddon.cc\", \"%s_nodewrapper.cc\", \"%s_dynamic.cpp\" ],\n", indentString, indentString, indentString, BaseName, BaseName, BaseName)
+	fmt.Fprintf(w, "%s%s%s\"cflags\": [ \"-fexceptions \" ],\n", indentString, indentString, indentString )
+	fmt.Fprintf(w, "%s%s%s\"cflags_cc\": [ \"-fexceptions \" ]\n", indentString, indentString, indentString )
 	fmt.Fprintf(w, "%s%s}\n", indentString, indentString)
 	fmt.Fprintf(w, "%s]\n", indentString)
 	fmt.Fprintf(w, "}\n")
