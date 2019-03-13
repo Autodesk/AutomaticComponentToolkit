@@ -47,9 +47,12 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 	w.Writeln ("**************************************************************************************************************************)");
 	w.Writeln ("");
 	w.Writeln ("const");
-	w.Writeln ("  %s_VERSION_MAJOR = %d;", strings.ToUpper (NameSpace), majorVersion(componentdefinition.Version));
-	w.Writeln ("  %s_VERSION_MINOR = %d;", strings.ToUpper (NameSpace), minorVersion(componentdefinition.Version));
-	w.Writeln ("  %s_VERSION_MICRO = %d;", strings.ToUpper (NameSpace), microVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MAJOR = %d;", strings.ToUpper(NameSpace), majorVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MINOR = %d;", strings.ToUpper(NameSpace), minorVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_MICRO = %d;", strings.ToUpper(NameSpace), microVersion(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_PRERELEASEINFO = '%s';", strings.ToUpper(NameSpace), preReleaseInfo(componentdefinition.Version));
+	w.Writeln ("  %s_VERSION_BUILDINFO = '%s';", strings.ToUpper(NameSpace), buildInfo(componentdefinition.Version));
+
 	w.Writeln ("");
 	w.Writeln ("");
 	
@@ -153,6 +156,8 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sSingle;", element.Name, arrayprefix);
 					case "double":
 						w.Writeln ( "    F%s: %sDouble;", element.Name, arrayprefix);
+					case "pointer":
+						w.Writeln ( "    F%s: %sPointer;", element.Name, arrayprefix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -251,6 +256,9 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 		case "double":
 			PascalParamTypeName = "Double";
+
+		case "pointer":
+			PascalParamTypeName = "Pointer";
 			
 		case "string":
 			if isPlain {
@@ -371,7 +379,14 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
-				
+
+			case "pointer":
+				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamName = "p" + param.ParamName;
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamConvention = "const ";
+				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
+
 			case "string":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
@@ -429,7 +444,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer", "enum":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -440,7 +455,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
-				cParams[0].ParamConvention = "out ";
+				cParams[0].ParamConvention = "";
 				cParams[0].ParamTypeNoConvention = "P" + cParamTypeName[1:];
 				
 			case "basicarray":
@@ -518,7 +533,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer", "enum":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);

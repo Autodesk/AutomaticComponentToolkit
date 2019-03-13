@@ -12,7 +12,6 @@ Abstract: This is a stub class definition of CLibPrimesSieveCalculator
 #include "libprimes_interfaceexception.hpp"
 
 // Include custom headers here.
-#include <cmath>
 
 
 using namespace LibPrimes::Impl;
@@ -33,7 +32,7 @@ void CLibPrimesSieveCalculator::Calculate()
 	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(std::sqrt(m_value));
 
 	int progressStep = (int)std::ceil(sqrtValue / 20.0f);
-	
+
 	for (LibPrimes_uint64 i = 2; i <= sqrtValue; i++) {
 
 		if (m_Callback) {
@@ -61,7 +60,7 @@ void CLibPrimesSieveCalculator::Calculate()
 	}
 }
 
-void CLibPrimesSieveCalculator::GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
+void CLibPrimesSieveCalculator::GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
 {
 	if (primes.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
@@ -76,6 +75,5 @@ void CLibPrimesSieveCalculator::GetPrimes (LibPrimes_uint64 nPrimesBufferSize, L
 			pPrimesBuffer[i] = primes[i];
 		}
 	}
-
 }
 

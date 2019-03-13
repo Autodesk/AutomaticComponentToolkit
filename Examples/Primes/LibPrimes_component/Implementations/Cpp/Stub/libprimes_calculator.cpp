@@ -21,20 +21,24 @@ using namespace LibPrimes::Impl;
 **************************************************************************************************************************/
 
 CLibPrimesCalculator::CLibPrimesCalculator()
-	:m_value(0) , m_Callback(nullptr)
+	:m_value(0), m_Callback(nullptr)
 {
 
 }
 
-
-LibPrimes_uint64  CLibPrimesCalculator::GetValue()
+LibPrimes_uint64 CLibPrimesCalculator::GetValue ()
 {
 	return m_value;
 }
 
-void CLibPrimesCalculator::SetValue(const LibPrimes_uint64  nValue)
+void CLibPrimesCalculator::SetValue (const LibPrimes_uint64 nValue)
 {
 	m_value = nValue;
+}
+
+void CLibPrimesCalculator::Calculate ()
+{
+	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
 void CLibPrimesCalculator::SetProgressCallback (const LibPrimesProgressCallback pProgressCallback)

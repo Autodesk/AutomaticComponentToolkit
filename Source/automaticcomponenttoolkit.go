@@ -69,7 +69,7 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 }
 
 func main () {
-	ACTVersion := "1.4.1"
+	ACTVersion := "1.5.0-develop"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
@@ -145,18 +145,29 @@ func main () {
 		return
 	}
 
-
+	// This needs to go into a "preparation function"
+	// baseClass, err := setupBaseClassDefinition(true)
+	// if (err != nil) {
+	// 	log.Fatal (err);
+	// }
+	// component.Classes = append([]ComponentDefinitionClass{baseClass}, component.Classes...)
+	// for i := 0; i < len(component.Classes); i++ {
+	// 	if (!component.Classes[i].isBaseClass()) {
+	// 		if (component.Classes[i].ParentClass == "") {
+	// 			component.Classes[i].ParentClass = "BaseClass";
+	// 		}
+	// 	}
+	// }
 
 	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
 	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
-	
+
 	err  = os.MkdirAll(outputFolder, os.ModePerm);
 	if (err != nil) {
 		log.Fatal (err);
 	}
-
 
 	licenseFileName := path.Join(outputFolder, "license.txt");
 	log.Printf("Creating \"%s\"", licenseFileName)
