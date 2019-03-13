@@ -22,15 +22,15 @@ uses
 	sysutils;
 
 type
-	TLibPrimesFactorizationCalculator = class (TLibPrimesCalculator, ILibPrimesFactorizationCalculator)
+	TLibPrimesFactorizationCalculator = class(TLibPrimesCalculator, ILibPrimesFactorizationCalculator)
 		private
-			FPrimeFactors : Array Of TLibPrimesPrimeFactor;
+      FPrimeFactors : Array Of TLibPrimesPrimeFactor;
 		protected
 
 		public
 			procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
-			procedure Calculate(); override;
-			destructor Destroy(); override;
+      procedure Calculate(); override;
+      destructor Destroy(); override;
 	end;
 
 implementation
@@ -65,24 +65,21 @@ var
   I: QWord;
   APFCount: QWord;
   APrimeFactor: TLibPrimesPrimeFactor;
-  AShouldAbort: Cardinal;
+  AShouldAbort: Byte;
 begin
   SetLength(FPrimeFactors, 0);
 
   APFCount := 0;
   AValue := FValue;
   I := 2;
-  while I < AValue
+  while I <= AValue
   do begin
-
-
     if (assigned(FProgressCallback)) then begin
     	AShouldAbort := 0;
 			FProgressCallback(1 - 1.0*AValue / FValue, AShouldAbort);
 			if (AShouldAbort <> 0) then
 				raise ELibPrimesException.Create(LIBPRIMES_ERROR_CALCULATIONABORTED);
     end;
-
 
     APrimeFactor.FMultiplicity:=0;
     APrimeFactor.FPrime:=I;

@@ -121,15 +121,18 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("");
 	w.Writeln("typedef %s_int32 %sResult;", NameSpace, NameSpace);
 	w.Writeln("typedef void * %sHandle;", NameSpace);
+	w.Writeln("typedef void * %s_pvoid;", NameSpace);
 	
 	w.Writeln("");
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" Version for %s", NameSpace);
 	w.Writeln("**************************************************************************************************************************/");
 	w.Writeln("");
-	w.Writeln("#define %s_VERSION_MAJOR %d", strings.ToUpper (NameSpace), majorVersion(component.Version));
-	w.Writeln("#define %s_VERSION_MINOR %d", strings.ToUpper (NameSpace), minorVersion(component.Version));
-	w.Writeln("#define %s_VERSION_MICRO %d", strings.ToUpper (NameSpace), microVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MAJOR %d", strings.ToUpper(NameSpace), majorVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MINOR %d", strings.ToUpper(NameSpace), minorVersion(component.Version));
+	w.Writeln("#define %s_VERSION_MICRO %d", strings.ToUpper(NameSpace), microVersion(component.Version));
+	w.Writeln("#define %s_VERSION_PRERELEASEINFO \"%s\"", strings.ToUpper(NameSpace), preReleaseInfo(component.Version));
+	w.Writeln("#define %s_VERSION_BUILDINFO \"%s\"", strings.ToUpper(NameSpace), buildInfo(component.Version));
 
 	w.Writeln("");
 
@@ -152,11 +155,9 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("**************************************************************************************************************************/");
 	w.Writeln("");
 	
-	w.Writeln("typedef %sHandle %s_BaseClass;", NameSpace, NameSpace);	
-	
 	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i];				
-		w.Writeln("typedef %sHandle %s_%s;", NameSpace, NameSpace, class.ClassName);	
+		class := component.Classes[i];
+		w.Writeln("typedef %sHandle %s_%s;", NameSpace, NameSpace, class.ClassName);
 	}
 	w.Writeln("");
 	
@@ -251,6 +252,8 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 						w.Writeln("    %s_single m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "double":
 						w.Writeln("    %s_double m_%s%s;", NameSpace, member.Name, arraysuffix);
+					case "pointer":
+						w.Writeln("    %s_pvoid m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
 					case "handle":
@@ -332,17 +335,33 @@ func CreateCHeader (component ComponentDefinition, CHeaderName string) (error) {
 	return err;
 }
 
+func writeClassMethodsIntoCHeader(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) (error) {
+	w.Writeln("");
+	w.Writeln("/*************************************************************************************************************************");
+	w.Writeln(" Class definition for %s", class.ClassName);
+	w.Writeln("**************************************************************************************************************************/");
+
+	for j := 0; j < len(class.Methods); j++ {
+		method := class.Methods[j];
+		err := WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
+		if (err != nil) {
+			return err;
+		}
+	}
+	return nil
+}
+
 func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) (error) {
 	w.Writeln("#ifndef __%s_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("#define __%s_HEADER", strings.ToUpper (NameSpace));
 	w.Writeln("");
 	w.Writeln("#ifdef __%s_EXPORTS", strings.ToUpper (NameSpace));
 	
-	w.Writeln("#ifdef WIN32");
+	w.Writeln("#ifdef _WIN32");
 	w.Writeln("#define %s_DECLSPEC __declspec (dllexport)", strings.ToUpper (NameSpace));
-	w.Writeln("#else // WIN32");
+	w.Writeln("#else // _WIN32");
 	w.Writeln("#define %s_DECLSPEC __attribute__((visibility(\"default\")))", strings.ToUpper (NameSpace));
-	w.Writeln("#endif // WIN32");
+	w.Writeln("#endif // _WIN32");
 	
 	w.Writeln("#else // __%s_EXPORTS", strings.ToUpper (NameSpace));
 	w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
@@ -355,16 +374,10 @@ func buildCHeader (component ComponentDefinition, w LanguageWriter, NameSpace st
 	w.Writeln("extern \"C\" {");
 
 	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i];		
-
-		w.Writeln("");
-		w.Writeln("/*************************************************************************************************************************");
-		w.Writeln(" Class definition for %s", class.ClassName);
-		w.Writeln("**************************************************************************************************************************/");
-
-		for j := 0; j < len(class.Methods); j++ {
-			method := class.Methods[j];
-			WriteCMethod (method, w, NameSpace, class.ClassName, false, false);
+		class := component.Classes[i];
+		err := writeClassMethodsIntoCHeader(component, class, w, NameSpace)
+		if (err != nil) {
+			return err;
 		}
 	}
 
@@ -497,6 +510,9 @@ func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass st
 		case "double":
 			cParamTypeName = fmt.Sprintf ("%s_double", NameSpace);
 		
+		case "pointer":
+			cParamTypeName = fmt.Sprintf ("%s_pvoid", NameSpace);
+		
 		case "string":
 			cParamTypeName = "char *";
 
@@ -566,6 +582,11 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "d" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+
+			case "pointer":
+				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamName = "p" + param.ParamName;
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 				
 			case "string":
 				cParams[0].ParamType = "const " + cParamTypeName;
@@ -610,7 +631,7 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64",  "int8", "int16", "int32", "int64", "bool", "single", "double", "enum":
+			case "uint8", "uint16", "uint32", "uint64",  "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer", "enum":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);

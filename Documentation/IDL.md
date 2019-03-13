@@ -76,9 +76,12 @@ Element **\<component>** of type **CT\_Component**
 | namespace | **ST\_NameSpace** | required | | Specifies the namespace for the components's functionality. |
 | copyright | **xs:string** | required | | The legal copyright holder. |
 | basename | **ST\_BaseName** | required | | The basename will be used as prefix for generated filenames and all sorts of identifiers in the generated source code. |
-| version | **ST\_Version** | required | | The three digit vesion of this component. |
+| version | **ST\_Version** | required | | The semantic version of this component. |
 | year | **ST\_Year** | optional | the current year | The year associcated with the copyright. |
 | @anyAttribute | | | | |
+
+It is RECOMMENDED that components generated with ACT follow the [semantic versioning scheme](https://semver.org/).
+The "version" attribute encodes the semantic version of this component. Major, Minor and Micro-version info MUST be included. Pre-release information and build information MAY be included.
 
 The \<component> element is the root element of a ACT-IDL file.
 There MUST be exactly one \<component> element in a ACT-IDL file.
@@ -157,15 +160,25 @@ Element **\<global>** of type **CT\_Global**
 ##### Attributes
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
+| baseclassname | **ST\_Name** | required | | Specifies the name of a class that is the base class for all classes of the generated component. |
 | releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release a class instance owned by the generated component. |
 | versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the semantic version of the component. |
+| errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
 | journalmethod | **ST\_Name** | optional | | Specifies the name of the method used to set the journal file. If ommitted, journalling will not be built into the component. |
 
 The \<global> element contains a list of [method](#9-function-type) elements that define the exported global functions of the component.
 The names of the \<method> elements MUST be unique within the \<global> element.
 
+The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
+This class will be the base class for all classes of the generated component.
+
 The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="handle"`, `class="BaseClass"` and `pass="in"`.
-The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters with `type="uint32"` and `pass="out"`.
+The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly five parameters. The first three parameters MUST be of type `type="uint32"` and `pass="out"`, the last two MUST be of type `type="string"` and `pass="out"`.
+
+The `errormethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters:
+1. `type="handle"`, `class="$BASECLASSNAME"` and `pass="in"`, where `"$BASECLASSNAME"` is the value of the `baseclassname` attribute of the \<global> element.
+2. `type="string"` and `pass="out"`: outputs the last error message
+3. `type="bool"` and `pass="return"`: returns the instance of the baseclass has an error.
 
 If the `journalmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="string"` and `pass="in"`.
 
@@ -183,6 +196,10 @@ Element **\<class>** of type **CT\_Class**
 
 The \<class> element contains a list of [method](#9-function-type) elements that define the exported member functions of this class.
 The names of the \<method> elements MUST be unique in this list.
+
+If the `parent`-attribute is empty, and the name of this class differs from the `baseclassname`-attribute of the \<global> element, `baseclassname` will be considered as the parent class of this class.
+
+A class MUST be defined in the list of \<class> elements before it is used as parent-class of another class. This restiction rules out circular inheritance. Moreover, the default `baseclassname` MUST be defined as the first \<class> within the IDL-file.
 
 ## 9. Function Type
 Element **\<functiontype>**
@@ -293,6 +310,9 @@ Element **\<errors>** of type **CT\_ErrorList**
 The \<errors> element contains a list of [\<error>](#16-error) elements.
 The names and codes of the \<error> elements in this list MUST be unique within the \<errors> element.
 
+Each ACT-component MUST contain at least the following 8 error codes:
+
+`NOTIMPLEMENTED`, `INVALIDPARAM`, `INVALIDCAST`, `BUFFERTOOSMALL`, `GENERICEXCEPTION`, `COULDNOTLOADLIBRARY`, `COULDNOTFINDLIBRARYEXPORT`, `INCOMPATIBLEBINARYVERSION`
 
 ## 16. Error
 Element **\<error>** of type **CT\_Error**
@@ -312,18 +332,41 @@ The simple types of this specification encode features, concepts, data types,
 and naming rules used in or required by programming languages.
 
 For now, please look the up in the [ACT.xsd](../Source/ACT.xsd).
-TODO: add all simple types here.
 
 ### 17.1 Type
-ST_Type `string` denotes a null-terminated string. If a component requires arbitrary strings that can contain null-characters, on should use the type `basicarray` of class `uint8`.
-
-### 17.2 ScalarType
-ST_ScalarType `bool` denotes a boolean value (`true` or `false`).
+Supported types are:
+- `bool`: denotes a boolean value (`true` or `false`).
 Although this can be encoded in a single bit, the thin C89-layer APIs generated by ACT will use a unsigned 8 bit value (a `uint8` in ACT terms) to encode a boolean value.
 A numerical value of `0` encodes `false`, all oher values encode `true`.
 Implementations and bindings should use the definition of a boolean value native to the respective language of the implementation or binding.
+- `uint8`, `uint16`, `uint32`, `uint64`:
+An _unsigned_ integer vaules ranging from 0 - 2<sup>8</sup>-1, 0 - 2<sup>16</sup>-1, 0 - 2<sup>32</sup>-1, 0 - 2<sup>64</sup>-1, respectively.
+- `int8`, `int16`, `int32`, `int64`:
+A _signed_ integer vaules ranging from -2<sup>7</sup> - 2<sup>7</sup>-1, -2<sup>15</sup> - 2<sup>15</sup>-1,
+-2<sup>31</sup> - 2<sup>31</sup>-1,
+-2<sup>63</sup> - 2<sup>63</sup>-1, respectively.
+- `pointer`: An address memory without knowledge of the kind of data that resides there. In C++, this corresponds to a `void*`.
+- `string` denotes a null-terminated string. If a component requires arbitrary strings that can contain null-characters, on should use the type `basicarray` of class `uint8`.
+- `single`: Single precision floating point number.
+- `double`: Double precision floating point number.
+- `struct`: see [13. Struct](#13-struct)
+- `enum`: see [11. Enum](#11-enum)
+- `basicarray`: an array of [ST\_ScalarTypes](#17-2-scalartype)
+- `enumarray`: an array of [enums](#11-enum)
+- `structarray`: an array of [structs](#13-struct)
+- `handle`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#8-class)
+- `functiontype`: see [9. Function Type](#9-function-type)
+
+### 17.2 ScalarType
+A subset of scalar or integral of ST\_Type:
+
+`bool`, `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`, `single`, `double`, `pointer`.
 
 ### 17.3 ComposedType
+A subset of more complex types, or types composed of other ST\_Types:
+
+`string`, `enum`, `basicarray`, `enumarray`, `structarray`, `handle`, `functiontype`
+
 ### 17.4 Name
 ### 17.5 Description
 ### 17.6 ErrorName

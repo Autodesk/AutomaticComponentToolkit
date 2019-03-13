@@ -27,7 +27,7 @@ namespace Impl {
 
 
 /*************************************************************************************************************************
-	Class declaration of CLibPrimesFactorizationCalculator
+ Class declaration of CLibPrimesFactorizationCalculator 
 **************************************************************************************************************************/
 
 class CLibPrimesFactorizationCalculator : public virtual ILibPrimesFactorizationCalculator, public virtual CLibPrimesCalculator {
@@ -53,7 +53,7 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor* pPrimeFactorsBuffer);
+	void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer);
 
 };
 

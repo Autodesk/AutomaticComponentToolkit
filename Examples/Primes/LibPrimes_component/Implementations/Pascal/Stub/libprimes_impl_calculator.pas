@@ -17,12 +17,12 @@ uses
 	libprimes_types,
 	libprimes_interfaces,
 	libprimes_exception,
-  libprimes_impl_baseclass,
+	libprimes_impl_base,
 	Classes,
 	sysutils;
 
 type
-	TLibPrimesCalculator = class (TLibPrimesBaseClass, ILibPrimesCalculator)
+	TLibPrimesCalculator = class(TLibPrimesBase, ILibPrimesCalculator)
 		private
 
 		protected
@@ -31,8 +31,8 @@ type
 		public
 			function GetValue(): QWord;
 			procedure SetValue(const AValue: QWord);
-			procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 			procedure Calculate(); virtual;
+			procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 	end;
 
 implementation
@@ -47,14 +47,14 @@ begin
 	FValue := AValue;
 end;
 
-procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
-begin
-  FProgressCallback:=AProgressCallback;
-end;
-
 procedure TLibPrimesCalculator.Calculate();
 begin
-  raise ELibPrimesException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+end;
+
+procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
+begin
+	FProgressCallback:=AProgressCallback;
 end;
 
 end.

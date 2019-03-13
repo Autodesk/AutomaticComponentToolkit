@@ -263,12 +263,14 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
 	w.Writeln("  ")
 
+	
 	w.Writeln("  def checkError(self, instance, errorCode):")
-	w.Writeln("    if instance:")
-	w.Writeln("      if instance._wrapper != self:")
-	w.Writeln("        raise E%sException(%sErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace, NameSpace)
 	w.Writeln("    if errorCode != %sErrorCodes.SUCCESS.value:", NameSpace)
-	w.Writeln("      raise E%sException(errorCode)", NameSpace)
+	w.Writeln("      if instance:")
+	w.Writeln("        if instance._wrapper != self:")
+	w.Writeln("          raise E%sException(%sErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace, NameSpace)
+	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
+	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
 	
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
@@ -279,22 +281,10 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 
-	w.Writeln("'''Base Class Implementation")
-	w.Writeln("'''")
-	w.Writeln("class %sBaseClass():", NameSpace)
-	w.Writeln("  def __init__(self, handle, wrapper):")
-	w.Writeln("    if not handle or not wrapper:")
-	w.Writeln("      raise E%sException()", NameSpace)
-	w.Writeln("    self._handle = handle")
-	w.Writeln("    self._wrapper = wrapper")
-	w.Writeln("  ")
-	w.Writeln("  def __del__(self):")
-	w.Writeln("    self._wrapper.%s(self)", componentdefinition.Global.ReleaseMethod)
-
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		w.Writeln("")
 		w.Writeln("")
-		err = writeClass(componentdefinition.Classes[i], w, NameSpace)
+		err = writePythonClass(componentdefinition, componentdefinition.Classes[i], w, NameSpace)
 		if (err!=nil) {
 			return err
 		}
@@ -395,6 +385,8 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 			CTypesParamTypeName = "ctypes.c_float";
 		case "double":
 			CTypesParamTypeName = "ctypes.c_double";
+		case "pointer":
+			CTypesParamTypeName = "ctypes.c_void_p";
 		case "string":
 			CTypesParamTypeName = "ctypes.c_char_p";
 		case "basicarray":
@@ -460,6 +452,12 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "d" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+			
+			case "pointer":
+				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamCallType = cParamTypeName;
+				cParams[0].ParamName = "p" + param.ParamName;
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 				
 			case "string":
 				cParams[0].ParamType = cParamTypeName;
@@ -474,7 +472,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
 
 			case "struct":
-				cParams[0].ParamType = cParamTypeName;
+				cParams[0].ParamType = "ctypes.POINTER("+cParamTypeName+")";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -510,7 +508,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 	
 		switch (param.ParamType) {
 		
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 				cParams[0].ParamType = "ctypes.POINTER("+cParamTypeName+")";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
@@ -580,19 +578,34 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 }
 
 
-func writeClass(class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
-	w.Writeln("'''%s Class Implementation",  class.ClassName)
+func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
+	pythonBaseClassName := fmt.Sprintf("%s%s", NameSpace, component.Global.BaseClassName)
+
+	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
-	parentClass := fmt.Sprintf("%sBaseClass", NameSpace)
-	if (class.ParentClass != "") {
-		parentClass = fmt.Sprintf("%s%s", NameSpace, class.ParentClass)
-	}
+	parentClass := ""
+	if (!component.isBaseClass(class)) {
+		if (class.ParentClass != "") {
+			parentClass = fmt.Sprintf("%s%s", NameSpace, class.ParentClass)
+		} else {
+			parentClass = pythonBaseClassName
+		}
+		w.Writeln("class %s%s(%s):", NameSpace, class.ClassName, parentClass)
+		w.Writeln("  def __init__(self, handle, wrapper):")
+		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
-	w.Writeln("class %s%s(%s):", NameSpace, class.ClassName, parentClass)
-	w.Writeln("  def __init__(self, handle, wrapper):")
-	w.Writeln("    %sBaseClass.__init__(self, handle, wrapper)", NameSpace)
-	w.Writeln("  ")
+	} else {
+		w.Writeln("class %s%s:", NameSpace, class.ClassName)
+		w.Writeln("  def __init__(self, handle, wrapper):")
+		w.Writeln("    if not handle or not wrapper:")
+		w.Writeln("      raise E%sException(%sErrorCodes.INVALIDPARAM)", NameSpace, NameSpace)
+		w.Writeln("    self._handle = handle")
+		w.Writeln("    self._wrapper = wrapper")
+		w.Writeln("  ")
+		w.Writeln("  def __del__(self):")
+		w.Writeln("    self._wrapper.%s(self)", component.Global.ReleaseMethod)
+	}
 
 	for i:=0; i<len(class.Methods); i++ {
 		err := writeMethod(class.Methods[i], w, NameSpace, class.ClassName, false)
@@ -712,7 +725,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName
 				retVals = retVals + fmt.Sprintf("%s(%s.value)", cParams[0].ParamCallType, cParams[0].ParamName)
 			}
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 				if (retVals != "") {
 					retVals = retVals + ", ";
 				}
@@ -742,7 +755,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			pythonInParams = pythonInParams + ", ";
 			
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
 				pythonInParams = pythonInParams + param.ParamName
 				cArguments = cArguments + cParams[0].ParamName
@@ -828,8 +841,13 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("  libpath = '' # TODO add the location of the shared library binary here")
 	w.Writeln("  wrapper = %s.%sWrapper(os.path.join(libpath, \"%s\"))", NameSpace, NameSpace, BaseName)
 	w.Writeln("  ")
-	w.Writeln("  major, minor, micro = wrapper.GetLibraryVersion()")
-	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro))", NameSpace)
+	w.Writeln("  major, minor, micro, prereleaseinfo, buildinfo = wrapper.GetLibraryVersion()")
+	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro), end=\"\")", NameSpace)
+	w.Writeln("  if prereleaseinfo:")
+	w.Writeln("    print(\"-\"+prereleaseinfo, end=\"\")")
+	w.Writeln("  if buildinfo:")
+	w.Writeln("    print(\"+\"+buildinfo, end=\"\")")
+	w.Writeln("  print(\"\")")
 	w.Writeln("")
 	w.Writeln("")
 

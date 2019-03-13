@@ -49,6 +49,7 @@ const (
 	eSpecialMethodRelease = 1
 	eSpecialMethodVersion = 2
 	eSpecialMethodJournal = 3
+	eSpecialMethodError = 4
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -107,6 +108,8 @@ type ComponentDefinitionImplementationList struct {
 type ComponentDefinitionGlobal struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"global"`
+	BaseClassName string `xml:"baseclassname,attr"`
+	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
@@ -261,6 +264,7 @@ func checkImplementations(implementations[] ComponentDefinitionImplementation) e
 func checkErrors(errors ComponentDefinitionErrors) error {
 	errorNameList := make(map[string]bool, 0);
 	errorCodeList := make(map[int]bool, 0);
+
 	for i := 0; i < len(errors.Errors); i++ {
 		merror := errors.Errors[i];
 		if !nameIsValidIdentifier(merror.Name) {
@@ -280,6 +284,15 @@ func checkErrors(errors ComponentDefinitionErrors) error {
 			return fmt.Errorf( "invalid error description \"%s\" for error \"%s\"", merror.Description, merror.Name);
 		}
 	}
+
+	requiredErrors := []string{"NOTIMPLEMENTED", "INVALIDPARAM",
+			"INVALIDCAST", "BUFFERTOOSMALL", "GENERICEXCEPTION", "COULDNOTLOADLIBRARY", "COULDNOTFINDLIBRARYEXPORT", "INCOMPATIBLEBINARYVERSION"}
+		for _, req := range requiredErrors {
+			if (!errorNameList[strings.ToLower(req)]) {
+				return fmt.Errorf( "component is missing the required error \"%s\"", req);
+			}
+		}
+
 	return nil
 }
 
@@ -362,9 +375,10 @@ func checkStructs(structs[] ComponentDefinitionStruct) (map[string]bool, error) 
 	return structNameList, nil
 }
 
-func checkClasses(classes[] ComponentDefinitionClass) (map[string]bool, error) {
+func checkClasses(classes[] ComponentDefinitionClass, baseClassName string) (map[string]bool, error) {
 	classLowerNameList := make(map[string]bool, 0)
 	classNameList := make(map[string]bool, 0)
+	classNameIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		if !nameIsValidIdentifier(class.ClassName) {
@@ -379,22 +393,29 @@ func checkClasses(classes[] ComponentDefinitionClass) (map[string]bool, error) {
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		classNameList[class.ClassName] = true
+		classNameIndex[class.ClassName] = i
 	}
 
+	// Check parent class definitions
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		parentClass := class.ParentClass;
+		if ((baseClassName != class.ClassName) && (len(parentClass) == 0) ) {
+			parentClass = baseClassName
+		}
 		if (len(parentClass) > 0) {
 			if !nameIsValidIdentifier(parentClass) {
-				return nil, fmt.Errorf ("invalid class parent name \"%s\"", parentClass);
+				return nil, fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
 			}
 			if (classNameList[parentClass] == false) {
 				return nil, fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
 			}
+			if (classNameIndex[parentClass] >= i) {
+				return nil, fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
 				return nil, fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
 			}
-
 		}
 	}
 
@@ -424,7 +445,7 @@ func checkFunctionTypes(functions[] ComponentDefinitionFunctionType) (map[string
 
 func checkDuplicateNames(enumList map[string]bool, structList map[string]bool, classList map[string]bool) (error) {
 	allLowerList := make(map[string]string, 0)
-    for k := range structList {
+	for k := range structList {
 		if allLowerList[strings.ToLower(k)] == "struct" {
 			return fmt.Errorf ("duplicate struct name \"%s\"", k)
 		}
@@ -538,50 +559,75 @@ func descriptionIsValid (description string) bool {
 
 func isScalarType(typeStr string) bool {
 	switch (typeStr) {
-		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double":
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
 			return true
 	}
 	return false
 }
 
 func majorVersion (version string) int {
-	return versionTriple(version)[0]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[0]
 }
 func minorVersion (version string) int {
-	return versionTriple(version)[1]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[1]
 }
 func microVersion (version string) int {
-	return versionTriple(version)[2]
+	isValid, versions, _ := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return versions[2]
+}
+func preReleaseInfo (version string) string {
+	isValid, _, additionalData := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return additionalData[0]
+}
+func buildInfo (version string) string {
+	isValid, _, additionalData := decomposeVersionString(version)
+	if (!isValid) {
+		log.Fatal("invalid version")
+	}
+	return additionalData[1]
 }
 
-func versionTriple (version string) [3]int {
-	if !versionIsValidVersion(version) {
-		log.Fatal("invalid version")
-	}
-	
-	versionTripleR, _ := regexp.Compile("([0-9]*)")
-	trip := versionTripleR.FindAllString(version, -1)
-	if len(trip) != 3 {
-		log.Fatal("invalid version")
-	}
+func decomposeVersionString (version string) (bool, [3]int, [2]string) {
+	var IsValidVersion = regexp.MustCompile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(\\-[a-zA-Z0-9.\\-]+)?(\\+[a-zA-Z0-9.\\-]+)?$")
 
 	var vers [3]int;
+	var data [2]string;
+
+	if !(IsValidVersion.MatchString(version)) {
+		return false, vers, data;
+	}
+	slices := IsValidVersion.FindStringSubmatch(version)
+	if (len(slices) != 6) {
+		return false, vers, data;
+	}
 	for i := 0; i < 3; i++ {
-		ver, err := strconv.Atoi(trip[i])
+		ver, err := strconv.Atoi(slices[i+1])
 		if err != nil {
-			log.Fatal("invalid version")
+			return false, vers, data;
 		}
 		vers[i] = ver
 	}
-	return vers
-}
-
-func versionIsValidVersion (version string) bool {
-	var IsValidVersion = regexp.MustCompile("^([0-9]*)\\.([0-9]*)\\.([0-9]*)$").MatchString
-	if (version != "") {
-		return IsValidVersion (version);
+	for i := 0; i < 2; i++ {
+		slice := slices[i+4]
+		if (len(slice)>0) {
+			data[i] = slice[1:]
+		}
 	}
-	return false;
+	return true, vers, data;
 }
 
 func nameSpaceIsValid (namespace string) bool {
@@ -617,7 +663,8 @@ func baseNameIsValid (baseName string) bool {
 }
 
 func checkComponentHeader(component ComponentDefinition) (error) {
-	if !versionIsValidVersion(component.Version) {
+	versionIsValid, _, _ := decomposeVersionString(component.Version)
+	if !versionIsValid {
 		return fmt.Errorf("Version \"%s\" is invalid", component.Version)
 	}
 	if component.Copyright == "" {
@@ -647,7 +694,7 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 	if err != nil {
 		return err
 	}
-	
+
 	err = checkErrors(component.Errors)
 	if err != nil {
 		return err
@@ -671,7 +718,7 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 	}
 
 	var classList = make(map[string]bool, 0)
-	classList, err = checkClasses(component.Classes)
+	classList, err = checkClasses(component.Classes, component.Global.BaseClassName)
 	if err != nil {
 		return err
 	}
@@ -692,6 +739,21 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 		return err
 	}
 
+
+	if (component.Global.BaseClassName == "") {
+		return errors.New ("No base class name specified");
+	}
+	found := 0
+	for i := 0; i < len(component.Classes); i++ {
+		if (component.Classes[i].ClassName == component.Global.BaseClassName) {
+			found++
+		}
+	}
+	if (found==0) {
+		return errors.New ("Specified base class not found");
+	}	else if (found>1) {
+		return errors.New ("Base clase defined more than once");
+	}
 	return nil
 }
 
@@ -707,6 +769,10 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
 
+	if (global.ErrorMethod == "") {
+		return eSpecialMethodNone, errors.New ("No error method specified");
+	}
+
 	if (global.ReleaseMethod == global.JournalMethod) {
 		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Journal method");
 	}
@@ -718,13 +784,13 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 	if (global.JournalMethod == global.VersionMethod) {
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
 	}
-	
+
 	if (method.MethodName == global.ReleaseMethod) {
 		if (len (method.Params) != 1) {
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 		
-		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != "BaseClass") || (method.Params[0].ParamPass != "in") {
+		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 
@@ -744,20 +810,77 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 	}
 
 	if (method.MethodName == global.VersionMethod) {
-		if (len (method.Params) != 3) {
+		if (len (method.Params) != 5) {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "uint32") || (method.Params[0].ParamPass != "out") || 
 			(method.Params[1].ParamType != "uint32") || (method.Params[1].ParamPass != "out") || 
-			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out")  {
+			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out") ||
+			(method.Params[3].ParamType != "string") || (method.Params[3].ParamPass != "out") || 
+			(method.Params[4].ParamType != "string") || (method.Params[4].ParamPass != "out") {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
 		return eSpecialMethodVersion, nil;
 	}
 	
+	if (method.MethodName == global.ErrorMethod) {
+		if (len (method.Params) != 3) {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamPass != "in") || 
+			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") || 
+			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
+			(method.Params[0].ParamClass != global.BaseClassName) {
+			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
+		}
+		
+		return eSpecialMethodError, nil;
+	}
+
 	return eSpecialMethodNone, nil;
 }
 
 
+
+func GetLastErrorMessageMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="GetLastErrorMessage" description = "Returns the last error registered of this class instance">
+		<param name="ErrorMessage" type="string" pass="out" description="Message of the last error registered" />
+		<param name="HasLastError" type="bool" pass="return" description="Has an error been registered already" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+func RegisterErrorMessageMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="RegisterErrorMessage" description = "Registers an error message with this class instance">
+		<param name="ErrorMessage" type="string" pass="in" description="Error message to register" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass) (bool) {
+	return class.ClassName == component.Global.BaseClassName
+}
+
+func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
+	for i := 0; i < len(component.Classes); i++ {
+		if (component.isBaseClass(component.Classes[i])) {
+			return component.Classes[i]
+		}
+	}
+	var out ComponentDefinitionClass
+	log.Fatal("Now base class available")
+	return out
+}
