@@ -210,11 +210,11 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 			case "basicarray":
-				callParameter = "nullptr, 0";
+				callParameter = "0, nullptr";
 				initCallParameter = callParameter;
 
 			case "structarray":
-				callParameter = "nullptr, 0";
+				callParameter = "0, nullptr";
 				initCallParameter = callParameter;
 
 			case "functiontype":
@@ -385,11 +385,11 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				//return fmt.Errorf("can not return struct \"%s\" for %s.%s (%s) yet in nodejs", param.ParamType, ClassName, method.MethodName, param.ParamName)
 
 			case "basicarray":
-				callParameter = "nullptr, 0, nullptr";
+				callParameter = "0, nullptr, nullptr";
 				initCallParameter = callParameter;
 
 			case "structarray":
-				callParameter = "nullptr, 0, nullptr";
+				callParameter = "0, nullptr, nullptr";
 				initCallParameter = callParameter;
 
 			case "functiontype":
