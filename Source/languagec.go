@@ -322,6 +322,32 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 	return nil;
 }
 
+func GetCMemberDefaultValue (memberType string, memberClass string, NameSpace string) (string, error) {
+
+	switch (memberType) {		
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
+			return "0", nil;
+		case "bool":
+			return "false", nil;
+		case "single":
+			return "0.0f", nil;
+		case "double":
+			return "0.0", nil;
+		case "pointer":
+			return "nullptr", nil;
+		case "enum":
+			return "0", nil;
+		case "string":
+			return "", fmt.Errorf ("it is not possible for a struct to contain a string value");
+		case "handle":
+			return "", fmt.Errorf ("it is not possible for a struct to contain a handle value");
+		default:
+			return "", fmt.Errorf ("unknown member type %s", memberType);
+	}
+
+}
+
+
 // CreateCHeader creates a C header file for the component's API
 func CreateCHeader (component ComponentDefinition, CHeaderName string) (error) {
 	hfile, err := CreateLanguageFile(CHeaderName, "  ");

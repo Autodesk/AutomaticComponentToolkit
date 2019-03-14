@@ -252,9 +252,12 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 			case "struct":
-				callParameter = "nullptr";
+				inputcheckfunction = "IsObject"
+				
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%ss%s%s s%s = convertObjectTo%s%s(isolate, args[%d]);\n", spacing, NameSpace, param.ParamClass, param.ParamName, NameSpace, param.ParamClass, k)
+				
+				callParameter = fmt.Sprintf ("&s%s", param.ParamName);
 				initCallParameter = callParameter;
-				//return fmt.Errorf("parameter type \"%s\" not yet supported for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 
 			case "handle":
 				inputcheckfunction = "IsObject"
@@ -289,35 +292,35 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "uint16":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned short nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "uint32":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned int nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
 
 			case "uint64":
 				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, (uint32_t) nReturn%s));\n", spacing, param.ParamName)
 			
 			case "pointer":
 				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, (void*) nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, (uint32_t) nReturn%s));\n", spacing, param.ParamName)
 
 			case "int8":
 				returndeclaration = returndeclaration + fmt.Sprintf("%schar nReturn%s = 0;\n", spacing, param.ParamName)
@@ -345,7 +348,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, (int) nReturn%s));\n", spacing, param.ParamName)
 
 			case "string":
 				requiresInitCall = true;
@@ -506,6 +509,214 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 	return nil
 }
 
+func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw io.Writer, NameSpace string) error {
+
+	hasRowVariable := false;
+	hasColumnVariable := false;
+	
+	for i := 0; i < len(structdefinition.Members); i++ {
+	
+		member := structdefinition.Members[i];
+		if (member.Rows > 0) {			
+			hasRowVariable = true;
+		
+			if (member.Columns > 0) {			
+				hasColumnVariable = true;			
+			}
+		}
+		
+	}
+	
+
+	fmt.Fprintf(implw, "/*************************************************************************************************************************\n")
+	fmt.Fprintf(implw, " Class s%s%s Conversion\n", NameSpace, structdefinition.Name)
+	fmt.Fprintf(implw, "**************************************************************************************************************************/\n")
+	
+	fmt.Fprintf(implw, "");
+	fmt.Fprintf(implw, "s%s%s convertObjectTo%s%s (Isolate* isolate, Local<Value> & pParamValue)\n", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name);
+	fmt.Fprintf(implw, "{\n");
+	fmt.Fprintf(implw, "  s%s%s s%s;\n", NameSpace, structdefinition.Name, structdefinition.Name);
+	fmt.Fprintf(implw, "  Local<Context> context = isolate->GetCurrentContext();\n");	
+	
+	if (hasRowVariable) {
+		fmt.Fprintf(implw, "  int rowIndex;\n");	
+	}
+	if (hasColumnVariable) {
+		fmt.Fprintf(implw, "  int columnIndex;\n");	
+	}
+	
+	fmt.Fprintf(implw, "\n");
+	
+	for i := 0; i < len(structdefinition.Members); i++ {
+	
+		member := structdefinition.Members[i];
+		defaultValue, err := GetCMemberDefaultValue (member.Type, member.Class, NameSpace);
+		if err != nil {
+			return err;
+		}
+		
+		defaultValueAssignment := " = " + defaultValue;
+		if (member.Type == "enum") {
+			defaultValueAssignment = ".m_code = " + defaultValue;
+		}
+		
+		if (member.Rows > 0) {
+			if (member.Columns > 0) {										
+				fmt.Fprintf(implw, "  for (rowIndex = 0; rowIndex < %d; rowIndex++)\n", member.Rows);
+				fmt.Fprintf(implw, "    for (columnIndex = 0; columnIndex < %d; columnIndex++)\n", member.Columns);
+				fmt.Fprintf(implw, "      s%s.m_%s[rowIndex][columnIndex]%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
+			} else {
+				fmt.Fprintf(implw, "  for (rowIndex = 0; rowIndex < %d; rowIndex++)\n", member.Rows);
+				fmt.Fprintf(implw, "    s%s.m_%s[rowIndex]%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
+			}
+		} else {
+		
+			fmt.Fprintf(implw, "  s%s.m_%s%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
+		}
+		
+		
+	}
+	
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "  if (pParamValue->IsObject ()) {\n");
+	fmt.Fprintf(implw, "    MaybeLocal<Object> maybeObject = pParamValue->ToObject(context);\n");
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "    if (!maybeObject.IsEmpty ()) {\n");
+	fmt.Fprintf(implw, "      Local<Object> obj = maybeObject.ToLocalChecked();\n");
+	fmt.Fprintf(implw, "\n");
+
+	for i := 0; i < len(structdefinition.Members); i++ {
+
+		member := structdefinition.Members[i];		
+		fmt.Fprintf(implw, "      // %s Member\n", member.Name);
+
+		fmt.Fprintf(implw, "      MaybeLocal<Value> maybeVal%s = obj->Get(context, String::NewFromUtf8(isolate, \"%s\"));\n", member.Name, member.Name);
+		fmt.Fprintf(implw, "      if (!maybeVal%s.IsEmpty ()) {\n", member.Name);
+		fmt.Fprintf(implw, "        Local<Value> val%s = maybeVal%s.ToLocalChecked ();\n", member.Name, member.Name);
+		
+		valueTypeCall := "";
+		assignmentOperator := " = ";
+		switch (member.Type) {
+			case "uint8", "uint16", "uint32":
+				valueTypeCall = "Uint32Value";				
+			case "int8", "int16", "int32":
+				valueTypeCall = "Int32Value";		
+			case "enum":
+				valueTypeCall = "Int32Value";
+				assignmentOperator = ".m_code = ";
+				
+			case "uint64", "int64":
+				valueTypeCall = "IntegerValue";				
+			case "pointer":
+				valueTypeCall = "IntegerValue";				
+				assignmentOperator = " = (void *)";
+			case "bool":
+				valueTypeCall = "BooleanValue";				
+			case "single":
+				assignmentOperator = " = (float)";
+				valueTypeCall = "NumberValue";
+			case "double":
+				valueTypeCall = "NumberValue";
+		}
+		
+		
+		if (member.Rows > 0) {
+
+			fmt.Fprintf(implw, "        if (val%s->IsArray ()) {\n", member.Name);
+			fmt.Fprintf(implw, "          Local<Array> array%s = Local<Array>::Cast(val%s);\n", member.Name, member.Name);
+			
+			if (member.Columns > 0) {
+					
+				fmt.Fprintf(implw, "          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);
+				fmt.Fprintf(implw, "            MaybeLocal<Value> mlocalRow = array%s->Get(context, rowIndex);\n", member.Name);
+				fmt.Fprintf(implw, "            Local<Value> localRow;\n");
+				fmt.Fprintf(implw, "            if (mlocalRow.ToLocal (&localRow)) {\n");
+				fmt.Fprintf(implw, "        	  if (localRow->IsArray ()) {\n");
+				fmt.Fprintf(implw, "                Local<Array> localRowArray = Local<Array>::Cast(localRow);\n");
+				fmt.Fprintf(implw, "                for (int colIndex = 0; colIndex < %d; colIndex++) {\n", member.Columns);
+				fmt.Fprintf(implw, "                  MaybeLocal<Value> mlocalValue = localRowArray->Get(context, colIndex);\n");
+				fmt.Fprintf(implw, "                  Local<Value> localValue;\n");
+  				fmt.Fprintf(implw, "                  if (mlocalValue.ToLocal (&localValue)) {\n");
+				fmt.Fprintf(implw, "                    if (localValue->IsNumber ()) {\n");
+				fmt.Fprintf(implw, "                      MaybeLocal<Number> localNumber = localValue->ToNumber(context);\n");
+				fmt.Fprintf(implw, "                      s%s.m_%s[rowIndex][colIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
+				fmt.Fprintf(implw, "                    } else {\n");
+				fmt.Fprintf(implw, "                      isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));\n", member.Name);
+				fmt.Fprintf(implw, "                    }\n");
+				fmt.Fprintf(implw, "                  } else {\n");
+				fmt.Fprintf(implw, "                    isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));\n", member.Name);
+				fmt.Fprintf(implw, "                  }\n");					
+				fmt.Fprintf(implw, "                }\n");
+				fmt.Fprintf(implw, "              } else {\n");
+				fmt.Fprintf(implw, "                isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not an array\" )));\n", member.Name);
+				fmt.Fprintf(implw, "              }\n");
+				fmt.Fprintf(implw, "            } else {\n");
+				fmt.Fprintf(implw, "              isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));\n", member.Name);
+				fmt.Fprintf(implw, "            }\n");
+				fmt.Fprintf(implw, "          }\n");
+				
+				
+					
+			} else {
+
+				fmt.Fprintf(implw, "          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);
+				fmt.Fprintf(implw, "            MaybeLocal<Value> mlocalValue = array%s->Get(context, rowIndex);\n", member.Name);
+				fmt.Fprintf(implw, "            Local<Value> localValue;\n");
+  				fmt.Fprintf(implw, "            if (mlocalValue.ToLocal (&localValue)) {\n");
+				fmt.Fprintf(implw, "              if (localValue->IsNumber ()) {\n");
+				fmt.Fprintf(implw, "                MaybeLocal<Number> localNumber = localValue->ToNumber(context);\n");
+				fmt.Fprintf(implw, "                s%s.m_%s[rowIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
+				fmt.Fprintf(implw, "              } else {\n");
+				fmt.Fprintf(implw, "                isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));\n", member.Name);
+				fmt.Fprintf(implw, "              }\n");					
+				fmt.Fprintf(implw, "            } else {\n");
+				fmt.Fprintf(implw, "              isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));\n", member.Name);
+				fmt.Fprintf(implw, "            }\n");					
+				fmt.Fprintf(implw, "          }\n");
+			
+			}
+
+			fmt.Fprintf(implw, "        } else {\n");	
+			fmt.Fprintf(implw, "          isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s member is not an array\" )));\n", member.Name);
+			fmt.Fprintf(implw, "        }\n");			
+			
+			
+		} else {
+			fmt.Fprintf(implw, "        if (val%s->IsNumber ()) {\n", member.Name);
+			fmt.Fprintf(implw, "          MaybeLocal<Number> localVal%s = val%s->ToNumber(context);\n", member.Name, member.Name);
+			fmt.Fprintf(implw, "          s%s.m_%s%slocalVal%s.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, member.Name, valueTypeCall);
+			fmt.Fprintf(implw, "        } else {\n");	
+			fmt.Fprintf(implw, "          isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s member is not a number\" )));\n", member.Name);
+			fmt.Fprintf(implw, "        }\n");			
+		}	
+		
+		fmt.Fprintf(implw, "      } else {\n");
+		fmt.Fprintf(implw, "        isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s member not found in object\" )));\n", member.Name);
+		fmt.Fprintf(implw, "      }\n");
+		fmt.Fprintf(implw, "\n");
+		
+	}
+							
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "    } else {\n");
+	fmt.Fprintf(implw, "      isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"invalid object passed.\" )));\n");
+	fmt.Fprintf(implw, "    }\n");
+	fmt.Fprintf(implw, "  } else {\n");
+	fmt.Fprintf(implw, "    isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"expected object parameter.\" )));\n");
+	fmt.Fprintf(implw, "  }\n");
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "  return s%s;\n", structdefinition.Name);	
+	fmt.Fprintf(implw, "}\n");
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "\n");
+
+	return nil;
+	
+}
+
+
+
+
 func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.Writer, NameSpace string, BaseName string) error {
 
 	fmt.Fprintf(w, "\n")
@@ -619,6 +830,18 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "Persistent<Function> C%s%s::constructor;\n", NameSpace, class.ClassName)
 	}
 	fmt.Fprintf(implw, "\n")
+	
+
+
+	for i := 0; i < len(component.Structs); i++ {
+		structdefinition := component.Structs[i];
+		err := buildNodeStructConversion (structdefinition, implw, NameSpace);
+		if (err != nil) {
+			return err;
+		}
+	}
+	
+	
 
 	fmt.Fprintf(implw, "/*************************************************************************************************************************\n")
 	fmt.Fprintf(implw, " Class C%sBaseClass Implementation\n", NameSpace)
@@ -733,9 +956,11 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
 		fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 		fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
-		fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked();\n")
-		fmt.Fprintf(implw, "    instance->SetInternalField (NODEWRAPPER_TABLEINDEX, External::New (isolate, C%sBaseClass::getDynamicWrapperTable (pParent)));\n", NameSpace)
-		fmt.Fprintf(implw, "    instance->SetInternalField (NODEWRAPPER_HANDLEINDEX, External::New (isolate, pHandle));\n")
+		fmt.Fprintf(implw, "    Local<Object> instance;\n");
+		fmt.Fprintf(implw, "    if (cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocal (&instance)) {\n")
+		fmt.Fprintf(implw, "      instance->SetInternalField (NODEWRAPPER_TABLEINDEX, External::New (isolate, C%sBaseClass::getDynamicWrapperTable (pParent)));\n", NameSpace)
+		fmt.Fprintf(implw, "      instance->SetInternalField (NODEWRAPPER_HANDLEINDEX, External::New (isolate, pHandle));\n")
+		fmt.Fprintf(implw, "    }\n");
 		fmt.Fprintf(implw, "    return instance;\n")
 		fmt.Fprintf(implw, "}\n")
 		fmt.Fprintf(implw, "\n")
@@ -836,7 +1061,8 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
 	fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 	fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
-	fmt.Fprintf(implw, "    Local<Object> instance = cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked();\n")
+	fmt.Fprintf(implw, "    Local<Object> instance;\n"); 
+	fmt.Fprintf(implw, "    cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocal(&instance);\n")
 	fmt.Fprintf(implw, "    return instance;\n")
 	fmt.Fprintf(implw, "}\n")
 
