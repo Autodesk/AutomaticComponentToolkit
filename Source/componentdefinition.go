@@ -368,9 +368,15 @@ func checkStructs(structs[] ComponentDefinitionStruct) (map[string]bool, error) 
 		if structLowerNameList[mstruct.Name] == true {
 			return nil, fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
 		}
-		
 		structNameList[mstruct.Name] = true
 		structLowerNameList[strings.ToLower(mstruct.Name)] = true
+
+		for j := 0; j < len(mstruct.Members); j++ {
+			member := mstruct.Members[j]
+			if !nameIsValidIdentifier(member.Name) {
+				return nil, fmt.Errorf ("invalid member name \"%s\"", member.Name);
+			}
+		}
 	}
 	return structNameList, nil
 }
