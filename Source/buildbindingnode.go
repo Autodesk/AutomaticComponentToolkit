@@ -266,7 +266,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sC%s%s * instance%s = ObjectWrap::Unwrap<C%s%s>(obj%s);\n", spacing, NameSpace, param.ParamClass, param.ParamName, NameSpace, param.ParamClass, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sif (instance%s == nullptr)\n", spacing, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%s    throw std::runtime_error(\"Invalid Object parameter %d (%s)\");\n", spacing, k, param.ParamName)
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s%sHandle h%s = instance%s->getHandle (args.Holder ());\n", spacing, NameSpace, param.ParamName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s%sHandle h%s = instance%s->getHandle ( obj%s );\n", spacing, NameSpace, param.ParamName, param.ParamName, param.ParamName)
 
 				callParameter = "h" + param.ParamName
 				initCallParameter = callParameter;
@@ -533,7 +533,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	fmt.Fprintf(implw, "**************************************************************************************************************************/\n")
 	
 	fmt.Fprintf(implw, "");
-	fmt.Fprintf(implw, "s%s%s convertObjectTo%s%s (Isolate* isolate, Local<Value> & pParamValue)\n", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name);
+	fmt.Fprintf(implw, "s%s%s convertObjectTo%s%s (Isolate* isolate, const Local<Value> & pParamValue)\n", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name);
 	fmt.Fprintf(implw, "{\n");
 	fmt.Fprintf(implw, "  s%s%s s%s;\n", NameSpace, structdefinition.Name, structdefinition.Name);
 	fmt.Fprintf(implw, "  Local<Context> context = isolate->GetCurrentContext();\n");	
@@ -562,9 +562,9 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 		
 		if (member.Rows > 0) {
 			if (member.Columns > 0) {										
-				fmt.Fprintf(implw, "  for (rowIndex = 0; rowIndex < %d; rowIndex++)\n", member.Rows);
-				fmt.Fprintf(implw, "    for (columnIndex = 0; columnIndex < %d; columnIndex++)\n", member.Columns);
-				fmt.Fprintf(implw, "      s%s.m_%s[rowIndex][columnIndex]%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
+				fmt.Fprintf(implw, "  for (columnIndex = 0; columnIndex < %d; columnIndex++)\n", member.Columns);
+				fmt.Fprintf(implw, "    for (rowIndex = 0; rowIndex < %d; rowIndex++)\n", member.Rows);
+				fmt.Fprintf(implw, "      s%s.m_%s[columnIndex][rowIndex]%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
 			} else {
 				fmt.Fprintf(implw, "  for (rowIndex = 0; rowIndex < %d; rowIndex++)\n", member.Rows);
 				fmt.Fprintf(implw, "    s%s.m_%s[rowIndex]%s;\n", structdefinition.Name, member.Name, defaultValueAssignment);
@@ -627,19 +627,19 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			
 			if (member.Columns > 0) {
 					
-				fmt.Fprintf(implw, "          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);
-				fmt.Fprintf(implw, "            MaybeLocal<Value> mlocalRow = array%s->Get(context, rowIndex);\n", member.Name);
-				fmt.Fprintf(implw, "            Local<Value> localRow;\n");
-				fmt.Fprintf(implw, "            if (mlocalRow.ToLocal (&localRow)) {\n");
-				fmt.Fprintf(implw, "        	  if (localRow->IsArray ()) {\n");
-				fmt.Fprintf(implw, "                Local<Array> localRowArray = Local<Array>::Cast(localRow);\n");
-				fmt.Fprintf(implw, "                for (int colIndex = 0; colIndex < %d; colIndex++) {\n", member.Columns);
-				fmt.Fprintf(implw, "                  MaybeLocal<Value> mlocalValue = localRowArray->Get(context, colIndex);\n");
+				fmt.Fprintf(implw, "          for (int colIndex = 0; colIndex < %d; colIndex++) {\n", member.Columns);
+				fmt.Fprintf(implw, "            MaybeLocal<Value> mlocalCol = array%s->Get(context, colIndex);\n", member.Name);
+				fmt.Fprintf(implw, "            Local<Value> localCol;\n");
+				fmt.Fprintf(implw, "            if (mlocalCol.ToLocal (&localCol)) {\n");
+				fmt.Fprintf(implw, "        	  if (localCol->IsArray ()) {\n");
+				fmt.Fprintf(implw, "                Local<Array> localColArray = Local<Array>::Cast(localCol);\n");
+				fmt.Fprintf(implw, "                for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);
+				fmt.Fprintf(implw, "                  MaybeLocal<Value> mlocalValue = localColArray->Get(context, rowIndex);\n");
 				fmt.Fprintf(implw, "                  Local<Value> localValue;\n");
   				fmt.Fprintf(implw, "                  if (mlocalValue.ToLocal (&localValue)) {\n");
 				fmt.Fprintf(implw, "                    if (localValue->IsNumber ()) {\n");
 				fmt.Fprintf(implw, "                      MaybeLocal<Number> localNumber = localValue->ToNumber(context);\n");
-				fmt.Fprintf(implw, "                      s%s.m_%s[rowIndex][colIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
+				fmt.Fprintf(implw, "                      s%s.m_%s[colIndex][rowIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
 				fmt.Fprintf(implw, "                    } else {\n");
 				fmt.Fprintf(implw, "                      isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));\n", member.Name);
 				fmt.Fprintf(implw, "                    }\n");
@@ -1094,7 +1094,14 @@ func buildNodeBindingGyp(component ComponentDefinition, w io.Writer, indentStrin
 	fmt.Fprintf(w, "%s%s%s\"target_name\": \"%s_nodeaddon\",\n", indentString, indentString, indentString, BaseName)
 	fmt.Fprintf(w, "%s%s%s\"sources\": [ \"%s_nodeaddon.cc\", \"%s_nodewrapper.cc\", \"%s_dynamic.cpp\" ],\n", indentString, indentString, indentString, BaseName, BaseName, BaseName)
 	fmt.Fprintf(w, "%s%s%s\"cflags\": [ \"-fexceptions \" ],\n", indentString, indentString, indentString )
-	fmt.Fprintf(w, "%s%s%s\"cflags_cc\": [ \"-fexceptions \" ]\n", indentString, indentString, indentString )
+	fmt.Fprintf(w, "%s%s%s\"cflags_cc\": [ \"-fexceptions \" ],\n", indentString, indentString, indentString )
+	fmt.Fprintf(w, "%s%s%s\"msvs_settings\": {\n", indentString, indentString, indentString)
+	fmt.Fprintf(w, "%s%s%s%s\"VCCLCompilerTool\": { \"ExceptionHandling\": 1 }\n", indentString, indentString, indentString, indentString)
+	fmt.Fprintf(w, "%s%s%s},\n", indentString, indentString, indentString)
+	fmt.Fprintf(w, "%s%s%s\"conditions\": [\n", indentString, indentString, indentString)
+	fmt.Fprintf(w, "%s%s%s%s[\"OS=='win'\", {	\"defines\": [ \"_HAS_EXCEPTIONS=1\" ] }]\n", indentString, indentString, indentString, indentString)
+	fmt.Fprintf(w, "%s%s%s]\n", indentString, indentString, indentString)
+				
 	fmt.Fprintf(w, "%s%s}\n", indentString, indentString)
 	fmt.Fprintf(w, "%s]\n", indentString)
 	fmt.Fprintf(w, "}\n")
