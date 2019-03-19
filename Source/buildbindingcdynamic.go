@@ -236,8 +236,16 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 
 	w.Writeln("#ifdef _WIN32")
-	// TODO: Unicode
-	w.Writeln("HMODULE hLibrary = LoadLibraryExA(pLibraryFileName, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);")
+	w.Writeln("// Convert filename to UTF16-string")
+	w.Writeln("int nLength = strlen(pLibraryFileName);")
+	w.Writeln("int nBufferSize = nLength * 2 + 2;")
+	w.Writeln("std::vector<wchar_t> wsLibraryFileName(nBufferSize);")
+	w.Writeln("int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, &wsLibraryFileName[0], nBufferSize);")
+	w.Writeln("if (nResult == 0)")
+	w.Writeln("  return LIB3MF_ERROR_COULDNOTLOADLIBRARY;")
+	w.Writeln("")
+	w.Writeln("HMODULE hLibrary = LoadLibraryW(wsLibraryFileName.data());")
+
 	w.Writeln("if (hLibrary == 0) ")
 	w.Writeln("  return %s_ERROR_COULDNOTLOADLIBRARY;", strings.ToUpper(NameSpace))
 	w.Writeln("#else // _WIN32")
@@ -284,6 +292,7 @@ func buildDynamicCppImplementation(component ComponentDefinition, w LanguageWrit
 
 	w.Writeln("#ifdef _WIN32")
 	w.Writeln("#include <Windows.h>")
+	w.Writeln("#include <vector>")
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
 	w.Writeln("#endif // _WIN32")
