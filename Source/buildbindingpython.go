@@ -88,12 +88,15 @@ func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFo
 func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w LanguageWriter) error {
 
 	NameSpace := componentdefinition.NameSpace
-	// BaseName := componentdefinition.BaseName
+	BaseName := componentdefinition.BaseName
 
 	w.Writeln("")
 	w.Writeln("import ctypes")
 	w.Writeln("import platform")
 	w.Writeln("import enum")
+	w.Writeln("")
+
+	w.Writeln("name = %s", BaseName)
 	w.Writeln("")
 
 	w.Writeln("'''Definition of domain specific exception")
@@ -224,7 +227,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("class %sWrapper:", NameSpace)
 	w.Writeln("")
 
-	w.Writeln("  def __init__(self, libraryName):")
+	w.Writeln("  def __init__(self, libraryName = None):")
 	w.Writeln("    ending = ''")
 	w.Writeln("    if platform.system() == 'Windows':")
 	w.Writeln("      ending = 'dll'")
@@ -235,6 +238,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    else:")
 	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTLOADLIBRARY)", NameSpace, NameSpace)
 	w.Writeln("    ")
+	w.Writeln("    if (not libraryName):")
+	w.Writeln("      libraryName = os.path.join(os.path.dirname(os.path.realpath(__file__)),'%s')", BaseName)
 	w.Writeln("    path = libraryName + '.' + ending")
 	w.Writeln("    ")
 	w.Writeln("    try:")
@@ -258,7 +263,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 
 	w.Writeln("  def _checkBinaryVersion(self):")
-	w.Writeln("    nMajor, nMinor, _ = self.%s()", componentdefinition.Global.VersionMethod)
+	w.Writeln("    nMajor, nMinor, _, _, _ = self.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("    if (nMajor != %sBindingVersion.MAJOR) or (nMinor < %sBindingVersion.MINOR):", NameSpace, NameSpace)
 	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
 	w.Writeln("  ")
