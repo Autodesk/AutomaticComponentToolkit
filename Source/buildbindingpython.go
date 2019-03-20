@@ -96,7 +96,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("import enum")
 	w.Writeln("")
 
-	w.Writeln("name = %s", BaseName)
+	w.Writeln("name = \"%s\"", BaseName)
 	w.Writeln("")
 
 	w.Writeln("'''Definition of domain specific exception")
