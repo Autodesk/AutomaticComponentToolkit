@@ -780,7 +780,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
 						initCallParameters = initCallParameters + "A" + param.ParamName;
 
-					case "handle":
+					case "class":
 						initCommands = append (initCommands, fmt.Sprintf ("  if not Assigned (A%s) then", param.ParamName));
 						initCommands = append (initCommands, fmt.Sprintf ("    raise E%sException.CreateCustomMessage (%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper (NameSpace), param.ParamName));
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName + ".FHandle";
@@ -852,7 +852,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 
 						doInitCall = true;
 					
-					case "handle":
+					case "class":
 						defineCommands = append (defineCommands, "  H" + param.ParamName + ": " + PlainParamTypeName + ";");
 						initCommands = append (initCommands, "  Result := nil;");
 						initCommands = append (initCommands, "  A%s := nil;", param.ParamName);
@@ -926,7 +926,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 
 						doInitCall = true;
 
-					case "handle":
+					case "class":
 						defineCommands = append (defineCommands, "  H" + param.ParamName + ": " + PlainParamTypeName + ";");
 						initCommands = append (initCommands, "  Result := nil;");
 						initCommands = append (initCommands, "  H" + param.ParamName + " := nil;");

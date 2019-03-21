@@ -534,7 +534,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				
 				callParameters = callParameters + fmt.Sprintf("%s, %s", pascalParams[0].ParamName, pascalParams[1].ParamName)
 
-			case "handle":
+			case "class":
 				variableDefinitions = append (variableDefinitions, fmt.Sprintf ("  Object%s: TObject;", param.ParamName));
 				checkInputCode = append (checkInputCode, fmt.Sprintf("Object%s := TObject (%s);", param.ParamName, pascalParams[0].ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if (not Supports (Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
@@ -681,7 +681,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				postCallCode = append (postCallCode, fmt.Sprintf("  Move (PAnsiChar (Result%s)^, %s^, Len%s + 1);", param.ParamName, pascalParams[2].ParamName, param.ParamName));
 				postCallCode = append (postCallCode, fmt.Sprintf("end;"));
 
-			case "handle":
+			case "class":
 				checkInputCode = append (checkInputCode, fmt.Sprintf("if not Assigned(p%s) then", param.ParamName))
 				checkInputCode = append (checkInputCode, fmt.Sprintf("  raise E%sException.Create (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
@@ -1098,7 +1098,7 @@ func getPascalImplClassParameters(method ComponentDefinitionMethod, NameSpace st
 						}
 						parameters = parameters + "const A" + param.ParamName  + "Count: QWord"
 						parameters = parameters + "; const A" + param.ParamName + ": " + ParamTypeName
-					case "handle":
+					case "class":
 						if (parameters != "") {
 							parameters = parameters + "; ";
 						}
