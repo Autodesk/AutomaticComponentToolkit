@@ -256,7 +256,7 @@ func buildCTypesHeader (component ComponentDefinition, w LanguageWriter, NameSpa
 						w.Writeln("    %s_pvoid m_%s%s;", NameSpace, member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
-					case "handle":
+					case "class":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
 					case "enum":
 						w.Writeln("    structEnum%s%s m_%s%s;", NameSpace, member.Class, member.Name, arraysuffix);
@@ -339,7 +339,7 @@ func GetCMemberDefaultValue (memberType string, memberClass string, NameSpace st
 			return "0", nil;
 		case "string":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a string value");
-		case "handle":
+		case "class":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a handle value");
 		default:
 			return "", fmt.Errorf ("unknown member type %s", memberType);
@@ -558,7 +558,7 @@ func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass st
 		case "structarray":
 			cParamTypeName = fmt.Sprintf ("s%s%s *", NameSpace, ParamClass)
 			
-		case "handle":
+		case "class":
 			cParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamClass)
 
 		case "functiontype":
@@ -639,7 +639,7 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "handle":
+			case "class":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -695,7 +695,7 @@ func generateCParameter(param ComponentDefinitionParam, className string, method
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "handle":
+			case "class":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);

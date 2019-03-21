@@ -868,7 +868,7 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 			return "e" + param.ParamName;
 		case "struct":
 			return param.ParamName;
-		case "handle":
+		case "class":
 			return "p" + param.ParamName;
 		case "functiontype":
 			return "p" + param.ParamName;
@@ -931,7 +931,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] %s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("const %s %s", cppParamType, param.ParamName)
 
-			case "handle":
+			case "class":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("I%s%s%s* p%s", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName)
 
@@ -1006,7 +1006,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sBuffer - %s buffer of %s\n", param.ParamName, param.ParamClass, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
-			case "handle":
+			case "class":
 				parameters = parameters + fmt.Sprintf("I%s%s%s * p%s", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
@@ -1021,7 +1021,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				returntype = currentReturnType
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
-			case "handle":
+			case "class":
 				returntype = fmt.Sprintf("I%s%s%s *", ClassIdentifier, NameSpace, param.ParamClass)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
@@ -1131,7 +1131,7 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
 		case "struct":
 			return fmt.Sprintf ("s%s%s", NameSpace, param.ParamClass);
-		case "handle":
+		case "class":
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
@@ -1178,7 +1178,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 
-			case "handle":
+			case "class":
 				preCallCode = fmt.Sprintf(indentString + indentString + "%s* pIBaseClass%s = (%s *)p%s;\n", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName) +
 					fmt.Sprintf(indentString + indentString + "I%s%s%s* pI%s = dynamic_cast<I%s%s%s*>(pIBaseClass%s);\n", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName, ClassIdentifier, NameSpace, param.ParamClass, param.ParamName) +
 					fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", param.ParamName) +
@@ -1267,7 +1267,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
-			case "handle":
+			case "class":
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr)\n", param.ParamName)
 				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
 
@@ -1365,7 +1365,7 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 				case "enum":
 					journalCall = "addEnumParameter (\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", " + variableName + ")";
 					
-				case "handle":
+				case "class":
 					journalCall = "addHandleParameter (\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "struct":
@@ -1435,7 +1435,7 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 				case "enum":
 					journalCall = "addEnumResult (\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", *p" + param.ParamName + ")";
 					
-				case "handle":
+				case "class":
 					journalCall = "addHandleResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 				
 				case "struct":

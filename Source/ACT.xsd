@@ -267,6 +267,7 @@
 			<xs:enumeration value="structarray"/>
 			<xs:enumeration value="string"/>
 			<xs:enumeration value="handle"/>
+			<xs:enumeration value="class"/>
 			<xs:enumeration value="functiontype"/>
 		</xs:restriction>
 	</xs:simpleType>

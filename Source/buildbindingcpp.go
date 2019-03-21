@@ -502,7 +502,7 @@ func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, i
 			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
 		case "struct":
 			return fmt.Sprintf ("s%s%s", NameSpace, param.ParamClass);
-		case "handle":
+		case "class":
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
@@ -535,7 +535,7 @@ func getBindingCppVariableName (param ComponentDefinitionParam) (string) {
 			return "e" + param.ParamName;
 		case "struct":
 			return param.ParamName;
-		case "handle":
+		case "class":
 			return "p" + param.ParamName;
 		case "functiontype":
 			return fmt.Sprintf ("p%s", param.ParamName);
@@ -609,7 +609,7 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 				callParameter = fmt.Sprintf("(%s_uint64)%s.size(), %s.data()", NameSpace, variableName, variableName);
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
-			case "handle":
+			case "class":
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
@@ -649,7 +649,7 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName))
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName))
 
-			case "handle":
+			case "class":
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter;
@@ -707,7 +707,7 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s%s result%s;", NameSpace, param.ParamClass, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
-			case "handle":
+			case "class":
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter;

@@ -65,6 +65,9 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 	if (err != nil) {
 		return component, err
 	}
+
+	component.Normalize();
+
 	return component, nil
 }
 

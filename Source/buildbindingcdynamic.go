@@ -357,7 +357,7 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
 			case "structarray", "basicarray":
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
-			case "handle":
+			case "class":
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
 
 			default:
@@ -458,7 +458,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("(%s_uint64)%s.size(), %s.data()", NameSpace, variableName, variableName);
 				initCallParameter = callParameter;
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName);
-			case "handle":
+			case "class":
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle ();", param.ParamName, variableName))
@@ -498,7 +498,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName) )
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName) )
 
-			case "handle":
+			case "class":
 				// NOTTESTED
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName) )
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
@@ -556,7 +556,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s%s result%s;", NameSpace, param.ParamClass, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
-			case "handle":
+			case "class":
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter;
