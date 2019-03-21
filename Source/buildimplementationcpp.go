@@ -438,7 +438,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		journalParameter = fmt.Sprintf (", C%sInterfaceJournalEntry * pJournalEntry = nullptr", NameSpace);
 	}
 
-	IBaseClassName := "I" + component.Global.BaseClassName
+	IBaseClassName := "I" + ClassIdentifier + component.Global.BaseClassName
 	registerErrorMethod := RegisterErrorMessageMethod()
 	w.Writeln("%sResult handle%sException(%s * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, IBaseClassName, NameSpace, journalParameter)
 	w.Writeln("{")

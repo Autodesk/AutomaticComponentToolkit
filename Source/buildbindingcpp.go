@@ -165,7 +165,6 @@ func writeCppBaseClassDefinitions(component ComponentDefinition, baseClass Compo
 }
 
 
-
 func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWriter, cppimplw LanguageWriter, NameSpace string, BaseName string) error {
 	// Header start code
 	w.Writeln("")
@@ -173,7 +172,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("#define __%s_CPPHEADER", strings.ToUpper(NameSpace))
 	w.Writeln("")
 
-	w.Writeln("#include \"%s.h\"", BaseName)
+	w.Writeln("#include \"%s_abi.hpp\"", BaseName)
 
 	w.Writeln("#include <string>")
 	w.Writeln("#include <memory>")
@@ -189,7 +188,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 
-	cppClassPrefix := "C" + NameSpace
+	cppClassPrefix := "C"
 	cppBaseClassName := cppClassPrefix + component.Global.BaseClassName
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -207,7 +206,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		w.Writeln("typedef std::shared_ptr<%s%s> P%s%s;", cppClassPrefix, class.ClassName, NameSpace, class.ClassName)
+		w.Writeln("typedef std::shared_ptr<%s%s> P%s;", cppClassPrefix, class.ClassName, class.ClassName)
 	}
 
 	w.Writeln("     ")
@@ -395,10 +394,10 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 
 func writeCPPInputVector(w LanguageWriter, NameSpace string) (error) {
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Class C%sInputVector", NameSpace)
+	w.Writeln(" Class CInputVector")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("template <typename T>")
-	w.Writeln("class C%sInputVector {", NameSpace)
+	w.Writeln("class CInputVector {")
 	w.Writeln("private:")
 	w.Writeln("  ")
 	w.Writeln("  const T* m_data;")
@@ -406,12 +405,12 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string) (error) {
 	w.Writeln("  ")
 	w.Writeln("public:")
 	w.Writeln("  ")
-	w.Writeln("  C%sInputVector( const std::vector<T>& vec)", NameSpace)
+	w.Writeln("  CInputVector( const std::vector<T>& vec)")
 	w.Writeln("    : m_data( vec.data() ), m_size( vec.size() )");
 	w.Writeln("  {")
 	w.Writeln("  }")
 	w.Writeln("  ")
-	w.Writeln("  C%sInputVector( const T* in_data, size_t in_size)", NameSpace)
+	w.Writeln("  CInputVector( const T* in_data, size_t in_size)")
 	w.Writeln("    : m_data( in_data ), m_size(in_size )");
 	w.Writeln("  {")
 	w.Writeln("  }")
@@ -431,7 +430,7 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string) (error) {
 }
 
 func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, isInput bool) (string) {
-	cppClassPrefix := "C" + NameSpace;
+	cppClassPrefix := "C";
 	switch (param.ParamType) {
 		case "uint8":
 			return fmt.Sprintf ("%s_uint8", NameSpace);
@@ -490,25 +489,25 @@ func getBindingCppParamType (param ComponentDefinitionParam, NameSpace string, i
 				log.Fatal ("Invalid parameter type: ", param.ParamClass);
 			}
 			if (isInput) {
-				return fmt.Sprintf ("C%sInputVector<%s>", NameSpace, cppBasicType);
+				return fmt.Sprintf ("CInputVector<%s>", cppBasicType);
 			}
 			return fmt.Sprintf ("std::vector<%s>", cppBasicType);
 		case "structarray":
 			if (isInput) {
-				return fmt.Sprintf ("C%sInputVector<s%s%s>", NameSpace, NameSpace, param.ParamClass);
+				return fmt.Sprintf ("CInputVector<s%s>", param.ParamClass);
 			}
-			return fmt.Sprintf ("std::vector<s%s%s>", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("std::vector<s%s>", param.ParamClass);
 		case "enum":
-			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("e%s", param.ParamClass);
 		case "struct":
-			return fmt.Sprintf ("s%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("s%s", param.ParamClass);
 		case "class":
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
-			return fmt.Sprintf ("P%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("P%s", param.ParamClass);
 		case "functiontype":
-			return fmt.Sprintf ("%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("%s", param.ParamClass);
 	}
 	
 	log.Fatal ("Invalid parameter type: ", param.ParamType);
@@ -575,7 +574,7 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 	commentcodeLines := []string{}
 	postCallCodeLines := []string{}
 
-	cppClassPrefix := "C" + NameSpace
+	cppClassPrefix := "C"
 	cppClassName := cppClassPrefix + ClassName
 
 	for k := 0; k < len(method.Params); k++ {
@@ -698,13 +697,13 @@ func writeCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, cppimplw
 			case "enum":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("e%s%s result%s = (e%s%s) 0;", NameSpace, param.ParamClass, param.ParamName, NameSpace, param.ParamClass))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("e%s result%s = (e%s) 0;", param.ParamClass, param.ParamName, param.ParamClass))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "struct":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter;
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s%s result%s;", NameSpace, param.ParamClass, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s result%s;", param.ParamClass, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "class":
@@ -782,7 +781,7 @@ func buildCppExample(componentdefinition ComponentDefinition, w LanguageWriter, 
 	w.Writeln("  {")
 	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
 	w.Writeln("    std::string sPreReleaseInfo, sBuildInfo;")
-	w.Writeln("    %s::C%sWrapper::%s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", NameSpace, NameSpace, componentdefinition.Global.VersionMethod)
+	w.Writeln("    %s::CWrapper::%s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", NameSpace, componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro;", NameSpace)
 	w.Writeln("    if (!sPreReleaseInfo.empty())")
 	w.Writeln("      std::cout << \"-\" << sPreReleaseInfo;")

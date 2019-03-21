@@ -263,14 +263,14 @@ func main () {
 					log.Fatal (err);
 				}
 
-				CTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
+				CPPTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_types.hpp");
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
 				
-				CHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + ".h");
-				err = CreateCHeader (component, CHeaderName);
+				CPPABIHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_abi.hpp");
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -400,7 +400,7 @@ func main () {
 				}
 				
 				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + ".h");
-				err = CreateCHeader (component, CHeaderName);
+				err = CreateCAbiHeader(component, CHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}

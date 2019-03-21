@@ -100,7 +100,7 @@ func buildDynamicCHeader(component ComponentDefinition, w LanguageWriter, NameSp
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			WriteCMethod(method, w, NameSpace, class.ClassName, false, true)
+			WriteCCPPAbiMethod(method, w, NameSpace, class.ClassName, false, true, true)
 		}
 
 	}
@@ -113,7 +113,7 @@ func buildDynamicCHeader(component ComponentDefinition, w LanguageWriter, NameSp
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
-		err := WriteCMethod(method, w, NameSpace, "Wrapper", true, true)
+		err := WriteCCPPAbiMethod(method, w, NameSpace, "Wrapper", true, true, true)
 		if err != nil {
 			return err
 		}
