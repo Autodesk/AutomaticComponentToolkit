@@ -224,6 +224,7 @@ func (component* ComponentDefinition) Normalize() {
 	for i := 0; i < len(component.Classes); i++ {
 		component.Classes[i].Normalize();
 	}
+	component.Global.Normalize()
 }
 
 func (global* ComponentDefinitionGlobal) Normalize() {
