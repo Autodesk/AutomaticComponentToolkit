@@ -261,18 +261,18 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 func writeCPPClassInterface(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) (error) {
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Class interface for %s%s ", NameSpace, class.ClassName)
+	w.Writeln(" Class interface for %s ", class.ClassName)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 	parentClassName := " "
 	if (!component.isBaseClass(class)) {
-		parentClassName = fmt.Sprintf(" : public virtual I%s%s%s", ClassIdentifier, NameSpace, component.Global.BaseClassName)
+		parentClassName = fmt.Sprintf(" : public virtual I%s%s", ClassIdentifier, component.Global.BaseClassName)
 		if (class.ParentClass != "") && (component.Global.BaseClassName != class.ParentClass) {
-			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual I%s%s%s", NameSpace, ClassIdentifier, class.ParentClass)
+			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual I%s%s", ClassIdentifier, class.ParentClass)
 		}
 	}
 	
-	classInterfaceName := fmt.Sprintf("I%s%s%s", ClassIdentifier, NameSpace, class.ClassName)
+	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 	w.Writeln("class %s%s{", classInterfaceName, parentClassName)
 	w.Writeln("public:")
 
@@ -332,7 +332,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("*/")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		w.Writeln("class I%s%s%s;", ClassIdentifier, NameSpace, class.ClassName);
+		w.Writeln("class I%s%s;", ClassIdentifier, class.ClassName);
 	}
 	w.Writeln("")
 
@@ -348,7 +348,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln(" Global functions declarations")
 	w.Writeln("**************************************************************************************************************************/")
 
-	w.Writeln("class C%s%sWrapper {", ClassIdentifier, NameSpace)
+	w.Writeln("class C%sWrapper {", ClassIdentifier)
 	w.Writeln("public:")
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
@@ -438,7 +438,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		journalParameter = fmt.Sprintf (", C%sInterfaceJournalEntry * pJournalEntry = nullptr", NameSpace);
 	}
 
-	IBaseClassName := "I" + NameSpace + component.Global.BaseClassName
+	IBaseClassName := "I" + component.Global.BaseClassName
 	registerErrorMethod := RegisterErrorMessageMethod()
 	w.Writeln("%sResult handle%sException(%s * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, IBaseClassName, NameSpace, journalParameter)
 	w.Writeln("{")
@@ -596,7 +596,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	
 
 	if !isGlobal {
-		preCallCPPFunctionCode =  fmt.Sprintf(indentString + indentString + "I%s%s%s* pI%s = dynamic_cast<I%s%s%s*>(pIBaseClass);\n", ClassIdentifier, NameSpace, ClassName, ClassName, ClassIdentifier, NameSpace, ClassName) +
+		preCallCPPFunctionCode =  fmt.Sprintf(indentString + indentString + "I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass);\n", ClassIdentifier, ClassName, ClassName, ClassIdentifier, ClassName) +
 			fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", ClassName) +
 			fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException(%s_ERROR_INVALIDCAST);\n\n", NameSpace, strings.ToUpper(NameSpace)) +
 			preCallCPPFunctionCode
@@ -605,7 +605,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	w.Writeln("%sResult %s (%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
 
-	IBaseClassName := fmt.Sprintf("I%s%s%s", ClassIdentifier, NameSpace, BaseClassName)
+	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	if !isGlobal {
 		w.Writeln ("  %s* pIBaseClass = (%s *)p%s;\n", IBaseClassName, IBaseClassName, ClassName);
 	} else {
@@ -654,7 +654,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 
 
 func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool) error {
-		outClassName := "C" + ClassIdentifier + NameSpace + class.ClassName
+		outClassName := "C" + ClassIdentifier + class.ClassName
 
 		StubHeaderFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_" +strings.ToLower(class.ClassName)+".hpp");
 		StubImplFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_" + strings.ToLower(class.ClassName)+".cpp");
@@ -682,8 +682,8 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			false)
 
 		stubheaderw.Writeln("")
-		stubheaderw.Writeln("#ifndef __%s_%s%s", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
-		stubheaderw.Writeln("#define __%s_%s%s", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
+		stubheaderw.Writeln("#ifndef __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
+		stubheaderw.Writeln("#define __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
 		stubheaderw.Writeln("")
 
 		stubheaderw.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
@@ -719,9 +719,9 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln(" Class declaration of %s ", outClassName)
 		stubheaderw.Writeln("**************************************************************************************************************************/")
 		stubheaderw.Writeln("")
-		parentClassName := fmt.Sprintf("I%s%s%s", ClassIdentifier, NameSpace, class.ClassName)
+		parentClassName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 		if "" != class.ParentClass {
-			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s%s", ClassIdentifier, NameSpace, class.ParentClass)
+			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, class.ParentClass)
 		}
 		stubheaderw.Writeln("class %s : public virtual %s {", outClassName, parentClassName)
 		stubheaderw.Writeln("private:")
@@ -831,7 +831,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		if class.ParentClass != "" {
 			stubheaderw.Writeln("#pragma warning( pop )")
 		}
-		stubheaderw.Writeln("#endif // __%s_%s%s", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
+		stubheaderw.Writeln("#endif // __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
 	return nil
 }
 
@@ -933,7 +933,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 
 			case "class":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("I%s%s%s* p%s", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName)
+				parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 
 			case "basicarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
@@ -1007,7 +1007,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "class":
-				parameters = parameters + fmt.Sprintf("I%s%s%s * p%s", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName)
+				parameters = parameters + fmt.Sprintf("I%s%s * p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			default:
@@ -1022,7 +1022,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			case "class":
-				returntype = fmt.Sprintf("I%s%s%s *", ClassIdentifier, NameSpace, param.ParamClass)
+				returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			default:
@@ -1056,9 +1056,9 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	}
 
 	if isGlobal {
-		templateimplementation = fmt.Sprintf("%s C%s%s%s::%s (%s)", returntype, ClassIdentifier, NameSpace, className, method.MethodName, parameters)
+		templateimplementation = fmt.Sprintf("%s C%s%s::%s (%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
 	} else {
-		templateimplementation = fmt.Sprintf("%s C%s%s%s::%s (%s)", returntype, ClassIdentifier, NameSpace, className, method.MethodName, parameters)
+		templateimplementation = fmt.Sprintf("%s C%s%s::%s (%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
 	}
 
 	return outstring, templateimplementation, nil
@@ -1135,7 +1135,7 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
-			return fmt.Sprintf ("P%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("P%s", param.ParamClass);
 		case "functiontype":
 			return fmt.Sprintf ("%s%s", NameSpace, param.ParamClass);
 	}
@@ -1150,7 +1150,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 	callParameters := ""
 	returnVariable := ""
 	checkInputCode := ""
-	IBaseClassName := fmt.Sprintf("I%s%s%s", ClassIdentifier, NameSpace, BaseClassName)
+	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		variableName := getCppVariableName(param)
@@ -1180,7 +1180,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 
 			case "class":
 				preCallCode = fmt.Sprintf(indentString + indentString + "%s* pIBaseClass%s = (%s *)p%s;\n", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName) +
-					fmt.Sprintf(indentString + indentString + "I%s%s%s* pI%s = dynamic_cast<I%s%s%s*>(pIBaseClass%s);\n", ClassIdentifier, NameSpace, param.ParamClass, param.ParamName, ClassIdentifier, NameSpace, param.ParamClass, param.ParamName) +
+					fmt.Sprintf(indentString + indentString + "I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);\n", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName) +
 					fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", param.ParamName) +
 					fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDCAST);\n\n", NameSpace, strings.ToUpper(NameSpace)) +
 					preCallCode
@@ -1294,7 +1294,7 @@ func generateCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace str
 	}
 	callFunctionCode := ""
 	if isGlobal {
-		callFunctionCode = fmt.Sprintf(indentString + indentString + "%sC%s%s%s::%s(%s);\n", returnValueCode, ClassIdentifier, NameSpace, ClassName, method.MethodName, callParameters)
+		callFunctionCode = fmt.Sprintf(indentString + indentString + "%sC%s%s::%s(%s);\n", returnValueCode, ClassIdentifier, ClassName, method.MethodName, callParameters)
 	} else {
 		callFunctionCode = fmt.Sprintf(indentString + indentString + "%spI%s->%s(%s);\n", returnValueCode, ClassName, method.MethodName, callParameters)
 	}
