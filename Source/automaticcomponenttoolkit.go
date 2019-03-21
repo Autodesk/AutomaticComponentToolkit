@@ -226,27 +226,33 @@ func main () {
 				}
 			}
 
-			case "CppDynamic": {
-				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic";
-				err  = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+		case "CppDynamic": {
+				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
+				err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				outputFolderExampleCppDynamic := outputFolderExamples + "/CppDynamic";
-				err  = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderExampleCppDynamic := outputFolderExamples + "/CppDynamic"
+				err = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				CTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+				CPPTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_types.hpp")
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				CPPABIHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_abi.hpp")
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 

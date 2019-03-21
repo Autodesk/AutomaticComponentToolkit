@@ -49,7 +49,7 @@
 		</method>
 		
 		<method name="GetSelf" description="Returns the current value of this Calculator">
-			<param name="Value" type="handle" class="Base" pass="return" description="The current value of this Calculator" />
+			<param name="Value" type="handle" class="Calculator" pass="return" description="The current value of this Calculator" />
 		</method>
 		
 		<method name="SetValue" description="Sets the value to be factorized">

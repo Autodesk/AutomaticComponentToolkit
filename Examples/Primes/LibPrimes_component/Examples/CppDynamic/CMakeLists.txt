@@ -22,4 +22,4 @@ add_executable(LibPrimesExample_CPPDynamic "${CMAKE_CURRENT_SOURCE_DIR}/LibPrime
 if (UNIX)
 	target_link_libraries(LibPrimesExample_CPPDynamic ${CMAKE_DL_LIBS})
 endif (UNIX)
-target_include_directories(LibPrimesExample_CPPDynamic PRIVATE "C:/Users/weismam/Documents/Code/PUBLIC/AutomaticComponentToolkit/Examples/Primes//LibPrimes_component/Bindings/CppDynamic")
+target_include_directories(LibPrimesExample_CPPDynamic PRIVATE "D:/Projekte/AutomaticComponentToolkit/Examples/Primes/LibPrimes_component/Bindings/CppDynamic")

@@ -220,33 +220,38 @@ type ComponentDefinition struct {
 	Errors ComponentDefinitionErrors `xml:"errors"`
 }
 
-func (component* ComponentDefinition) Normalize() {
+// Normalize adds default values, changes deprecated constants to their later versions
+func (component *ComponentDefinition) Normalize() {
 	for i := 0; i < len(component.Classes); i++ {
-		component.Classes[i].Normalize();
+		component.Classes[i].Normalize()
 	}
 	component.Global.Normalize()
 }
 
-func (global* ComponentDefinitionGlobal) Normalize() {
+// Normalize adds default values, changes deprecated constants to their later versions
+func (global *ComponentDefinitionGlobal) Normalize() {
 	for i := 0; i < len(global.Methods); i++ {
-		global.Methods[i].Normalize();
+		global.Methods[i].Normalize()
 	}
 }
 
-func (class* ComponentDefinitionClass) Normalize() {
+// Normalize adds default values, changes deprecated constants to their later versions
+func (class *ComponentDefinitionClass) Normalize() {
 	for i := 0; i < len(class.Methods); i++ {
-		class.Methods[i].Normalize();
+		class.Methods[i].Normalize()
 	}
 }
 
-func (method* ComponentDefinitionMethod) Normalize() {
+// Normalize adds default values, changes deprecated constants to their later versions
+func (method *ComponentDefinitionMethod) Normalize() {
 	for i := 0; i < len(method.Params); i++ {
-		method.Params[i].Normalize();
+		method.Params[i].Normalize()
 	}
 }
 
-func (param* ComponentDefinitionParam) Normalize() {
-	if (param.ParamType == "handle") {
+// Normalize adds default values, changes deprecated constants to their later versions
+func (param *ComponentDefinitionParam) Normalize() {
+	if param.ParamType == "handle" {
 		param.ParamType = "class"
 	}
 }
