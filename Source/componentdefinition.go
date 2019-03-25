@@ -220,6 +220,37 @@ type ComponentDefinition struct {
 	Errors ComponentDefinitionErrors `xml:"errors"`
 }
 
+func (component* ComponentDefinition) Normalize() {
+	for i := 0; i < len(component.Classes); i++ {
+		component.Classes[i].Normalize();
+	}
+	component.Global.Normalize()
+}
+
+func (global* ComponentDefinitionGlobal) Normalize() {
+	for i := 0; i < len(global.Methods); i++ {
+		global.Methods[i].Normalize();
+	}
+}
+
+func (class* ComponentDefinitionClass) Normalize() {
+	for i := 0; i < len(class.Methods); i++ {
+		class.Methods[i].Normalize();
+	}
+}
+
+func (method* ComponentDefinitionMethod) Normalize() {
+	for i := 0; i < len(method.Params); i++ {
+		method.Params[i].Normalize();
+	}
+}
+
+func (param* ComponentDefinitionParam) Normalize() {
+	if (param.ParamType == "handle") {
+		param.ParamType = "class"
+	}
+}
+
 func getIndentationString (str string) string {
 	if str == "tabs" {
 		return "\t";
@@ -517,7 +548,7 @@ func checkClassMethods(classes[] ComponentDefinitionClass, enumList map[string]b
 
 				if (isScalarType(param.ParamType) || param.ParamType == "string") {
 					// okay
-				} else if (param.ParamType == "handle") {
+				} else if (param.ParamType == "class") {
 					if (classList[param.ParamClass] != true) {
 						return fmt.Errorf ("parameter \"%s\" of method \"%s.%s\" is of unknown class \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
 					}
@@ -796,7 +827,7 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 		
-		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
+		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
 		}
 
@@ -836,7 +867,7 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
 		}
 		
-		if (method.Params[0].ParamType != "handle") || (method.Params[0].ParamPass != "in") || 
+		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamPass != "in") || 
 			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") || 
 			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
 			(method.Params[0].ParamClass != global.BaseClassName) {
@@ -887,6 +918,6 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 		}
 	}
 	var out ComponentDefinitionClass
-	log.Fatal("Now base class available")
+	log.Fatal("No base class available")
 	return out
 }

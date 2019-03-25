@@ -160,7 +160,7 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 						w.Writeln ( "    F%s: %sPointer;", element.Name, arrayprefix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
-					case "handle":
+					case "class":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
 					case "enum":
 						w.Writeln ( "    F%s: %sInteger;", element.Name, arrayprefix);
@@ -315,7 +315,7 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 				}
 			}
 			
-		case "handle":
+		case "class":
 			if isPlain {
 				PascalParamTypeName = fmt.Sprintf ("T%sHandle", NameSpace)
 			} else {
@@ -429,7 +429,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[0].ParamConvention = "const ";
 				cParams[0].ParamTypeNoConvention = cParams[0].ParamType;
 
-			case "handle":
+			case "class":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -518,7 +518,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[2].ParamConvention = "";
 				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
 
-			case "handle":
+			case "class":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -607,7 +607,7 @@ func generatePlainPascalParameter(param ComponentDefinitionParam, className stri
 				cParams[2].ParamConvention = "";
 				cParams[2].ParamTypeNoConvention = cParams[2].ParamType;
 
-			case "handle":
+			case "class":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
