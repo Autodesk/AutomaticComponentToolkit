@@ -174,7 +174,7 @@ void CLibPrimesInterfaceJournalEntry::addHandleParameter(const std::string & sNa
 	addParameter(sName, "handle", LibPrimesHandleToHex(pHandle));
 }
 
-void CLibPrimesInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const LibPrimes_uint32 nValue)
+void CLibPrimesInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const LibPrimes_int32 nValue)
 {
 	addParameter(sName, "enum" + sEnumType, std::to_string(nValue));
 }
@@ -254,7 +254,7 @@ void CLibPrimesInterfaceJournalEntry::addHandleResult(const std::string & sName,
 	addResult(sName, "handle", LibPrimesHandleToHex(pHandle));
 }
 
-void CLibPrimesInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const LibPrimes_uint32 nValue)
+void CLibPrimesInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const LibPrimes_int32 nValue)
 {
 	addResult(sName, "enum" + sEnumType, std::to_string(nValue));
 }

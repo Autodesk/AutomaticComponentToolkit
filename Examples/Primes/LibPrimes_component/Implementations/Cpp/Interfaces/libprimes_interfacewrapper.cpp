@@ -13,7 +13,7 @@ Interface version: 1.2.0
 
 */
 
-#include "libprimes.h"
+#include "libprimes_abi.hpp"
 #include "libprimes_interfaces.hpp"
 #include "libprimes_interfaceexception.hpp"
 #include "libprimes_interfacejournal.hpp"
@@ -70,7 +70,7 @@ LibPrimesResult handleUnhandledException(IBase * pIBaseClass, CLibPrimesInterfac
 /*************************************************************************************************************************
  Class implementation for Calculator
 **************************************************************************************************************************/
-LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator, LibPrimes_uint64 * pValue)
+LibPrimesResult libprimes_calculator_getvalue(LibPrimes_Calculator pCalculator, LibPrimes_uint64 * pValue)
 {
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
@@ -92,7 +92,7 @@ LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator,
 
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addUInt64Result ("Value", *pValue);
+			pJournalEntry->addUInt64Result("Value", *pValue);
 			pJournalEntry->writeSuccess();
 		}
 
@@ -109,7 +109,7 @@ LibPrimesResult libprimes_calculator_getvalue (LibPrimes_Calculator pCalculator,
 	}
 }
 
-LibPrimesResult libprimes_calculator_getself (LibPrimes_Calculator pCalculator, LibPrimes_Calculator * pValue)
+LibPrimesResult libprimes_calculator_getself(LibPrimes_Calculator pCalculator, LibPrimes_Calculator * pValue)
 {
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
@@ -133,7 +133,7 @@ LibPrimesResult libprimes_calculator_getself (LibPrimes_Calculator pCalculator, 
 		*pValue = (IBase*)(pBaseValue);
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addHandleResult ("Value", *pValue);
+			pJournalEntry->addHandleResult("Value", *pValue);
 			pJournalEntry->writeSuccess();
 		}
 
@@ -150,7 +150,7 @@ LibPrimesResult libprimes_calculator_getself (LibPrimes_Calculator pCalculator, 
 	}
 }
 
-LibPrimesResult libprimes_calculator_setvalue (LibPrimes_Calculator pCalculator, LibPrimes_uint64 nValue)
+LibPrimesResult libprimes_calculator_setvalue(LibPrimes_Calculator pCalculator, LibPrimes_uint64 nValue)
 {
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
@@ -158,7 +158,7 @@ LibPrimesResult libprimes_calculator_setvalue (LibPrimes_Calculator pCalculator,
 	try {
 		if (m_GlobalJournal.get() != nullptr)  {
 			pJournalEntry = m_GlobalJournal->beginClassMethod(pCalculator, "Calculator", "SetValue");
-			pJournalEntry->addUInt64Parameter ("Value", nValue);
+			pJournalEntry->addUInt64Parameter("Value", nValue);
 		}
 
 
@@ -187,7 +187,7 @@ LibPrimesResult libprimes_calculator_setvalue (LibPrimes_Calculator pCalculator,
 	}
 }
 
-LibPrimesResult libprimes_calculator_calculate (LibPrimes_Calculator pCalculator)
+LibPrimesResult libprimes_calculator_calculate(LibPrimes_Calculator pCalculator)
 {
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
@@ -223,7 +223,7 @@ LibPrimesResult libprimes_calculator_calculate (LibPrimes_Calculator pCalculator
 	}
 }
 
-LibPrimesResult libprimes_calculator_setprogresscallback (LibPrimes_Calculator pCalculator, LibPrimesProgressCallback pProgressCallback)
+LibPrimesResult libprimes_calculator_setprogresscallback(LibPrimes_Calculator pCalculator, LibPrimesProgressCallback pProgressCallback)
 {
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
@@ -263,7 +263,7 @@ LibPrimesResult libprimes_calculator_setprogresscallback (LibPrimes_Calculator p
 /*************************************************************************************************************************
  Class implementation for FactorizationCalculator
 **************************************************************************************************************************/
-LibPrimesResult libprimes_factorizationcalculator_getprimefactors (LibPrimes_FactorizationCalculator pFactorizationCalculator, const LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+LibPrimesResult libprimes_factorizationcalculator_getprimefactors(LibPrimes_FactorizationCalculator pFactorizationCalculator, const LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
 {
 	IBase* pIBaseClass = (IBase *)pFactorizationCalculator;
 
@@ -305,7 +305,7 @@ LibPrimesResult libprimes_factorizationcalculator_getprimefactors (LibPrimes_Fac
 /*************************************************************************************************************************
  Class implementation for SieveCalculator
 **************************************************************************************************************************/
-LibPrimesResult libprimes_sievecalculator_getprimes (LibPrimes_SieveCalculator pSieveCalculator, const LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
+LibPrimesResult libprimes_sievecalculator_getprimes(LibPrimes_SieveCalculator pSieveCalculator, const LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
 {
 	IBase* pIBaseClass = (IBase *)pSieveCalculator;
 
@@ -347,7 +347,7 @@ LibPrimesResult libprimes_sievecalculator_getprimes (LibPrimes_SieveCalculator p
 /*************************************************************************************************************************
  Global functions implementation
 **************************************************************************************************************************/
-LibPrimesResult libprimes_getlasterror (LibPrimes_Base pInstance, const LibPrimes_uint32 nErrorMessageBufferSize, LibPrimes_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+LibPrimesResult libprimes_getlasterror(LibPrimes_Base pInstance, const LibPrimes_uint32 nErrorMessageBufferSize, LibPrimes_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -355,7 +355,7 @@ LibPrimesResult libprimes_getlasterror (LibPrimes_Base pInstance, const LibPrime
 	try {
 		if (m_GlobalJournal.get() != nullptr)  {
 			pJournalEntry = m_GlobalJournal->beginStaticFunction("GetLastError");
-			pJournalEntry->addHandleParameter ("Instance", pInstance);
+			pJournalEntry->addHandleParameter("Instance", pInstance);
 		}
 
 		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
@@ -382,8 +382,8 @@ LibPrimesResult libprimes_getlasterror (LibPrimes_Base pInstance, const LibPrime
 		}
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addStringResult ("ErrorMessage", sErrorMessage.c_str());
-			pJournalEntry->addBooleanResult ("HasError", *pHasError);
+			pJournalEntry->addStringResult("ErrorMessage", sErrorMessage.c_str());
+			pJournalEntry->addBooleanResult("HasError", *pHasError);
 			pJournalEntry->writeSuccess();
 		}
 
@@ -400,7 +400,7 @@ LibPrimesResult libprimes_getlasterror (LibPrimes_Base pInstance, const LibPrime
 	}
 }
 
-LibPrimesResult libprimes_releaseinstance (LibPrimes_Base pInstance)
+LibPrimesResult libprimes_releaseinstance(LibPrimes_Base pInstance)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -408,7 +408,7 @@ LibPrimesResult libprimes_releaseinstance (LibPrimes_Base pInstance)
 	try {
 		if (m_GlobalJournal.get() != nullptr)  {
 			pJournalEntry = m_GlobalJournal->beginStaticFunction("ReleaseInstance");
-			pJournalEntry->addHandleParameter ("Instance", pInstance);
+			pJournalEntry->addHandleParameter("Instance", pInstance);
 		}
 
 
@@ -438,7 +438,7 @@ LibPrimesResult libprimes_releaseinstance (LibPrimes_Base pInstance)
 	}
 }
 
-LibPrimesResult libprimes_getlibraryversion (LibPrimes_uint32 * pMajor, LibPrimes_uint32 * pMinor, LibPrimes_uint32 * pMicro, const LibPrimes_uint32 nPreReleaseInfoBufferSize, LibPrimes_uint32* pPreReleaseInfoNeededChars, char * pPreReleaseInfoBuffer, const LibPrimes_uint32 nBuildInfoBufferSize, LibPrimes_uint32* pBuildInfoNeededChars, char * pBuildInfoBuffer)
+LibPrimesResult libprimes_getlibraryversion(LibPrimes_uint32 * pMajor, LibPrimes_uint32 * pMinor, LibPrimes_uint32 * pMicro, const LibPrimes_uint32 nPreReleaseInfoBufferSize, LibPrimes_uint32* pPreReleaseInfoNeededChars, char * pPreReleaseInfoBuffer, const LibPrimes_uint32 nBuildInfoBufferSize, LibPrimes_uint32* pBuildInfoNeededChars, char * pBuildInfoBuffer)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -482,11 +482,11 @@ LibPrimesResult libprimes_getlibraryversion (LibPrimes_uint32 * pMajor, LibPrime
 		}
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addUInt32Result ("Major", *pMajor);
-			pJournalEntry->addUInt32Result ("Minor", *pMinor);
-			pJournalEntry->addUInt32Result ("Micro", *pMicro);
-			pJournalEntry->addStringResult ("PreReleaseInfo", sPreReleaseInfo.c_str());
-			pJournalEntry->addStringResult ("BuildInfo", sBuildInfo.c_str());
+			pJournalEntry->addUInt32Result("Major", *pMajor);
+			pJournalEntry->addUInt32Result("Minor", *pMinor);
+			pJournalEntry->addUInt32Result("Micro", *pMicro);
+			pJournalEntry->addStringResult("PreReleaseInfo", sPreReleaseInfo.c_str());
+			pJournalEntry->addStringResult("BuildInfo", sBuildInfo.c_str());
 			pJournalEntry->writeSuccess();
 		}
 
@@ -503,7 +503,7 @@ LibPrimesResult libprimes_getlibraryversion (LibPrimes_uint32 * pMajor, LibPrime
 	}
 }
 
-LibPrimesResult libprimes_createfactorizationcalculator (LibPrimes_FactorizationCalculator * pInstance)
+LibPrimesResult libprimes_createfactorizationcalculator(LibPrimes_FactorizationCalculator * pInstance)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -523,7 +523,7 @@ LibPrimesResult libprimes_createfactorizationcalculator (LibPrimes_Factorization
 		*pInstance = (IBase*)(pBaseInstance);
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addHandleResult ("Instance", *pInstance);
+			pJournalEntry->addHandleResult("Instance", *pInstance);
 			pJournalEntry->writeSuccess();
 		}
 
@@ -540,7 +540,7 @@ LibPrimesResult libprimes_createfactorizationcalculator (LibPrimes_Factorization
 	}
 }
 
-LibPrimesResult libprimes_createsievecalculator (LibPrimes_SieveCalculator * pInstance)
+LibPrimesResult libprimes_createsievecalculator(LibPrimes_SieveCalculator * pInstance)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -560,7 +560,7 @@ LibPrimesResult libprimes_createsievecalculator (LibPrimes_SieveCalculator * pIn
 		*pInstance = (IBase*)(pBaseInstance);
 
 		if (pJournalEntry.get() != nullptr) {
-			pJournalEntry->addHandleResult ("Instance", *pInstance);
+			pJournalEntry->addHandleResult("Instance", *pInstance);
 			pJournalEntry->writeSuccess();
 		}
 
@@ -577,7 +577,7 @@ LibPrimesResult libprimes_createsievecalculator (LibPrimes_SieveCalculator * pIn
 	}
 }
 
-LibPrimesResult libprimes_setjournal (const char * pFileName)
+LibPrimesResult libprimes_setjournal(const char * pFileName)
 {
 	IBase* pIBaseClass = nullptr;
 

@@ -34,9 +34,17 @@
 		<member name="Prime" type="uint64" />
 		<member name="Multiplicity" type="uint32" />
 	</struct>
+
+	<enum name="ProgressIdentifier">
+		<option name="NoOp" value="-1"/>
+		<option name="Starting" value="0"/>
+		<option name="Running" value="1"/>
+		<option name="Done" value="2"/>
+	</enum>
 	
 	<functiontype name="ProgressCallback" description="Callback to report calculation progress and query whether it should be aborted">
 		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
+		<param name="TheProgressIdentifier" type="enum" class="ProgressIdentifier" pass="in" description="What is the current state the calculation is in?"/>
 		<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
 	</functiontype>
 

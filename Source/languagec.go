@@ -481,7 +481,7 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 	for i := 0; i < len(component.Enums); i++ {
 		enum := component.Enums[i];
 		if (useCPPTypes) {
-			w.Writeln("enum class e%s : %s_uint32 {", enum.Name, NameSpace);
+			w.Writeln("enum class e%s : %s_int32 {", enum.Name, NameSpace);
 		} else {
 			w.Writeln("enum e%s%s {", NameSpace, enum.Name);
 		}

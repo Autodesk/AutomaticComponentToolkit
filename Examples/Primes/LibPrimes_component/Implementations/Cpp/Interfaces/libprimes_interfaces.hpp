@@ -20,7 +20,7 @@ Interface version: 1.2.0
 
 #include <string>
 
-#include "libprimes_types.h"
+#include "libprimes_types.hpp"
 
 namespace LibPrimes {
 namespace Impl {
@@ -50,18 +50,18 @@ public:
 	* @param[out] sErrorMessage - Message of the last error registered
 	* @return Has an error been registered already
 	*/
-	virtual bool GetLastErrorMessage (std::string & sErrorMessage) = 0;
+	virtual bool GetLastErrorMessage(std::string & sErrorMessage) = 0;
 
 	/**
 	* IBase::ClearErrorMessages - Clears all registered messages of this class instance
 	*/
-	virtual void ClearErrorMessages () = 0;
+	virtual void ClearErrorMessages() = 0;
 
 	/**
 	* IBase::RegisterErrorMessage - Registers an error message with this class instance
 	* @param[in] sErrorMessage - Error message to register
 	*/
-	virtual void RegisterErrorMessage (const std::string & sErrorMessage) = 0;
+	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
 };
 
 
@@ -75,30 +75,30 @@ public:
 	* ICalculator::GetValue - Returns the current value of this Calculator
 	* @return The current value of this Calculator
 	*/
-	virtual LibPrimes_uint64 GetValue () = 0;
+	virtual LibPrimes_uint64 GetValue() = 0;
 
 	/**
 	* ICalculator::GetSelf - Returns the current value of this Calculator
 	* @return The current value of this Calculator
 	*/
-	virtual ICalculator * GetSelf () = 0;
+	virtual ICalculator * GetSelf() = 0;
 
 	/**
 	* ICalculator::SetValue - Sets the value to be factorized
 	* @param[in] nValue - The value to be factorized
 	*/
-	virtual void SetValue (const LibPrimes_uint64 nValue) = 0;
+	virtual void SetValue(const LibPrimes_uint64 nValue) = 0;
 
 	/**
 	* ICalculator::Calculate - Performs the specific calculation of this Calculator
 	*/
-	virtual void Calculate () = 0;
+	virtual void Calculate() = 0;
 
 	/**
 	* ICalculator::SetProgressCallback - Sets the progress callback function
 	* @param[in] pProgressCallback - callback function
 	*/
-	virtual void SetProgressCallback (const LibPrimesProgressCallback pProgressCallback) = 0;
+	virtual void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback) = 0;
 
 };
 
@@ -115,7 +115,7 @@ public:
 	* @param[out] pPrimeFactorsNeededCount - will be filled with the count of the written structs, or needed buffer size.
 	* @param[out] pPrimeFactorsBuffer - PrimeFactor buffer of The prime factors of this number
 	*/
-	virtual void GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer) = 0;
+	virtual void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) = 0;
 
 };
 
@@ -132,7 +132,7 @@ public:
 	* @param[out] pPrimesNeededCount - will be filled with the count of the written structs, or needed buffer size.
 	* @param[out] pPrimesBuffer - uint64 buffer of The primes lower or equal to the sieve's value
 	*/
-	virtual void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer) = 0;
+	virtual void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer) = 0;
 
 };
 
@@ -148,13 +148,13 @@ public:
 	* @param[out] sErrorMessage - Message of the last error
 	* @return Is there a last error to query
 	*/
-	static bool GetLastError (IBase* pInstance, std::string & sErrorMessage);
+	static bool GetLastError(IBase* pInstance, std::string & sErrorMessage);
 
 	/**
 	* Ilibprimes::ReleaseInstance - Releases the memory of an Instance
 	* @param[in] pInstance - Instance Handle
 	*/
-	static void ReleaseInstance (IBase* pInstance);
+	static void ReleaseInstance(IBase* pInstance);
 
 	/**
 	* Ilibprimes::GetLibraryVersion - retrieves the binary version of this library.
@@ -164,25 +164,25 @@ public:
 	* @param[out] sPreReleaseInfo - returns pre-release info of this library (if this is a pre-release binary)
 	* @param[out] sBuildInfo - returns build-information of this library (optional)
 	*/
-	static void GetLibraryVersion (LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo);
+	static void GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo);
 
 	/**
 	* Ilibprimes::CreateFactorizationCalculator - Creates a new FactorizationCalculator instance
 	* @return New FactorizationCalculator instance
 	*/
-	static IFactorizationCalculator * CreateFactorizationCalculator ();
+	static IFactorizationCalculator * CreateFactorizationCalculator();
 
 	/**
 	* Ilibprimes::CreateSieveCalculator - Creates a new SieveCalculator instance
 	* @return New SieveCalculator instance
 	*/
-	static ISieveCalculator * CreateSieveCalculator ();
+	static ISieveCalculator * CreateSieveCalculator();
 
 	/**
 	* Ilibprimes::SetJournal - Handles Library Journaling
 	* @param[in] sFileName - Journal FileName
 	*/
-	static void SetJournal (const std::string & sFileName);
+	static void SetJournal(const std::string & sFileName);
 
 };
 

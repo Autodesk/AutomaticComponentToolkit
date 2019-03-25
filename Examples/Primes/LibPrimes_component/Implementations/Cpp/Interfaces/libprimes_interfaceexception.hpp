@@ -18,7 +18,7 @@ Interface version: 1.2.0
 
 #include <exception>
 #include <stdexcept>
-#include "libprimes_types.h"
+#include "libprimes_types.hpp"
 
 /*************************************************************************************************************************
  Class ELibPrimesInterfaceException

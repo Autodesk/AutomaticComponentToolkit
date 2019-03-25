@@ -23,7 +23,7 @@ Interface version: 1.2.0
 #include <list>
 #include <mutex>
 #include <chrono>
-#include "libprimes_types.h"
+#include "libprimes_types.hpp"
 
 /*************************************************************************************************************************
  Class CLibPrimesInterfaceJournal 
@@ -70,7 +70,7 @@ class CLibPrimesInterfaceJournalEntry {
 		void addPointerParameter(const std::string & sName, const LibPrimes_pvoid pValue);
 		void addStringParameter(const std::string & sName, const char * pValue);
 		void addHandleParameter(const std::string & sName, const LibPrimesHandle pHandle);
-		void addEnumParameter(const std::string & sName, const std::string & sEnumType, const LibPrimes_uint32 nValue);
+		void addEnumParameter(const std::string & sName, const std::string & sEnumType, const LibPrimes_int32 nValue);
 
 		void addBooleanResult(const std::string & sName, const bool bValue);
 		void addUInt8Result(const std::string & sName, const LibPrimes_uint8 nValue);
@@ -86,7 +86,7 @@ class CLibPrimesInterfaceJournalEntry {
 		void addPointerResult(const std::string & sName, const LibPrimes_pvoid pValue);
 		void addStringResult(const std::string & sName, const char * pValue);
 		void addHandleResult(const std::string & sName, const LibPrimesHandle pHandle);
-		void addEnumResult(const std::string & sName, const std::string & sEnumType, const LibPrimes_uint32 nValue);
+		void addEnumResult(const std::string & sName, const std::string & sEnumType, const LibPrimes_int32 nValue);
 
 friend class CLibPrimesInterfaceJournal;
 

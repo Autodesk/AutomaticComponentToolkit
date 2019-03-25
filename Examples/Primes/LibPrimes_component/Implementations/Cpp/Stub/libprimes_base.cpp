@@ -4,7 +4,7 @@ Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is a stub class definition of CLibPrimesBase
+Abstract: This is a stub class definition of CBase
 
 */
 
@@ -17,10 +17,10 @@ Abstract: This is a stub class definition of CLibPrimesBase
 using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
- Class definition of CLibPrimesBase 
+ Class definition of CBase 
 **************************************************************************************************************************/
 
-bool CLibPrimesBase::GetLastErrorMessage (std::string & sErrorMessage)
+bool CBase::GetLastErrorMessage(std::string & sErrorMessage)
 {
 	auto iIterator = m_errors.rbegin();
 	if (iIterator != m_errors.rend()) {
@@ -32,12 +32,12 @@ bool CLibPrimesBase::GetLastErrorMessage (std::string & sErrorMessage)
 	}
 }
 
-void CLibPrimesBase::ClearErrorMessages ()
+void CBase::ClearErrorMessages()
 {
 	m_errors.clear();
 }
 
-void CLibPrimesBase::RegisterErrorMessage (const std::string & sErrorMessage)
+void CBase::RegisterErrorMessage(const std::string & sErrorMessage)
 {
 	m_errors.push_back(sErrorMessage);
 }
