@@ -104,7 +104,7 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w io.Writer, Na
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "void Load%s (const FunctionCallbackInfo<Value>& args)\n", NameSpace)
 	fmt.Fprintf(w, "{\n")
-	fmt.Fprintf(w, "    Isolate* isolate = Isolate::GetCurrent();\n")
+	fmt.Fprintf(w, "    Isolate* isolate = args.GetIsolate();\n")
 	fmt.Fprintf(w, "    HandleScope scope(isolate);\n")
 	fmt.Fprintf(w, "    args.GetReturnValue().Set (C%sWrapper::NewInstance());\n", NameSpace)
 	fmt.Fprintf(w, "}\n")
@@ -128,7 +128,6 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w io.Writer, Na
 
 func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Writer, NameSpace string, ClassName string, isGlobal bool) error {
 
-	returnvariablecount := 0
 	returndeclaration := ""
 	inputdeclaration := ""
 	inputcheck := ""
@@ -141,6 +140,21 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 	callParameters := ""
 	initCallParameters := ""
 	
+
+	returnParamCount := 0;
+	
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k];
+		if ((param.ParamPass == "out") || (param.ParamPass == "return")) {
+			returnParamCount = returnParamCount + 1;
+		}		
+	}
+	
+	if (returnParamCount > 1) {
+		inputdeclaration = inputdeclaration + fmt.Sprintf ("%sLocal<Object> outObject = Object::New(isolate);\n", spacing);
+	}
+
+
 	for k := 0; k < len(method.Params); k++ {
 	
 		initCallParameter := "";
@@ -172,14 +186,20 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 			case "uint64":
-				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = (uint64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputcheckfunction = "IsString"
+
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = stoull (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 			
 			case "pointer":
-				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = (uint64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputcheckfunction = "IsString"
+
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = stoull (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "(void*) n" + param.ParamName
 				initCallParameter = callParameter;
 
@@ -202,16 +222,19 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 			case "int64":
-				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sint64_t n%s = (int64_t) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputcheckfunction = "IsString"
+
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sint64_t n%s = stoll (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "string":
 				inputcheckfunction = "IsString"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value s%sUTF8 (args[%d]->ToString());\n", spacing, param.ParamName, k)
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *s%sUTF8;\n", spacing, param.ParamName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "s" + param.ParamName + ".c_str()"
 				initCallParameter = callParameter;
 
@@ -283,8 +306,19 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			}
 
 		case "out", "return":
-
-			returnvariablecount = returnvariablecount + 1
+		
+			var argsvalue string;
+			if (returnParamCount > 1) {
+				
+				//returndeclaration = returndeclaration + fmt.Sprintf("%sLocal<Number> local%s = Local<Number>::Cast(args[%d]);\n", spacing, param.ParamName, k);								
+				//argsvalue = "local" + param.ParamName;
+				argsvalue = fmt.Sprintf ("outObject->Set (String::NewFromUtf8 (isolate, \"%s\"), ", param.ParamName);
+				
+				
+			} else {
+				argsvalue = "args.GetReturnValue().Set (";
+			}
+				
 
 			switch param.ParamType {
 			case "uint8":
@@ -292,63 +326,63 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::NewFromUnsigned (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "uint16":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned short nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::NewFromUnsigned (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "uint32":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sunsigned int nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::NewFromUnsigned (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "uint64":
 				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, (uint32_t) nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, std::to_string (nReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
 			
 			case "pointer":
 				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::NewFromUnsigned (isolate, (uint32_t) nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, std::to_string (nReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
 
 			case "int8":
 				returndeclaration = returndeclaration + fmt.Sprintf("%schar nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::New (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "int16":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s short nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::New (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "int32":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s int nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::New (isolate, nReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "int64":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s int64_t nReturn%s = 0;\n", spacing, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, (int) nReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, std::to_string (nReturn%s).c_str() ));\n", spacing, argsvalue, param.ParamName)
 
 			case "string":
 				requiresInitCall = true;
@@ -363,40 +397,42 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
 				returncode = returncode + fmt.Sprintf("%sbuffer%s[bytesNeeded%s + 1] = 0;\n", spacing, param.ParamName, param.ParamName);
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(String::NewFromUtf8 (isolate, &buffer%s[0]));\n", spacing, param.ParamName);
+				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, &buffer%s[0]));\n", spacing, argsvalue, param.ParamName);
 			
 			case "bool":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sbool bReturn%s = false;\n", spacing, param.ParamName)
 				callParameter = "&bReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Boolean::New (isolate, bReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sBoolean::New (isolate, bReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "single":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sfloat fReturn%s = 0.0f;\n", spacing, param.ParamName)
 				callParameter = "&fReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Number::New (isolate, fReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNumber::New (isolate, (double) fReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "double":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sdouble dReturn%s = 0.0;\n", spacing, param.ParamName)
 				callParameter = "&dReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Number::New (isolate, dReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNumber::New (isolate, dReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "enum":
 				returndeclaration = returndeclaration + fmt.Sprintf("%se%s%s eReturn%s;\n", spacing, NameSpace, param.ParamClass, param.ParamName)
 				callParameter = "&eReturn" + param.ParamName
 				initCallParameter = callParameter;
 
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(Integer::New (isolate, (int) eReturn%s));\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sInteger::New (isolate, (int) eReturn%s));\n", spacing, argsvalue, param.ParamName)
 
 			case "struct":
 				returndeclaration = returndeclaration + fmt.Sprintf("%ss%s%s sReturn%s;\n", spacing, NameSpace, param.ParamClass, param.ParamName)
 				callParameter = "&sReturn" + param.ParamName
 				initCallParameter = callParameter;
+				
+				returncode = returncode + fmt.Sprintf("%s%sconvert%s%sToObject (isolate, sReturn%s));\n", spacing, argsvalue, NameSpace, param.ParamClass, param.ParamName)
 
 				//return fmt.Errorf("can not return struct \"%s\" for %s.%s (%s) yet in nodejs", param.ParamType, ClassName, method.MethodName, param.ParamName)
 
@@ -418,7 +454,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = callParameter;
 
 				returncode = returncode + fmt.Sprintf("%sLocal<Object> instanceObj%s = C%s%s::NewInstance (args.Holder(), hReturn%s);\n", spacing, param.ParamName, NameSpace, param.ParamClass, param.ParamName)
-				returncode = returncode + fmt.Sprintf("%sargs.GetReturnValue().Set(instanceObj%s);\n", spacing, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sinstanceObj%s);\n", spacing, argsvalue, param.ParamName)
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -440,11 +476,16 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 		
 	}
 
+	if (returnParamCount > 1) {
+		returncode = returncode + fmt.Sprintf ("%sargs.GetReturnValue().Set (outObject);\n", spacing);
+	}
+	
+	
 	fmt.Fprintf(implw, "\n")
 
 	fmt.Fprintf(implw, "void C%s%s::%s (const FunctionCallbackInfo<Value>& args) \n", NameSpace, ClassName, method.MethodName)
 	fmt.Fprintf(implw, "{\n")
-	fmt.Fprintf(implw, "    Isolate* isolate = Isolate::GetCurrent();\n")
+	fmt.Fprintf(implw, "    Isolate* isolate = args.GetIsolate();\n")
 	fmt.Fprintf(implw, "    HandleScope scope(isolate);\n")
 	fmt.Fprintf(implw, "    try {\n")
 
@@ -709,6 +750,85 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	fmt.Fprintf(implw, "}\n");
 	fmt.Fprintf(implw, "\n");
 	fmt.Fprintf(implw, "\n");
+	
+	
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "Local<Object> convert%s%sToObject (Isolate* isolate, s%s%s s%s)\n", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name, structdefinition.Name);
+	fmt.Fprintf(implw, "{\n");
+	fmt.Fprintf(implw, "  Local<Object> returnInstance = Object::New(isolate);\n");
+	
+	for i := 0; i < len(structdefinition.Members); i++ {
+	
+		member := structdefinition.Members[i];		
+
+		conversionCall := "";
+		conversionValue := fmt.Sprintf ("s%s.m_%s", structdefinition.Name, member.Name);
+		conversionPostfix := "";
+		switch (member.Type) {
+			case "uint8", "uint16", "uint32":
+				conversionCall = "Integer::NewFromUnsigned";
+			case "int8", "int16", "int32":
+				conversionCall = "Integer::New";
+			case "enum":
+				conversionCall = "Integer::New";
+				conversionPostfix = ".m_code";
+			case "uint64", "int64":
+				conversionCall = "String::NewFromUtf8";
+				conversionValue = "std::to_string (" + conversionValue;
+				conversionPostfix = ").c_str()";
+			case "pointer":
+				conversionCall = "String::NewFromUtf8";
+				conversionValue = "std::to_string ((uint_ptr) " + conversionValue;
+				conversionPostfix = ").c_str()";
+			case "bool":
+				conversionCall = "Boolean::New";
+			case "single":
+				conversionCall = "Number::New";				
+				conversionValue = "(double) " + conversionValue;
+			case "double":
+				conversionCall = "Number::New";
+				
+		}
+	
+		if (member.Rows > 0) {
+			
+			if (member.Columns > 0) {
+
+
+				fmt.Fprintf(implw, "  Local<Array> new%s = Array::New (isolate, %d);\n", member.Name, member.Columns);
+				fmt.Fprintf(implw, "  for (int colIndex = 0; colIndex < %d; colIndex++) {\n", member.Columns);
+				fmt.Fprintf(implw, "    Local<Array> colArray = Array::New (isolate, %d);\n", member.Rows);
+				fmt.Fprintf(implw, "    for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);	
+				fmt.Fprintf(implw, "      colArray->Set (rowIndex, %s (isolate, %s[colIndex][rowIndex]%s));\n", conversionCall, conversionValue, conversionPostfix);
+				fmt.Fprintf(implw, "    }\n");
+				fmt.Fprintf(implw, "    new%s->Set (colIndex, colArray);\n", member.Name);
+				fmt.Fprintf(implw, "  }\n");
+				fmt.Fprintf(implw, "  returnInstance->Set (String::NewFromUtf8 (isolate, \"%s\"), new%s);\n", member.Name, member.Name);
+				fmt.Fprintf(implw, "\n");
+
+			} else {
+
+				fmt.Fprintf(implw, "  Local<Array> new%s = Array::New (isolate, %d);\n", member.Name, member.Rows);
+				fmt.Fprintf(implw, "  for (int rowIndex = 0; rowIndex < %d; rowIndex++) {\n", member.Rows);	
+				fmt.Fprintf(implw, "    new%s->Set (rowIndex, %s (isolate, %s[rowIndex]%s));\n", member.Name, conversionCall, conversionValue, conversionPostfix);
+				fmt.Fprintf(implw, "  }\n");
+				fmt.Fprintf(implw, "  returnInstance->Set (String::NewFromUtf8 (isolate, \"%s\"), new%s);\n", member.Name, member.Name);
+				fmt.Fprintf(implw, "\n");
+
+			}
+			
+		} else {
+			fmt.Fprintf(implw, "  returnInstance->Set (String::NewFromUtf8 (isolate, \"%s\"), %s (isolate, %s%s));\n", member.Name, conversionCall, conversionValue, conversionPostfix);
+		}
+		
+	}
+	
+	fmt.Fprintf(implw, "\n");
+	fmt.Fprintf(implw, "  return returnInstance;\n");	
+	fmt.Fprintf(implw, "}\n");
+	fmt.Fprintf(implw, "\n");
+	
+	 	
 
 	return nil;
 	
@@ -931,7 +1051,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 
 		fmt.Fprintf(implw, "void C%s%s::New(const FunctionCallbackInfo<Value>& args)\n", NameSpace, class.ClassName)
 		fmt.Fprintf(implw, "{\n")
-		fmt.Fprintf(implw, "    Isolate* isolate = Isolate::GetCurrent();\n")
+		fmt.Fprintf(implw, "    Isolate* isolate = args.GetIsolate();\n")
 		fmt.Fprintf(implw, "    HandleScope scope(isolate);\n")
 		fmt.Fprintf(implw, "\n")
 		fmt.Fprintf(implw, "    if (args.IsConstructCall()) {\n")
@@ -953,11 +1073,9 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "{\n")
 		fmt.Fprintf(implw, "    Isolate* isolate = Isolate::GetCurrent();\n")
 		fmt.Fprintf(implw, "    HandleScope scope(isolate);\n")
-		fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
-		fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 		fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
 		fmt.Fprintf(implw, "    Local<Object> instance;\n");
-		fmt.Fprintf(implw, "    if (cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocal (&instance)) {\n")
+		fmt.Fprintf(implw, "    if (cons->NewInstance(isolate->GetCurrentContext()).ToLocal (&instance)) {\n")
 		fmt.Fprintf(implw, "      instance->SetInternalField (NODEWRAPPER_TABLEINDEX, External::New (isolate, C%sBaseClass::getDynamicWrapperTable (pParent)));\n", NameSpace)
 		fmt.Fprintf(implw, "      instance->SetInternalField (NODEWRAPPER_HANDLEINDEX, External::New (isolate, pHandle));\n")
 		fmt.Fprintf(implw, "    }\n");
@@ -1010,7 +1128,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "\n")
 	fmt.Fprintf(implw, "void C%sWrapper::New(const FunctionCallbackInfo<Value>& args)\n", NameSpace)
 	fmt.Fprintf(implw, "{\n")
-	fmt.Fprintf(implw, "    Isolate* isolate = Isolate::GetCurrent();\n")
+	fmt.Fprintf(implw, "    Isolate* isolate = args.GetIsolate();\n")
 	fmt.Fprintf(implw, "    HandleScope scope(isolate);\n")
 	fmt.Fprintf(implw, "\n")
 	fmt.Fprintf(implw, "    try {\n")
@@ -1058,11 +1176,9 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "{\n")
 	fmt.Fprintf(implw, "    Isolate* isolate = Isolate::GetCurrent();\n")
 	fmt.Fprintf(implw, "    HandleScope scope(isolate);\n")
-	fmt.Fprintf(implw, "    const unsigned argc = 1; // TODO: Find out how to not pass dummy parameters..\n")
-	fmt.Fprintf(implw, "    Handle<Value> argv[argc] = { Number::New (isolate, 0.0) };\n")
 	fmt.Fprintf(implw, "    Local<Function> cons = Local<Function>::New(isolate, constructor);\n")
 	fmt.Fprintf(implw, "    Local<Object> instance;\n"); 
-	fmt.Fprintf(implw, "    cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocal(&instance);\n")
+	fmt.Fprintf(implw, "    cons->NewInstance(isolate->GetCurrentContext()).ToLocal(&instance);\n")
 	fmt.Fprintf(implw, "    return instance;\n")
 	fmt.Fprintf(implw, "}\n")
 
