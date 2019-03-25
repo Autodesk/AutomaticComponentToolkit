@@ -1208,7 +1208,7 @@ func buildNodeBindingGyp(component ComponentDefinition, w io.Writer, indentStrin
 	fmt.Fprintf(w, "%s\"targets\": [\n", indentString)
 	fmt.Fprintf(w, "%s%s{\n", indentString, indentString)
 	fmt.Fprintf(w, "%s%s%s\"target_name\": \"%s_nodeaddon\",\n", indentString, indentString, indentString, BaseName)
-	fmt.Fprintf(w, "%s%s%s\"sources\": [ \"%s_nodeaddon.cc\", \"%s_nodewrapper.cc\", \"%s_dynamic.cpp\" ],\n", indentString, indentString, indentString, BaseName, BaseName, BaseName)
+	fmt.Fprintf(w, "%s%s%s\"sources\": [ \"%s_nodeaddon.cc\", \"%s_nodewrapper.cc\", \"%s_dynamic.cc\" ],\n", indentString, indentString, indentString, BaseName, BaseName, BaseName)
 	fmt.Fprintf(w, "%s%s%s\"cflags\": [ \"-fexceptions \" ],\n", indentString, indentString, indentString )
 	fmt.Fprintf(w, "%s%s%s\"cflags_cc\": [ \"-fexceptions \" ],\n", indentString, indentString, indentString )
 	fmt.Fprintf(w, "%s%s%s\"msvs_settings\": {\n", indentString, indentString, indentString)
