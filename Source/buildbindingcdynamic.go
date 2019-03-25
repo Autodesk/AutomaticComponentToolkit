@@ -654,14 +654,14 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  }")
 
 	w.Writeln("  ")
-	w.Writeln("  friend class C%sWrapper;", NameSpace)
+	w.Writeln("  friend class CWrapper;", NameSpace)
 	return nil
 }
 
 
 func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w LanguageWriter, NameSpace string, cppClassPrefix string) {
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Forward Declaration of all classes ")
+	w.Writeln(" Forward Declaration of all classes")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("class %sWrapper;", cppClassPrefix)
 	for i := 0; i < len(component.Classes); i++ {
@@ -670,7 +670,7 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 	}
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Declaration of deprecated class types ")
+	w.Writeln(" Declaration of deprecated class types")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("typedef %sWrapper %s%sWrapper;", cppClassPrefix, cppClassPrefix, NameSpace)
 	for i := 0; i < len(component.Classes); i++ {
@@ -680,16 +680,18 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 	w.Writeln("")
 
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Declaration of shared pointer types ")
+	w.Writeln(" Declaration of shared pointer types")
 	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("typedef std::shared_ptr<%sWrapper> PWrapper;", cppClassPrefix)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("typedef std::shared_ptr<%s%s> P%s;", cppClassPrefix, class.ClassName, class.ClassName)
 	}
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Declaration of deprecated shared pointer types ")
+	w.Writeln(" Declaration of deprecated shared pointer types")
 	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("typedef PWrapper P%sWrapper;", NameSpace)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("typedef P%s P%s%s;", class.ClassName, NameSpace, class.ClassName)
