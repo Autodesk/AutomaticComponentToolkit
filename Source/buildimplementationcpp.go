@@ -190,7 +190,7 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wHeader.Writeln("#include <exception>");
 	wHeader.Writeln("#include <stdexcept>");
 
-	wHeader.Writeln("#include \"%s_types.h\"", BaseName);
+	wHeader.Writeln("#include \"%s_types.hpp\"", BaseName);
 	wHeader.Writeln("");
 		
 	wHeader.Writeln("/*************************************************************************************************************************");
@@ -320,7 +320,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 
 	w.Writeln("#include <string>")
 	w.Writeln("")
-	w.Writeln("#include \"%s_types.h\"", BaseName)
+	w.Writeln("#include \"%s_types.hpp\"", BaseName)
 	w.Writeln("")
 
 	w.Writeln("namespace %s {", NameSpace)
@@ -373,10 +373,11 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 }
 
 func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) error {
-	stubfile.Writeln("#include \"%s.h\"", BaseName)
+	stubfile.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	stubfile.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
 	stubfile.Writeln("#include \"%s_interfaceexception.hpp\"", BaseName)
 	stubfile.Writeln("")
+	stubfile.Writeln("using namespace %s;", NameSpace)
 	stubfile.Writeln("using namespace %s::%s;", NameSpace, NameSpaceImplementation)
 	stubfile.Writeln("")
 
@@ -390,7 +391,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 
 		stubfile.Writeln("%s", implementationdeclaration)
 		stubfile.Writeln("{")
-		stubfile.Writeln("  throw E%sInterfaceException (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
+		stubfile.Writeln("  throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
 		stubfile.Writeln("}")
 		stubfile.Writeln("")
 	}
@@ -417,7 +418,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 }
 
 func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, doJournal bool) error {
-	w.Writeln("#include \"%s.h\"", BaseName)
+	w.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	w.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
 	w.Writeln("#include \"%s_interfaceexception.hpp\"", BaseName)
 	if (doJournal) {
@@ -602,7 +603,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 			preCallCPPFunctionCode
 	}
 
-	w.Writeln("%sResult %s (%s)", NameSpace, CMethodName, cparameters)
+	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
 
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
@@ -950,7 +951,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				parameters = parameters + fmt.Sprintf("const %s p%s", cppParamType, param.ParamName)
 
 			default:
-				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, method.MethodName, param.ParamName)
+				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
 			}
 
 		case "out":
@@ -1011,7 +1012,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			default:
-				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, method.MethodName, param.ParamName)
+				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
 			}
 
 		case "return":
@@ -1026,11 +1027,11 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			default:
-				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, method.MethodName, param.ParamName)
+				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
 			}
 
 		default:
-			return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, className, method.MethodName, param.ParamName)
+			return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, className, method.MethodName, param.ParamName)
 		}
 	}
 	outstring := "";
@@ -1043,22 +1044,22 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	
 	if isGlobal {
 		if isVirtual {
-			outstring = outstring + fmt.Sprintf(indentString + "virtual static %s %s (%s) = 0;", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "virtual static %s %s(%s) = 0;", returntype, method.MethodName, parameters)
 		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "static %s %s (%s);", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "static %s %s(%s);", returntype, method.MethodName, parameters)
 		}
 	} else {
 		if isVirtual {
-			outstring = outstring + fmt.Sprintf(indentString + "virtual %s %s (%s) = 0;", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "virtual %s %s(%s) = 0;", returntype, method.MethodName, parameters)
 		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "%s %s (%s);", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "%s %s(%s);", returntype, method.MethodName, parameters)
 		}
 	}
 
 	if isGlobal {
-		templateimplementation = fmt.Sprintf("%s C%s%s::%s (%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
+		templateimplementation = fmt.Sprintf("%s C%s%s::%s(%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
 	} else {
-		templateimplementation = fmt.Sprintf("%s C%s%s::%s (%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
+		templateimplementation = fmt.Sprintf("%s C%s%s::%s(%s)", returntype, ClassIdentifier, className, method.MethodName, parameters)
 	}
 
 	return outstring, templateimplementation, nil
@@ -1067,58 +1068,22 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput bool) (string) {
 	cppClassPrefix := "C" + NameSpace;
 	switch (param.ParamType) {
-		case "uint8":
-			return fmt.Sprintf ("%s_uint8", NameSpace);
-		case "uint16":
-			return fmt.Sprintf ("%s_uint16", NameSpace);
-		case "uint32":
-			return fmt.Sprintf ("%s_uint32", NameSpace);
-		case "uint64":
-			return fmt.Sprintf ("%s_uint64", NameSpace);
-		case "int8":
-			return fmt.Sprintf ("%s_int8", NameSpace);
-		case "int16":
-			return fmt.Sprintf ("%s_int16", NameSpace);
-		case "int32":
-			return fmt.Sprintf ("%s_int32", NameSpace);
-		case "int64":
-			return fmt.Sprintf ("%s_int64", NameSpace);
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+			return fmt.Sprintf ("%s_%s", NameSpace, param.ParamType);
 		case "string":
 			return fmt.Sprintf ("std::string");
 		case "bool":
 			return fmt.Sprintf ("bool");
-		case "single":
-			return fmt.Sprintf ("%s_single", NameSpace);
-		case "double":
-			return fmt.Sprintf ("%s_double", NameSpace);
 		case "pointer":
 			return fmt.Sprintf ("%s_pvoid", NameSpace);
 
 		case "basicarray":
 			cppBasicType := "";
 			switch (param.ParamClass) {
-			case "uint8":
-				cppBasicType = fmt.Sprintf ("%s_uint8", NameSpace);
-			case "uint16":
-				cppBasicType = fmt.Sprintf ("%s_uint16", NameSpace);
-			case "uint32":
-				cppBasicType = fmt.Sprintf ("%s_uint32", NameSpace);
-			case "uint64":
-				cppBasicType = fmt.Sprintf ("%s_uint64", NameSpace);
-			case "int8":
-				cppBasicType = fmt.Sprintf ("%s_int8", NameSpace);
-			case "int16":
-				cppBasicType = fmt.Sprintf ("%s_int16", NameSpace);
-			case "int32":
-				cppBasicType = fmt.Sprintf ("%s_int32", NameSpace);
-			case "int64":
-				cppBasicType = fmt.Sprintf ("%s_int64", NameSpace);
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+				cppBasicType = fmt.Sprintf ("%s_%s", NameSpace, param.ParamClass);
 			case "bool":
 				cppBasicType = "bool";
-			case "single":
-				cppBasicType = fmt.Sprintf ("%s_single", NameSpace);
-			case "double":
-				cppBasicType = fmt.Sprintf ("%s_double", NameSpace);
 			case "pointer":
 				cppBasicType = fmt.Sprintf ("%s_pvoid", NameSpace);
 			default:
@@ -1126,18 +1091,18 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 			}
 			return fmt.Sprintf ("%s *", cppBasicType);
 		case "structarray":
-			return fmt.Sprintf ("s%s%s *", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("%s::s%s *", NameSpace, param.ParamClass);
 		case "enum":
-			return fmt.Sprintf ("e%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("%s::e%s", NameSpace, param.ParamClass);
 		case "struct":
-			return fmt.Sprintf ("s%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("%s::s%s", NameSpace, param.ParamClass);
 		case "class":
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
 			return fmt.Sprintf ("P%s", param.ParamClass);
 		case "functiontype":
-			return fmt.Sprintf ("%s%s", NameSpace, param.ParamClass);
+			return fmt.Sprintf ("%s::%s", NameSpace, param.ParamClass);
 	}
 	
 	log.Fatal ("Invalid parameter type: ", param.ParamType);
@@ -1276,11 +1241,11 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "*%s = (%s*)(pBase%s);\n", variableName, IBaseClassName, param.ParamName);
 			default:
-				return "", "", "", "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
+				return "", "", "", "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
 
 		default:
-			return "", "", "", "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+			return "", "", "", "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 	}
 
@@ -1324,49 +1289,49 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 			
 			switch (param.ParamType) {
 				case "bool":
-					journalCall = "addBooleanParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addBooleanParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 				
 				case "uint8":
-					journalCall = "addUInt8Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addUInt8Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "uint16":
-					journalCall = "addUInt16Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addUInt16Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "uint32":
-					journalCall = "addUInt32Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addUInt32Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "uint64":
-					journalCall = "addUInt64Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addUInt64Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "int8":
-					journalCall = "addInt8Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addInt8Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "int16":
-					journalCall = "addInt16Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addInt16Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "int32":
-					journalCall = "addInt32Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addInt32Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "int64":
-					journalCall = "addInt64Parameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addInt64Parameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "single":
-					journalCall = "addSingleParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addSingleParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "double":
-					journalCall = "addDoubleParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addDoubleParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 				
 				case "pointer":
-					journalCall = "addPointerParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addPointerParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "string":
-					journalCall = "addStringParameter (\"" + param.ParamName+ "\", p" + param.ParamName + ")";
+					journalCall = "addStringParameter(\"" + param.ParamName+ "\", p" + param.ParamName + ")";
 
 				case "enum":
-					journalCall = "addEnumParameter (\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", " + variableName + ")";
+					journalCall = "addEnumParameter(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(" + variableName + "))";
 					
 				case "class":
-					journalCall = "addHandleParameter (\"" + param.ParamName+ "\", " + variableName + ")";
+					journalCall = "addHandleParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "struct":
 				case "basicarray":
@@ -1374,7 +1339,7 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 				case "functiontype":
 				
 				default:
-					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 				
 			}
 			if journalCall != "" {
@@ -1394,62 +1359,61 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 			
 			switch (param.ParamType) {
 				case "bool":
-					journalCall = "addBooleanResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addBooleanResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 				
 				case "uint8":
-					journalCall = "addUInt8Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addUInt8Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "uint16":
-					journalCall = "addUInt16Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addUInt16Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "uint32":
-					journalCall = "addUInt32Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addUInt32Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "uint64":
-					journalCall = "addUInt64Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addUInt64Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "int8":
-					journalCall = "addInt8Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addInt8Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "int16":
-					journalCall = "addInt16Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addInt16Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "int32":
-					journalCall = "addInt32Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addInt32Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "int64":
-					journalCall = "addInt64Result (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addInt64Result(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "single":
-					journalCall = "addSingleResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addSingleResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "double":
-					journalCall = "addDoubleResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addDoubleResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "pointer":
-					journalCall = "addPointerResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addPointerResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 
 				case "string":
-					journalCall = "addStringResult (\"" + param.ParamName+ "\", s" + param.ParamName + ".c_str())";
+					journalCall = "addStringResult(\"" + param.ParamName+ "\", s" + param.ParamName + ".c_str())";
 
 				case "enum":
-					journalCall = "addEnumResult (\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", *p" + param.ParamName + ")";
+					journalCall = "addEnumResult(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(*p" + param.ParamName + "))";
 					
 				case "class":
-					journalCall = "addHandleResult (\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
+					journalCall = "addHandleResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 				
 				case "struct":
 				case "basicarray":
 				case "structarray":
 				
 				default:
-					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 				
 			}
 			if journalCall != "" {
 				journalSuccessFunctionCode = journalSuccessFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry->%s;\n", journalCall);
 			}
-
 		}
 	}
 
@@ -1520,7 +1484,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("#include <list>");
 	headerw.Writeln("#include <mutex>");
 	headerw.Writeln("#include <chrono>");
-	headerw.Writeln("#include \"%s_types.h\"", BaseName);
+	headerw.Writeln("#include \"%s_types.hpp\"", BaseName);
 	headerw.Writeln("");
 	headerw.Writeln("/*************************************************************************************************************************");
 	headerw.Writeln(" Class C%sInterfaceJournal ", NameSpace);
@@ -1568,7 +1532,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addPointerParameter(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringParameter(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleParameter(const std::string & sName, const %sHandle pHandle);", NameSpace);
-	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
+	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void addBooleanResult(const std::string & sName, const bool bValue);");
 	headerw.Writeln("    void addUInt8Result(const std::string & sName, const %s_uint8 nValue);", NameSpace);
@@ -1584,7 +1548,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addPointerResult(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringResult(const std::string & sName, const char * pValue);");
 	headerw.Writeln("    void addHandleResult(const std::string & sName, const %sHandle pHandle);", NameSpace);
-	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue);", NameSpace);
+	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("friend class C%sInterfaceJournal;", NameSpace);
 	headerw.Writeln("");
@@ -1785,7 +1749,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addParameter(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue)", NameSpace, NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addParameter(sName, \"enum\" + sEnumType, std::to_string(nValue));");
 	implw.Writeln("}");
@@ -1865,7 +1829,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  addResult(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_uint32 nValue)", NameSpace, NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue)", NameSpace, NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  addResult(sName, \"enum\" + sEnumType, std::to_string(nValue));");
 	implw.Writeln("}");

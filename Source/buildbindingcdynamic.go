@@ -658,6 +658,45 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	return nil
 }
 
+
+func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w LanguageWriter, NameSpace string, cppClassPrefix string) {
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Forward Declaration of all classes ")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("class %sWrapper;", cppClassPrefix)
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("class %s%s;", cppClassPrefix, class.ClassName)
+	}
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Declaration of deprecated class types ")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("typedef %sWrapper %s%sWrapper;", cppClassPrefix, cppClassPrefix, NameSpace)
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("typedef %s%s %s%s%s;", cppClassPrefix, class.ClassName, cppClassPrefix, NameSpace, class.ClassName)
+	}
+	w.Writeln("")
+
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Declaration of shared pointer types ")
+	w.Writeln("**************************************************************************************************************************/")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("typedef std::shared_ptr<%s%s> P%s;", cppClassPrefix, class.ClassName, class.ClassName)
+	}
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Declaration of deprecated shared pointer types ")
+	w.Writeln("**************************************************************************************************************************/")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("typedef P%s P%s%s;", class.ClassName, NameSpace, class.ClassName)
+	}
+	w.Writeln("")
+}
+
 func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 	useCPPTypes := true
 
@@ -693,27 +732,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("namespace %s {", NameSpace)
 	w.Writeln("")
 
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Forward Declaration of all classes ")
-	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("")
-
-	w.Writeln("class %sWrapper;", cppClassPrefix)
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		w.Writeln("class %s%s;", cppClassPrefix, class.ClassName)
-	}
-	w.Writeln("")
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Declaration of shared pointer types ")
-	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("")
-
-	w.Writeln("typedef std::shared_ptr<%sWrapper> PWrapper;", cppClassPrefix)
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		w.Writeln("typedef std::shared_ptr<%s%s> P%s;", cppClassPrefix, class.ClassName, class.ClassName)
-	}
+	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix)
 
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
@@ -734,7 +753,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
-	w.Writeln("  E%sException (%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
+	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
 	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string (errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    m_errorCode = errorCode;")
@@ -743,7 +762,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  /**")
 	w.Writeln("  * Returns error code")
 	w.Writeln("  */")
-	w.Writeln("  %sResult getErrorCode () const noexcept", NameSpace)
+	w.Writeln("  %sResult getErrorCode() const noexcept", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    return m_errorCode;")
 	w.Writeln("  }")
@@ -751,7 +770,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  /**")
 	w.Writeln("  * Returns error message")
 	w.Writeln("  */")
-	w.Writeln("  const char* what () const noexcept")
+	w.Writeln("  const char* what() const noexcept")
 	w.Writeln("  {")
 	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")

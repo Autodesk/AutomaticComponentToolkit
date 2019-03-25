@@ -399,14 +399,14 @@ func main () {
 					log.Fatal (err);
 				}
 
-				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
+				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_types.hpp");
+				err = CreateCPPTypesHeader(component, CTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
 				
-				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + ".h");
-				err = CreateCAbiHeader(component, CHeaderName);
+				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_abi.hpp");
+				err = CreateCPPAbiHeader(component, CHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}

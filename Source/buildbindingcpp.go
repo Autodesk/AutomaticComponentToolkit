@@ -165,6 +165,9 @@ func writeCppBaseClassDefinitions(component ComponentDefinition, baseClass Compo
 }
 
 func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWriter, cppimplw LanguageWriter, NameSpace string, BaseName string) error {
+	cppClassPrefix := "C"
+	cppBaseClassName := cppClassPrefix + component.Global.BaseClassName
+
 	// Header start code
 	w.Writeln("")
 	w.Writeln("#ifndef __%s_CPPHEADER", strings.ToUpper(NameSpace))
@@ -182,31 +185,7 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("namespace %s {", NameSpace)
 	w.Writeln("")
 
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Forward Declaration of all classes ")
-	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("")
-
-	cppClassPrefix := "C"
-	cppBaseClassName := cppClassPrefix + component.Global.BaseClassName
-
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		w.Writeln("class %s%s;", cppClassPrefix, class.ClassName)
-	}
-
-	w.Writeln("")
-
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Declaration of shared pointer types ")
-	w.Writeln("**************************************************************************************************************************/")
-
-	w.Writeln("")
-
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		w.Writeln("typedef std::shared_ptr<%s%s> P%s;", cppClassPrefix, class.ClassName, class.ClassName)
-	}
+	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix)
 
 	w.Writeln("     ")
 	w.Writeln("/*************************************************************************************************************************")
@@ -227,17 +206,17 @@ func buildCPPHeaderAndImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("    /**")
 	w.Writeln("    * Exception Constructor.")
 	w.Writeln("    */")
-	w.Writeln("    E%sException (%sResult errorCode, const std::string & sErrorMessage);", NameSpace, NameSpace)
+	w.Writeln("    E%sException(%sResult errorCode, const std::string & sErrorMessage);", NameSpace, NameSpace)
 	w.Writeln("")
 	w.Writeln("    /**")
 	w.Writeln("    * Returns error code")
 	w.Writeln("    */")
-	w.Writeln("    %sResult getErrorCode () const noexcept;", NameSpace)
+	w.Writeln("    %sResult getErrorCode() const noexcept;", NameSpace)
 	w.Writeln("")
 	w.Writeln("    /**")
 	w.Writeln("    * Returns error message")
 	w.Writeln("    */")
-	w.Writeln("    const char* what () const noexcept;")
+	w.Writeln("    const char* what() const noexcept;")
 	w.Writeln("")
 
 	w.Writeln("};")
@@ -424,6 +403,10 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string) error {
 	w.Writeln("  }")
 	w.Writeln("  ")
 	w.Writeln("};")
+	w.Writeln("")
+	w.Writeln("// declare deprecated class name")
+	w.Writeln("template<typename T>")
+	w.Writeln("using C%sInputVector = CInputVector<T>;", NameSpace)
 	return nil
 }
 

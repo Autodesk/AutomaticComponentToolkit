@@ -211,7 +211,22 @@ func buildCCPPTypesHeader(component ComponentDefinition, w LanguageWriter, NameS
 	if (useCPPTypes) {
 		w.AddIndentationLevel(-1);
 		w.Writeln("} // namespace %s;", NameSpace);
+		w.Writeln("")
+		w.Writeln("// define legacy C-names for enums, structs and function types")
+		for i := 0; i < len(component.Enums); i++ {
+			enum := component.Enums[i];
+			w.Writeln("typedef %s::e%s e%s%s;", NameSpace, enum.Name, NameSpace, enum.Name);
+		}
+		for i := 0; i < len(component.Structs); i++ {
+			structinfo := component.Structs[i];
+			w.Writeln("typedef %s::s%s s%s%s;", NameSpace, structinfo.Name, NameSpace, structinfo.Name);
+		}
+		for i := 0; i < len(component.Functions); i++ {
+			functiontype := component.Functions[i]
+			w.Writeln("typedef %s::%s %s%s;", NameSpace, functiontype.FunctionName, NameSpace, functiontype.FunctionName);
+		}
 	}
+
 	w.Writeln("");
 	w.Writeln("#endif // %s", sIncludeGuard);
 
@@ -283,28 +298,23 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	w.Writeln("#define %s", sIncludeGuard);
 	w.Writeln("");
 
-	if (useCPPTypes) {
-		w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
-		w.Writeln("");
+	w.Writeln("#ifdef __%s_EXPORTS", strings.ToUpper (NameSpace));
+	w.Writeln("#ifdef _WIN32");
+	w.Writeln("#define %s_DECLSPEC __declspec (dllexport)", strings.ToUpper (NameSpace));
+	w.Writeln("#else // _WIN32");
+	w.Writeln("#define %s_DECLSPEC __attribute__((visibility(\"default\")))", strings.ToUpper (NameSpace));
+	w.Writeln("#endif // _WIN32");
+	
+	w.Writeln("#else // __%s_EXPORTS", strings.ToUpper (NameSpace));
+	w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
+	w.Writeln("#endif // __%s_EXPORTS", strings.ToUpper (NameSpace));
+	w.Writeln("");
 
+	if (useCPPTypes) {
 		w.Writeln("#include \"%s_types.hpp\"", BaseName);
 	} else {
-		w.Writeln("#ifdef __%s_EXPORTS", strings.ToUpper (NameSpace));
-		
-		w.Writeln("#ifdef _WIN32");
-		w.Writeln("#define %s_DECLSPEC __declspec (dllexport)", strings.ToUpper (NameSpace));
-		w.Writeln("#else // _WIN32");
-		w.Writeln("#define %s_DECLSPEC __attribute__((visibility(\"default\")))", strings.ToUpper (NameSpace));
-		w.Writeln("#endif // _WIN32");
-		
-		w.Writeln("#else // __%s_EXPORTS", strings.ToUpper (NameSpace));
-		w.Writeln("#define %s_DECLSPEC", strings.ToUpper (NameSpace));
-		w.Writeln("#endif // __%s_EXPORTS", strings.ToUpper (NameSpace));
-		w.Writeln("");
-	
 		w.Writeln("#include \"%s_types.h\"", BaseName);
 	}
-	
 	w.Writeln("");
 
 	w.Writeln("extern \"C\" {");
@@ -424,9 +434,7 @@ func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace
 		w.Writeln("typedef struct {");
 		
 		for j := 0; j < len(structinfo.Members); j++ {
-
-		member := structinfo.Members[j];
-		
+			member := structinfo.Members[j];
 			arraysuffix := "";
 			if (member.Rows > 0) {
 				if (member.Columns > 0) {
@@ -437,9 +445,9 @@ func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace
 			}
 			var memberLine string
 			if (useCPPTypes) {
-				memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
-			} else {
 				memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
+			} else {
+				memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
 			}
 			if (err!=nil) {
 				return err

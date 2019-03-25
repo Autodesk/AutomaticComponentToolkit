@@ -60,7 +60,7 @@ func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arrays
 			}
 			return fmt.Sprintf("%s m_%s%s;", typeName, member.Name, arraysuffix), nil
 		case "enum":
-			return fmt.Sprintf("s%s m_%s%s;", member.Class, member.Name, arraysuffix), nil
+			return fmt.Sprintf("e%s m_%s%s;", member.Class, member.Name, arraysuffix), nil
 		default:
 			return "", fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
 		
