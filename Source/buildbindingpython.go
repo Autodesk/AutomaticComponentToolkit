@@ -115,7 +115,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 	w.Writeln("'''Definition of binding API version")
 	w.Writeln("'''")
-	w.Writeln("class %sBindingVersion(enum.IntEnum):", NameSpace)
+	w.Writeln("class BindingVersion(enum.IntEnum):")
 	w.Writeln("  MAJOR = %d", majorVersion(componentdefinition.Version))
 	w.Writeln("  MINOR = %d", minorVersion(componentdefinition.Version))
 	w.Writeln("  MICRO = %d", microVersion(componentdefinition.Version))
@@ -123,7 +123,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 	w.Writeln("'''Definition Error Codes")
 	w.Writeln("'''")
-	w.Writeln("class %sErrorCodes(enum.IntEnum):", NameSpace)
+	w.Writeln("class ErrorCodes(enum.IntEnum):")
 	w.Writeln("  SUCCESS = 0")
 	for i := 0; i<len(componentdefinition.Errors.Errors); i++ {
 		merror := componentdefinition.Errors.Errors[i]
@@ -144,9 +144,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 		for i := 0; i<len(componentdefinition.Enums); i++ {
 			enum := componentdefinition.Enums[i]
-			w.Writeln("'''Definition of %s%s", NameSpace, enum.Name)
+			w.Writeln("'''Definition of %s", enum.Name)
 			w.Writeln("'''")
-			w.Writeln("class %s%s(CTypesEnum):", NameSpace, enum.Name)
+			w.Writeln("class %s(CTypesEnum):", enum.Name)
 			for j:= 0; j<len(enum.Options); j++ {
 				option := enum.Options[j]
 				w.Writeln("  %s = %d", option.Name, option.Value)
@@ -160,9 +160,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("'''")
 		for i := 0; i<len(componentdefinition.Structs); i++ {
 			_struct := componentdefinition.Structs[i]
-			w.Writeln("'''Definition of %s%s", NameSpace, _struct.Name)
+			w.Writeln("'''Definition of %s", _struct.Name)
 			w.Writeln("'''")
-			w.Writeln("class %s%s(ctypes.Structure):", NameSpace, _struct.Name)
+			w.Writeln("class %s(ctypes.Structure):", _struct.Name)
 			if (len(_struct.Members) > 0) {
 				w.Writeln("  _pack_ = 1")
 				w.Writeln("  _fields_ = [")
@@ -201,7 +201,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("'''")
 		for i := 0; i<len(componentdefinition.Functions); i++ {
 			_func := componentdefinition.Functions[i]
-			w.Writeln("'''Definition of %s%s", NameSpace, _func.FunctionName)
+			w.Writeln("'''Definition of %s", _func.FunctionName)
 			w.Writeln("    %s", _func.FunctionDescription)
 			w.Writeln("'''")
 			arguments := "ctypes.c_void_p"
@@ -216,7 +216,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 				}
 				arguments = arguments + cParams[0].ParamType
 			}
-			w.Writeln("%s%s = ctypes.CFUNCTYPE(%s)", NameSpace, _func.FunctionName, arguments)
+			w.Writeln("%s = ctypes.CFUNCTYPE(%s)", _func.FunctionName, arguments)
 		}
 		w.Writeln("")
 	}
@@ -236,7 +236,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    elif platform.system() == 'Darwin':")
 	w.Writeln("      ending = 'dylib'")
 	w.Writeln("    else:")
-	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTLOADLIBRARY)", NameSpace, NameSpace)
+	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY)", NameSpace)
 	w.Writeln("    ")
 	w.Writeln("    if (not libraryName):")
 	w.Writeln("      libraryName = os.path.join(os.path.dirname(os.path.realpath(__file__)),'%s')", BaseName)
@@ -245,7 +245,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    try:")
 	w.Writeln("      self.lib = ctypes.CDLL(path)")
 	w.Writeln("    except Exception as e:")
-	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace, NameSpace )
+	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace )
 	w.Writeln("    ")
 	w.Writeln("    self._loadFunctionTable()")
 	w.Writeln("    ")
@@ -259,21 +259,21 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		return err
 	}
 	w.Writeln("    except AttributeError as ae:")
-	w.Writeln("      raise E%sException(%sErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])", NameSpace, NameSpace)
+	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])", NameSpace)
 	w.Writeln("  ")
 
 	w.Writeln("  def _checkBinaryVersion(self):")
 	w.Writeln("    nMajor, nMinor, _, _, _ = self.%s()", componentdefinition.Global.VersionMethod)
-	w.Writeln("    if (nMajor != %sBindingVersion.MAJOR) or (nMinor < %sBindingVersion.MINOR):", NameSpace, NameSpace)
-	w.Writeln("      raise E%sException(%sErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace, NameSpace)
+	w.Writeln("    if (nMajor != BindingVersion.MAJOR) or (nMinor < BindingVersion.MINOR):")
+	w.Writeln("      raise E%sException(ErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace)
 	w.Writeln("  ")
 
 	
 	w.Writeln("  def checkError(self, instance, errorCode):")
-	w.Writeln("    if errorCode != %sErrorCodes.SUCCESS.value:", NameSpace)
+	w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
 	w.Writeln("      if instance:")
 	w.Writeln("        if instance._wrapper != self:")
-	w.Writeln("          raise E%sException(%sErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace, NameSpace)
+	w.Writeln("          raise E%sException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace)
 	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
 	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
@@ -401,13 +401,13 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 			}
 			CTypesParamTypeName = dummy
 		case "enum":
-			return fmt.Sprintf("%s%s", NameSpace, ParamClass), nil
+			return fmt.Sprintf("%s", ParamClass), nil
 		case "struct":
-			return fmt.Sprintf("%s%s", NameSpace, ParamClass), nil
+			return fmt.Sprintf("%s", ParamClass), nil
 		case "structarray":
-			return fmt.Sprintf("%s%s", NameSpace, ParamClass), nil
+			return fmt.Sprintf("%s", ParamClass), nil
 		case "functiontype":
-			return fmt.Sprintf("%s%s", NameSpace, ParamClass), nil
+			return fmt.Sprintf("%s", ParamClass), nil
 		case "class":
 			CTypesParamTypeName = "ctypes.c_void_p";
 		default:
@@ -584,7 +584,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
-	pythonBaseClassName := fmt.Sprintf("%s%s", NameSpace, component.Global.BaseClassName)
+	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
 
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
@@ -592,19 +592,19 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 	parentClass := ""
 	if (!component.isBaseClass(class)) {
 		if (class.ParentClass != "") {
-			parentClass = fmt.Sprintf("%s%s", NameSpace, class.ParentClass)
+			parentClass = fmt.Sprintf("%s", class.ParentClass)
 		} else {
 			parentClass = pythonBaseClassName
 		}
-		w.Writeln("class %s%s(%s):", NameSpace, class.ClassName, parentClass)
+		w.Writeln("class %s(%s):", class.ClassName, parentClass)
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
 	} else {
-		w.Writeln("class %s%s:", NameSpace, class.ClassName)
+		w.Writeln("class %s:", class.ClassName)
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    if not handle or not wrapper:")
-		w.Writeln("      raise E%sException(%sErrorCodes.INVALIDPARAM)", NameSpace, NameSpace)
+		w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
 		w.Writeln("    self._handle = handle")
 		w.Writeln("    self._wrapper = wrapper")
 		w.Writeln("  ")
@@ -670,8 +670,8 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cArguments = cArguments + newArgument
 				cCheckArguments = cCheckArguments + newArgument
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("%sObject = %s%s(%sHandle, %s)",
-					param.ParamName, NameSpace, param.ParamClass, param.ParamName, wrapperReference))
+					fmt.Sprintf("%sObject = %s(%sHandle, %s)",
+					param.ParamName, param.ParamClass, param.ParamName, wrapperReference))
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
 			case "string": {

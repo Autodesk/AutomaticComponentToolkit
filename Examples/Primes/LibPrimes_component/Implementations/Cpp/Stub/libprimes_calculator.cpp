@@ -4,7 +4,7 @@ Copyright (C) 2018 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is a stub class definition of CLibPrimesCalculator
+Abstract: This is a stub class definition of CCalculator
 
 */
 
@@ -17,32 +17,31 @@ Abstract: This is a stub class definition of CLibPrimesCalculator
 using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
- Class definition of CLibPrimesCalculator 
+ Class definition of CCalculator 
 **************************************************************************************************************************/
 
-CLibPrimesCalculator::CLibPrimesCalculator()
-	:m_value(0), m_Callback(nullptr)
+LibPrimes_uint64 CCalculator::GetValue()
 {
-
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
-LibPrimes_uint64 CLibPrimesCalculator::GetValue ()
+ICalculator * CCalculator::GetSelf()
 {
-	return m_value;
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
-void CLibPrimesCalculator::SetValue (const LibPrimes_uint64 nValue)
+void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 {
-	m_value = nValue;
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
-void CLibPrimesCalculator::Calculate ()
+void CCalculator::Calculate()
 {
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
-void CLibPrimesCalculator::SetProgressCallback (const LibPrimesProgressCallback pProgressCallback)
+void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
 {
-	m_Callback = pProgressCallback;
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 

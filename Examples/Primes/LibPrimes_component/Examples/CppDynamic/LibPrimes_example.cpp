@@ -30,7 +30,7 @@ int main()
 	try
 	{
 		std::string libpath = ""; // TODO: put the location of the LibPrimes-library file here.
-		auto wrapper = LibPrimes::CLibPrimesWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
+		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
 		wrapper->SetJournal("journal_cppdynamic.xml");
 
 		unsigned int nMajor, nMinor, nMicro;
@@ -47,7 +47,7 @@ int main()
 		factorization->SetValue(735);
 		factorization->SetProgressCallback(progressCallback);
 		factorization->Calculate();
-		std::vector<sLibPrimesPrimeFactor> primeFactors;
+		std::vector<LibPrimes::sPrimeFactor> primeFactors;
 		factorization->GetPrimeFactors(primeFactors);
 
 		std::cout << factorization->GetValue() << " = ";
