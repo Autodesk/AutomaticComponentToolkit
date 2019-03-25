@@ -34,9 +34,17 @@
 		<member name="Prime" type="uint64" />
 		<member name="Multiplicity" type="uint32" />
 	</struct>
+
+	<enum name="ProgressIdentifier">
+		<option name="NoOp" value="-1"/>
+		<option name="Starting" value="0"/>
+		<option name="Running" value="1"/>
+		<option name="Done" value="2"/>
+	</enum>
 	
 	<functiontype name="ProgressCallback" description="Callback to report calculation progress and query whether it should be aborted">
 		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
+		<param name="TheProgressIdentifier" type="enum" class="ProgressIdentifier" pass="in" description="What is the current state the calculation is in?"/>
 		<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
 	</functiontype>
 
@@ -46,6 +54,10 @@
 	<class name="Calculator" parent="Base">
 		<method name="GetValue" description="Returns the current value of this Calculator">
 			<param name="Value" type="uint64" pass="return" description="The current value of this Calculator" />
+		</method>
+		
+		<method name="GetSelf" description="Returns the current value of this Calculator">
+			<param name="Value" type="handle" class="Calculator" pass="return" description="The current value of this Calculator" />
 		</method>
 		
 		<method name="SetValue" description="Sets the value to be factorized">
@@ -76,13 +88,13 @@
 		journalmethod="SetJournal" errormethod="GetLastError">
 		
 		<method name="GetLastError" description="Returns the last error recorded on this object">
-			<param name="Instance" type="handle" class="Base" pass="in" description="Instance Handle" />
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
 		
 		<method name="ReleaseInstance" description="Releases the memory of an Instance">
-			<param name="Instance" type="handle" class="Base" pass="in" description="Instance Handle" />
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
 		
 		<method name="GetLibraryVersion" description = "retrieves the binary version of this library.">
@@ -94,11 +106,11 @@
 		</method>
 		
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
-			<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
+			<param name="Instance" type="class" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
 		</method>
 		
 		<method name="CreateSieveCalculator" description="Creates a new SieveCalculator instance">
-			<param name="Instance" type="handle" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
+			<param name="Instance" type="class" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
 		</method>
 		
 		<method name="SetJournal" description="Handles Library Journaling">

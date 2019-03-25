@@ -65,11 +65,14 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 	if (err != nil) {
 		return component, err
 	}
+
+	component.Normalize();
+
 	return component, nil
 }
 
 func main () {
-	ACTVersion := "1.5.0-develop"
+	ACTVersion := "1.5.0-develop3"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
 	if (len (os.Args) < 2) {
 		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
@@ -223,27 +226,33 @@ func main () {
 				}
 			}
 
-			case "CppDynamic": {
-				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic";
-				err  = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+		case "CppDynamic": {
+				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
+				err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				outputFolderExampleCppDynamic := outputFolderExamples + "/CppDynamic";
-				err  = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderExampleCppDynamic := outputFolderExamples + "/CppDynamic"
+				err = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				CTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+				CPPTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_types.hpp")
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				CPPABIHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_abi.hpp")
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
@@ -260,14 +269,14 @@ func main () {
 					log.Fatal (err);
 				}
 
-				CTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
+				CPPTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_types.hpp");
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
 				
-				CHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + ".h");
-				err = CreateCHeader (component, CHeaderName);
+				CPPABIHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_abi.hpp");
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
@@ -390,14 +399,14 @@ func main () {
 					log.Fatal (err);
 				}
 
-				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
+				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_types.hpp");
+				err = CreateCPPTypesHeader(component, CTypesHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
 				
-				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + ".h");
-				err = CreateCHeader (component, CHeaderName);
+				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_abi.hpp");
+				err = CreateCPPAbiHeader(component, CHeaderName);
 				if (err != nil) {
 					log.Fatal (err);
 				}
