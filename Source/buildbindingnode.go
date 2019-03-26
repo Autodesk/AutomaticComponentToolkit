@@ -993,12 +993,20 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "      std::string sMessage;\n")
 	
 	if len (component.Global.ErrorMethod) > 0 {
-	
-	//Lib3MF_Base pInstance, const Lib3MF_uint32 nLastErrorStringBufferSize, Lib3MF_uint32* pLastErrorStringNeededChars, char * pLastErrorStringBuffer, bool * pHasLastError
-	
-		fmt.Fprintf(implw, "      if (sWrapperTable != nullptr) {\n")
+		
+		fmt.Fprintf(implw, "      if ((sWrapperTable != nullptr) && (pInstance != nullptr)) {\n")
 		fmt.Fprintf(implw, "        if (sWrapperTable->m_%s != nullptr) {\n", component.Global.ErrorMethod)
-		fmt.Fprintf(implw, "          sWrapperTable->m_%s ()\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "          uint32_t neededChars = 0;\n")
+		fmt.Fprintf(implw, "          bool hasLastError = 0;\n")
+		fmt.Fprintf(implw, "          if (sWrapperTable->m_%s (pInstance, 0, &neededChars, nullptr, &hasLastError) == 0) {\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "            uint32_t dummyChars = 0;\n")
+		fmt.Fprintf(implw, "            std::vector<char> Buffer;\n")
+		fmt.Fprintf(implw, "            Buffer.resize (neededChars + 2);\n")
+		fmt.Fprintf(implw, "            if (sWrapperTable->m_%s (pInstance, neededChars + 1, &dummyChars, Buffer.data(), &hasLastError) == 0) {\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "              Buffer[neededChars + 1] = 0;\n")
+		fmt.Fprintf(implw, "              sMessage = std::string (\": \") + std::string (&Buffer[0]);\n")
+		fmt.Fprintf(implw, "            }\n")
+		fmt.Fprintf(implw, "          }\n")
 		fmt.Fprintf(implw, "        }\n")
 		fmt.Fprintf(implw, "      }\n")
 		
