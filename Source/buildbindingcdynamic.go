@@ -82,6 +82,7 @@ func BuildBindingCDynamic(component ComponentDefinition, outputFolder string, in
 	return nil
 }
 
+
 func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string,
 	headerOnly bool, useCPPTypes bool) error {
 
@@ -383,7 +384,7 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 }
 
 func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string,
-	isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool) error {
+	isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, linkStatically bool) error {
 
 	CMethodName := ""
 	requiresInitCall := false
@@ -394,11 +395,19 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	makeSharedParameter := ""
 
 	if isGlobal {
-		CMethodName = fmt.Sprintf("m_WrapperTable.m_%s", method.MethodName)
+		if linkStatically {
+			CMethodName = fmt.Sprintf("%s_%s", strings.ToLower (NameSpace), strings.ToLower (method.MethodName))
+		} else {	
+			CMethodName = fmt.Sprintf("m_WrapperTable.m_%s", method.MethodName)
+		}
 		checkErrorCodeBegin = "CheckError(nullptr,"
 		makeSharedParameter = "this, "
 	} else {
-		CMethodName = fmt.Sprintf("m_pWrapper->m_WrapperTable.m_%s_%s", ClassName, method.MethodName)
+		if linkStatically {
+			CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower (NameSpace), strings.ToLower (ClassName), strings.ToLower (method.MethodName))
+		} else {
+			CMethodName = fmt.Sprintf("m_pWrapper->m_WrapperTable.m_%s_%s", ClassName, method.MethodName)
+		}
 		callParameters = "m_pHandle"
 		initCallParameters = "m_pHandle"
 		checkErrorCodeBegin = "CheckError("
@@ -699,7 +708,7 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 	w.Writeln("")
 }
 
-func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
+func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, LinkStatically bool) error {
 	useCPPTypes := true
 
 	global := component.Global
@@ -708,7 +717,14 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	baseClass := component.baseClass()
 	cppBaseClassName := cppClassPrefix + baseClass.ClassName
 
-	sIncludeGuard := "__" + strings.ToUpper(NameSpace) + "_DYNAMICCPPHEADER"
+	sIncludeGuard := "";
+	
+	if LinkStatically {
+		sIncludeGuard = "__" + strings.ToUpper(NameSpace) + "_HEADERONLYCPPHEADER"
+	} else {
+		sIncludeGuard = "__" + strings.ToUpper(NameSpace) + "_DYNAMICCPPHEADER"
+	}
+	
 	if useCPPTypes {
 		sIncludeGuard += "_CPP"
 	}
@@ -717,7 +733,13 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("")
 
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
-	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
+	
+	if LinkStatically {	
+		w.Writeln("#include \"%s_abi.hpp\"", BaseName)
+	} else {
+		w.Writeln("#include \"%s_dynamic.h\"", BaseName)
+	}
+	
 	w.Writeln("")
 
 	w.Writeln("#ifdef _WIN32")
@@ -795,25 +817,42 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("class %sWrapper {", cppClassPrefix)
 	w.Writeln("public:")
 	w.Writeln("  ")
-	w.Writeln("  %sWrapper (const std::string &sFileName)", cppClassPrefix)
-	w.Writeln("  {")
-	w.Writeln("    CheckError (nullptr, initWrapperTable (&m_WrapperTable));")
-	w.Writeln("    CheckError (nullptr, loadWrapperTable (&m_WrapperTable, sFileName.c_str ()));")
-	w.Writeln("    ")
-	w.Writeln("    CheckError(nullptr, checkBinaryVersion());")
-	w.Writeln("  }")
-	w.Writeln("  ")
+	
+	if LinkStatically {
 
-	w.Writeln("  static PWrapper loadLibrary (const std::string &sFileName)")
-	w.Writeln("  {")
-	w.Writeln("    return std::make_shared<%sWrapper>(sFileName);", cppClassPrefix)
-	w.Writeln("  }")
-	w.Writeln("  ")
+		w.Writeln("  %sWrapper ()", cppClassPrefix)
+		w.Writeln("  {")
+		w.Writeln("  }")
+		w.Writeln("  ")
 
-	w.Writeln("  ~%sWrapper ()", cppClassPrefix)
-	w.Writeln("  {")
-	w.Writeln("    releaseWrapperTable(&m_WrapperTable);")
-	w.Writeln("  }")
+		w.Writeln("  ~%sWrapper ()", cppClassPrefix)
+		w.Writeln("  {")
+		w.Writeln("  }")
+
+	} else {
+	
+		w.Writeln("  %sWrapper (const std::string &sFileName)", cppClassPrefix)
+		w.Writeln("  {")
+		w.Writeln("    CheckError (nullptr, initWrapperTable (&m_WrapperTable));")
+		w.Writeln("    CheckError (nullptr, loadWrapperTable (&m_WrapperTable, sFileName.c_str ()));")
+		w.Writeln("    ")
+		w.Writeln("    CheckError(nullptr, checkBinaryVersion());")
+		w.Writeln("  }")
+		w.Writeln("  ")
+
+		w.Writeln("  static PWrapper loadLibrary (const std::string &sFileName)")
+		w.Writeln("  {")
+		w.Writeln("    return std::make_shared<%sWrapper>(sFileName);", cppClassPrefix)
+		w.Writeln("  }")
+		w.Writeln("  ")
+
+		w.Writeln("  ~%sWrapper ()", cppClassPrefix)
+		w.Writeln("  {")
+		w.Writeln("    releaseWrapperTable(&m_WrapperTable);")
+		w.Writeln("  }")
+	
+	}
+	
 	w.Writeln("  ")
 	w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
 	w.Writeln("")
@@ -829,7 +868,10 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 
 	w.Writeln("")
 	w.Writeln("private:")
-	w.Writeln("  s%sDynamicWrapperTable m_WrapperTable;", NameSpace)
+	if !LinkStatically {
+		w.Writeln("  s%sDynamicWrapperTable m_WrapperTable;", NameSpace)
+	}
+	
 	w.Writeln("  ")
 	w.Writeln("  %sResult checkBinaryVersion()", NameSpace)
 	w.Writeln("  {")
@@ -842,9 +884,11 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
 	w.Writeln("  }")
 
-	w.Writeln("  %sResult initWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
-	w.Writeln("  %sResult releaseWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
-	w.Writeln("  %sResult loadWrapperTable(s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);", NameSpace, NameSpace)
+	if !LinkStatically {
+		w.Writeln("  %sResult initWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
+		w.Writeln("  %sResult releaseWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
+		w.Writeln("  %sResult loadWrapperTable(s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);", NameSpace, NameSpace)
+	}
 	w.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -910,7 +954,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true, true, false, useCPPTypes)
+		err := writeDynamicCPPMethod(method, w, NameSpace, "Wrapper", true, true, false, useCPPTypes, LinkStatically)
 		if err != nil {
 			return err
 		}
@@ -930,36 +974,41 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 	w.Writeln("  ")
 
 	w.Writeln("")
-	w.Writeln("  inline %sResult %sWrapper::initWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, cppClassPrefix, NameSpace)
-	w.Writeln("  {")
+	
+	if !LinkStatically {
+	
+		w.Writeln("  inline %sResult %sWrapper::initWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, cppClassPrefix, NameSpace)
+		w.Writeln("  {")
 
-	w.AddIndentationLevel(2)
-	buildDynamicCInitTableCode(component, w, NameSpace, BaseName)
-	w.AddIndentationLevel(-2)
+		w.AddIndentationLevel(2)
+		buildDynamicCInitTableCode(component, w, NameSpace, BaseName)
+		w.AddIndentationLevel(-2)
 
-	w.Writeln("  }")
-	w.Writeln("")
+		w.Writeln("  }")
+		w.Writeln("")
 
-	w.Writeln("  inline %sResult %sWrapper::releaseWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, cppClassPrefix, NameSpace)
-	w.Writeln("  {")
+		w.Writeln("  inline %sResult %sWrapper::releaseWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, cppClassPrefix, NameSpace)
+		w.Writeln("  {")
 
-	w.AddIndentationLevel(2)
-	buildDynamicCReleaseTableCode(component, w, NameSpace, BaseName, "initWrapperTable")
-	w.AddIndentationLevel(-2)
+		w.AddIndentationLevel(2)
+		buildDynamicCReleaseTableCode(component, w, NameSpace, BaseName, "initWrapperTable")
+		w.AddIndentationLevel(-2)
 
-	w.Writeln("  }")
-	w.Writeln("")
+		w.Writeln("  }")
+		w.Writeln("")
 
-	w.Writeln("  inline %sResult %sWrapper::loadWrapperTable(s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName)", NameSpace, cppClassPrefix, NameSpace)
-	w.Writeln("  {")
+		w.Writeln("  inline %sResult %sWrapper::loadWrapperTable(s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName)", NameSpace, cppClassPrefix, NameSpace)
+		w.Writeln("  {")
 
-	w.AddIndentationLevel(2)
-	buildDynamicCLoadTableCode(component, w, NameSpace, BaseName)
-	w.AddIndentationLevel(-2)
+		w.AddIndentationLevel(2)
+		buildDynamicCLoadTableCode(component, w, NameSpace, BaseName)
+		w.AddIndentationLevel(-2)
 
-	w.Writeln("  }")
+		w.Writeln("  }")
+		
+		w.Writeln("  ")
+	}
 
-	w.Writeln("  ")
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -970,7 +1019,7 @@ func buildDynamicCppHeader(component ComponentDefinition, w LanguageWriter, Name
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false, false, useCPPTypes)
+			err := writeDynamicCPPMethod(method, w, NameSpace, class.ClassName, false, false, false, useCPPTypes, LinkStatically)
 			if err != nil {
 				return err
 			}
@@ -1020,7 +1069,7 @@ func BuildBindingCppDynamic(component ComponentDefinition, outputFolder string, 
 	dynhppfile.WriteCLicenseHeader(component,
 		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s", libraryname),
 		true)
-	err = buildDynamicCppHeader(component, dynhppfile, namespace, baseName)
+	err = buildDynamicCppHeader(component, dynhppfile, namespace, baseName, false)
 	if err != nil {
 		return err
 	}
@@ -1059,6 +1108,33 @@ func BuildBindingCppDynamic(component ComponentDefinition, outputFolder string, 
 
 	return nil
 }
+
+
+// BuildBindingCppHeaderOnly builds dynamic headeronly C++-bindings of a library's API in form of statically linked functions
+// handles.
+func BuildBindingCppHeaderOnly(component ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
+
+	namespace := component.NameSpace
+	libraryname := component.LibraryName
+	baseName := component.BaseName
+
+	CppHeader := path.Join(outputFolder, baseName+"_headeronly.hpp")
+	log.Printf("Creating \"%s\"", CppHeader)
+	hppfile, err := CreateLanguageFile(CppHeader, indentString)
+	if err != nil {
+		return err
+	}
+	hppfile.WriteCLicenseHeader(component,
+		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s", libraryname),
+		true)
+	err = buildDynamicCppHeader(component, hppfile, namespace, baseName, true)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 
 func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) error {
 	NameSpace := componentdefinition.NameSpace

@@ -226,6 +226,7 @@ func main () {
 				}
 			}
 
+			
 		case "CppDynamic": {
 				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
 				err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
@@ -256,6 +257,36 @@ func main () {
 				}
 			}
 
+		case "CppHeaderOnly": {
+				outputFolderBindingCppHeaderOnly := outputFolderBindings + "/CppHeaderOnly"
+				err = os.MkdirAll(outputFolderBindingCppHeaderOnly, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+				outputFolderExampleCppHeaderOnly := outputFolderExamples + "/CppHeaderOnly"
+				err = os.MkdirAll(outputFolderExampleCppHeaderOnly, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				CPPTypesHeaderName := path.Join(outputFolderBindingCppHeaderOnly, component.BaseName+"_types.hpp")
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				CPPABIHeaderName := path.Join(outputFolderBindingCppHeaderOnly, component.BaseName+"_abi.hpp")
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = BuildBindingCppHeaderOnly(component, outputFolderBindingCppHeaderOnly, outputFolderExampleCppHeaderOnly, indentString)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			
 			case "Cpp": {
 				outputFolderBindingCpp := outputFolderBindings + "/Cpp";
 				err  = os.MkdirAll(outputFolderBindingCpp, os.ModePerm);
