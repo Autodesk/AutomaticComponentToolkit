@@ -514,7 +514,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &elementsNeeded%s, nullptr", param.ParamName)
 
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%s.resize(elementsNeeded%s);", variableName, param.ParamName))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%s.resize((size_t) elementsNeeded%s);", variableName, param.ParamName))
 				callParameter = fmt.Sprintf("elementsNeeded%s, &elementsWritten%s, %s.data()", param.ParamName, param.ParamName, variableName)
 
 			default:
@@ -663,7 +663,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  }")
 
 	w.Writeln("  ")
-	w.Writeln("  friend class CWrapper;", NameSpace)
+	w.Writeln("  friend class CWrapper;")
 	return nil
 }
 
