@@ -34,56 +34,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"fmt"
-	"path"
-	"log"
-	"io/ioutil"
-	"os"
 	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path"
 )
 
 const (
 	eACTModeGenerate = 0
-	eACTModeDiff = 1
+	eACTModeDiff     = 1
 )
 
 func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
 	var component ComponentDefinition
 
-	file, err := os.Open(FileName);
-	if (err != nil) {
+	file, err := os.Open(FileName)
+	if err != nil {
 		return component, err
 	}
 
-	bytes, err := ioutil.ReadAll (file);
-	if (err != nil) {
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
 		return component, err
 	}
-	
+
 	component.ACTVersion = ACTVersion
 	err = xml.Unmarshal(bytes, &component)
-	if (err != nil) {
+	if err != nil {
 		return component, err
 	}
 
-	component.Normalize();
+	component.Normalize()
 
 	return component, nil
 }
 
-func main () {
-	ACTVersion := "1.5.0-develop3"
-	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v" + ACTVersion)
-	if (len (os.Args) < 2) {
-		log.Fatal ("Please run with the Interface Description XML as command line parameter.");
-		log.Fatal ("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"");
-		log.Fatal ("To create a diff between two versions of an Interface Description XML use the optional flag \"-d OTHER_IDL_FILE\"");
+func main() {
+	ACTVersion := "1.5.0-develop4"
+	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
+	if len(os.Args) < 2 {
+		log.Fatal("Please run with the Interface Description XML as command line parameter.")
+		log.Fatal("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"")
+		log.Fatal("To create a diff between two versions of an Interface Description XML use the optional flag \"-d OTHER_IDL_FILE\"")
 	}
 	if os.Args[1] == "-v" {
 		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)
 		return
 	}
-	log.Printf ("---------------------------------------\n");
+	log.Printf("---------------------------------------\n")
 
 	mode := eACTModeGenerate
 	outfolderBase, err := os.Getwd()
@@ -91,7 +91,7 @@ func main () {
 		log.Fatal(err)
 	}
 	diffFile := ""
-	if (len (os.Args) >= 4) {
+	if len(os.Args) >= 4 {
 		if os.Args[2] == "-o" {
 			outfolderBase = os.Args[3]
 		}
@@ -101,50 +101,50 @@ func main () {
 			mode = eACTModeDiff
 		}
 	}
-	if (mode == eACTModeGenerate) {
+	if mode == eACTModeGenerate {
 		log.Printf("Output directory: " + outfolderBase)
 	}
-	
-	log.Printf ("Loading Component Description File" );
+
+	log.Printf("Loading Component Description File")
 	component, err := readComponentDefinition(os.Args[1], ACTVersion)
-	if (err != nil) {
-		log.Fatal (err);
-	}
-	
-	log.Printf ("Checking Component Description", );
-	err = CheckComponentDefinition (component);
-	if (err != nil) {
-		log.Fatal (err);
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if (mode == eACTModeDiff) {
-		log.Printf ("Loading Component Description File to compare to" );
+	log.Printf("Checking Component Description")
+	err = CheckComponentDefinition(component)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if mode == eACTModeDiff {
+		log.Printf("Loading Component Description File to compare to")
 		componentB, err := readComponentDefinition(diffFile, ACTVersion)
-		if (err != nil) {
-			log.Fatal (err);
+		if err != nil {
+			log.Fatal(err)
 		}
-		log.Printf ("Checking Component Description B", );
-		err = CheckComponentDefinition (componentB);
-		if (err != nil) {
-			log.Fatal (err);
+		log.Printf("Checking Component Description B")
+		err = CheckComponentDefinition(componentB)
+		if err != nil {
+			log.Fatal(err)
 		}
 		diff, err := DiffComponentDefinitions(component, componentB)
-		if (err != nil) {
-			log.Fatal (err);
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		output, err := xml.MarshalIndent(diff, "", "\t")
-		if (err != nil) {
-			log.Fatal (err);
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		writer, err := os.Create("diff.xml")
 		if err != nil {
-			log.Fatal (err);
+			log.Fatal(err)
 		}
 		os.Stdout.Write(output)
 		writer.Write(output)
-		
+
 		return
 	}
 
@@ -162,71 +162,74 @@ func main () {
 	// 	}
 	// }
 
-	outputFolder := path.Join(outfolderBase, component.NameSpace + "_component");
+	outputFolder := path.Join(outfolderBase, component.NameSpace+"_component")
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
 	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
 
-	err  = os.MkdirAll(outputFolder, os.ModePerm);
-	if (err != nil) {
-		log.Fatal (err);
-	}
-
-	licenseFileName := path.Join(outputFolder, "license.txt");
-	log.Printf("Creating \"%s\"", licenseFileName)
-	licenseFile, err :=  CreateLanguageFile (licenseFileName, "")
+	err = os.MkdirAll(outputFolder, os.ModePerm)
 	if err != nil {
-		log.Fatal (err);
+		log.Fatal(err)
 	}
-	licenseFile.WritePlainLicenseHeader(component, "", false);
 
-	if (len(component.BindingList.Bindings) > 0) {
-		err  = os.MkdirAll(outputFolderBindings, os.ModePerm);
-		if (err != nil) {
-			log.Fatal (err);
+	licenseFileName := path.Join(outputFolder, "license.txt")
+	log.Printf("Creating \"%s\"", licenseFileName)
+	licenseFile, err := CreateLanguageFile(licenseFileName, "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	licenseFile.WritePlainLicenseHeader(component, "", false)
+
+	if len(component.BindingList.Bindings) > 0 {
+		err = os.MkdirAll(outputFolderBindings, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 	for bindingindex := 0; bindingindex < len(component.BindingList.Bindings); bindingindex++ {
-		binding := component.BindingList.Bindings[bindingindex];
+		binding := component.BindingList.Bindings[bindingindex]
 		indentString := getIndentationString(binding.Indentation)
-		log.Printf ("Exporting Interface Binding for Languge \"%s\"", binding.Language);
-		
-		switch (binding.Language) {
-			case "C": {
-				outputFolderBindingC := outputFolderBindings + "/C";
+		log.Printf("Exporting Interface Binding for Languge \"%s\"", binding.Language)
 
-				err  = os.MkdirAll(outputFolderBindingC, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+		switch binding.Language {
+		case "C":
+			{
+				outputFolderBindingC := outputFolderBindings + "/C"
+
+				err = os.MkdirAll(outputFolderBindingC, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
+
 				err = BuildBindingC(component, outputFolderBindingC)
-				if (err != nil) {
-					log.Fatal (err);
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-			case "CDynamic": {
-				outputFolderBindingCDynamic := outputFolderBindings + "/CDynamic";
+		case "CDynamic":
+			{
+				outputFolderBindingCDynamic := outputFolderBindings + "/CDynamic"
 
-				err  = os.MkdirAll(outputFolderBindingCDynamic, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderBindingCDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				CTypesHeaderName := path.Join(outputFolderBindingCDynamic, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+
+				CTypesHeaderName := path.Join(outputFolderBindingCDynamic, component.BaseName+"_types.h")
+				err = CreateCTypesHeader(component, CTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingCDynamic(component, outputFolderBindingCDynamic, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				err = BuildBindingCDynamic(component, outputFolderBindingCDynamic, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-		case "CppDynamic": {
+		case "CppDynamic":
+			{
 				outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
 				err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
 				if err != nil {
@@ -256,195 +259,204 @@ func main () {
 				}
 			}
 
-			case "Cpp": {
-				outputFolderBindingCpp := outputFolderBindings + "/Cpp";
-				err  = os.MkdirAll(outputFolderBindingCpp, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+		case "Cpp":
+			{
+				outputFolderBindingCpp := outputFolderBindings + "/Cpp"
+				err = os.MkdirAll(outputFolderBindingCpp, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				outputFolderExampleCPP := outputFolderExamples + "/CPP";
-				err  = os.MkdirAll(outputFolderExampleCPP, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderExampleCPP := outputFolderExamples + "/CPP"
+				err = os.MkdirAll(outputFolderExampleCPP, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				CPPTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_types.hpp");
-				err = CreateCPPTypesHeader(component, CPPTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+				CPPTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName+"_types.hpp")
+				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				CPPABIHeaderName := path.Join(outputFolderBindingCpp, component.BaseName + "_abi.hpp");
-				err = CreateCPPAbiHeader(component, CPPABIHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+
+				CPPABIHeaderName := path.Join(outputFolderBindingCpp, component.BaseName+"_abi.hpp")
+				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingCPP(component, outputFolderBindingCpp, outputFolderExampleCPP, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				err = BuildBindingCPP(component, outputFolderBindingCpp, outputFolderExampleCPP, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-			case "Go": {
-				outputFolderBindingGo := outputFolderBindings + "/Go";
+		case "Go":
+			{
+				outputFolderBindingGo := outputFolderBindings + "/Go"
 
-				err  = os.MkdirAll(outputFolderBindingGo, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderBindingGo, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				err := BuildBindingGo(component, outputFolderBindingGo);
-				if (err != nil) {
-					log.Fatal (err);
+				err := BuildBindingGo(component, outputFolderBindingGo)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-			case "Node": {
-				outputFolderBindingNode := outputFolderBindings + "/NodeJS";
+		case "Node":
+			{
+				outputFolderBindingNode := outputFolderBindings + "/NodeJS"
 
-				err  = os.MkdirAll(outputFolderBindingNode, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
-				}
-				
-				CTypesHeaderName := path.Join(outputFolderBindingNode, component.BaseName + "_types.h");
-				err = CreateCTypesHeader (component, CTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
-				}
-				
-				err = BuildBindingCDynamic(component, outputFolderBindingNode, indentString);
-				if (err != nil) {
-					log.Fatal (err);
-				}
-				
-				err := BuildBindingNode(component, outputFolderBindingNode, indentString);
-				if (err != nil) {
-					log.Fatal (err);
-				}
-			}
-			
-			case "Pascal": {
-				outputFolderBindingPascal := outputFolderBindings + "/Pascal";
-				err  = os.MkdirAll(outputFolderBindingPascal, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderBindingNode, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				outputFolderExamplePascal := outputFolderExamples + "/Pascal";
-				err  = os.MkdirAll(outputFolderExamplePascal, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				CTypesHeaderName := path.Join(outputFolderBindingNode, component.BaseName+"_types.h")
+				err = CreateCTypesHeader(component, CTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingPascalDynamic(component, outputFolderBindingPascal, outputFolderExamplePascal, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				err = BuildBindingCDynamic(component, outputFolderBindingNode, indentString)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err := BuildBindingNode(component, outputFolderBindingNode, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-			case "Python": {
-				outputFolderBindingPython := outputFolderBindings + "/Python";
-				err  = os.MkdirAll(outputFolderBindingPython, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+		case "Pascal":
+			{
+				outputFolderBindingPascal := outputFolderBindings + "/Pascal"
+				err = os.MkdirAll(outputFolderBindingPascal, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				outputFolderExamplePython := outputFolderExamples + "/Python";
-				err  = os.MkdirAll(outputFolderExamplePython, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderExamplePascal := outputFolderExamples + "/Pascal"
+				err = os.MkdirAll(outputFolderExamplePascal, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingPythonDynamic(component, outputFolderBindingPython, outputFolderExamplePython, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				err = BuildBindingPascalDynamic(component, outputFolderBindingPascal, outputFolderExamplePascal, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
-			}
-			
-			case"Fortran": {
-				log.Printf ("Interface binding for language \"%s\" is not yet supported.", binding.Language);
 			}
 
-			default:
-				log.Fatal ("Unknown binding export");
+		case "Python":
+			{
+				outputFolderBindingPython := outputFolderBindings + "/Python"
+				err = os.MkdirAll(outputFolderBindingPython, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				outputFolderExamplePython := outputFolderExamples + "/Python"
+				err = os.MkdirAll(outputFolderExamplePython, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = BuildBindingPythonDynamic(component, outputFolderBindingPython, outputFolderExamplePython, indentString)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+		case "Fortran":
+			{
+				log.Printf("Interface binding for language \"%s\" is not yet supported.", binding.Language)
+			}
+
+		default:
+			log.Fatal("Unknown binding export")
 		}
 	}
 
-	if (len(component.ImplementationList.Implementations) > 0) {
-		err  = os.MkdirAll(outputFolderImplementations, os.ModePerm);
-		if (err != nil) {
-			log.Fatal (err);
+	if len(component.ImplementationList.Implementations) > 0 {
+		err = os.MkdirAll(outputFolderImplementations, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 	for implementationindex := 0; implementationindex < len(component.ImplementationList.Implementations); implementationindex++ {
-		implementation := component.ImplementationList.Implementations[implementationindex];
-		log.Printf ("Exporting Implementation Interface for Language \"%s\"", implementation.Language);
-		
-		switch (implementation.Language) {
-			case "Cpp": {
-				outputFolderImplementationProject := outputFolderImplementations + "/Cpp";
-				outputFolderImplementationCpp := outputFolderImplementations + "/Cpp/Interfaces";
-				outputFolderImplementationCppStub := outputFolderImplementations + "/Cpp/Stub";
+		implementation := component.ImplementationList.Implementations[implementationindex]
+		log.Printf("Exporting Implementation Interface for Language \"%s\"", implementation.Language)
 
-				err  = os.MkdirAll(outputFolderImplementationCpp, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
-				}
+		switch implementation.Language {
+		case "Cpp":
+			{
+				outputFolderImplementationProject := outputFolderImplementations + "/Cpp"
+				outputFolderImplementationCpp := outputFolderImplementations + "/Cpp/Interfaces"
+				outputFolderImplementationCppStub := outputFolderImplementations + "/Cpp/Stub"
 
-				err  = os.MkdirAll(outputFolderImplementationCppStub, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderImplementationCpp, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_types.hpp");
-				err = CreateCPPTypesHeader(component, CTypesHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderImplementationCppStub, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName + "_abi.hpp");
-				err = CreateCPPAbiHeader(component, CHeaderName);
-				if (err != nil) {
-					log.Fatal (err);
+
+				CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName+"_types.hpp")
+				err = CreateCPPTypesHeader(component, CTypesHeaderName)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
+
+				CHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName+"_abi.hpp")
+				err = CreateCPPAbiHeader(component, CHeaderName)
+				if err != nil {
+					log.Fatal(err)
+				}
+
 				err = BuildImplementationCPP(component, outputFolderImplementationCpp, outputFolderImplementationCppStub,
-					outputFolderImplementationProject, implementation);
-				if (err != nil) {
-					log.Fatal (err);
+					outputFolderImplementationProject, implementation)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 
-			case "Pascal": {
-				outputFolderImplementationProject := outputFolderImplementations + "/Pascal";
-				outputFolderImplementationPascal := outputFolderImplementations + "/Pascal/Interfaces";
-				outputFolderImplementationPascalStub := outputFolderImplementations + "/Pascal/Stub";
+		case "Pascal":
+			{
+				outputFolderImplementationProject := outputFolderImplementations + "/Pascal"
+				outputFolderImplementationPascal := outputFolderImplementations + "/Pascal/Interfaces"
+				outputFolderImplementationPascalStub := outputFolderImplementations + "/Pascal/Stub"
 
-				err  = os.MkdirAll(outputFolderImplementationPascal, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderImplementationPascal, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				err  = os.MkdirAll(outputFolderImplementationPascalStub, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				err = os.MkdirAll(outputFolderImplementationPascalStub, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
+
 				err = BuildImplementationPascal(component, outputFolderImplementationPascal, outputFolderImplementationPascalStub,
-					outputFolderImplementationProject, implementation);
-				if (err != nil) {
-					log.Fatal (err);
+					outputFolderImplementationProject, implementation)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
-			
-			case "Fortran": {
-				log.Printf ("Implementation in language \"%s\" is not yet supported.", implementation.Language);
+
+		case "Fortran":
+			{
+				log.Printf("Implementation in language \"%s\" is not yet supported.", implementation.Language)
 			}
-			default:
-				log.Fatal ("Unknown export");
+		default:
+			log.Fatal("Unknown export")
 		}
 	}
 
