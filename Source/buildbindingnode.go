@@ -308,12 +308,8 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 		case "out", "return":
 		
 			var argsvalue string;
-			if (returnParamCount > 1) {
-				
-				//returndeclaration = returndeclaration + fmt.Sprintf("%sLocal<Number> local%s = Local<Number>::Cast(args[%d]);\n", spacing, param.ParamName, k);								
-				//argsvalue = "local" + param.ParamName;
+			if (returnParamCount > 1) {				
 				argsvalue = fmt.Sprintf ("outObject->Set (String::NewFromUtf8 (isolate, \"%s\"), ", param.ParamName);
-				
 				
 			} else {
 				argsvalue = "args.GetReturnValue().Set (";
@@ -434,8 +430,6 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				
 				returncode = returncode + fmt.Sprintf("%s%sconvert%s%sToObject (isolate, sReturn%s));\n", spacing, argsvalue, NameSpace, param.ParamClass, param.ParamName)
 
-				//return fmt.Errorf("can not return struct \"%s\" for %s.%s (%s) yet in nodejs", param.ParamType, ClassName, method.MethodName, param.ParamName)
-
 			case "basicarray":
 				callParameter = "0, nullptr, nullptr";
 				initCallParameter = callParameter;
@@ -505,7 +499,11 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 		fmt.Fprintf(implw, "%sif (wrapperTable->m_%s_%s == nullptr)\n", spacing, ClassName, method.MethodName)
 		fmt.Fprintf(implw, "%s    throw std::runtime_error (\"Could not call %s method %s::%s.\");\n", spacing, NameSpace, ClassName, method.MethodName)
 	}
-
+	
+		
+	if (!isGlobal) {
+		fmt.Fprintf(implw, "%s%sHandle instanceHandle = C%sBaseClass::getHandle (args.Holder());\n", spacing, NameSpace, NameSpace);
+	}
 	
 	if (requiresInitCall) {
 	
@@ -516,11 +514,15 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			if initCallParameters != "" {
 				initCallParameters = ", " + initCallParameters
 			}
-			fmt.Fprintf(implw, "%s%sResult initErrorCode = wrapperTable->m_%s_%s (C%sBaseClass::getHandle (args.Holder())%s);\n", spacing, NameSpace, ClassName, method.MethodName, NameSpace, initCallParameters)
+			fmt.Fprintf(implw, "%s%sResult initErrorCode = wrapperTable->m_%s_%s (instanceHandle%s);\n", spacing, NameSpace, ClassName, method.MethodName, initCallParameters)
 		}
 	
 	
-		fmt.Fprintf(implw, "%sCheckError (initErrorCode);\n", spacing)
+		if (isGlobal) {
+			fmt.Fprintf(implw, "%sCheckError (isolate, wrapperTable, nullptr, initErrorCode);\n", spacing)
+		} else {
+			fmt.Fprintf(implw, "%sCheckError (isolate, wrapperTable, instanceHandle, initErrorCode);\n", spacing)
+		}
 	}
 	
 	fmt.Fprintf(implw, functioncode)
@@ -532,11 +534,15 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 		if callParameters != "" {
 			callParameters = ", " + callParameters
 		}
-		fmt.Fprintf(implw, "%s%sResult errorCode = wrapperTable->m_%s_%s (C%sBaseClass::getHandle (args.Holder())%s);\n", spacing, NameSpace, ClassName, method.MethodName, NameSpace, callParameters)
+		fmt.Fprintf(implw, "%s%sResult errorCode = wrapperTable->m_%s_%s (instanceHandle%s);\n", spacing, NameSpace, ClassName, method.MethodName, callParameters)
 	}
 	
 	
-	fmt.Fprintf(implw, "%sCheckError (errorCode);\n", spacing)
+	if (isGlobal) {
+		fmt.Fprintf(implw, "%sCheckError (isolate, wrapperTable, nullptr, errorCode);\n", spacing)
+	} else {
+		fmt.Fprintf(implw, "%sCheckError (isolate, wrapperTable, instanceHandle, errorCode);\n", spacing)
+	}
 
 	fmt.Fprintf(implw, returncode)
 
@@ -872,7 +878,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(w, "public:\n")
 	fmt.Fprintf(w, "    C%sBaseClass ();\n", NameSpace)
 	fmt.Fprintf(w, "    static void RaiseError (v8::Isolate * isolate, std::string Message);\n")
-	fmt.Fprintf(w, "    static void CheckError (%sResult errorCode);\n", NameSpace)
+	fmt.Fprintf(w, "    static void CheckError (v8::Isolate * isolate, s%sDynamicWrapperTable * sWrapperTable, %sHandle pInstance, %sResult errorCode);\n", NameSpace, NameSpace, NameSpace)
 	fmt.Fprintf(w, "    static void setHandle (%sHandle pHandle);\n", NameSpace)
 	fmt.Fprintf(w, "    static %sHandle getHandle (v8::Handle<v8::Object> objecthandle);\n", NameSpace)
 	fmt.Fprintf(w, "    static s%sDynamicWrapperTable * getDynamicWrapperTable (v8::Handle<v8::Object> objecthandle);\n", NameSpace)
@@ -981,10 +987,31 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "    }\n")
 	fmt.Fprintf(implw, "}\n")
 
-	fmt.Fprintf(implw, "void C%sBaseClass::CheckError (%sResult errorCode)\n", NameSpace, NameSpace)
+	fmt.Fprintf(implw, "void C%sBaseClass::CheckError (v8::Isolate * isolate, s%sDynamicWrapperTable * sWrapperTable, %sHandle pInstance, %sResult errorCode)\n", NameSpace, NameSpace, NameSpace, NameSpace)
 	fmt.Fprintf(implw, "{\n")
 	fmt.Fprintf(implw, "    if (errorCode != 0) {	\n")
-	fmt.Fprintf(implw, "       throw std::runtime_error (\"%s Error \" + std::to_string (errorCode));\n", NameSpace)
+	fmt.Fprintf(implw, "      std::string sMessage;\n")
+	
+	if len (component.Global.ErrorMethod) > 0 {
+		
+		fmt.Fprintf(implw, "      if ((sWrapperTable != nullptr) && (pInstance != nullptr)) {\n")
+		fmt.Fprintf(implw, "        if (sWrapperTable->m_%s != nullptr) {\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "          uint32_t neededChars = 0;\n")
+		fmt.Fprintf(implw, "          bool hasLastError = 0;\n")
+		fmt.Fprintf(implw, "          if (sWrapperTable->m_%s (pInstance, 0, &neededChars, nullptr, &hasLastError) == 0) {\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "            uint32_t dummyChars = 0;\n")
+		fmt.Fprintf(implw, "            std::vector<char> Buffer;\n")
+		fmt.Fprintf(implw, "            Buffer.resize (neededChars + 2);\n")
+		fmt.Fprintf(implw, "            if (sWrapperTable->m_%s (pInstance, neededChars + 1, &dummyChars, Buffer.data(), &hasLastError) == 0) {\n", component.Global.ErrorMethod)
+		fmt.Fprintf(implw, "              Buffer[neededChars + 1] = 0;\n")
+		fmt.Fprintf(implw, "              sMessage = std::string (\": \") + std::string (&Buffer[0]);\n")
+		fmt.Fprintf(implw, "            }\n")
+		fmt.Fprintf(implw, "          }\n")
+		fmt.Fprintf(implw, "        }\n")
+		fmt.Fprintf(implw, "      }\n")
+		
+	}
+	fmt.Fprintf(implw, "      throw std::runtime_error (\"%s Error\" + sMessage + \" (\" + std::to_string (errorCode) + \")\");\n", NameSpace)
 	fmt.Fprintf(implw, "    }\n")
 	fmt.Fprintf(implw, "}\n")
 
@@ -1146,7 +1173,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 
 	fmt.Fprintf(implw, "            Local<Object> newObject = args.This();\n")
 	fmt.Fprintf(implw, "            std::auto_ptr<s%sDynamicWrapperTable> wrapperTable ( new s%sDynamicWrapperTable );\n", NameSpace, NameSpace)
-	fmt.Fprintf(implw, "            CheckError (Load%sWrapperTable (wrapperTable.get(), sLibraryName.c_str()));\n", NameSpace)
+	fmt.Fprintf(implw, "            CheckError (isolate, nullptr, nullptr, Load%sWrapperTable (wrapperTable.get(), sLibraryName.c_str()));\n", NameSpace)
 	fmt.Fprintf(implw, "            newObject->SetInternalField (NODEWRAPPER_TABLEINDEX, External::New (isolate, wrapperTable.release ()));\n")
 
 	// write out enums
