@@ -354,6 +354,15 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
+		// Omit Journal Method
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) {
+			continue
+		}
+
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
 		if err != nil {
 			return err
@@ -384,6 +393,14 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 
+		// Omit Journal Method
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) {
+			continue
+		}
 		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
 			return err
@@ -817,7 +834,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 			stubimplw.Writeln("%s", implementationdeclaration)
 			stubimplw.Writeln("{")
-			stubimplw.Writeln("  throw E%sInterfaceException (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
+			stubimplw.Writeln("  throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
 			stubimplw.Writeln("}")
 			stubimplw.Writeln("")
 		}

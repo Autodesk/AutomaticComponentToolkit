@@ -1307,7 +1307,7 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 	} else {
 		w.Writeln("    auto wrapper = %s::CWrapper::loadLibrary();", NameSpace)
 	}
-	w.Writeln("    unsigned int nMajor, nMinor, nMicro;")
+	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
 	w.Writeln("    std::string sPreReleaseInfo, sBuildInfo;")
 	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro;", NameSpace)
