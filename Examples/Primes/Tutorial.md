@@ -340,9 +340,11 @@ However, this is solution is fine in the context of ACT, as all automatically ge
 bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
 {
 	return pInstance->GetLastErrorMessage(sErrorMessage);
-}```
-This method is queries the last error that occurred during a method of an instance.
-See [4.1.1 Exception/Error handling](#4-1-1-Exception-Error-handling) for more details.
+}
+```
+
+This method queries the last error that occurred during a method of an instance.
+See [4.1.1 Exception/Error handling](#411-exceptionerror-handling) for more details.
 
 
 ### 3.3.2. Domain code implementation: Steps for LibPrimes
