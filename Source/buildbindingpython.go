@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpython.go
-// functions to generate dynamic Python3-bindings of a library's API in form of dynamically loaded functions
-// handles.
+// functions to generate dynamic Python3-bindings of a library's API in form of explicitly loaded
+// function handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 package main
@@ -40,8 +40,8 @@ import (
 	"path"
 )
 
-// BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of dynamically loaded functions
-// handles.
+// BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of explicitly loaded
+// functions handles.
 func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
 	forceRecreation := false
 

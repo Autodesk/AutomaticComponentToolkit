@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpascal.go
-// functions to generate dynamic Pascal-bindings of a library's API in form of dynamically loaded functions
-// handles.
+// functions to generate dynamic Pascal-bindings of a library's API in form of explicitly loaded
+// function handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 package main
@@ -41,8 +41,8 @@ import (
 	"strings"
 )
 
-// BuildBindingPascalDynamic builds dynamic Pascal bindings of a library's API in form of dynamically loaded functions
-// handles.
+// BuildBindingPascalDynamic builds dynamic Pascal bindings of a library's API in form of explicitly loaded
+// function handles.
 func BuildBindingPascalDynamic(component ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
 	forceRecreation := false
 
@@ -1138,21 +1138,21 @@ func buildDynamicPascalExampleLPI(w LanguageWriter, NameSpace string, BaseName s
 	w.Writeln ("    <PathDelim Value=\"\\\"/>");
 	w.Writeln ("    <General>");
 	w.Writeln ("      <Flags>");
-	w.Writeln ("        <MainUnitHasCreateFormStatements Value=\"False\" />");
-	w.Writeln ("        <MainUnitHasTitleStatement Value=\"False\" />");
-	w.Writeln ("        <MainUnitHasScaledStatement Value=\"False\" />");
+	w.Writeln ("        <MainUnitHasCreateFormStatements Value=\"False\"/>");
+	w.Writeln ("        <MainUnitHasTitleStatement Value=\"False\"/>");
+	w.Writeln ("        <MainUnitHasScaledStatement Value=\"False\"/>");
 	w.Writeln ("      </Flags>");
-	w.Writeln ("      <SessionStorage Value=\"InProjectDir\" />");
+	w.Writeln ("      <SessionStorage Value=\"InProjectDir\"/>");
 	w.Writeln ("      <MainUnit Value=\"%d\"/>", 0);
-	w.Writeln ("      <Title Value=\"%s_Example\" />", NameSpace);
-	w.Writeln ("      <UseAppBundle Value=\"False\" />");
-	w.Writeln ("      <ResourceType Value=\"res\" />");
+	w.Writeln ("      <Title Value=\"%s_Example\"/>", NameSpace);
+	w.Writeln ("      <UseAppBundle Value=\"False\"/>");
+	w.Writeln ("      <ResourceType Value=\"res\"/>");
 	w.Writeln ("    </General>");
 	w.Writeln ("    <BuildModes Count=\"%d\">", 2);
 	w.Writeln ("      <Item1 Name=\"Release\" Default=\"True\"/>");
 	w.Writeln ("      <Item2 Name=\"Debug\">");
 	w.Writeln ("        <CompilerOptions>");
-	w.Writeln ("          <Version Value=\"11\" />");
+	w.Writeln ("          <Version Value=\"11\"/>");
 	w.Writeln ("          <PathDelim Value=\"\\\"/>");
 	w.Writeln ("          <Target>");
 	w.Writeln ("            <Filename Value=\"bin\\$(TargetCPU)-$(TargetOS)\\Release\\%s_Example\"/>", NameSpace);
@@ -1168,7 +1168,7 @@ func buildDynamicPascalExampleLPI(w LanguageWriter, NameSpace string, BaseName s
 	w.Writeln ("            </SyntaxOptions>");
 	w.Writeln ("          </Parsing>");
 	w.Writeln ("          <CodeGeneration>");
-	w.Writeln ("            <RelocatableUnit Value=\"True\" />");
+	w.Writeln ("            <RelocatableUnit Value=\"True\"/>");
 	w.Writeln ("          </CodeGeneration>");
 	w.Writeln ("          <Linking>");
 	w.Writeln ("            <Debugging>");

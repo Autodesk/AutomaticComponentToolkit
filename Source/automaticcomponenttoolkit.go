@@ -222,7 +222,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCDynamic(component, outputFolderBindingCDynamic, indentString)
+				err = BuildBindingCExplicit(component, outputFolderBindingCDynamic, indentString)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -253,38 +253,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCppDynamic(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-
-		case "CppHeaderOnly":
-			{
-				outputFolderBindingCppHeaderOnly := outputFolderBindings + "/CppHeaderOnly"
-				err = os.MkdirAll(outputFolderBindingCppHeaderOnly, os.ModePerm)
-				if err != nil {
-					log.Fatal(err)
-				}
-				outputFolderExampleCppHeaderOnly := outputFolderExamples + "/CppHeaderOnly"
-				err = os.MkdirAll(outputFolderExampleCppHeaderOnly, os.ModePerm)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				CPPTypesHeaderName := path.Join(outputFolderBindingCppHeaderOnly, component.BaseName+"_types.hpp")
-				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				CPPABIHeaderName := path.Join(outputFolderBindingCppHeaderOnly, component.BaseName+"_abi.hpp")
-				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = BuildBindingCppHeaderOnly(component, outputFolderBindingCppHeaderOnly, outputFolderExampleCppHeaderOnly, indentString)
+				err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -292,31 +261,30 @@ func main() {
 
 		case "Cpp":
 			{
-				outputFolderBindingCpp := outputFolderBindings + "/Cpp"
-				err = os.MkdirAll(outputFolderBindingCpp, os.ModePerm)
+				outputFolderBindingCppImplicit := outputFolderBindings + "/Cpp"
+				err = os.MkdirAll(outputFolderBindingCppImplicit, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+				outputFolderExampleCppImplicit := outputFolderExamples + "/Cpp"
+				err = os.MkdirAll(outputFolderExampleCppImplicit, os.ModePerm)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				outputFolderExampleCPP := outputFolderExamples + "/CPP"
-				err = os.MkdirAll(outputFolderExampleCPP, os.ModePerm)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				CPPTypesHeaderName := path.Join(outputFolderBindingCpp, component.BaseName+"_types.hpp")
+				CPPTypesHeaderName := path.Join(outputFolderBindingCppImplicit, component.BaseName+"_types.hpp")
 				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				CPPABIHeaderName := path.Join(outputFolderBindingCpp, component.BaseName+"_abi.hpp")
+				CPPABIHeaderName := path.Join(outputFolderBindingCppImplicit, component.BaseName+"_abi.hpp")
 				err = CreateCPPAbiHeader(component, CPPABIHeaderName)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCPP(component, outputFolderBindingCpp, outputFolderExampleCPP, indentString)
+				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit, indentString)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -352,7 +320,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCDynamic(component, outputFolderBindingNode, indentString)
+				err = BuildBindingCExplicit(component, outputFolderBindingNode, indentString)
 				if err != nil {
 					log.Fatal(err)
 				}

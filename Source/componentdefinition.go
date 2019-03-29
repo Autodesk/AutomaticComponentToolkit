@@ -886,7 +886,7 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 }
 
 
-
+// GetLastErrorMessageMethod returns the xml definition of the GetLastErrorMessage-method
 func GetLastErrorMessageMethod() (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `<method name="GetLastErrorMessage" description = "Returns the last error registered of this class instance">
@@ -896,6 +896,8 @@ func GetLastErrorMessageMethod() (ComponentDefinitionMethod) {
 	xml.Unmarshal([]byte(source), &method)
 	return method
 }
+
+// RegisterErrorMessageMethod returns the xml definition of the RegisterErrorMessage-method
 func RegisterErrorMessageMethod() (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `<method name="RegisterErrorMessage" description = "Registers an error message with this class instance">
@@ -904,6 +906,8 @@ func RegisterErrorMessageMethod() (ComponentDefinitionMethod) {
 	xml.Unmarshal([]byte(source), &method)
 	return method
 }
+
+// ClearErrorMessageMethod returns the xml definition of the ClearErrorMessage-method
 func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">

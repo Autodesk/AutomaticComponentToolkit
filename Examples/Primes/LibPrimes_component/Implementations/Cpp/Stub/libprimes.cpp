@@ -17,27 +17,33 @@ Interface version: 1.2.0
 #include "libprimes_interfaces.hpp"
 #include "libprimes_interfaceexception.hpp"
 
+#include "libprimes_factorizationcalculator.hpp"
+
 using namespace LibPrimes;
 using namespace LibPrimes::Impl;
 
 bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
 {
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	return pInstance->GetLastErrorMessage(sErrorMessage);
 }
 
 void CWrapper::ReleaseInstance(IBase* pInstance)
 {
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	delete pInstance;
 }
 
 void CWrapper::GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo)
 {
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	nMajor = LIBPRIMES_VERSION_MAJOR;
+	nMinor = LIBPRIMES_VERSION_MINOR;
+	nMicro = LIBPRIMES_VERSION_MICRO;
+	sPreReleaseInfo = LIBPRIMES_VERSION_PRERELEASEINFO;
+	sBuildInfo = LIBPRIMES_VERSION_BUILDINFO;
 }
 
 IFactorizationCalculator * CWrapper::CreateFactorizationCalculator()
 {
-	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	return new CFactorizationCalculator();
 }
 
 ISieveCalculator * CWrapper::CreateSieveCalculator()

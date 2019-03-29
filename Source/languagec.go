@@ -233,9 +233,9 @@ func buildCCPPTypesHeader(component ComponentDefinition, w LanguageWriter, NameS
 	return nil;
 }
 
-func GetCMemberDefaultValue (memberType string, memberClass string, NameSpace string) (string, error) {
-
-	switch (memberType) {		
+// GetCMemberDefaultValue returns the defailt value of a member in C-based-languages
+func GetCMemberDefaultValue(memberType string, memberClass string, NameSpace string) (string, error) {
+	switch (memberType) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
 			return "0", nil;
 		case "bool":
