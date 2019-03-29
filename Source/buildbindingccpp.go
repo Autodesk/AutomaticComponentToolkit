@@ -763,6 +763,125 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 	w.Writeln("")
 }
 
+func writeCPPInputVector(w LanguageWriter, NameSpace string) error {
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Class CInputVector")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("template <typename T>")
+	w.Writeln("class CInputVector {")
+	w.Writeln("private:")
+	w.Writeln("  ")
+	w.Writeln("  const T* m_data;")
+	w.Writeln("  size_t m_size;")
+	w.Writeln("  ")
+	w.Writeln("public:")
+	w.Writeln("  ")
+	w.Writeln("  CInputVector( const std::vector<T>& vec)")
+	w.Writeln("    : m_data( vec.data() ), m_size( vec.size() )")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("  ")
+	w.Writeln("  CInputVector( const T* in_data, size_t in_size)")
+	w.Writeln("    : m_data( in_data ), m_size(in_size )")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("  ")
+	w.Writeln("  const T* data() const")
+	w.Writeln("  {")
+	w.Writeln("    return m_data;")
+	w.Writeln("  }")
+	w.Writeln("  ")
+	w.Writeln("  size_t size() const")
+	w.Writeln("  {")
+	w.Writeln("    return m_size;")
+	w.Writeln("  }")
+	w.Writeln("  ")
+	w.Writeln("};")
+	w.Writeln("")
+	w.Writeln("// declare deprecated class name")
+	w.Writeln("template<typename T>")
+	w.Writeln("using C%sInputVector = CInputVector<T>;", NameSpace)
+	return nil
+}
+
+
+func getBindingCppParamType(paramType string, paramClass string, NameSpace string, isInput bool) string {
+	cppClassPrefix := "C"
+	switch paramType {
+	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+		return fmt.Sprintf("%s_%s", NameSpace, paramType)
+	case "string":
+		return fmt.Sprintf("std::string")
+	case "bool":
+		return fmt.Sprintf("bool")
+	case "pointer":
+		return fmt.Sprintf("%s_pvoid", NameSpace)
+	case "basicarray":
+		cppBasicType := ""
+		switch paramClass {
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double",
+			"bool", "pointer":
+			cppBasicType = getBindingCppParamType(paramClass, "", NameSpace, isInput)
+		default:
+			log.Fatal("Invalid parameter type: ", paramClass)
+		}
+		if isInput {
+			return fmt.Sprintf("CInputVector<%s>", cppBasicType)
+		}
+		return fmt.Sprintf("std::vector<%s>", cppBasicType)
+	case "structarray":
+		if isInput {
+			return fmt.Sprintf("CInputVector<s%s>", paramClass)
+		}
+		return fmt.Sprintf("std::vector<s%s>", paramClass)
+	case "enum":
+		return fmt.Sprintf("e%s", paramClass)
+	case "struct":
+		return fmt.Sprintf("s%s", paramClass)
+	case "class":
+		if isInput {
+			return fmt.Sprintf("%s%s *", cppClassPrefix, paramClass)
+		}
+		return fmt.Sprintf("P%s", paramClass)
+	case "functiontype":
+		return fmt.Sprintf("%s", paramClass)
+	}
+	log.Fatal("Invalid parameter type: ", paramType)
+	return ""
+}
+
+func getBindingCppVariableName(param ComponentDefinitionParam) string {
+	switch param.ParamType {
+	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
+		return "n" + param.ParamName
+	case "string":
+		return "s" + param.ParamName
+	case "bool":
+		return "b" + param.ParamName
+	case "single":
+		return "f" + param.ParamName
+	case "basicarray", "structarray":
+		return param.ParamName + "Buffer"
+	case "double":
+		return "d" + param.ParamName
+	case "pointer":
+		return "p" + param.ParamName
+	case "enum":
+		return "e" + param.ParamName
+	case "struct":
+		return param.ParamName
+	case "class":
+		return "p" + param.ParamName
+	case "functiontype":
+		return fmt.Sprintf("p%s", param.ParamName)
+	}
+
+	log.Fatal("Invalid parameter type: ", param.ParamType)
+
+	return ""
+}
+
+
 func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, ExplicitLinking bool) error {
 	useCPPTypes := true
 
