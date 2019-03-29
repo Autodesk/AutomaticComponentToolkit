@@ -13,11 +13,11 @@ Interface version: 1.2.0
 
 */
 
-#ifndef __LIBPRIMES_CPPHEADER_DYNAMIC_CPP
-#define __LIBPRIMES_CPPHEADER_DYNAMIC_CPP
+#ifndef __LIBPRIMES_CPPHEADER_IMPLICIT_CPP
+#define __LIBPRIMES_CPPHEADER_IMPLICIT_CPP
 
 #include "libprimes_types.hpp"
-#include "libprimes_dynamic.h"
+#include "libprimes_abi.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -154,22 +154,16 @@ using CLibPrimesInputVector = CInputVector<T>;
 class CWrapper {
 public:
 	
-	CWrapper(const std::string &sFileName)
+	CWrapper()
 	{
-		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
-		CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
-		
-		CheckError(nullptr, checkBinaryVersion());
-	}
-	
-	static PWrapper loadLibrary(const std::string &sFileName)
-	{
-		return std::make_shared<CWrapper>(sFileName);
 	}
 	
 	~CWrapper()
 	{
-		releaseWrapperTable(&m_WrapperTable);
+	}
+	static inline PWrapper loadLibrary()
+	{
+		return std::make_shared<CWrapper>();
 	}
 	
 	inline void CheckError(CBase * pBaseClass, LibPrimesResult nResult);
@@ -182,7 +176,6 @@ public:
 	inline void SetJournal(const std::string & sFileName);
 
 private:
-	sLibPrimesDynamicWrapperTable m_WrapperTable;
 	
 	LibPrimesResult checkBinaryVersion()
 	{
@@ -194,9 +187,6 @@ private:
 		}
 		return LIBPRIMES_SUCCESS;
 	}
-	LibPrimesResult initWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable);
-	LibPrimesResult releaseWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable);
-	LibPrimesResult loadWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
 
 	friend class CBase;
 	friend class CCalculator;
@@ -325,10 +315,10 @@ public:
 		LibPrimes_uint32 bytesNeededErrorMessage = 0;
 		LibPrimes_uint32 bytesWrittenErrorMessage = 0;
 		bool resultHasError = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		CheckError(nullptr,libprimes_getlasterror(hInstance, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
 		std::vector<char> bufferErrorMessage;
 		bufferErrorMessage.resize(bytesNeededErrorMessage + 2);
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage + 2, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		CheckError(nullptr,libprimes_getlasterror(hInstance, bytesNeededErrorMessage + 2, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		bufferErrorMessage[bytesNeededErrorMessage + 1] = 0;
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
 		return resultHasError;
@@ -344,7 +334,7 @@ public:
 		if (pInstance != nullptr) {
 			hInstance = pInstance->GetHandle();
 		};
-		CheckError(nullptr,m_WrapperTable.m_ReleaseInstance(hInstance));
+		CheckError(nullptr,libprimes_releaseinstance(hInstance));
 	}
 	
 	/**
@@ -361,12 +351,12 @@ public:
 		LibPrimes_uint32 bytesWrittenPreReleaseInfo = 0;
 		LibPrimes_uint32 bytesNeededBuildInfo = 0;
 		LibPrimes_uint32 bytesWrittenBuildInfo = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetLibraryVersion(&nMajor, &nMinor, &nMicro, 0, &bytesNeededPreReleaseInfo, nullptr, 0, &bytesNeededBuildInfo, nullptr));
+		CheckError(nullptr,libprimes_getlibraryversion(&nMajor, &nMinor, &nMicro, 0, &bytesNeededPreReleaseInfo, nullptr, 0, &bytesNeededBuildInfo, nullptr));
 		std::vector<char> bufferPreReleaseInfo;
 		bufferPreReleaseInfo.resize(bytesNeededPreReleaseInfo + 2);
 		std::vector<char> bufferBuildInfo;
 		bufferBuildInfo.resize(bytesNeededBuildInfo + 2);
-		CheckError(nullptr,m_WrapperTable.m_GetLibraryVersion(&nMajor, &nMinor, &nMicro, bytesNeededPreReleaseInfo + 2, &bytesWrittenPreReleaseInfo, &bufferPreReleaseInfo[0], bytesNeededBuildInfo + 2, &bytesWrittenBuildInfo, &bufferBuildInfo[0]));
+		CheckError(nullptr,libprimes_getlibraryversion(&nMajor, &nMinor, &nMicro, bytesNeededPreReleaseInfo + 2, &bytesWrittenPreReleaseInfo, &bufferPreReleaseInfo[0], bytesNeededBuildInfo + 2, &bytesWrittenBuildInfo, &bufferBuildInfo[0]));
 		bufferPreReleaseInfo[bytesNeededPreReleaseInfo + 1] = 0;
 		sPreReleaseInfo = std::string(&bufferPreReleaseInfo[0]);
 		bufferBuildInfo[bytesNeededBuildInfo + 1] = 0;
@@ -380,7 +370,7 @@ public:
 	inline PFactorizationCalculator CWrapper::CreateFactorizationCalculator()
 	{
 		LibPrimesHandle hInstance = nullptr;
-		CheckError(nullptr,m_WrapperTable.m_CreateFactorizationCalculator(&hInstance));
+		CheckError(nullptr,libprimes_createfactorizationcalculator(&hInstance));
 		return std::make_shared<CFactorizationCalculator>(this, hInstance);
 	}
 	
@@ -391,7 +381,7 @@ public:
 	inline PSieveCalculator CWrapper::CreateSieveCalculator()
 	{
 		LibPrimesHandle hInstance = nullptr;
-		CheckError(nullptr,m_WrapperTable.m_CreateSieveCalculator(&hInstance));
+		CheckError(nullptr,libprimes_createsievecalculator(&hInstance));
 		return std::make_shared<CSieveCalculator>(this, hInstance);
 	}
 	
@@ -401,7 +391,7 @@ public:
 	*/
 	inline void CWrapper::SetJournal(const std::string & sFileName)
 	{
-		CheckError(nullptr,m_WrapperTable.m_SetJournal(sFileName.c_str()));
+		CheckError(nullptr,libprimes_setjournal(sFileName.c_str()));
 	}
 	
 	inline void CWrapper::CheckError(CBase * pBaseClass, LibPrimesResult nResult)
@@ -416,194 +406,6 @@ public:
 	}
 	
 
-	inline LibPrimesResult CWrapper::initWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable)
-	{
-		if (pWrapperTable == nullptr)
-			return LIBPRIMES_ERROR_INVALIDPARAM;
-		
-		pWrapperTable->m_LibraryHandle = nullptr;
-		pWrapperTable->m_Calculator_GetValue = nullptr;
-		pWrapperTable->m_Calculator_GetSelf = nullptr;
-		pWrapperTable->m_Calculator_SetValue = nullptr;
-		pWrapperTable->m_Calculator_Calculate = nullptr;
-		pWrapperTable->m_Calculator_SetProgressCallback = nullptr;
-		pWrapperTable->m_FactorizationCalculator_GetPrimeFactors = nullptr;
-		pWrapperTable->m_SieveCalculator_GetPrimes = nullptr;
-		pWrapperTable->m_GetLastError = nullptr;
-		pWrapperTable->m_ReleaseInstance = nullptr;
-		pWrapperTable->m_GetLibraryVersion = nullptr;
-		pWrapperTable->m_CreateFactorizationCalculator = nullptr;
-		pWrapperTable->m_CreateSieveCalculator = nullptr;
-		pWrapperTable->m_SetJournal = nullptr;
-		
-		return LIBPRIMES_SUCCESS;
-	}
-
-	inline LibPrimesResult CWrapper::releaseWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable)
-	{
-		if (pWrapperTable == nullptr)
-			return LIBPRIMES_ERROR_INVALIDPARAM;
-		
-		if (pWrapperTable->m_LibraryHandle != nullptr) {
-		#ifdef _WIN32
-			HMODULE hModule = (HMODULE) pWrapperTable->m_LibraryHandle;
-			FreeLibrary(hModule);
-		#else // _WIN32
-			dlclose(pWrapperTable->m_LibraryHandle);
-		#endif // _WIN32
-			return initWrapperTable(pWrapperTable);
-		}
-		
-		return LIBPRIMES_SUCCESS;
-	}
-
-	inline LibPrimesResult CWrapper::loadWrapperTable(sLibPrimesDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName)
-	{
-		if (pWrapperTable == nullptr)
-			return LIBPRIMES_ERROR_INVALIDPARAM;
-		if (pLibraryFileName == nullptr)
-			return LIBPRIMES_ERROR_INVALIDPARAM;
-		
-		#ifdef _WIN32
-		// Convert filename to UTF16-string
-		int nLength = (int)strlen(pLibraryFileName);
-		int nBufferSize = nLength * 2 + 2;
-		std::vector<wchar_t> wsLibraryFileName(nBufferSize);
-		int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, &wsLibraryFileName[0], nBufferSize);
-		if (nResult == 0)
-			return LIBPRIMES_ERROR_COULDNOTLOADLIBRARY;
-		
-		HMODULE hLibrary = LoadLibraryW(wsLibraryFileName.data());
-		if (hLibrary == 0) 
-			return LIBPRIMES_ERROR_COULDNOTLOADLIBRARY;
-		#else // _WIN32
-		void* hLibrary = dlopen(pLibraryFileName, RTLD_LAZY);
-		if (hLibrary == 0) 
-			return LIBPRIMES_ERROR_COULDNOTLOADLIBRARY;
-		dlerror();
-		#endif // _WIN32
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Calculator_GetValue = (PLibPrimesCalculator_GetValuePtr) GetProcAddress(hLibrary, "libprimes_calculator_getvalue");
-		#else // _WIN32
-		pWrapperTable->m_Calculator_GetValue = (PLibPrimesCalculator_GetValuePtr) dlsym(hLibrary, "libprimes_calculator_getvalue");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Calculator_GetValue == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Calculator_GetSelf = (PLibPrimesCalculator_GetSelfPtr) GetProcAddress(hLibrary, "libprimes_calculator_getself");
-		#else // _WIN32
-		pWrapperTable->m_Calculator_GetSelf = (PLibPrimesCalculator_GetSelfPtr) dlsym(hLibrary, "libprimes_calculator_getself");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Calculator_GetSelf == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Calculator_SetValue = (PLibPrimesCalculator_SetValuePtr) GetProcAddress(hLibrary, "libprimes_calculator_setvalue");
-		#else // _WIN32
-		pWrapperTable->m_Calculator_SetValue = (PLibPrimesCalculator_SetValuePtr) dlsym(hLibrary, "libprimes_calculator_setvalue");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Calculator_SetValue == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Calculator_Calculate = (PLibPrimesCalculator_CalculatePtr) GetProcAddress(hLibrary, "libprimes_calculator_calculate");
-		#else // _WIN32
-		pWrapperTable->m_Calculator_Calculate = (PLibPrimesCalculator_CalculatePtr) dlsym(hLibrary, "libprimes_calculator_calculate");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Calculator_Calculate == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Calculator_SetProgressCallback = (PLibPrimesCalculator_SetProgressCallbackPtr) GetProcAddress(hLibrary, "libprimes_calculator_setprogresscallback");
-		#else // _WIN32
-		pWrapperTable->m_Calculator_SetProgressCallback = (PLibPrimesCalculator_SetProgressCallbackPtr) dlsym(hLibrary, "libprimes_calculator_setprogresscallback");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Calculator_SetProgressCallback == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_FactorizationCalculator_GetPrimeFactors = (PLibPrimesFactorizationCalculator_GetPrimeFactorsPtr) GetProcAddress(hLibrary, "libprimes_factorizationcalculator_getprimefactors");
-		#else // _WIN32
-		pWrapperTable->m_FactorizationCalculator_GetPrimeFactors = (PLibPrimesFactorizationCalculator_GetPrimeFactorsPtr) dlsym(hLibrary, "libprimes_factorizationcalculator_getprimefactors");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_FactorizationCalculator_GetPrimeFactors == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_SieveCalculator_GetPrimes = (PLibPrimesSieveCalculator_GetPrimesPtr) GetProcAddress(hLibrary, "libprimes_sievecalculator_getprimes");
-		#else // _WIN32
-		pWrapperTable->m_SieveCalculator_GetPrimes = (PLibPrimesSieveCalculator_GetPrimesPtr) dlsym(hLibrary, "libprimes_sievecalculator_getprimes");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_SieveCalculator_GetPrimes == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_GetLastError = (PLibPrimesGetLastErrorPtr) GetProcAddress(hLibrary, "libprimes_getlasterror");
-		#else // _WIN32
-		pWrapperTable->m_GetLastError = (PLibPrimesGetLastErrorPtr) dlsym(hLibrary, "libprimes_getlasterror");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_GetLastError == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_ReleaseInstance = (PLibPrimesReleaseInstancePtr) GetProcAddress(hLibrary, "libprimes_releaseinstance");
-		#else // _WIN32
-		pWrapperTable->m_ReleaseInstance = (PLibPrimesReleaseInstancePtr) dlsym(hLibrary, "libprimes_releaseinstance");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_ReleaseInstance == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_GetLibraryVersion = (PLibPrimesGetLibraryVersionPtr) GetProcAddress(hLibrary, "libprimes_getlibraryversion");
-		#else // _WIN32
-		pWrapperTable->m_GetLibraryVersion = (PLibPrimesGetLibraryVersionPtr) dlsym(hLibrary, "libprimes_getlibraryversion");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_GetLibraryVersion == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_CreateFactorizationCalculator = (PLibPrimesCreateFactorizationCalculatorPtr) GetProcAddress(hLibrary, "libprimes_createfactorizationcalculator");
-		#else // _WIN32
-		pWrapperTable->m_CreateFactorizationCalculator = (PLibPrimesCreateFactorizationCalculatorPtr) dlsym(hLibrary, "libprimes_createfactorizationcalculator");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_CreateFactorizationCalculator == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_CreateSieveCalculator = (PLibPrimesCreateSieveCalculatorPtr) GetProcAddress(hLibrary, "libprimes_createsievecalculator");
-		#else // _WIN32
-		pWrapperTable->m_CreateSieveCalculator = (PLibPrimesCreateSieveCalculatorPtr) dlsym(hLibrary, "libprimes_createsievecalculator");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_CreateSieveCalculator == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_SetJournal = (PLibPrimesSetJournalPtr) GetProcAddress(hLibrary, "libprimes_setjournal");
-		#else // _WIN32
-		pWrapperTable->m_SetJournal = (PLibPrimesSetJournalPtr) dlsym(hLibrary, "libprimes_setjournal");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_SetJournal == nullptr)
-			return LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		pWrapperTable->m_LibraryHandle = hLibrary;
-		return LIBPRIMES_SUCCESS;
-	}
-	
 	
 	/**
 	 * Method definitions for class CBase
@@ -616,30 +418,30 @@ public:
 	LibPrimes_uint64 CCalculator::GetValue()
 	{
 		LibPrimes_uint64 resultValue = 0;
-		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_GetValue(m_pHandle, &resultValue));
+		CheckError(libprimes_calculator_getvalue(m_pHandle, &resultValue));
 		return resultValue;
 	}
 	
 	PCalculator CCalculator::GetSelf()
 	{
 		LibPrimesHandle hValue = nullptr;
-		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_GetSelf(m_pHandle, &hValue));
+		CheckError(libprimes_calculator_getself(m_pHandle, &hValue));
 		return std::make_shared<CCalculator>(m_pWrapper, hValue);
 	}
 	
 	void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 	{
-		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_SetValue(m_pHandle, nValue));
+		CheckError(libprimes_calculator_setvalue(m_pHandle, nValue));
 	}
 	
 	void CCalculator::Calculate()
 	{
-		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_Calculate(m_pHandle));
+		CheckError(libprimes_calculator_calculate(m_pHandle));
 	}
 	
 	void CCalculator::SetProgressCallback(const ProgressCallback pProgressCallback)
 	{
-		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_SetProgressCallback(m_pHandle, pProgressCallback));
+		CheckError(libprimes_calculator_setprogresscallback(m_pHandle, pProgressCallback));
 	}
 	
 	/**
@@ -650,9 +452,9 @@ public:
 	{
 		LibPrimes_uint64 elementsNeededPrimeFactors = 0;
 		LibPrimes_uint64 elementsWrittenPrimeFactors = 0;
-		CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, 0, &elementsNeededPrimeFactors, nullptr));
+		CheckError(libprimes_factorizationcalculator_getprimefactors(m_pHandle, 0, &elementsNeededPrimeFactors, nullptr));
 		PrimeFactorsBuffer.resize((size_t) elementsNeededPrimeFactors);
-		CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, elementsNeededPrimeFactors, &elementsWrittenPrimeFactors, PrimeFactorsBuffer.data()));
+		CheckError(libprimes_factorizationcalculator_getprimefactors(m_pHandle, elementsNeededPrimeFactors, &elementsWrittenPrimeFactors, PrimeFactorsBuffer.data()));
 	}
 	
 	/**
@@ -663,12 +465,12 @@ public:
 	{
 		LibPrimes_uint64 elementsNeededPrimes = 0;
 		LibPrimes_uint64 elementsWrittenPrimes = 0;
-		CheckError(m_pWrapper->m_WrapperTable.m_SieveCalculator_GetPrimes(m_pHandle, 0, &elementsNeededPrimes, nullptr));
+		CheckError(libprimes_sievecalculator_getprimes(m_pHandle, 0, &elementsNeededPrimes, nullptr));
 		PrimesBuffer.resize((size_t) elementsNeededPrimes);
-		CheckError(m_pWrapper->m_WrapperTable.m_SieveCalculator_GetPrimes(m_pHandle, elementsNeededPrimes, &elementsWrittenPrimes, PrimesBuffer.data()));
+		CheckError(libprimes_sievecalculator_getprimes(m_pHandle, elementsNeededPrimes, &elementsWrittenPrimes, PrimesBuffer.data()));
 	}
 
 } // namespace LibPrimes
 
-#endif // __LIBPRIMES_CPPHEADER_DYNAMIC_CPP
+#endif // __LIBPRIMES_CPPHEADER_IMPLICIT_CPP
 
