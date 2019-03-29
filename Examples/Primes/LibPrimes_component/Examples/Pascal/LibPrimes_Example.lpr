@@ -43,8 +43,8 @@ var
   ALibPath: string;
 begin
   writeln ('loading DLL');
-  ALibPath := 'D:\\PUBLIC\\Primes\\LibPrimes_component\\Implementations\\Cpp\\_build\\Release\'; // TODO add the location of the shared library binary here
-  ALibPrimesWrapper := TLibPrimesWrapper.Create (ALibPath + '/' + 'libprimes.dll');
+  ALibPath := ''; // TODO add the location of the shared library binary here
+  ALibPrimesWrapper := TLibPrimesWrapper.Create (ALibPath + '/' + 'libprimes.');
   try
     writeln ('loading DLL Done');
     ALibPrimesWrapper.GetLibraryVersion(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);
