@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -37,6 +37,8 @@ private:
 	* Put private members here.
 	*/
 
+	std::vector<LibPrimes_uint64> primes;
+
 protected:
 
 	/**
@@ -53,6 +55,8 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
+
+	void Calculate();
 
 	void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -20,27 +20,22 @@ using namespace LibPrimes::Impl;
  Class definition of CCalculator 
 **************************************************************************************************************************/
 
-LibPrimes_uint64 CCalculator::GetValue()
+void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
 {
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	m_Callback = pProgressCallback;
 }
 
-ICalculator * CCalculator::GetSelf()
+LibPrimes_uint64 CCalculator::GetValue()
 {
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	return m_value;
 }
 
 void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 {
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	m_value = nValue;
 }
 
 void CCalculator::Calculate()
-{
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
-}
-
-void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
 {
 	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
