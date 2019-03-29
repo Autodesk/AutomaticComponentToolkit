@@ -56,15 +56,15 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 | Pascal          | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Python3         | ![](Documentation/images/Tick.png) complete (but unstable) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Golang          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        |
-| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       in      |      in       |      in       |       ?    |      ?      |     -     |         -        |
-| C#              | ![](Documentation/images/O.png) not implemented            | Win, Linux, MacOS | ?         | ?             |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        |
-| PHP             | ![](Documentation/images/O.png) not implemented            | Win, Linux, MacOS | ?         | ?             |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        |
+| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        |
+| C#              | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |      -     |      -      |     -     |         -        |
+| PHP             | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |       -    |      -      |     -     |         -        |
 
 #### Feature Matrix: Implementation Stubs
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling | Error Message Propagation |
 |:--------------:|:-----------------------------------------------------:|:-----------------:|:---------:|:-------------:|:-------------:|:-------------:|:-------------:|:----------:|:-----------:|:---------:|:----------:|:---------:|
-| C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          | +          |
-| Pascal         | ![](Documentation/images/O.png) stable                | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | -          | +          |
+| C++            | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | +          | +         |
+| Pascal         | ![](Documentation/images/Tick.png) mature             | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   | in        | -          | +         |
 
 
 ## Example
