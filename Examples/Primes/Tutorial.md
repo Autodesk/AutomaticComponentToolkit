@@ -473,6 +473,8 @@ void CSieveCalculator::GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_u
 
 Finally, the following calculate method implements the [Sieve of Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
 ```cpp
+#include <cmath>
+/* ... */
 void CSieveCalculator::Calculate()
 {
 	primes.clear();
@@ -481,7 +483,7 @@ void CSieveCalculator::Calculate()
 	for (LibPrimes_uint64 i = 0; i <= m_value; i++) {
 		strikenOut[i] = i < 2;
 	}
-	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(sqrt(m_value));
+	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(std::sqrt(m_value));
 	for (LibPrimes_uint64 i = 2; i <= sqrtValue; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
@@ -879,9 +881,11 @@ as their respective language bindings have already been updated at the end of th
 Open the solution from [Section 4.1](#41-cpp-dynamic), and add a concrete implementation of the
 "ProgressCallback" function-type:
 ```cpp
+#include <cmath>
+/* ... */
 void progressCallback(LibPrimes_single progress, bool* shouldAbort)
 {
-	std::cout << "Progress = " << round(progress * 100) << "%" << std::endl;
+	std::cout << "Progress = " << std::round(progress * 100) << "%" << std::endl;
 	if (shouldAbort) {
 		*shouldAbort = progress > 0.5;
 	}

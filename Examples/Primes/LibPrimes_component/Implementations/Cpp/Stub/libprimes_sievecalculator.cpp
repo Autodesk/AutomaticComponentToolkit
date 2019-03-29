@@ -12,7 +12,7 @@ Abstract: This is a stub class definition of CSieveCalculator
 #include "libprimes_interfaceexception.hpp"
 
 // Include custom headers here.
-
+#include <cmath>
 
 using namespace LibPrimes::Impl;
 
@@ -28,7 +28,7 @@ void CSieveCalculator::Calculate()
 	for (LibPrimes_uint64 i = 0; i <= m_value; i++) {
 		strikenOut[i] = i < 2;
 	}
-	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(sqrt(m_value));
+	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(std::sqrt(m_value));
 	for (LibPrimes_uint64 i = 2; i <= sqrtValue; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
