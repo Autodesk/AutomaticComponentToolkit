@@ -349,7 +349,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 	w.Writeln("#include \"%s_types.h\"", BaseName)
-	w.Writeln("#include \"%s_explicit.h\"", BaseName)
+	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
 
 	w.Writeln("#ifdef _WIN32")
 	w.Writeln("#include <Windows.h>")
