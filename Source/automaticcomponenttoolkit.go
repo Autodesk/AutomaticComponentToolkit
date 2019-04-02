@@ -345,6 +345,25 @@ func main () {
 				}
 			}
 
+			case "CSharp": {
+				outputFolderBindingCSharp := outputFolderBindings + "/CSharp";
+				err  = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+
+				outputFolderExampleCSharp := outputFolderExamples + "/CSharp";
+				err  = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+				
+				err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+			}
+			
 			case "Python": {
 				outputFolderBindingPython := outputFolderBindings + "/Python";
 				err  = os.MkdirAll(outputFolderBindingPython, os.ModePerm);
