@@ -87,10 +87,10 @@
 			<param name="BuildInfo" type="string" pass="out" description="returns build-information of this library (optional)" /> 
 		</method>
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
-			<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
+			<param name="Instance" type="class" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
 		</method>
 		<method name="CreateSieveCalculator" description="Creates a new SieveCalculator instance">
-			<param name="Instance" type="handle" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
+			<param name="Instance" type="class" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
 		</method>
 		<method name="SetJournal" description="Handles Library Journaling">
 			<param name="FileName" type="string" pass="in" description="Journal FileName" />

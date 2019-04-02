@@ -177,14 +177,14 @@ results from a calculator without having performed a calculation before. Thus ad
 The global section requires two more methods, that are used as entry points to the component's functionality:
 ```xml
 <method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
-	<param name="Instance" type="handle" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
+	<param name="Instance" type="class" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
 </method>
 ```
 `CreateFactorizationCalculator` specifies a global function that will create a new instance of the `FactorizationCalculator`.
 
 ```xml
 <method name="CreateSieveCalculator" description="Creates a new SieveCalculator instance">
-	<param name="Instance" type="handle" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
+	<param name="Instance" type="class" class="SieveCalculator" pass="return" description="New SieveCalculator instance" />
 </method>
 ```
 `CreateSieveCalculator` specifies a global function that will create a new instance of the `SieveCalculator`.
@@ -1094,7 +1094,7 @@ that go through the interface:
         <result name="BuildInfo" type="string" value="" />
     </entry>
     <entry method="CreateFactorizationCalculator" timestamp="1" duration="0">
-        <result name="Instance" type="handle" value="000001d259663858" />
+        <result name="Instance" type="class" value="000001d259663858" />
     </entry>
     <entry class="Calculator" method="SetValue" timestamp="1" duration="0">
         <instance handle="000001d259663858" />
@@ -1107,17 +1107,17 @@ that go through the interface:
         <instance handle="000001d259663858" />
     </entry>
     <entry method="GetLastError" timestamp="1115" duration="0">
-        <parameter name="Instance" type="handle" value="000001d259663858" />
+        <parameter name="Instance" type="class" value="000001d259663858" />
         <result name="ErrorMessage" type="string" value="LibPrimes Error 10" />
         <result name="HasError" type="bool" value="1" />
     </entry>
     <entry method="GetLastError" timestamp="1115" duration="0">
-        <parameter name="Instance" type="handle" value="000001d259663858" />
+        <parameter name="Instance" type="class" value="000001d259663858" />
         <result name="ErrorMessage" type="string" value="LibPrimes Error 10" />
         <result name="HasError" type="bool" value="1" />
     </entry>
     <entry method="ReleaseInstance" timestamp="1116" duration="0">
-        <parameter name="Instance" type="handle" value="000001d259663858" />
+        <parameter name="Instance" type="class" value="000001d259663858" />
     </entry>
 </journal>
 ```
