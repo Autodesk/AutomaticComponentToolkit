@@ -572,9 +572,9 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	}
 
 	if isGlobal {
-		CMethodName = fmt.Sprintf("%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	} else {
-		CMethodName = fmt.Sprintf("%s_%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		if cparameters != "" {
 			cparameters = ", " + cparameters
 		}

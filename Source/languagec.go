@@ -355,9 +355,9 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 func GetCExportName (NameSpace string, ClassName string, method ComponentDefinitionMethod, isGlobal bool) (string) {
 	CMethodName := "";
 	if isGlobal {
-		CMethodName = fmt.Sprintf("%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	} else {
-		CMethodName = fmt.Sprintf("%s_%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 	}
 	
 	return CMethodName;
@@ -370,10 +370,10 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 	CCallbackName := "";
 	parameters := "";
 	if (isGlobal) {
-		CMethodName = fmt.Sprintf ("%s_%s%s", strings.ToLower (NameSpace), strings.ToLower (method.MethodName), method.DLLSuffix);
+		CMethodName = fmt.Sprintf ("%s_%s", strings.ToLower (NameSpace), strings.ToLower (method.MethodName));
 		CCallbackName = fmt.Sprintf ("P%s%sPtr", NameSpace, method.MethodName);
 	} else {
-		CMethodName = fmt.Sprintf ("%s_%s_%s%s", strings.ToLower (NameSpace), strings.ToLower (ClassName), strings.ToLower (method.MethodName), method.DLLSuffix);
+		CMethodName = fmt.Sprintf ("%s_%s_%s", strings.ToLower (NameSpace), strings.ToLower (ClassName), strings.ToLower (method.MethodName));
 		CCallbackName = fmt.Sprintf ("P%s%s_%sPtr", NameSpace, ClassName, method.MethodName);
 		parameters = fmt.Sprintf ("%s_%s p%s", NameSpace, ClassName, ClassName);
 	}

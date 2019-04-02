@@ -277,9 +277,9 @@ func buildDynamicCReleaseTableCode(component ComponentDefinition, w LanguageWrit
 // WriteLoadingOfMethod the loading of a method from a library into a LanguagWriter
 func WriteLoadingOfMethod(class ComponentDefinitionClass, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) {
 	w.Writeln("#ifdef _WIN32")
-	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) GetProcAddress(hLibrary, \"%s_%s_%s%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
+	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) GetProcAddress(hLibrary, \"%s_%s_%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 	w.Writeln("#else // _WIN32")
-	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) dlsym(hLibrary, \"%s_%s_%s%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
+	w.Writeln("pWrapperTable->m_%s_%s = (P%s%s_%sPtr) dlsym(hLibrary, \"%s_%s_%s\");", class.ClassName, method.MethodName, NameSpace, class.ClassName, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 	w.Writeln("dlerror();")
 	w.Writeln("#endif // _WIN32")
 	w.Writeln("if (pWrapperTable->m_%s_%s == nullptr)", class.ClassName, method.MethodName)
@@ -330,9 +330,9 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 		w.Writeln("#ifdef _WIN32")
-		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) GetProcAddress(hLibrary, \"%s_%s%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
+		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) GetProcAddress(hLibrary, \"%s_%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		w.Writeln("#else // _WIN32")
-		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) dlsym(hLibrary, \"%s_%s%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
+		w.Writeln("pWrapperTable->m_%s = (P%s%sPtr) dlsym(hLibrary, \"%s_%s\");", method.MethodName, NameSpace, method.MethodName, strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		w.Writeln("dlerror();")
 		w.Writeln("#endif // _WIN32")
 
