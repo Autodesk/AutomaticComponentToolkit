@@ -253,7 +253,8 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
+				err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic,
+					indentString, binding.ClassIdentifier)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -284,7 +285,8 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit, indentString)
+				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit,
+					indentString, binding.ClassIdentifier)
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -340,7 +340,6 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		class := component.Classes[i]
 
 		writeCPPClassInterface(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName)
-		
 	}
 
 	w.Writeln("")
