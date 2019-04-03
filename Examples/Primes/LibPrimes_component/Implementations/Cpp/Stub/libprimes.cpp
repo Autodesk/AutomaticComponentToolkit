@@ -33,13 +33,11 @@ void CWrapper::ReleaseInstance(IBase* pInstance)
 	delete pInstance;
 }
 
-void CWrapper::GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo)
+void CWrapper::GetVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro)
 {
 	nMajor = LIBPRIMES_VERSION_MAJOR;
 	nMinor = LIBPRIMES_VERSION_MINOR;
 	nMicro = LIBPRIMES_VERSION_MICRO;
-	sPreReleaseInfo = LIBPRIMES_VERSION_PRERELEASEINFO;
-	sBuildInfo = LIBPRIMES_VERSION_BUILDINFO;
 }
 
 IFactorizationCalculator * CWrapper::CreateFactorizationCalculator()

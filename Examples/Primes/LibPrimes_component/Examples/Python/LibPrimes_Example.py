@@ -26,14 +26,10 @@ def progressCallback(progress, shouldAbort):
 
 def main():
 	libpath = '' # TODO add the location of the shared library binary here
-	wrapper = LibPrimes.LibPrimesWrapper(os.path.join(libpath, "libprimes"))
+	wrapper = LibPrimes.Wrapper(os.path.join(libpath, "libprimes"))
 	wrapper.SetJournal('journal_python.xml')
-	major, minor, micro, prereleaseinfo, buildinfo = wrapper.GetLibraryVersion()
+	major, minor, micro = wrapper.GetVersion()
 	print("LibPrimes version: {:d}.{:d}.{:d}".format(major, minor, micro), end="")
-	if prereleaseinfo:
-		print("-"+prereleaseinfo, end="")
-	if buildinfo:
-		print("+"+buildinfo, end="")
 	print("")
 	
 	factorization = wrapper.CreateFactorizationCalculator()

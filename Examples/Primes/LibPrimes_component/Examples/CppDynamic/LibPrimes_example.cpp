@@ -33,13 +33,8 @@ int main()
 		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
 		wrapper->SetJournal("journal_cppdynamic.xml");
 		LibPrimes_uint32 nMajor, nMinor, nMicro;
-		std::string sPreReleaseInfo, sBuildInfo;
-		wrapper->GetLibraryVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
+		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro;
-		if (!sPreReleaseInfo.empty())
-			std::cout << "-" << sPreReleaseInfo;
-		if (!sBuildInfo.empty())
-			std::cout << "+" << sBuildInfo;
 		std::cout << std::endl;
 
 		auto factorization = wrapper->CreateFactorizationCalculator();

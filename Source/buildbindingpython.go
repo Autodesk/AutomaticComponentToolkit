@@ -224,7 +224,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("")
 	w.Writeln("'''Wrapper Class Implementation")
 	w.Writeln("'''")
-	w.Writeln("class %sWrapper:", NameSpace)
+	w.Writeln("class Wrapper:")
 	w.Writeln("")
 
 	w.Writeln("  def __init__(self, libraryName = None):")
@@ -844,7 +844,7 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("def main():")
 	w.Writeln("  libpath = '' # TODO add the location of the shared library binary here")
-	w.Writeln("  wrapper = %s.%sWrapper(os.path.join(libpath, \"%s\"))", NameSpace, NameSpace, BaseName)
+	w.Writeln("  wrapper = %s.Wrapper(os.path.join(libpath, \"%s\"))", NameSpace, BaseName)
 	w.Writeln("  ")
 	w.Writeln("  major, minor, micro = wrapper.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro), end=\"\")", NameSpace)

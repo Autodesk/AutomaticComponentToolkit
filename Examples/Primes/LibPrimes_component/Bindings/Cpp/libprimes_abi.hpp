@@ -108,6 +108,16 @@ LIBPRIMES_DECLSPEC LibPrimesResult libprimes_sievecalculator_getprimes(LibPrimes
 **************************************************************************************************************************/
 
 /**
+* retrieves the binary version of this library.
+*
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+LIBPRIMES_DECLSPEC LibPrimesResult libprimes_getversion(LibPrimes_uint32 * pMajor, LibPrimes_uint32 * pMinor, LibPrimes_uint32 * pMicro);
+
+/**
 * Returns the last error recorded on this object
 *
 * @param[in] pInstance - Instance Handle
@@ -126,22 +136,6 @@ LIBPRIMES_DECLSPEC LibPrimesResult libprimes_getlasterror(LibPrimes_Base pInstan
 * @return error code or 0 (success)
 */
 LIBPRIMES_DECLSPEC LibPrimesResult libprimes_releaseinstance(LibPrimes_Base pInstance);
-
-/**
-* retrieves the binary version of this library.
-*
-* @param[out] pMajor - returns the major version of this library
-* @param[out] pMinor - returns the minor version of this library
-* @param[out] pMicro - returns the micro version of this library
-* @param[in] nPreReleaseInfoBufferSize - size of the buffer (including trailing 0)
-* @param[out] pPreReleaseInfoNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pPreReleaseInfoBuffer -  buffer of returns pre-release info of this library (if this is a pre-release binary), may be NULL
-* @param[in] nBuildInfoBufferSize - size of the buffer (including trailing 0)
-* @param[out] pBuildInfoNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pBuildInfoBuffer -  buffer of returns build-information of this library (optional), may be NULL
-* @return error code or 0 (success)
-*/
-LIBPRIMES_DECLSPEC LibPrimesResult libprimes_getlibraryversion(LibPrimes_uint32 * pMajor, LibPrimes_uint32 * pMinor, LibPrimes_uint32 * pMicro, const LibPrimes_uint32 nPreReleaseInfoBufferSize, LibPrimes_uint32* pPreReleaseInfoNeededChars, char * pPreReleaseInfoBuffer, const LibPrimes_uint32 nBuildInfoBufferSize, LibPrimes_uint32* pBuildInfoNeededChars, char * pBuildInfoBuffer);
 
 /**
 * Creates a new FactorizationCalculator instance

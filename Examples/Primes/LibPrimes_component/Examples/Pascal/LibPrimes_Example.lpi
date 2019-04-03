@@ -41,6 +41,9 @@
             <Debugging>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
+            <Options>
+              <ExecutableType Value="Library"/>
+            </Options>
           </Linking>
         </CompilerOptions>
       </Item2>
@@ -57,7 +60,6 @@
       <Unit0>
         <Filename Value="LibPrimes_Example.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="LibPrimesPascalTest"/>
       </Unit0>
       <Unit1>
         <Filename Value="Unit_LibPrimes.pas"/>
@@ -89,6 +91,9 @@
         <StripSymbols Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
+      <Options>
+        <ExecutableType Value="Library"/>
+      </Options>
     </Linking>
   </CompilerOptions>
   <Debugging>
@@ -105,3 +110,4 @@
     </Exceptions>
   </Debugging>
 </CONFIG>
+

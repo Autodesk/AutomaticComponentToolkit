@@ -188,6 +188,16 @@ type
 **************************************************************************************************************************)
 
   (**
+  * retrieves the binary version of this library.
+  *
+  * @param[out] pMajor - returns the major version of this library
+  * @param[out] pMinor - returns the minor version of this library
+  * @param[out] pMicro - returns the micro version of this library
+  * @return error code or 0 (success)
+  *)
+  TLibPrimesGetVersionFunc = function (out pMajor: Cardinal; out pMinor: Cardinal; out pMicro: Cardinal): TLibPrimesResult; cdecl;
+  
+  (**
   * Returns the last error recorded on this object
   *
   * @param[in] pInstance - Instance Handle
@@ -206,22 +216,6 @@ type
   * @return error code or 0 (success)
   *)
   TLibPrimesReleaseInstanceFunc = function (const pInstance: TLibPrimesHandle): TLibPrimesResult; cdecl;
-  
-  (**
-  * retrieves the binary version of this library.
-  *
-  * @param[out] pMajor - returns the major version of this library
-  * @param[out] pMinor - returns the minor version of this library
-  * @param[out] pMicro - returns the micro version of this library
-  * @param[in] nPreReleaseInfoBufferSize - size of the buffer (including trailing 0)
-  * @param[out] pPreReleaseInfoNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-  * @param[out] pPreReleaseInfoBuffer -  buffer of returns pre-release info of this library (if this is a pre-release binary), may be NULL
-  * @param[in] nBuildInfoBufferSize - size of the buffer (including trailing 0)
-  * @param[out] pBuildInfoNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-  * @param[out] pBuildInfoBuffer -  buffer of returns build-information of this library (optional), may be NULL
-  * @return error code or 0 (success)
-  *)
-  TLibPrimesGetLibraryVersionFunc = function (out pMajor: Cardinal; out pMinor: Cardinal; out pMicro: Cardinal; const nPreReleaseInfoBufferSize: Cardinal; out pPreReleaseInfoNeededChars: Cardinal; pPreReleaseInfoBuffer: PAnsiChar; const nBuildInfoBufferSize: Cardinal; out pBuildInfoNeededChars: Cardinal; pBuildInfoBuffer: PAnsiChar): TLibPrimesResult; cdecl;
   
   (**
   * Creates a new FactorizationCalculator instance
@@ -328,9 +322,9 @@ type
     FLibPrimesCalculator_SetProgressCallbackFunc: TLibPrimesCalculator_SetProgressCallbackFunc;
     FLibPrimesFactorizationCalculator_GetPrimeFactorsFunc: TLibPrimesFactorizationCalculator_GetPrimeFactorsFunc;
     FLibPrimesSieveCalculator_GetPrimesFunc: TLibPrimesSieveCalculator_GetPrimesFunc;
+    FLibPrimesGetVersionFunc: TLibPrimesGetVersionFunc;
     FLibPrimesGetLastErrorFunc: TLibPrimesGetLastErrorFunc;
     FLibPrimesReleaseInstanceFunc: TLibPrimesReleaseInstanceFunc;
-    FLibPrimesGetLibraryVersionFunc: TLibPrimesGetLibraryVersionFunc;
     FLibPrimesCreateFactorizationCalculatorFunc: TLibPrimesCreateFactorizationCalculatorFunc;
     FLibPrimesCreateSieveCalculatorFunc: TLibPrimesCreateSieveCalculatorFunc;
     FLibPrimesSetJournalFunc: TLibPrimesSetJournalFunc;
@@ -350,9 +344,9 @@ type
     property LibPrimesCalculator_SetProgressCallbackFunc: TLibPrimesCalculator_SetProgressCallbackFunc read FLibPrimesCalculator_SetProgressCallbackFunc;
     property LibPrimesFactorizationCalculator_GetPrimeFactorsFunc: TLibPrimesFactorizationCalculator_GetPrimeFactorsFunc read FLibPrimesFactorizationCalculator_GetPrimeFactorsFunc;
     property LibPrimesSieveCalculator_GetPrimesFunc: TLibPrimesSieveCalculator_GetPrimesFunc read FLibPrimesSieveCalculator_GetPrimesFunc;
+    property LibPrimesGetVersionFunc: TLibPrimesGetVersionFunc read FLibPrimesGetVersionFunc;
     property LibPrimesGetLastErrorFunc: TLibPrimesGetLastErrorFunc read FLibPrimesGetLastErrorFunc;
     property LibPrimesReleaseInstanceFunc: TLibPrimesReleaseInstanceFunc read FLibPrimesReleaseInstanceFunc;
-    property LibPrimesGetLibraryVersionFunc: TLibPrimesGetLibraryVersionFunc read FLibPrimesGetLibraryVersionFunc;
     property LibPrimesCreateFactorizationCalculatorFunc: TLibPrimesCreateFactorizationCalculatorFunc read FLibPrimesCreateFactorizationCalculatorFunc;
     property LibPrimesCreateSieveCalculatorFunc: TLibPrimesCreateSieveCalculatorFunc read FLibPrimesCreateSieveCalculatorFunc;
     property LibPrimesSetJournalFunc: TLibPrimesSetJournalFunc read FLibPrimesSetJournalFunc;
@@ -360,9 +354,9 @@ type
   public
     constructor Create (ADLLName: String);
     destructor Destroy; override;
+    procedure GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
     function GetLastError(const AInstance: TLibPrimesBase; out AErrorMessage: String): Boolean;
     procedure ReleaseInstance(const AInstance: TLibPrimesBase);
-    procedure GetLibraryVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal; out APreReleaseInfo: String; out ABuildInfo: String);
     function CreateFactorizationCalculator(): TLibPrimesFactorizationCalculator;
     function CreateSieveCalculator(): TLibPrimesSieveCalculator;
     procedure SetJournal(const AFileName: String);
@@ -542,9 +536,9 @@ implementation
     FLibPrimesCalculator_SetProgressCallbackFunc := LoadFunction ('libprimes_calculator_setprogresscallback');
     FLibPrimesFactorizationCalculator_GetPrimeFactorsFunc := LoadFunction ('libprimes_factorizationcalculator_getprimefactors');
     FLibPrimesSieveCalculator_GetPrimesFunc := LoadFunction ('libprimes_sievecalculator_getprimes');
+    FLibPrimesGetVersionFunc := LoadFunction ('libprimes_getversion');
     FLibPrimesGetLastErrorFunc := LoadFunction ('libprimes_getlasterror');
     FLibPrimesReleaseInstanceFunc := LoadFunction ('libprimes_releaseinstance');
-    FLibPrimesGetLibraryVersionFunc := LoadFunction ('libprimes_getlibraryversion');
     FLibPrimesCreateFactorizationCalculatorFunc := LoadFunction ('libprimes_createfactorizationcalculator');
     FLibPrimesCreateSieveCalculatorFunc := LoadFunction ('libprimes_createsievecalculator');
     FLibPrimesSetJournalFunc := LoadFunction ('libprimes_setjournal');
@@ -599,13 +593,17 @@ implementation
   procedure TLibPrimesWrapper.checkBinaryVersion();
   var
     AMajor, AMinor, AMicro: Cardinal;
-    APreReleaseInfo, ABuildInfo: String;
   begin
-    GetLibraryVersion(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);
+    GetVersion(AMajor, AMinor, AMicro);
     if (AMajor <> LIBPRIMES_VERSION_MAJOR) or (AMinor < LIBPRIMES_VERSION_MINOR) then
       raise ELibPrimesException.Create(LIBPRIMES_ERROR_INCOMPATIBLEBINARYVERSION, '');
   end;
   
+  procedure TLibPrimesWrapper.GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
+  begin
+    CheckError (nil, LibPrimesGetVersionFunc (AMajor, AMinor, AMicro));
+  end;
+
   function TLibPrimesWrapper.GetLastError(const AInstance: TLibPrimesBase; out AErrorMessage: String): Boolean;
   var
     bytesNeededErrorMessage: Cardinal;
@@ -631,29 +629,6 @@ implementation
     if not Assigned (AInstance) then
       raise ELibPrimesException.CreateCustomMessage (LIBPRIMES_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
     CheckError (nil, LibPrimesReleaseInstanceFunc (AInstance.FHandle));
-  end;
-
-  procedure TLibPrimesWrapper.GetLibraryVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal; out APreReleaseInfo: String; out ABuildInfo: String);
-  var
-    bytesNeededPreReleaseInfo: Cardinal;
-    bytesWrittenPreReleaseInfo: Cardinal;
-    bufferPreReleaseInfo: array of Char;
-    bytesNeededBuildInfo: Cardinal;
-    bytesWrittenBuildInfo: Cardinal;
-    bufferBuildInfo: array of Char;
-  begin
-    bytesNeededPreReleaseInfo:= 0;
-    bytesWrittenPreReleaseInfo:= 0;
-    bytesNeededBuildInfo:= 0;
-    bytesWrittenBuildInfo:= 0;
-    CheckError (nil, LibPrimesGetLibraryVersionFunc (AMajor, AMinor, AMicro, 0, bytesNeededPreReleaseInfo, nil, 0, bytesNeededBuildInfo, nil));
-    SetLength (bufferPreReleaseInfo, bytesNeededPreReleaseInfo + 2);
-    SetLength (bufferBuildInfo, bytesNeededBuildInfo + 2);
-    CheckError (nil, LibPrimesGetLibraryVersionFunc (AMajor, AMinor, AMicro, bytesNeededPreReleaseInfo + 1, bytesWrittenPreReleaseInfo, @bufferPreReleaseInfo[0], bytesNeededBuildInfo + 1, bytesWrittenBuildInfo, @bufferBuildInfo[0]));
-    bufferPreReleaseInfo[bytesNeededPreReleaseInfo + 1] := #0;
-    APreReleaseInfo := StrPas (@bufferPreReleaseInfo[0]);
-    bufferBuildInfo[bytesNeededBuildInfo + 1] := #0;
-    ABuildInfo := StrPas (@bufferBuildInfo[0]);
   end;
 
   function TLibPrimesWrapper.CreateFactorizationCalculator(): TLibPrimesFactorizationCalculator;

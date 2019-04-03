@@ -137,6 +137,14 @@ public:
 class CWrapper {
 public:
 	/**
+	* Ilibprimes::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	static void GetVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro);
+
+	/**
 	* Ilibprimes::GetLastError - Returns the last error recorded on this object
 	* @param[in] pInstance - Instance Handle
 	* @param[out] sErrorMessage - Message of the last error
@@ -149,16 +157,6 @@ public:
 	* @param[in] pInstance - Instance Handle
 	*/
 	static void ReleaseInstance(IBase* pInstance);
-
-	/**
-	* Ilibprimes::GetLibraryVersion - retrieves the binary version of this library.
-	* @param[out] nMajor - returns the major version of this library
-	* @param[out] nMinor - returns the minor version of this library
-	* @param[out] nMicro - returns the micro version of this library
-	* @param[out] sPreReleaseInfo - returns pre-release info of this library (if this is a pre-release binary)
-	* @param[out] sBuildInfo - returns build-information of this library (optional)
-	*/
-	static void GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo);
 
 	/**
 	* Ilibprimes::CreateFactorizationCalculator - Creates a new FactorizationCalculator instance

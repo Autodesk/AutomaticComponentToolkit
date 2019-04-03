@@ -33,9 +33,9 @@ exports
 	libprimes_calculator_setprogresscallback,
 	libprimes_factorizationcalculator_getprimefactors,
 	libprimes_sievecalculator_getprimes,
+	libprimes_getversion,
 	libprimes_getlasterror,
 	libprimes_releaseinstance,
-	libprimes_getlibraryversion,
 	libprimes_createfactorizationcalculator,
 	libprimes_createsievecalculator,
 	libprimes_setjournal;

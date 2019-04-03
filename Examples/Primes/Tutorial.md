@@ -82,7 +82,7 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 	<class name="Base">	
 	</class>
 	
-	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion" errormethod="GetLastError">
+	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
 		<method name="GetLastError" description="Returns the last error recorded on this object">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
@@ -95,8 +95,6 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
-			<param name="PreReleaseInfo" type="string" pass="out" description="returns pre-release info of this library (if this is a pre-release binary)" />
-			<param name="BuildInfo" type="string" pass="out" description="returns build-information of this library (optional)" /> 
 		</method>
 	</global>
 </component>
@@ -297,17 +295,17 @@ Now we can start actually implementing the library.
 ### 3.3.1. Required steps for every ACT component
 #### GetVersion function
 ```cpp
-void CWrapper::GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo)
+void CWrapper::GetVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro)
 {
 	nMajor = LIBPRIMES_VERSION_MAJOR;
 	nMinor = LIBPRIMES_VERSION_MINOR;
 	nMicro = LIBPRIMES_VERSION_MICRO;
-	sPreReleaseInfo = LIBPRIMES_VERSION_PRERELEASEINFO;
-	sBuildInfo = LIBPRIMES_VERSION_BUILDINFO;
 }
 ```
 ACT advocates the [semantic versioning scheme](https://semver.org/) and all components defined by ACT provide a function that returns
-the major-, minor-, micro-versions as well as prerelease- and build-infromation. `LIBPRIMES_VERSION_*` are defined automatically from the `version` attribute of the `\<component>` in libPrimes.xml.
+the major-, minor- and micro-version. `LIBPRIMES_VERSION_*` are defined automatically from the `version` attribute of the `\<component>` in libPrimes.xml.
+
+In addition an ACT component CAN provide prerelease- and build-information by defining a `prereleasemethod` and `buildinfomethod`, see the [documentation](../../Documentation/IDL.md).
 
 #### CreateFunctions
 For all methods in the IDL that are used to return a new instance of a class, code similar to this needs to be implemented.
@@ -531,13 +529,8 @@ int main()
     std::string libpath = ""; // TODO: put the location of the LibPrimes-library file here.
     auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
     LibPrimes_uint32 nMajor, nMinor, nMicro;
-    std::string sPreReleaseInfo, sBuildInfo;
-    wrapper->GetLibraryVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
+    wrapper->GetVersion(nMajor, nMinor, nMicro);
     std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro;
-    if (!sPreReleaseInfo.empty())
-      std::cout << "-" << sPreReleaseInfo;
-    if (!sBuildInfo.empty())
-      std::cout << "+" << sBuildInfo;
     std::cout << std::endl;
   }
   catch (std::exception &e)
@@ -633,9 +626,9 @@ import LibPrimes
 
 def main():
 	libpath = '' # TODO add the location of the shared library binary here
-	wrapper = LibPrimes.LibPrimesWrapper(os.path.join(libpath, "LibPrimes"))
+	wrapper = LibPrimes.Wrapper(os.path.join(libpath, "LibPrimes"))
 	
-	major, minor, micro = wrapper.GetLibraryVersion()
+	major, minor, micro = wrapper.GetVersion()
 	print("LibPrimes version: {:d}.{:d}.{:d}".format(major, minor, micro))
 
 if __name__ == "__main__":
@@ -691,7 +684,7 @@ procedure TLibPrimes_Example.TestLibPrimes ();
 var
   ALibPrimesWrapper: TLibPrimesWrapper;
   AMajor, AMinor, AMicro: Cardinal;
-  APreReleaseInfo, ABuildInfo, AVersionString: string;
+  AVersionString: string;
   ALibPath: string;
 begin
   writeln ('loading DLL');
@@ -699,12 +692,8 @@ begin
   ALibPrimesWrapper := TLibPrimesWrapper.Create (ALibPath + '/' + 'libprimes.'); // TODO add the 
   try
     writeln ('loading DLL Done');
-    ALibPrimesWrapper.GetLibraryVersion(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);
+    ALibPrimesWrapper.GetVersion(AMajor, AMinor, AMicro);
     AVersionString := Format('LibPrimes.version = %d.%d.%d', [AMajor, AMinor, AMicro]);
-    if (APreReleaseInfo <> '') then
-      AVersionString := AVersionString + '-' + APreReleaseInfo;
-    if (ABuildInfo <> '') then
-      AVersionString := AVersionString + '+' + ABuildInfo;
     writeln(AVersionString);
   finally
     FreeAndNil(ALibPrimesWrapper);
@@ -953,7 +942,7 @@ and enabled/disabled dynamically during the usage of the component.
 ## 6.1 Update the IDL file
 To add the journaling, simply add a `journalmethod` to the IDL file `libPrimes.xml`:
 ```xml
-<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion" errormethod="GetLastError"
+<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError"
 		journalmethod="SetJournal" >
 <!--...-->
 	<method name="SetJournal" description="Handles Library Journaling">
@@ -1079,19 +1068,10 @@ that go through the interface:
 ```xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <journal library="LibPrimes" version="1.2.0" xmlns="http://schemas.autodesk.com/components/LibPrimes/1.2.0">
-    <entry method="GetLibraryVersion" timestamp="0" duration="0">
+    <entry method="GetVersion" timestamp="0" duration="0">
         <result name="Major" type="uint32" value="1" />
         <result name="Minor" type="uint32" value="2" />
         <result name="Micro" type="uint32" value="0" />
-        <result name="PreReleaseInfo" type="string" value="" />
-        <result name="BuildInfo" type="string" value="" />
-    </entry>
-    <entry method="GetLibraryVersion" timestamp="0" duration="0">
-        <result name="Major" type="uint32" value="1" />
-        <result name="Minor" type="uint32" value="2" />
-        <result name="Micro" type="uint32" value="0" />
-        <result name="PreReleaseInfo" type="string" value="" />
-        <result name="BuildInfo" type="string" value="" />
     </entry>
     <entry method="CreateFactorizationCalculator" timestamp="1" duration="0">
         <result name="Instance" type="class" value="000001d259663858" />
@@ -1129,7 +1109,7 @@ def main():
 	libpath = '' # TODO add the location of the shared library binary here
 	wrapper = LibPrimes.LibPrimesWrapper(os.path.join(libpath, "libprimes"))
 	wrapper.SetJournal('journal_python.xml')
-	major, minor, micro, prereleaseinfo, buildinfo = wrapper.GetLibraryVersion()
+	major, minor, micro = wrapper.GetVersion()
 	print("LibPrimes version: {:d}.{:d}.{:d}".format(major, minor, micro), end="")
 	# ...
 ```

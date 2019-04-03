@@ -75,7 +75,7 @@ ProgressCallback = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_float, ctypes.POIN
 
 '''Wrapper Class Implementation
 '''
-class LibPrimesWrapper:
+class Wrapper:
 
 	def __init__(self, libraryName = None):
 		ending = ''
@@ -103,14 +103,14 @@ class LibPrimesWrapper:
 	
 	def _loadFunctionTable(self):
 		try:
+			self.lib.libprimes_getversion.restype = ctypes.c_int64
+			self.lib.libprimes_getversion.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32)]
+			
 			self.lib.libprimes_getlasterror.restype = ctypes.c_int64
 			self.lib.libprimes_getlasterror.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
 			
 			self.lib.libprimes_releaseinstance.restype = ctypes.c_int64
 			self.lib.libprimes_releaseinstance.argtypes = [ctypes.c_void_p]
-			
-			self.lib.libprimes_getlibraryversion.restype = ctypes.c_int64
-			self.lib.libprimes_getlibraryversion.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p]
 			
 			self.lib.libprimes_createfactorizationcalculator.restype = ctypes.c_int64
 			self.lib.libprimes_createfactorizationcalculator.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
@@ -143,7 +143,7 @@ class LibPrimesWrapper:
 			raise ELibPrimesException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])
 	
 	def _checkBinaryVersion(self):
-		nMajor, nMinor, _, _, _ = self.GetLibraryVersion()
+		nMajor, nMinor, _ = self.GetVersion()
 		if (nMajor != BindingVersion.MAJOR) or (nMinor < BindingVersion.MINOR):
 			raise ELibPrimesException(ErrorCodes.INCOMPATIBLEBINARYVERSION)
 	
@@ -154,6 +154,13 @@ class LibPrimesWrapper:
 					raise ELibPrimesException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')
 			message,_ = self.GetLastError(instance)
 			raise ELibPrimesException(errorCode, message)
+	
+	def GetVersion(self):
+		pMajor = ctypes.c_uint32()
+		pMinor = ctypes.c_uint32()
+		pMicro = ctypes.c_uint32()
+		self.checkError(None, self.lib.libprimes_getversion(pMajor, pMinor, pMicro))
+		return pMajor.value, pMinor.value, pMicro.value
 	
 	def GetLastError(self, InstanceObject):
 		nErrorMessageBufferSize = ctypes.c_uint64(0)
@@ -168,24 +175,6 @@ class LibPrimesWrapper:
 	
 	def ReleaseInstance(self, InstanceObject):
 		self.checkError(None, self.lib.libprimes_releaseinstance(InstanceObject._handle))
-	
-	def GetLibraryVersion(self):
-		pMajor = ctypes.c_uint32()
-		pMinor = ctypes.c_uint32()
-		pMicro = ctypes.c_uint32()
-		nPreReleaseInfoBufferSize = ctypes.c_uint64(0)
-		nPreReleaseInfoNeededChars = ctypes.c_uint64(0)
-		pPreReleaseInfoBuffer = ctypes.c_char_p(None)
-		nBuildInfoBufferSize = ctypes.c_uint64(0)
-		nBuildInfoNeededChars = ctypes.c_uint64(0)
-		pBuildInfoBuffer = ctypes.c_char_p(None)
-		self.checkError(None, self.lib.libprimes_getlibraryversion(pMajor, pMinor, pMicro, nPreReleaseInfoBufferSize, nPreReleaseInfoNeededChars, pPreReleaseInfoBuffer, nBuildInfoBufferSize, nBuildInfoNeededChars, pBuildInfoBuffer))
-		nPreReleaseInfoBufferSize = ctypes.c_uint64(nPreReleaseInfoNeededChars.value + 2)
-		pPreReleaseInfoBuffer = (ctypes.c_char * (nPreReleaseInfoNeededChars.value + 2))()
-		nBuildInfoBufferSize = ctypes.c_uint64(nBuildInfoNeededChars.value + 2)
-		pBuildInfoBuffer = (ctypes.c_char * (nBuildInfoNeededChars.value + 2))()
-		self.checkError(None, self.lib.libprimes_getlibraryversion(pMajor, pMinor, pMicro, nPreReleaseInfoBufferSize, nPreReleaseInfoNeededChars, pPreReleaseInfoBuffer, nBuildInfoBufferSize, nBuildInfoNeededChars, pBuildInfoBuffer))
-		return pMajor.value, pMinor.value, pMicro.value, pPreReleaseInfoBuffer.value.decode(), pBuildInfoBuffer.value.decode()
 	
 	def CreateFactorizationCalculator(self):
 		InstanceHandle = ctypes.c_void_p()

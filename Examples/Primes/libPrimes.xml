@@ -70,20 +70,12 @@
 	</class>
 
 	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError"
-		journalmethod="SetJournal" prereleasemethod ="GetPrereleaseInformation" buildinfomethod ="GetBuildInformation" >
+		journalmethod="SetJournal" >
 		
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
-		</method>
-		<method name="GetPrereleaseInformation" description = "retrieves prerelease information of this library.">
-			<param name="HasPrereleaseInfo" type="bool" pass="return" description="Does the library provide prerelease version?"/>
-			<param name="PrereleaseInfo" type="string" pass="out" description="retrieves prerelease information of this library."/>
-		</method>
-		<method name="GetBuildInformation" description = "retrieves build information of this library.">
-			<param name="HasBuildInfo" type="bool" pass="return" description="Does the library provide build version?"/>
-			<param name="BuildInformation" type="string" pass="out" description="retrieves build information of this library."/>
 		</method>
 		<method name="GetLastError" description="Returns the last error recorded on this object">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />

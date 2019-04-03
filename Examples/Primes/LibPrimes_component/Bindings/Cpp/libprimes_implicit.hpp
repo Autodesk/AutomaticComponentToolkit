@@ -168,9 +168,9 @@ public:
 	
 	inline void CheckError(CBase * pBaseClass, LibPrimesResult nResult);
 
+	inline void GetVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro);
 	inline bool GetLastError(CBase * pInstance, std::string & sErrorMessage);
 	inline void ReleaseInstance(CBase * pInstance);
-	inline void GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo);
 	inline PFactorizationCalculator CreateFactorizationCalculator();
 	inline PSieveCalculator CreateSieveCalculator();
 	inline void SetJournal(const std::string & sFileName);
@@ -180,8 +180,7 @@ private:
 	LibPrimesResult checkBinaryVersion()
 	{
 		LibPrimes_uint32 nMajor, nMinor, nMicro;
-		std::string sPreReleaseInfo, sBuildInfo;
-		GetLibraryVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
+		GetVersion(nMajor, nMinor, nMicro);
 		if ( (nMajor != LIBPRIMES_VERSION_MAJOR) || (nMinor < LIBPRIMES_VERSION_MINOR) ) {
 			return LIBPRIMES_ERROR_INCOMPATIBLEBINARYVERSION;
 		}
@@ -300,6 +299,17 @@ public:
 };
 	
 	/**
+	* CWrapper::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	inline void CWrapper::GetVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro)
+	{
+		CheckError(nullptr,libprimes_getversion(&nMajor, &nMinor, &nMicro));
+	}
+	
+	/**
 	* CWrapper::GetLastError - Returns the last error recorded on this object
 	* @param[in] pInstance - Instance Handle
 	* @param[out] sErrorMessage - Message of the last error
@@ -334,32 +344,6 @@ public:
 			hInstance = pInstance->GetHandle();
 		};
 		CheckError(nullptr,libprimes_releaseinstance(hInstance));
-	}
-	
-	/**
-	* CWrapper::GetLibraryVersion - retrieves the binary version of this library.
-	* @param[out] nMajor - returns the major version of this library
-	* @param[out] nMinor - returns the minor version of this library
-	* @param[out] nMicro - returns the micro version of this library
-	* @param[out] sPreReleaseInfo - returns pre-release info of this library (if this is a pre-release binary)
-	* @param[out] sBuildInfo - returns build-information of this library (optional)
-	*/
-	inline void CWrapper::GetLibraryVersion(LibPrimes_uint32 & nMajor, LibPrimes_uint32 & nMinor, LibPrimes_uint32 & nMicro, std::string & sPreReleaseInfo, std::string & sBuildInfo)
-	{
-		LibPrimes_uint32 bytesNeededPreReleaseInfo = 0;
-		LibPrimes_uint32 bytesWrittenPreReleaseInfo = 0;
-		LibPrimes_uint32 bytesNeededBuildInfo = 0;
-		LibPrimes_uint32 bytesWrittenBuildInfo = 0;
-		CheckError(nullptr,libprimes_getlibraryversion(&nMajor, &nMinor, &nMicro, 0, &bytesNeededPreReleaseInfo, nullptr, 0, &bytesNeededBuildInfo, nullptr));
-		std::vector<char> bufferPreReleaseInfo;
-		bufferPreReleaseInfo.resize(bytesNeededPreReleaseInfo + 2);
-		std::vector<char> bufferBuildInfo;
-		bufferBuildInfo.resize(bytesNeededBuildInfo + 2);
-		CheckError(nullptr,libprimes_getlibraryversion(&nMajor, &nMinor, &nMicro, bytesNeededPreReleaseInfo + 2, &bytesWrittenPreReleaseInfo, &bufferPreReleaseInfo[0], bytesNeededBuildInfo + 2, &bytesWrittenBuildInfo, &bufferBuildInfo[0]));
-		bufferPreReleaseInfo[bytesNeededPreReleaseInfo + 1] = 0;
-		sPreReleaseInfo = std::string(&bufferPreReleaseInfo[0]);
-		bufferBuildInfo[bytesNeededBuildInfo + 1] = 0;
-		sBuildInfo = std::string(&bufferBuildInfo[0]);
 	}
 	
 	/**

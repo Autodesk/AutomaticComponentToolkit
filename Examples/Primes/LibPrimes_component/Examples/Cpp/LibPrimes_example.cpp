@@ -16,21 +16,38 @@ Interface version: 1.0.0
 #include <iostream>
 #include "libprimes_implicit.hpp"
 
+void progressCallback(LibPrimes_single progress, bool* shouldAbort)
+{
+	std::cout << "Progress = " << std::round(progress * 100) << "%" << std::endl;
+	if (shouldAbort) {
+		*shouldAbort = progress > 0.5;
+	}
+}
 
 int main()
 {
   try
   {
     auto wrapper = LibPrimes::CWrapper::loadLibrary();
-    unsigned int nMajor, nMinor, nMicro;
-    std::string sPreReleaseInfo, sBuildInfo;
-    wrapper->GetLibraryVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
-    std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro;
-    if (!sPreReleaseInfo.empty())
-      std::cout << "-" << sPreReleaseInfo;
-    if (!sBuildInfo.empty())
-      std::cout << "+" << sBuildInfo;
-    std::cout << std::endl;
+	wrapper->SetJournal("journal_cpp.xml");
+	LibPrimes_uint32 nMajor, nMinor, nMicro;
+	wrapper->GetVersion(nMajor, nMinor, nMicro);
+	std::cout << "LibPrimes.Version = " << nMajor << "." << nMinor << "." << nMicro;
+	std::cout << std::endl;
+
+	auto factorization = wrapper->CreateFactorizationCalculator();
+	factorization->SetValue(735);
+	factorization->SetProgressCallback(progressCallback);
+	factorization->Calculate();
+	std::vector<LibPrimes::sPrimeFactor > primeFactors;
+	factorization->GetPrimeFactors(primeFactors);
+
+	std::cout << factorization->GetValue() << " = ";
+	for (size_t i = 0; i < primeFactors.size(); i++) {
+		auto pF = primeFactors[i];
+		std::cout << pF.m_Prime << "^" << pF.m_Multiplicity << ((i < (primeFactors.size() - 1)) ? " * " : "");
+	}
+	std::cout << std::endl;
   }
   catch (std::exception &e)
   {

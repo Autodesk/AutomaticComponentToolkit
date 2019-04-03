@@ -31,6 +31,7 @@ type
 			function GetValue(): QWord;
 			procedure SetValue(const AValue: QWord);
 			procedure Calculate();
+			procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 	end;
 
 implementation
@@ -46,6 +47,11 @@ begin
 end;
 
 procedure TLibPrimesCalculator.Calculate();
+begin
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+end;
+
+procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 begin
 	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;

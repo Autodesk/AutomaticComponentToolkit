@@ -832,10 +832,6 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
 	}
 
-	if (global.PrereleaseMethod == global.BuildinfoMethod) {
-		return eSpecialMethodNone, errors.New ("Prerelease method can not be the same as the buildinfo method");
-	}
-
 	if (method.MethodName == global.ReleaseMethod) {
 		if (len (method.Params) != 1) {
 			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
@@ -889,6 +885,10 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodError, nil;
 	}
 
+	if len(global.PrereleaseMethod)>0 && (global.PrereleaseMethod == global.BuildinfoMethod) {
+		return eSpecialMethodNone, errors.New ("Prerelease method can not be the same as the buildinfo method");
+	}
+	
 	if (method.MethodName == global.PrereleaseMethod) {
 		if (len (method.Params) != 2) {
 			return eSpecialMethodNone, errors.New ("Prerelease method does not match the expected function template");

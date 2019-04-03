@@ -60,7 +60,7 @@
 		</method>
 	</class>
 
-	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion" errormethod="GetLastError">
+	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
 		<method name="GetLastError" description="Returns the last error recorded on this object">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
@@ -69,12 +69,10 @@
 		<method name="ReleaseInstance" description="Releases the memory of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="GetLibraryVersion" description = "retrieves the binary version of this library.">
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
-			<param name="PreReleaseInfo" type="string" pass="out" description="returns pre-release info of this library (if this is a pre-release binary)" />
-			<param name="BuildInfo" type="string" pass="out" description="returns build-information of this library (optional)" /> 
 		</method>
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
 			<param name="Instance" type="class" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />
