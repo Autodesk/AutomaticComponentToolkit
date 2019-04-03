@@ -104,7 +104,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 			CSharpParamTypeName = "Double";
 
 		case "pointer":
-			CSharpParamTypeName = "IntPtr";
+			CSharpParamTypeName = "UInt64";
 			
 		case "string":
 			if isPlain {
@@ -114,13 +114,21 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 			}
 
 		case "enum":
-			CSharpParamTypeName = fmt.Sprintf ("Int32");
+			if isPlain {
+				CSharpParamTypeName = "Int32";
+			} else {
+				CSharpParamTypeName = "e" + ParamClass;
+			}
 		
 		case "functiontype":
 			CSharpParamTypeName = fmt.Sprintf ("IntPtr");
 
 		case "struct":
-			CSharpParamTypeName = fmt.Sprintf ("IntPtr");
+			if isPlain {
+				CSharpParamTypeName = "internal" + ParamClass;
+			} else {
+				CSharpParamTypeName = "s" + ParamClass;
+			}
 
 		case "basicarray":
 			CSharpParamTypeName = fmt.Sprintf ("IntPtr");
@@ -219,26 +227,22 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 	
 	
 	defineCommands := make([]string, 0);
-	//initCommands := make([]string, 0);
+	initCommands := make([]string, 0);
 	resultCommands := make([]string, 0);
-	//postInitCommands := make([]string, 0);
-	//wrapperCallPrefix := "";
+	postInitCommands := make([]string, 0);
 	
-	//doInitCall := false;
+	doInitCall := false;
 	
 	
 	callFunctionName := "";	
 	callFunctionParameters := "";
 	initCallParameters := "";
-	//errorInstanceHandle := "";
 	
 	if isGlobal {
 		callFunctionName = fmt.Sprintf ("%s", method.MethodName);
-		//errorInstanceHandle = "nil";
-	} else {
+	} else {	
 		callFunctionName = fmt.Sprintf ("%s_%s", ClassName, method.MethodName);		
 		callFunctionParameters = "Handle";
-		//errorInstanceHandle = "Self";
 	}
 	
 	initCallParameters = callFunctionParameters;
@@ -279,17 +283,24 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
 						
 					case "enum":
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 enum%s = (Int32) A%s;", param.ParamName, param.ParamName));
+						callFunctionParameters = callFunctionParameters + "enum" + param.ParamName;
 
 					case "bool":
 						callFunctionParameters = callFunctionParameters + "( A" + param.ParamName + " ? 1 : 0 )";
 						
 					case "struct":
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s int%s = Internal.%sWrapper.convertStructToInternal_%s (A%s);", param.ParamClass, param.ParamName, NameSpace, param.ParamClass, param.ParamName));
+						callFunctionParameters = callFunctionParameters + "int" + param.ParamName;
 
 					case "basicarray":
+						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
 
 					case "structarray":
+						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
 
 					case "functiontype":
+						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
 
 					case "class":
 						callFunctionParameters = callFunctionParameters + "A" + param.ParamName + ".GetHandle()";
@@ -305,22 +316,25 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 				switch (param.ParamType) {
 					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
 					
-						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0;", ParamTypeName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
 
 					case "single":					
-						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0.0;", ParamTypeName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
 
 					case "double":					
-						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0.0;", ParamTypeName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
 
 					case "pointer":					
-						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = (IntPtr) 0;", ParamTypeName, param.ParamName));
+						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0;", ParamTypeName, param.ParamName));
 						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
 						
 					case "string":
+						defineCommands = append (defineCommands, fmt.Sprintf ("  String result%s;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
+					
+					
 						/*defineCommands = append (defineCommands, "  bytesNeeded" + param.ParamName + ": Cardinal;");
 						defineCommands = append (defineCommands, "  bytesWritten" + param.ParamName + ": Cardinal;");
 						defineCommands = append (defineCommands, "  buffer" + param.ParamName + ": array of Char;");
@@ -339,22 +353,25 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						doInitCall = true; */
 						
 					case "enum":
-						/*defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Integer;");
-						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
-			
-						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
-						initCallParameters = initCallParameters + "Result" + param.ParamName;
-						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := convertConstTo%s (Result%s);", param.ParamName, param.ParamClass, param.ParamName)); */
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = (e%s) (result%s);", param.ParamName, param.ParamClass, param.ParamName));
 
 					case "bool":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
 						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = (result%s != 0);", param.ParamName, param.ParamName));
 						
 					case "struct":
-						/*callFunctionParameters = callFunctionParameters + "@A" + param.ParamName;
-						initCallParameters = initCallParameters + "@A" + param.ParamName; */
-						
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s intresult%s;", param.ParamClass, param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out intresult" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", param.ParamName, NameSpace, param.ParamClass, param.ParamName));
+												
 					case "basicarray", "structarray":
+
+						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr result%s = (IntPtr) 0;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
 						
 						/*defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
 						defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": QWord;");
@@ -370,15 +387,9 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						doInitCall = true; */
 					
 					case "class":
-						/*defineCommands = append (defineCommands, "  H" + param.ParamName + ": " + PlainParamTypeName + ";");
-						initCommands = append (initCommands, "  Result := nil;");
-						initCommands = append (initCommands, "  A%s := nil;", param.ParamName);
-						initCommands = append (initCommands, "  H" + param.ParamName + " := nil;");
-						callFunctionParameters = callFunctionParameters + "H" + param.ParamName;
-						initCallParameters = initCallParameters + "nil";
-						
-						resultCommands = append (resultCommands, fmt.Sprintf ("  if Assigned (H%s) then", param.ParamName));
-						resultCommands = append (resultCommands, fmt.Sprintf ("    A%s := T%s%s.Create (%s, H%s);", param.ParamName, NameSpace, param.ParamClass, wrapperInstanceName, param.ParamName)); */
+						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr new%s = (IntPtr) 0;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out new" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = new C%s (new%s );", param.ParamName, param.ParamClass, param.ParamName));
 
 					default:
 						return fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName);
@@ -395,6 +406,10 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return result%s;", param.ParamName));
 
 					case "string":
+						defineCommands = append (defineCommands, fmt.Sprintf ("  String result%s;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  return result%s;", param.ParamName));
+
 						/*defineCommands = append (defineCommands, "  bytesNeeded" + param.ParamName + ": Cardinal;");
 						defineCommands = append (defineCommands, "  bytesWritten" + param.ParamName + ": Cardinal;");
 						defineCommands = append (defineCommands, "  buffer" + param.ParamName + ": array of Char;");
@@ -414,12 +429,9 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 
 						
 					case "enum":
-						/*defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Integer;");
-						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
-			
-						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
-						initCallParameters = initCallParameters + "Result" + param.ParamName;
-						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := convertConstTo%s (Result%s);", param.ParamClass, param.ParamName)); */
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  return (e%s) (result%s);", param.ParamClass, param.ParamName));
 
 					case "bool":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
@@ -428,7 +440,10 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						
 						
 					case "struct":
-						//callFunctionParameters = callFunctionParameters + "@Result";
+						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s intresult%s;", param.ParamClass, param.ParamName));
+						callFunctionParameters = callFunctionParameters + "out intresult" + param.ParamName;
+						resultCommands = append (resultCommands, fmt.Sprintf ("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName));
+												
 
 					case "basicarray", "structarray":
 						/*defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
@@ -450,13 +465,6 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						callFunctionParameters = callFunctionParameters + "out new" + param.ParamName;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return new C%s (new%s );", param.ParamClass, param.ParamName));
 
-						/*defineCommands = append (defineCommands, "  H" + param.ParamName + ": " + PlainParamTypeName + ";");
-						initCommands = append (initCommands, "  Result := nil;");
-						initCommands = append (initCommands, "  H" + param.ParamName + " := nil;");
-						callFunctionParameters = callFunctionParameters + "H" + param.ParamName;
-						resultCommands = append (resultCommands, fmt.Sprintf ("  if Assigned (H%s) then", param.ParamName));
-						resultCommands = append (resultCommands, fmt.Sprintf ("    Result := T%s%s.Create (%s, H%s);", NameSpace, param.ParamClass, wrapperInstanceName, param.ParamName)); */
-
 					default:
 						return fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName);
 				}
@@ -471,19 +479,20 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 	if len (defineCommands) > 0 {
 		w.Writelns (spacing, defineCommands);	
 	}
-		
-/*	if (doInitCall) {
-		w.Writeln (spacing + "  %sCheckError (%s, %s%s (%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters);
+
+	if len (initCommands) > 0 {
+		w.Writelns (spacing, initCommands);		
 	}
 	
-	w.Writelns (spacing, postInitCommands);	
+	if (doInitCall) {
+		w.Writeln (spacing + "  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, initCallParameters);
+	}
 	
-	
-	
-	w.Writeln (spacing + "end;");
-	w.Writeln (""); */
+	w.Writelns (spacing, postInitCommands);		
+		
+	w.Writeln (""); 
 
-	w.Writeln (spacing + "  Internal.%sWrapper.%s (%s);", NameSpace, callFunctionName, callFunctionParameters);
+	w.Writeln (spacing + "  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, callFunctionParameters);
 	
 	w.Writelns (spacing, resultCommands);	
 	
@@ -497,7 +506,6 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 	baseName := component.BaseName;
 	global := component.Global;
 	
-	
 	CSharpBaseClassName := "C" + component.Global.BaseClassName;
 	w.Writeln ("using System;")
 	w.Writeln ("using System.Runtime.InteropServices;")
@@ -506,11 +514,175 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 	w.Writeln ("namespace %s {", NameSpace)
 	w.Writeln ("")
 
+	
+	for i := 0; i < len(component.Enums); i++ {
+		enum := component.Enums[i];
+		w.Writeln ("  public enum e%s {", enum.Name);
+		
+		for j := 0; j < len(enum.Options); j++ {						
+			option := enum.Options[j];
+			commavalue := "";
+			if j < (len(enum.Options) - 1) {
+				commavalue = ",";
+			}
+
+			w.Writeln ("    %s = %d%s", option.Name, option.Value, commavalue);
+		}
+		
+		w.Writeln ("  };")
+		w.Writeln ("")
+		
+	}
+	
+	
+	for i := 0; i < len(component.Structs); i++ {
+		structinfo := component.Structs[i];
+		
+		w.Writeln ("  public struct s%s", structinfo.Name);
+		w.Writeln ("  {");
+		
+		for j := 0; j < len(structinfo.Members); j++ {
+			element := structinfo.Members[j];
+
+			arraysuffix := "";
+			if (element.Rows > 0) {
+				if (element.Columns > 0) {
+					arraysuffix = fmt.Sprintf ("[][]");
+				} else {
+					arraysuffix = fmt.Sprintf ("[]");
+				}
+			}
+			
+			switch (element.Type) {
+				case "uint8":
+					w.Writeln ( "    public Byte%s %s;", arraysuffix, element.Name);
+				case "uint16":
+					w.Writeln ( "    public UInt16%s %s;", arraysuffix, element.Name);
+				case "uint32":
+					w.Writeln ( "    public UInt32%s %s;", arraysuffix, element.Name);
+				case "uint64":
+					w.Writeln ( "    public UInt64%s %s;", arraysuffix, element.Name);
+				case "int8":
+					w.Writeln ( "    public Int8%s %s;", arraysuffix, element.Name);
+				case "int16":
+					w.Writeln ( "    public Int16%s %s;", arraysuffix, element.Name);
+				case "int32":
+					w.Writeln ( "    public Int32%s %s;", arraysuffix, element.Name);
+				case "int64":
+					w.Writeln ( "    public Int64%s %s;", arraysuffix, element.Name);
+				case "bool":
+					w.Writeln ( "    public bool%s %s;", arraysuffix, element.Name);
+				case "single":
+					w.Writeln ( "    public Single%s %s;", arraysuffix, element.Name);
+				case "double":
+					w.Writeln ( "    public Double%s %s;", arraysuffix, element.Name);
+				case "pointer":
+					w.Writeln ( "    public UInt64%s %s;", arraysuffix, element.Name);
+				case "string":
+					return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
+				case "class":
+					return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
+				case "enum":
+					w.Writeln ( "    public e%s%s %s;", element.Class, arraysuffix, element.Name);
+			}
+		}
+		
+		w.Writeln ("  }");
+		w.Writeln ("");
+	}
+	
+	w.Writeln ( "");
+	
+
+	
+	
 	w.Writeln ("  namespace Internal {")
 	w.Writeln ("")
+	
+	for i := 0; i < len(component.Structs); i++ {
+		structinfo := component.Structs[i];
+		
+		w.Writeln ("    [StructLayout(LayoutKind.Explicit)]");
+		w.Writeln ("    public unsafe struct internal%s", structinfo.Name);
+		w.Writeln ("    {");
+
+		fieldOffset := 0;
+		
+		for j := 0; j < len(structinfo.Members); j++ {
+			element := structinfo.Members[j];
+			
+			arraysuffix := "";
+			fixedtag := "";
+			multiplier := 1;
+			if (element.Rows > 0) {
+				if (element.Columns > 0) {
+					multiplier = element.Rows * element.Columns;
+					arraysuffix = fmt.Sprintf ("[%d]", multiplier);
+				} else {
+					multiplier = element.Rows;
+					arraysuffix = fmt.Sprintf ("[%d]", multiplier);
+				}
+				
+				fixedtag = "fixed ";
+			}
+					
+			switch (element.Type) {
+				case "uint8":
+					w.Writeln ( "      [FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 1 * multiplier;
+				case "uint16": 
+					w.Writeln ( "      [FieldOffset(%d)] public %sUInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 2 * multiplier;
+				case "uint32":
+					w.Writeln ( "      [FieldOffset(%d)] public %sUInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 4 * multiplier;
+				case "uint64":
+					w.Writeln ( "      [FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 8 * multiplier;
+				case "int8":
+					w.Writeln ( "      [FieldOffset(%d)] public %sInt8 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 1 * multiplier;
+				case "int16":
+					w.Writeln ( "      [FieldOffset(%d)] public %sInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 2 * multiplier;
+				case "int32":
+					w.Writeln ( "      [FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 4 * multiplier;
+				case "int64":
+					w.Writeln ( "      [FieldOffset(%d)] public %sInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 8 * multiplier;
+				case "bool":
+					w.Writeln ( "      [FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 1 * multiplier;
+				case "single":
+					w.Writeln ( "      [FieldOffset(%d)] public %sSingle %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 4 * multiplier;
+				case "double":
+					w.Writeln ( "      [FieldOffset(%d)] public %sDouble %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 8 * multiplier;
+				case "pointer":
+					w.Writeln ( "      [FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 8 * multiplier;
+				case "string":
+					return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
+				case "class":
+					return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
+				case "enum":
+					w.Writeln ( "      [FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix);
+					fieldOffset = fieldOffset + 4 * multiplier;
+			}
+		}
+		
+		w.Writeln ("    }");
+		w.Writeln ("");
+	}
+	
+	w.Writeln ( "");
+	
+	
 	w.Writeln ("    public class %sWrapper", NameSpace);
 	w.Writeln ("    {")
-	
+		
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		
@@ -530,7 +702,7 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 				parameters = "IntPtr Handle, " + parameters;
 			}
 			
-			w.Writeln ("      public extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters);
+			w.Writeln ("      public unsafe extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters);
 			w.Writeln ("")
 			
 		}
@@ -550,8 +722,115 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 		w.Writeln ("      public extern static Int32 %s (%s);", method.MethodName, parameters);
 		w.Writeln ("")
 	}
+
 	
+	for i := 0; i < len(component.Structs); i++ {
+		structinfo := component.Structs[i];
+		
+		w.Writeln ("      public unsafe static s%s convertInternalToStruct_%s (internal%s int%s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name);
+		w.Writeln ("      {");
+		w.Writeln ("        s%s %s;", structinfo.Name, structinfo.Name);
+		
+		for j := 0; j < len(structinfo.Members); j++ {
+			element := structinfo.Members[j];
+			
+			paramType, err := getCSharpParameterType (element.Type, NameSpace, element.Class, false);
+			if (err != nil) {
+				return err;
+			}
+			
+			
+			castPrefix := "";
+			castSuffix := "";
+			switch (element.Type) {
+				case "bool":
+					castSuffix = " != 0";
+				case "enum":
+					castPrefix = fmt.Sprintf ("(e%s) ", element.Class);
+			};
+
+			if (element.Rows > 0) {
+				if (element.Columns > 0) {
+
+					w.Writeln ("        %s.%s = new %s[%d][];", structinfo.Name, element.Name, paramType, element.Columns);
+					w.Writeln ("        for (int colIndex = 0; colIndex < %d; colIndex++) {", element.Columns);
+					w.Writeln ("          %s.%s[colIndex] = new %s[%d];", structinfo.Name, element.Name, paramType, element.Rows);
+					w.Writeln ("          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", element.Rows);
+					w.Writeln ("            %s.%s[colIndex][rowIndex] = %sint%s.%s%s[colIndex * %d + rowIndex];", structinfo.Name, element.Name, castPrefix, structinfo.Name, element.Name, castSuffix, element.Rows);
+					w.Writeln ("          }");
+					w.Writeln ("        }");
+					w.Writeln ("");
+								
+				} else {
+				
+					w.Writeln ("        %s.%s = new %s[%d];", structinfo.Name, element.Name, paramType, element.Rows);
+					w.Writeln ("        for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", element.Rows);
+					w.Writeln ("          %s.%s[rowIndex] = %sint%s.%s%s[rowIndex];", structinfo.Name, element.Name, castPrefix, structinfo.Name, element.Name, castSuffix);
+					w.Writeln ("        }");
+					w.Writeln ("");
+				
+				}
+			} else {
+					
+				w.Writeln ("        %s.%s = %sint%s.%s%s;", structinfo.Name, element.Name, castPrefix, structinfo.Name, element.Name, castSuffix);
+				
+			}
+			
+		}
+		
+		w.Writeln ("        return %s;", structinfo.Name);
+		w.Writeln ("      }");
+		w.Writeln ("");
+
+		w.Writeln ("      public unsafe static internal%s convertStructToInternal_%s (s%s %s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name);
+		w.Writeln ("      {");
+		w.Writeln ("        internal%s int%s;", structinfo.Name, structinfo.Name);
+		
+		for j := 0; j < len(structinfo.Members); j++ {
+			element := structinfo.Members[j];
+						
+			castPrefix := "";
+			castSuffix := "";
+			switch (element.Type) {
+				case "bool":
+					castSuffix = " (int)";
+				case "enum":
+					castPrefix = fmt.Sprintf ("(Int32) ");
+			};
+
+			if (element.Rows > 0) {
+				if (element.Columns > 0) {
+
+					w.Writeln ("        for (int colIndex = 0; colIndex < %d; colIndex++) {", element.Columns);
+					w.Writeln ("          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", element.Rows);
+					w.Writeln ("            int%s.%s[colIndex * %d + rowIndex] = %s%s.%s[colIndex][rowIndex]%s;", structinfo.Name, element.Name, element.Rows, castPrefix, structinfo.Name, element.Name, castSuffix);
+					w.Writeln ("          }");
+					w.Writeln ("        }");
+					w.Writeln ("");
+								
+				} else {
+				
+					w.Writeln ("        for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", element.Rows);
+					w.Writeln ("          int%s.%s[rowIndex] = %s%s.%s%s[rowIndex];", structinfo.Name, element.Name, castPrefix, structinfo.Name, element.Name, castSuffix);
+					w.Writeln ("        }");
+					w.Writeln ("");
+				
+				}
+			} else {
+					
+				w.Writeln ("        int%s.%s = %s%s.%s%s;", structinfo.Name, element.Name, castPrefix, structinfo.Name, element.Name, castSuffix);
+				
+			}
+			
+		}
+		
+		w.Writeln ("        return int%s;", structinfo.Name);
+		w.Writeln ("      }");
+		w.Writeln ("");
+
+	}
 	
+	           	
 	w.Writeln ("    }")
 	w.Writeln ("  }")
 
@@ -590,12 +869,21 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 			w.Writeln ("      }")
 			w.Writeln ("    }")
 			w.Writeln ("")
+
+			w.Writeln ("    public static void CheckError (Int32 errorCode)")
+			w.Writeln ("    {")
+			w.Writeln ("      if (errorCode != 0) {")
+			w.Writeln ("        throw new Exception (\"Error \" + errorCode);")
+			w.Writeln ("      }")
+			w.Writeln ("    }")
+			w.Writeln ("")
 			
 			w.Writeln ("    public IntPtr GetHandle ()")
 			w.Writeln ("    {")
 			w.Writeln ("      return Handle;")
 			w.Writeln ("    }")
 			w.Writeln ("")
+						
 		} else {
 			w.Writeln ("    public C%s (IntPtr NewHandle) : base (NewHandle)", class.ClassName)
 			w.Writeln ("    {")
@@ -611,7 +899,7 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 				return err;
 			}
 			
-			w.Writeln ("    %s %s (%s)", returnType, method.MethodName, parameters);
+			w.Writeln ("    public %s %s (%s)", returnType, method.MethodName, parameters);
 			w.Writeln ("    {");
 			
 			writeCSharpClassMethodImplementation (method, w, NameSpace, class.ClassName, false, "    ");
@@ -625,9 +913,17 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 	}
 
 	
-	w.Writeln ("  class CWrapper");
+	w.Writeln ("  class Wrapper");
 	w.Writeln ("  {")
-		
+
+	w.Writeln ("    public static void CheckError (Int32 errorCode)")
+	w.Writeln ("    {")
+	w.Writeln ("      if (errorCode != 0) {")
+	w.Writeln ("        throw new Exception (\"Error \" + errorCode);")
+	w.Writeln ("      }")
+	w.Writeln ("    }")
+	w.Writeln ("")
+	
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
@@ -635,8 +931,8 @@ func BuildBindingCSharpImplementation (component ComponentDefinition, w Language
 		if (err != nil) {
 			return err;
 		}
-
-		w.Writeln ("    %s %s (%s)", returnType, method.MethodName, parameters);
+		
+		w.Writeln ("    public static %s %s (%s)", returnType, method.MethodName, parameters);
 		w.Writeln ("    {");
 		
 		writeCSharpClassMethodImplementation (method, w, NameSpace, "Wrapper", true, "    ");
