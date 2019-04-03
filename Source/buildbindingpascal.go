@@ -581,7 +581,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln ("    AMajor, AMinor, AMicro: Cardinal;")
 	w.Writeln ("    APreReleaseInfo, ABuildInfo: String;")
 	w.Writeln ("  begin")
-	w.Writeln ("    %s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", global.VersionMethod)
+	w.Writeln ("    %s(AMajor, AMinor, AMicro);", global.VersionMethod)
 	w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
 	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION, '');", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln ("  end;")
@@ -1077,13 +1077,16 @@ func buildDynamicPascalExample(w LanguageWriter, global ComponentDefinitionGloba
 	w.Writeln("  A%sWrapper := T%sWrapper.Create (ALibPath + '/' + '%s.dll');", NameSpace, NameSpace, BaseName)
 	w.Writeln("  try")
 	w.Writeln("    writeln ('loading DLL Done');")
-	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", NameSpace, global.VersionMethod)
+	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro);", NameSpace, global.VersionMethod)
 	w.Writeln("    AVersionString := Format('%s.version = %s', [AMajor, AMinor, AMicro]);", NameSpace, "%d.%d.%d")
-	w.Writeln("    if (APreReleaseInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
-	w.Writeln("    if (ABuildInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '+' + ABuildInfo;")
-
+	if len(global.PrereleaseMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(APreReleaseInfo) then", NameSpace, global.PrereleaseMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
+	}
+	if len(global.BuildinfoMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(ABuildInfo) then", NameSpace, global.BuildinfoMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + ABuildInfo;")
+	}
 	w.Writeln("    writeln(AVersionString);")
 	w.Writeln("  finally")
 	w.Writeln("    FreeAndNil(A%sWrapper);", NameSpace)

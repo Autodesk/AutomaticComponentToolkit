@@ -263,7 +263,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 
 	w.Writeln("  def _checkBinaryVersion(self):")
-	w.Writeln("    nMajor, nMinor, _, _, _ = self.%s()", componentdefinition.Global.VersionMethod)
+	w.Writeln("    nMajor, nMinor, _ = self.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("    if (nMajor != BindingVersion.MAJOR) or (nMinor < BindingVersion.MINOR):")
 	w.Writeln("      raise E%sException(ErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace)
 	w.Writeln("  ")
@@ -846,12 +846,18 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("  libpath = '' # TODO add the location of the shared library binary here")
 	w.Writeln("  wrapper = %s.%sWrapper(os.path.join(libpath, \"%s\"))", NameSpace, NameSpace, BaseName)
 	w.Writeln("  ")
-	w.Writeln("  major, minor, micro, prereleaseinfo, buildinfo = wrapper.GetLibraryVersion()")
+	w.Writeln("  major, minor, micro = wrapper.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro), end=\"\")", NameSpace)
-	w.Writeln("  if prereleaseinfo:")
-	w.Writeln("    print(\"-\"+prereleaseinfo, end=\"\")")
-	w.Writeln("  if buildinfo:")
-	w.Writeln("    print(\"+\"+buildinfo, end=\"\")")
+	if len(componentdefinition.Global.PrereleaseMethod)>0 {
+		w.Writeln("  hasInfo, prereleaseinfo = wrapper.%s()", componentdefinition.Global.PrereleaseMethod)
+		w.Writeln("  if hasInfo:")
+		w.Writeln("    print(\"-\"+prereleaseinfo, end=\"\")")
+	}
+	if len(componentdefinition.Global.BuildinfoMethod)>0 {
+		w.Writeln("  hasInfo, buildinfo = wrapper.%s()", componentdefinition.Global.BuildinfoMethod)
+		w.Writeln("  if hasInfo:")
+		w.Writeln("    print(\"+\"+buildinfo, end=\"\")")
+	}
 	w.Writeln("  print(\"\")")
 	w.Writeln("")
 	w.Writeln("")

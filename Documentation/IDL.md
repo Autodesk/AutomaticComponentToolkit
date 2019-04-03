@@ -162,7 +162,9 @@ Element **\<global>** of type **CT\_Global**
 | --- | --- | --- | --- | --- |
 | baseclassname | **ST\_Name** | required | | Specifies the name of a class that is the base class for all classes of the generated component. |
 | releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release a class instance owned by the generated component. |
-| versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the semantic version of the component. |
+| versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the major, minor and micro version of the component. |
+| prereleasemethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the prerelease information of the component. |
+| buildinfomethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the build information of the component. |
 | errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
 | journalmethod | **ST\_Name** | optional | | Specifies the name of the method used to set the journal file. If ommitted, journalling will not be built into the component. |
 
@@ -172,8 +174,13 @@ The names of the \<method> elements MUST be unique within the \<global> element.
 The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
 This class will be the base class for all classes of the generated component.
 
-The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
-The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly five parameters. The first three parameters MUST be of type `type="uint32"` and `pass="out"`, the last two MUST be of type `type="string"` and `pass="out"`.
+The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
+The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly three parameters. The three parameters MUST be of type `type="uint32"` and `pass="out"`.
+The `prereleasemethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
+The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
+The `buildinfomethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
+The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
+
 
 The `errormethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters:
 1. `type="class"`, `class="$BASECLASSNAME"` and `pass="in"`, where `"$BASECLASSNAME"` is the value of the `baseclassname` attribute of the \<global> element.

@@ -1051,8 +1051,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  %sResult checkBinaryVersion()", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
-	w.Writeln("    std::string sPreReleaseInfo, sBuildInfo;")
-	w.Writeln("    %s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", global.VersionMethod)
+	w.Writeln("    %s(nMajor, nMinor, nMicro);", global.VersionMethod)
 	w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
 	w.Writeln("      return %s_ERROR_INCOMPATIBLEBINARYVERSION;", strings.ToUpper(NameSpace))
 	w.Writeln("    }")
@@ -1308,13 +1307,20 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 		w.Writeln("    auto wrapper = %s::CWrapper::loadLibrary();", NameSpace)
 	}
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
-	w.Writeln("    std::string sPreReleaseInfo, sBuildInfo;")
-	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);", componentdefinition.Global.VersionMethod)
+	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro);", componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro;", NameSpace)
-	w.Writeln("    if (!sPreReleaseInfo.empty())")
-	w.Writeln("      std::cout << \"-\" << sPreReleaseInfo;")
-	w.Writeln("    if (!sBuildInfo.empty())")
-	w.Writeln("      std::cout << \"+\" << sBuildInfo;")
+	if len(componentdefinition.Global.PrereleaseMethod)>0 {
+		w.Writeln("    std::string sPreReleaseInfo;")
+		w.Writeln("    if (wrapper->%s(sPreReleaseInfo)) {", componentdefinition.Global.PrereleaseMethod)
+		w.Writeln("      std::cout << \"-\" << sPreReleaseInfo;")
+		w.Writeln("    }")
+	}
+	if len(componentdefinition.Global.BuildinfoMethod)>0 {
+		w.Writeln("    std::string sBuildInfo;")
+		w.Writeln("    if (wrapper->%s(sBuildInfo)) {", componentdefinition.Global.BuildinfoMethod)
+		w.Writeln("      std::cout << \"+\" << sBuildInfo;")
+		w.Writeln("    }")
+	}
 	w.Writeln("    std::cout << std::endl;")
 	w.Writeln("  }")
 	w.Writeln("  catch (std::exception &e)")

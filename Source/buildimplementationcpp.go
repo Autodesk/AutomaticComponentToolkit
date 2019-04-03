@@ -588,19 +588,16 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 		return err
 	}
 	
-	
-	if (isSpecialFunction == eSpecialMethodNone || isSpecialFunction == eSpecialMethodRelease || isSpecialFunction == eSpecialMethodVersion || isSpecialFunction == eSpecialMethodError ) {
-		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
-		if err != nil {
-			return err
-		}
-	}
-	
 	if (isSpecialFunction == eSpecialMethodJournal) {
 		callCPPFunctionCode = fmt.Sprintf(indentString + indentString + "m_GlobalJournal = nullptr;\n") +
 							  fmt.Sprintf(indentString + indentString + "if (s%s != \"\") {\n", method.Params[0].ParamName) +	
 							  fmt.Sprintf(indentString + indentString + indentString + "m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);\n", NameSpace, method.Params[0].ParamName) + 
 							  fmt.Sprintf(indentString + indentString + "}\n");
+	} else {
+		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
+		if err != nil {
+			return err
+		}
 	}
 	
 	journalInitFunctionCode := "";
