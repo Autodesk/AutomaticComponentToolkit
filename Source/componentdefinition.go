@@ -71,7 +71,6 @@ type ComponentDefinitionMethod struct {
 	XMLName xml.Name `xml:"method"`
 	MethodName string `xml:"name,attr"`
 	MethodDescription string `xml:"description,attr"`
-	DLLSuffix string `xml:"dllsuffix,attr"`
 	Params   []ComponentDefinitionParam `xml:"param"`
 }
 
