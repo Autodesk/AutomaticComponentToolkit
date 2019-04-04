@@ -170,7 +170,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 	case "struct":
 		if isPlain {
-			CSharpParamTypeName = "internal" + ParamClass
+			CSharpParamTypeName = "Internal" + ParamClass
 		} else {
 			CSharpParamTypeName = "s" + ParamClass
 		}
