@@ -378,11 +378,10 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				
 			case "structarray":
 
-				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.internal%s[] intdata%s = new Internal.internal%s[A%s.Length];", param.ParamClass, param.ParamName, param.ParamClass, param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.Internal%s[] intdata%s = new Internal.Internal%s[A%s.Length];", param.ParamClass, param.ParamName, param.ParamClass, param.ParamName))
 				defineCommands = append(defineCommands, fmt.Sprintf("  for (int index = 0; index < A%s.Length; index++)", param.ParamName))
 				defineCommands = append(defineCommands, fmt.Sprintf("    intdata%s[index] = Internal.%sWrapper.convertStructToInternal_%s(A%s[index]);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
-				           
-              				
+              			
 				defineCommands = append(defineCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(intdata%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 				
 				callFunctionParameter = fmt.Sprintf ("(UInt64) A%s.Length, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName); 
@@ -490,7 +489,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  var array%s = new Internal.internal%s[size%s];", param.ParamName, param.ParamClass, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  var array%s = new Internal.Internal%s[size%s];", param.ParamName, param.ParamClass, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(array%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
 				callFunctionParameter = fmt.Sprintf("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName)
