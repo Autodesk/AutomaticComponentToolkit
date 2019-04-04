@@ -377,7 +377,8 @@ func main() {
 				outputFolderBindingPython := outputFolderBindings + "/Python"
 				err = os.MkdirAll(outputFolderBindingPython, os.ModePerm)
 				if err != nil {
-					log.Fatal(err)				}
+					log.Fatal(err)
+				}
 
 				outputFolderExamplePython := outputFolderExamples + "/Python"
 				err = os.MkdirAll(outputFolderExamplePython, os.ModePerm)
