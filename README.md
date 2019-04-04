@@ -55,7 +55,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 | Pascal          | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Python3         | ![](Documentation/images/Tick.png) complete (but not very pythonic) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Golang          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        |
-| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        |
+| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |     -     |         +        |
 | C#              | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        |
 | PHP             | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |       -    |      -      |     -     |         -        |
 
