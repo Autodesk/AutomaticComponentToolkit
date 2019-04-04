@@ -13,7 +13,7 @@ namespace LibPrimes {
 
 	namespace Internal {
 
-		[StructLayout(LayoutKind.Explicit)]
+		[StructLayout(LayoutKind.Explicit, Size=12)]
 		public unsafe struct InternalPrimeFactor
 		{
 			[FieldOffset(0)] public UInt64 Prime;

@@ -39,7 +39,8 @@ import (
 	"log"
 	"path"
 	"strings"
-	"github.com/google/uuid"
+	"io"
+	"crypto/rand"
 )
 
 // BuildBindingCSharp builds CSharp bindings of a library's API in form of dynamically loaded function
@@ -83,7 +84,10 @@ func BuildBindingCSharp(component ComponentDefinition, outputFolder string, outp
 			if err != nil {
 				return err;
 			}
-			buildCSharpExampleSolution(component, csharpExampleSolutionFile, outputFolder)
+			err = buildCSharpExampleSolution(component, csharpExampleSolutionFile, outputFolder)
+			if err != nil {
+				return err;
+			}
 		} else {
 			log.Printf("Omitting recreation of CSharp example \"%s\"", csharpExample)
 		}
@@ -705,12 +709,8 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i]
 
-		w.Writeln("    [StructLayout(LayoutKind.Explicit)]")
-		w.Writeln("    public unsafe struct Internal%s", structinfo.Name)
-		w.Writeln("    {")
-
 		fieldOffset := 0
-
+		memberLines := make([]string, 0);
 		for j := 0; j < len(structinfo.Members); j++ {
 			element := structinfo.Members[j]
 
@@ -725,57 +725,60 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 					multiplier = element.Rows
 					arraysuffix = fmt.Sprintf("[%d]", multiplier)
 				}
-
 				fixedtag = "fixed "
 			}
 
 			switch element.Type {
 			case "uint8":
-				w.Writeln("      [FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "uint16":
-				w.Writeln("      [FieldOffset(%d)] public %sUInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 2*multiplier
 			case "uint32":
-				w.Writeln("      [FieldOffset(%d)] public %sUInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "uint64":
-				w.Writeln("      [FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "int8":
-				w.Writeln("      [FieldOffset(%d)] public %sInt8 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt8 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "int16":
-				w.Writeln("      [FieldOffset(%d)] public %sInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 2*multiplier
 			case "int32":
-				w.Writeln("      [FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "int64":
-				w.Writeln("      [FieldOffset(%d)] public %sInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "bool":
-				w.Writeln("      [FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "single":
-				w.Writeln("      [FieldOffset(%d)] public %sSingle %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sSingle %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "double":
-				w.Writeln("      [FieldOffset(%d)] public %sDouble %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sDouble %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "pointer":
-				w.Writeln("      [FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUint64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
 			case "class":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
-				w.Writeln("      [FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix)
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 4*multiplier
 			}
 		}
 
+		w.Writeln("    [StructLayout(LayoutKind.Explicit, Size=%d)]", fieldOffset)
+		w.Writeln("    public unsafe struct Internal%s", structinfo.Name)
+		w.Writeln("    {")
+		w.Writelns("      ", memberLines)
 		w.Writeln("    }")
 		w.Writeln("")
 	}
@@ -1096,14 +1099,40 @@ func buildCSharpExample(componentdefinition ComponentDefinition, w LanguageWrite
 	w.Writeln("")
 }
 
-func buildCSharpExampleSolution(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) {
+
+// newUUID generates a random UUID according to RFC 4122
+// taken from https://play.golang.org/p/4FkNSiUDMg to not rely on external dependencies
+func newUUID() (string, error) {
+	uuid := make([]byte, 16)
+	n, err := io.ReadFull(rand.Reader, uuid)
+	if n != len(uuid) || err != nil {
+		return "", err
+	}
+	// variant bits; see section 4.1.1
+	uuid[8] = uuid[8]&^0xc0 | 0x80
+	// version 4 (pseudo-random); see section 4.1.3
+	uuid[6] = uuid[6]&^0xf0 | 0x40
+	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
+}
+
+
+func buildCSharpExampleSolution(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) (error) {
 	NameSpace := componentdefinition.NameSpace
 
 	exampleName := NameSpace + "_Example"
 	
-	uuid1 := uuid.New().String()
-	uuid2 := uuid.New().String()
-	solutionGUID := uuid.New().String()
+	uuid1, err := newUUID()
+	if (err != nil) {
+		return err;
+	}
+	uuid2, err := newUUID()
+	if (err != nil) {
+		return err;
+	}
+	solutionGUID, err := newUUID()
+	if (err != nil) {
+		return err;
+	}
 	w.Writeln("")
 	w.Writeln("Microsoft Visual Studio Solution File, Format Version 12.00")
 	w.Writeln("# Visual Studio 15")
@@ -1113,8 +1142,8 @@ func buildCSharpExampleSolution(componentdefinition ComponentDefinition, w Langu
 	w.Writeln("EndProject")
 	w.Writeln("Global")
 	w.Writeln("  GlobalSection(SolutionConfigurationPlatforms) = preSolution")
-	w.Writeln("  Debug|x64 = Debug|x64")
-	w.Writeln("  Release|x64 = Release|x64")
+	w.Writeln("    Debug|x64 = Debug|x64")
+	w.Writeln("    Release|x64 = Release|x64")
 	w.Writeln("  EndGlobalSection")
 	w.Writeln("  GlobalSection(ProjectConfigurationPlatforms) = postSolution")
 	w.Writeln("    %s.Debug|x64.ActiveCfg = Debug|x64", uuid2)
@@ -1129,6 +1158,8 @@ func buildCSharpExampleSolution(componentdefinition ComponentDefinition, w Langu
 	w.Writeln("    SolutionGuid = %s", solutionGUID)
 	w.Writeln("  EndGlobalSection")
 	w.Writeln("EndGlobal")
+	
+	return nil
 }
 
 func buildCSharpExampleProject(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string) {
