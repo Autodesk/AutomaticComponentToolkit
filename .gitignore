@@ -7,6 +7,7 @@
 *.exe
 *.c
 *.go
+*.orig
 
 # Visual Studio Code
 debug

@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpython.go
-// functions to generate dynamic Python3-bindings of a library's API in form of dynamically loaded functions
-// handles.
+// functions to generate dynamic Python3-bindings of a library's API in form of explicitly loaded
+// function handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 package main
@@ -40,8 +40,8 @@ import (
 	"path"
 )
 
-// BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of dynamically loaded functions
-// handles.
+// BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of explicitly loaded
+// functions handles.
 func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
 	forceRecreation := false
 
@@ -224,7 +224,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("")
 	w.Writeln("'''Wrapper Class Implementation")
 	w.Writeln("'''")
-	w.Writeln("class %sWrapper:", NameSpace)
+	w.Writeln("class Wrapper:")
 	w.Writeln("")
 
 	w.Writeln("  def __init__(self, libraryName = None):")
@@ -263,7 +263,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 
 	w.Writeln("  def _checkBinaryVersion(self):")
-	w.Writeln("    nMajor, nMinor, _, _, _ = self.%s()", componentdefinition.Global.VersionMethod)
+	w.Writeln("    nMajor, nMinor, _ = self.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("    if (nMajor != BindingVersion.MAJOR) or (nMinor < BindingVersion.MINOR):")
 	w.Writeln("      raise E%sException(ErrorCodes.INCOMPATIBLEBINARYVERSION)", NameSpace)
 	w.Writeln("  ")
@@ -844,14 +844,20 @@ func buildDynamiCPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("def main():")
 	w.Writeln("  libpath = '' # TODO add the location of the shared library binary here")
-	w.Writeln("  wrapper = %s.%sWrapper(os.path.join(libpath, \"%s\"))", NameSpace, NameSpace, BaseName)
+	w.Writeln("  wrapper = %s.Wrapper(os.path.join(libpath, \"%s\"))", NameSpace, BaseName)
 	w.Writeln("  ")
-	w.Writeln("  major, minor, micro, prereleaseinfo, buildinfo = wrapper.GetLibraryVersion()")
+	w.Writeln("  major, minor, micro = wrapper.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro), end=\"\")", NameSpace)
-	w.Writeln("  if prereleaseinfo:")
-	w.Writeln("    print(\"-\"+prereleaseinfo, end=\"\")")
-	w.Writeln("  if buildinfo:")
-	w.Writeln("    print(\"+\"+buildinfo, end=\"\")")
+	if len(componentdefinition.Global.PrereleaseMethod)>0 {
+		w.Writeln("  hasInfo, prereleaseinfo = wrapper.%s()", componentdefinition.Global.PrereleaseMethod)
+		w.Writeln("  if hasInfo:")
+		w.Writeln("    print(\"-\"+prereleaseinfo, end=\"\")")
+	}
+	if len(componentdefinition.Global.BuildinfoMethod)>0 {
+		w.Writeln("  hasInfo, buildinfo = wrapper.%s()", componentdefinition.Global.BuildinfoMethod)
+		w.Writeln("  if hasInfo:")
+		w.Writeln("    print(\"+\"+buildinfo, end=\"\")")
+	}
 	w.Writeln("  print(\"\")")
 	w.Writeln("")
 	w.Writeln("")

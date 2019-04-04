@@ -1,6 +1,6 @@
 #[[++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -17,9 +17,9 @@ Interface version: 1.2.0
 cmake_minimum_required(VERSION 3.5)
 
 project(LibPrimesExample_CPPDynamic)
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 add_executable(LibPrimesExample_CPPDynamic "${CMAKE_CURRENT_SOURCE_DIR}/LibPrimes_example.cpp")
 if (UNIX)
 	target_link_libraries(LibPrimesExample_CPPDynamic ${CMAKE_DL_LIBS})
 endif (UNIX)
-target_include_directories(LibPrimesExample_CPPDynamic PRIVATE "D:/Projekte/AutomaticComponentToolkit/Examples/Primes/LibPrimes_component/Bindings/CppDynamic")
+target_include_directories(LibPrimesExample_CPPDynamic PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CppDynamic")

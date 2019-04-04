@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildbindingpascal.go
-// functions to generate dynamic Pascal-bindings of a library's API in form of dynamically loaded functions
-// handles.
+// functions to generate dynamic Pascal-bindings of a library's API in form of explicitly loaded
+// function handles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 package main
@@ -41,8 +41,8 @@ import (
 	"strings"
 )
 
-// BuildBindingPascalDynamic builds dynamic Pascal bindings of a library's API in form of dynamically loaded functions
-// handles.
+// BuildBindingPascalDynamic builds dynamic Pascal bindings of a library's API in form of explicitly loaded
+// function handles.
 func BuildBindingPascalDynamic(component ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
 	forceRecreation := false
 
@@ -579,9 +579,8 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln ("  procedure T%sWrapper.checkBinaryVersion();", NameSpace)
 	w.Writeln ("  var")
 	w.Writeln ("    AMajor, AMinor, AMicro: Cardinal;")
-	w.Writeln ("    APreReleaseInfo, ABuildInfo: String;")
 	w.Writeln ("  begin")
-	w.Writeln ("    %s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", global.VersionMethod)
+	w.Writeln ("    %s(AMajor, AMinor, AMicro);", global.VersionMethod)
 	w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
 	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION, '');", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln ("  end;")
@@ -1069,21 +1068,27 @@ func buildDynamicPascalExample(w LanguageWriter, global ComponentDefinitionGloba
 	w.Writeln("var")
 	w.Writeln("  A%sWrapper: T%sWrapper;", NameSpace, NameSpace)
 	w.Writeln("  AMajor, AMinor, AMicro: Cardinal;")
-	w.Writeln("  APreReleaseInfo, ABuildInfo, AVersionString: string;")
+	if len(global.PrereleaseMethod)>0 {
+		w.Writeln("  APreReleaseInfo, ABuildInfo: string;")
+	}
+	w.Writeln("  AVersionString: string;")
 	w.Writeln("  ALibPath: string;")
 	w.Writeln("begin")
 	w.Writeln("  writeln ('loading DLL');")
 	w.Writeln("  ALibPath := ''; // TODO add the location of the shared library binary here")
-	w.Writeln("  A%sWrapper := T%sWrapper.Create (ALibPath + '/' + '%s.dll');", NameSpace, NameSpace, BaseName)
+	w.Writeln("  A%sWrapper := T%sWrapper.Create (ALibPath + '/' + '%s.'); // TODO add the extension of the shared library file here", NameSpace, NameSpace, BaseName)
 	w.Writeln("  try")
 	w.Writeln("    writeln ('loading DLL Done');")
-	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", NameSpace, global.VersionMethod)
+	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro);", NameSpace, global.VersionMethod)
 	w.Writeln("    AVersionString := Format('%s.version = %s', [AMajor, AMinor, AMicro]);", NameSpace, "%d.%d.%d")
-	w.Writeln("    if (APreReleaseInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
-	w.Writeln("    if (ABuildInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '+' + ABuildInfo;")
-
+	if len(global.PrereleaseMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(APreReleaseInfo) then", NameSpace, global.PrereleaseMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
+	}
+	if len(global.BuildinfoMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(ABuildInfo) then", NameSpace, global.BuildinfoMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + ABuildInfo;")
+	}
 	w.Writeln("    writeln(AVersionString);")
 	w.Writeln("  finally")
 	w.Writeln("    FreeAndNil(A%sWrapper);", NameSpace)
@@ -1138,21 +1143,21 @@ func buildDynamicPascalExampleLPI(w LanguageWriter, NameSpace string, BaseName s
 	w.Writeln ("    <PathDelim Value=\"\\\"/>");
 	w.Writeln ("    <General>");
 	w.Writeln ("      <Flags>");
-	w.Writeln ("        <MainUnitHasCreateFormStatements Value=\"False\" />");
-	w.Writeln ("        <MainUnitHasTitleStatement Value=\"False\" />");
-	w.Writeln ("        <MainUnitHasScaledStatement Value=\"False\" />");
+	w.Writeln ("        <MainUnitHasCreateFormStatements Value=\"False\"/>");
+	w.Writeln ("        <MainUnitHasTitleStatement Value=\"False\"/>");
+	w.Writeln ("        <MainUnitHasScaledStatement Value=\"False\"/>");
 	w.Writeln ("      </Flags>");
-	w.Writeln ("      <SessionStorage Value=\"InProjectDir\" />");
+	w.Writeln ("      <SessionStorage Value=\"InProjectDir\"/>");
 	w.Writeln ("      <MainUnit Value=\"%d\"/>", 0);
-	w.Writeln ("      <Title Value=\"%s_Example\" />", NameSpace);
-	w.Writeln ("      <UseAppBundle Value=\"False\" />");
-	w.Writeln ("      <ResourceType Value=\"res\" />");
+	w.Writeln ("      <Title Value=\"%s_Example\"/>", NameSpace);
+	w.Writeln ("      <UseAppBundle Value=\"False\"/>");
+	w.Writeln ("      <ResourceType Value=\"res\"/>");
 	w.Writeln ("    </General>");
 	w.Writeln ("    <BuildModes Count=\"%d\">", 2);
 	w.Writeln ("      <Item1 Name=\"Release\" Default=\"True\"/>");
 	w.Writeln ("      <Item2 Name=\"Debug\">");
 	w.Writeln ("        <CompilerOptions>");
-	w.Writeln ("          <Version Value=\"11\" />");
+	w.Writeln ("          <Version Value=\"11\"/>");
 	w.Writeln ("          <PathDelim Value=\"\\\"/>");
 	w.Writeln ("          <Target>");
 	w.Writeln ("            <Filename Value=\"bin\\$(TargetCPU)-$(TargetOS)\\Release\\%s_Example\"/>", NameSpace);
@@ -1168,7 +1173,7 @@ func buildDynamicPascalExampleLPI(w LanguageWriter, NameSpace string, BaseName s
 	w.Writeln ("            </SyntaxOptions>");
 	w.Writeln ("          </Parsing>");
 	w.Writeln ("          <CodeGeneration>");
-	w.Writeln ("            <RelocatableUnit Value=\"True\" />");
+	w.Writeln ("            <RelocatableUnit Value=\"True\"/>");
 	w.Writeln ("          </CodeGeneration>");
 	w.Writeln ("          <Linking>");
 	w.Writeln ("            <Debugging>");

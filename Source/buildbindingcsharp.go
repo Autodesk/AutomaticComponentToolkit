@@ -56,7 +56,7 @@ func BuildBindingCSharp(component ComponentDefinition, outputFolder string, outp
 	}
 	
 	
-	err = BuildBindingCSharpImplementation (component, CSharpImplFile, namespace, baseName);
+	err = buildBindingCSharpImplementation(component, CSharpImplFile, namespace, baseName);
 
 	return err;
 }
@@ -500,8 +500,7 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 }
 
 
-
-func BuildBindingCSharpImplementation (component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
+func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 
 	baseName := component.BaseName;
 	global := component.Global;
