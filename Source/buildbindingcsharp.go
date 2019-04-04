@@ -126,10 +126,27 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 		}
 
 	case "basicarray":
-		CSharpParamTypeName = fmt.Sprintf("IntPtr")
+		if isPlain {
+			CSharpParamTypeName = fmt.Sprintf("IntPtr")
+		} else {
+		
+			basicTypeName, err := getCSharpParameterType(ParamClass, NameSpace, "", isPlain);
+			if (err != nil) {
+				return "", err;
+			}
+			
+			CSharpParamTypeName = basicTypeName + "[]";			
+		
+		}
 
 	case "structarray":
-		CSharpParamTypeName = fmt.Sprintf("IntPtr")
+		if isPlain {
+			CSharpParamTypeName = fmt.Sprintf("IntPtr")
+		} else {
+					
+			CSharpParamTypeName = "s" + ParamClass + "[]";			
+		
+		}
 
 	case "class":
 		if isPlain {
@@ -159,7 +176,17 @@ func getCSharpPlainParameters(method ComponentDefinitionMethod, NameSpace string
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
-			parameters = parameters + ParamTypeName + " A" + param.ParamName
+			
+			switch param.ParamType {
+			case "basicarray":
+				parameters = parameters + fmt.Sprintf("UInt64 size%s, IntPtr data%s", param.ParamName, param.ParamName)
+			case "structarray":
+				parameters = parameters + fmt.Sprintf("UInt64 size%s, IntPtr data%s", param.ParamName, param.ParamName)
+
+			default:
+			
+				parameters = parameters + ParamTypeName + " A" + param.ParamName
+			}
 
 		case "out", "return":
 			if parameters != "" {
@@ -169,6 +196,10 @@ func getCSharpPlainParameters(method ComponentDefinitionMethod, NameSpace string
 			switch param.ParamType {
 			case "string":
 				parameters = parameters + fmt.Sprintf("UInt32 size%s, out UInt32 needed%s, IntPtr data%s", param.ParamName, param.ParamName, param.ParamName)
+			case "basicarray":
+				parameters = parameters + fmt.Sprintf("UInt64 size%s, out UInt64 needed%s, IntPtr data%s", param.ParamName, param.ParamName, param.ParamName)
+			case "structarray":
+				parameters = parameters + fmt.Sprintf("UInt64 size%s, out UInt64 needed%s, IntPtr data%s", param.ParamName, param.ParamName, param.ParamName)
 
 			default:
 				parameters = parameters + "out " + ParamTypeName + " A" + param.ParamName
@@ -291,13 +322,28 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 
 			case "basicarray":
-				callFunctionParameter = "IntPtr.Zero"
+			
+				defineCommands = append(defineCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(A%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
+				
+				callFunctionParameter = fmt.Sprintf ("(UInt64) A%s.Length, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName); 
 				initCallParameter = callFunctionParameter
 
+				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free ();", param.ParamName))
+				
 			case "structarray":
-				callFunctionParameter = "IntPtr.Zero"
+
+				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.internal%s[] intdata%s = new Internal.internal%s[A%s.Length];", param.ParamClass, param.ParamName, param.ParamClass, param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  for (int index = 0; index < A%s.Length; index++)", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("    intdata%s[index] = Internal.%sWrapper.convertStructToInternal_%s(A%s[index]);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
+				           
+              				
+				defineCommands = append(defineCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(intdata%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
+				
+				callFunctionParameter = fmt.Sprintf ("(UInt64) A%s.Length, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName); 
 				initCallParameter = callFunctionParameter
 
+				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free ();", param.ParamName))
+			
 			case "functiontype":
 				callFunctionParameter = "IntPtr.Zero"
 				initCallParameter = callFunctionParameter
@@ -368,26 +414,49 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
 
-			case "basicarray", "structarray":
+			case "basicarray":
 
-				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr result%s = IntPtr.Zero;", param.ParamName))
-				callFunctionParameter = "out result" + param.ParamName
-				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = result%s;", param.ParamName, param.ParamName))
+				ParamTypeArrayName, err := getCSharpParameterType(param.ParamClass, NameSpace, param.ParamClass, false)
+				if err != nil {
+					return err
+				}
+			
+				initCommands = append(initCommands, fmt.Sprintf("  UInt64 size%s = 0;", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  UInt64 needed%s = 0;", param.ParamName))
+				
+				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
-				/*defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
-				defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": QWord;");
-				initCommands = append (initCommands, "  countNeeded" + param.ParamName + ":= 0;");
-				initCommands = append (initCommands, "  countWritten" + param.ParamName + ":= 0;");
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  A%s = new %s[size%s];", param.ParamName, ParamTypeArrayName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(A%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
+				callFunctionParameter = fmt.Sprintf("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName)
 
-				postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (A%s, countNeeded%s);", param.ParamName, param.ParamName));
+				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free();", param.ParamName))
 
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @A%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				doInitCall = true
 
-				doInitCall = true; */
+			case "structarray":
+			
+				initCommands = append(initCommands, fmt.Sprintf("  UInt64 size%s = 0;", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  UInt64 needed%s = 0;", param.ParamName))
+				
+				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  var array%s = new Internal.internal%s[size%s];", param.ParamName, param.ParamClass, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(array%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
+
+				callFunctionParameter = fmt.Sprintf("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName)
+
+				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free();", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = new s%s[size%s];", param.ParamName, param.ParamClass, param.ParamName))
+
+				resultCommands = append(resultCommands, fmt.Sprintf("  for (int index = 0; index < A%s.Length; index++)", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("    A%s[index] = Internal.%sWrapper.convertInternalToStruct_%s(array%s[index]);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
+
+				doInitCall = true
+				
 			case "class":
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
@@ -444,19 +513,6 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
-			case "basicarray", "structarray":
-				/*defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
-				defineCommands = append (defineCommands, "  countWritten" + param.ParamName + ": QWord;");
-				initCommands = append (initCommands, "  countNeeded" + param.ParamName + ":= 0;");
-				initCommands = append (initCommands, "  countWritten" + param.ParamName + ":= 0;");
-
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
-
-				postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (Result, countNeeded%s);", param.ParamName));
-
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @Result[0]", param.ParamName, param.ParamName)
-
-				doInitCall = true; */
 
 			case "class":
 
