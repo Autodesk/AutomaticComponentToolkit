@@ -867,7 +867,37 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 
 	}
 	
-	           	
+	
+	w.Writeln ("      public static void ThrowError(IntPtr Handle, Int32 errorCode)");
+	w.Writeln ("      {");
+	w.Writeln ("        String sMessage = \"%s Error\";", NameSpace);
+	
+	if (len (component.Global.ErrorMethod) > 0) {
+	
+		w.Writeln ("        if (Handle != IntPtr.Zero) {");
+		w.Writeln ("          UInt32 sizeMessage = 0;");
+		w.Writeln ("          UInt32 neededMessage = 0;");
+		w.Writeln ("          Int32 hasLastError = 0;");
+		w.Writeln ("          Int32 resultCode1 = %s (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);", component.Global.ErrorMethod);
+		w.Writeln ("          if ((resultCode1 == 0) && (hasLastError != 0)) {");
+		w.Writeln ("            sizeMessage = neededMessage + 1;");
+		w.Writeln ("            byte[] bytesMessage = new byte[sizeMessage];");
+		w.Writeln (""); 
+		w.Writeln ("            GCHandle dataMessage = GCHandle.Alloc(bytesMessage, GCHandleType.Pinned);");
+		w.Writeln ("            Int32 resultCode2 = %s(Handle, sizeMessage, out neededMessage, dataMessage.AddrOfPinnedObject(), out hasLastError);", component.Global.ErrorMethod);
+		w.Writeln ("            dataMessage.Free();");
+		w.Writeln ("");
+		w.Writeln ("            if ((resultCode2 == 0) && (hasLastError != 0)) {");
+		w.Writeln ("              sMessage = sMessage + \": \" + Encoding.UTF8.GetString(bytesMessage).TrimEnd(char.MinValue);");
+		w.Writeln ("            }");
+		w.Writeln ("          }");
+		w.Writeln ("        }");
+		w.Writeln ("");
+	}
+	w.Writeln ("        throw new Exception(sMessage + \"(# \" + errorCode + \")\");");
+	w.Writeln ("      }");
+	w.Writeln ("");
+                           	
 	w.Writeln ("    }")
 	w.Writeln ("  }")
 
@@ -907,10 +937,10 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln ("    }")
 			w.Writeln ("")
 
-			w.Writeln ("    public static void CheckError (Int32 errorCode)")
+			w.Writeln ("    protected void CheckError (Int32 errorCode)")
 			w.Writeln ("    {")
 			w.Writeln ("      if (errorCode != 0) {")
-			w.Writeln ("        throw new Exception (\"Error \" + errorCode);")
+			w.Writeln ("        Internal.%sWrapper.ThrowError (Handle, errorCode);", NameSpace)
 			w.Writeln ("      }")
 			w.Writeln ("    }")
 			w.Writeln ("")
@@ -953,10 +983,10 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln ("  class Wrapper");
 	w.Writeln ("  {")
 
-	w.Writeln ("    public static void CheckError (Int32 errorCode)")
+	w.Writeln ("    private static void CheckError (Int32 errorCode)")
 	w.Writeln ("    {")
 	w.Writeln ("      if (errorCode != 0) {")
-	w.Writeln ("        throw new Exception (\"Error \" + errorCode);")
+	w.Writeln ("        Internal.%sWrapper.ThrowError (IntPtr.Zero, errorCode);", NameSpace)
 	w.Writeln ("      }")
 	w.Writeln ("    }")
 	w.Writeln ("")
