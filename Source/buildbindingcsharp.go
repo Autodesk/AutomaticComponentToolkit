@@ -108,7 +108,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 			
 		case "string":
 			if isPlain {
-				CSharpParamTypeName = "String";
+				CSharpParamTypeName = "byte[]";
 			} else {
 				CSharpParamTypeName = "String";
 			}
@@ -169,10 +169,21 @@ func getCSharpPlainParameters(method ComponentDefinitionMethod, NameSpace string
 				parameters = parameters + ParamTypeName + " A" + param.ParamName;
 				
 			case "out", "return":
+
 				if (parameters != "") {
 					parameters = parameters + ", ";
 				}			
-				parameters = parameters + "out " + ParamTypeName + " A" + param.ParamName;
+				
+				
+				switch (param.ParamType) {
+					case "string":
+					
+						parameters = parameters + fmt.Sprintf ("UInt32 size%s, out UInt32 needed%s, IntPtr data%s", param.ParamName, param.ParamName, param.ParamName);
+					
+					default:
+								
+						parameters = parameters + "out " + ParamTypeName + " A" + param.ParamName;
+				}
 
 		}
 	}
@@ -255,55 +266,65 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 			return err;
 		}
 				
-		if (callFunctionParameters != "") {
-			callFunctionParameters = callFunctionParameters + ", ";
-		}			
-
-		if (initCallParameters != "") {
-			initCallParameters = initCallParameters + ", ";
-		}			
+		
+		callFunctionParameter := "";
+		initCallParameter := "";
+		
 		
 		switch (param.ParamPass) {
 			case "in":
 
 				switch (param.ParamType) {
 					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
+						callFunctionParameter = "A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "single":
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
+						callFunctionParameter = "A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "double":
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
+						callFunctionParameter = "A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "pointer":						
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
+						callFunctionParameter = "A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						
 					case "string":
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName;
+						defineCommands = append (defineCommands, fmt.Sprintf ("  byte[] byte%s = Encoding.UTF8.GetBytes(A%s + char.MinValue);", param.ParamName, param.ParamName));
+						callFunctionParameter = "byte" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						
 					case "enum":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 enum%s = (Int32) A%s;", param.ParamName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "enum" + param.ParamName;
+						callFunctionParameter = "enum" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "bool":
-						callFunctionParameters = callFunctionParameters + "( A" + param.ParamName + " ? 1 : 0 )";
+						callFunctionParameter = "( A" + param.ParamName + " ? 1 : 0 )";
+						initCallParameter = callFunctionParameter;
 						
 					case "struct":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s int%s = Internal.%sWrapper.convertStructToInternal_%s (A%s);", param.ParamClass, param.ParamName, NameSpace, param.ParamClass, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "int" + param.ParamName;
+						callFunctionParameter = "int" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "basicarray":
-						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
+						callFunctionParameter = "IntPtr.Zero";
+						initCallParameter = callFunctionParameter;
 
 					case "structarray":
-						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
+						callFunctionParameter = "IntPtr.Zero";
+						initCallParameter = callFunctionParameter;
 
 					case "functiontype":
-						callFunctionParameters = callFunctionParameters + "(IntPtr) 0";
+						callFunctionParameter = "IntPtr.Zero";
+						initCallParameter = callFunctionParameter;
 
 					case "class":
-						callFunctionParameters = callFunctionParameters + "A" + param.ParamName + ".GetHandle()";
+						callFunctionParameter = "A" + param.ParamName + ".GetHandle()";
+						initCallParameter = callFunctionParameter;
 
 					default:
 						return fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName);
@@ -316,61 +337,64 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 				switch (param.ParamType) {
 					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
 					
-						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
+						callFunctionParameter = "out A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "single":					
-						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
+						callFunctionParameter = "out A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "double":					
-						callFunctionParameters = callFunctionParameters + "out A" + param.ParamName;
+						callFunctionParameter = "out A" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 
 					case "pointer":					
 						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0;", ParamTypeName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
+						initCallParameter = callFunctionParameter;
 						
 					case "string":
-						defineCommands = append (defineCommands, fmt.Sprintf ("  String result%s;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
-						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
-					
-					
-						/*defineCommands = append (defineCommands, "  bytesNeeded" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  bytesWritten" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  buffer" + param.ParamName + ": array of Char;");
-						initCommands = append (initCommands, "  bytesNeeded" + param.ParamName + ":= 0;");
-						initCommands = append (initCommands, "  bytesWritten" + param.ParamName + ":= 0;");
-						
-						initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
-						
-						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s + 2);", param.ParamName, param.ParamName));
-						
-						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s + 1, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-						resultCommands = append (resultCommands, fmt.Sprintf ("  buffer%s[bytesNeeded%s + 1] := #0;", param.ParamName, param.ParamName));
-						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := StrPas (@buffer%s[0]);", param.ParamName, param.ParamName));
+						initCommands = append (initCommands, fmt.Sprintf ("  UInt32 size%s = 0;",  param.ParamName));
+						initCommands = append (initCommands, fmt.Sprintf ("  UInt32 needed%s = 0;",  param.ParamName));
 
-						doInitCall = true; */
+						initCallParameter = fmt.Sprintf ("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName);
+
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  size%s = needed%s + 1;",  param.ParamName,  param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  byte[] bytes%s = new byte[size%s];",  param.ParamName,  param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);",  param.ParamName,  param.ParamName));
+						            
+						callFunctionParameter = fmt.Sprintf ("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName);
+
+						resultCommands = append (resultCommands, fmt.Sprintf ("  data%s.Free();", param.ParamName));
+						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName, param.ParamName));
+						            											
+						doInitCall = true; 
 						
 					case "enum":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = (e%s) (result%s);", param.ParamName, param.ParamClass, param.ParamName));
 
 					case "bool":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = (result%s != 0);", param.ParamName, param.ParamName));
 						
 					case "struct":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s intresult%s;", param.ParamClass, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out intresult" + param.ParamName;
+						callFunctionParameter = "out intresult" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", param.ParamName, NameSpace, param.ParamClass, param.ParamName));
 												
 					case "basicarray", "structarray":
 
-						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr result%s = (IntPtr) 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr result%s = IntPtr.Zero;", param.ParamName));
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = result%s;", param.ParamName, param.ParamName));
 						
 						/*defineCommands = append (defineCommands, "  countNeeded" + param.ParamName + ": QWord;");
@@ -387,8 +411,9 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 						doInitCall = true; */
 					
 					case "class":
-						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr new%s = (IntPtr) 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out new" + param.ParamName;
+						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr new%s = IntPtr.Zero;", param.ParamName));
+						callFunctionParameter = "out new" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s = new C%s (new%s );", param.ParamName, param.ParamClass, param.ParamName));
 
 					default:
@@ -402,46 +427,46 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 					case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 					
 						defineCommands = append (defineCommands, fmt.Sprintf ("  %s result%s = 0;", ParamTypeName, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return result%s;", param.ParamName));
 
 					case "string":
-						defineCommands = append (defineCommands, fmt.Sprintf ("  String result%s;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
-						resultCommands = append (resultCommands, fmt.Sprintf ("  return result%s;", param.ParamName));
 
-						/*defineCommands = append (defineCommands, "  bytesNeeded" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  bytesWritten" + param.ParamName + ": Cardinal;");
-						defineCommands = append (defineCommands, "  buffer" + param.ParamName + ": array of Char;");
-						initCommands = append (initCommands, "  bytesNeeded" + param.ParamName + ":= 0;");
-						initCommands = append (initCommands, "  bytesWritten" + param.ParamName + ":= 0;");
-						
-						initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
+						initCommands = append (initCommands, fmt.Sprintf ("  UInt32 size%s = 0;",  param.ParamName));
+						initCommands = append (initCommands, fmt.Sprintf ("  UInt32 needed%s = 0;",  param.ParamName));
 
-						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s + 2);", param.ParamName, param.ParamName));
-						
-						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s + 2, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+						initCallParameter = fmt.Sprintf ("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName);
 
-						resultCommands = append (resultCommands, fmt.Sprintf ("  buffer%s[bytesNeeded%s + 1] := #0;", param.ParamName, param.ParamName));
-						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := StrPas (@buffer%s[0]);", param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  size%s = needed%s + 1;",  param.ParamName,  param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  byte[] bytes%s = new byte[size%s];",  param.ParamName,  param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf ("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);",  param.ParamName,  param.ParamName));
+						            
+						callFunctionParameter = fmt.Sprintf ("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName);
 
-						doInitCall = true; */
+						resultCommands = append (resultCommands, fmt.Sprintf ("  data%s.Free();", param.ParamName));
+						resultCommands = append (resultCommands, fmt.Sprintf ("  return Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName));
+						            											
+						doInitCall = true; 
 
 						
 					case "enum":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return (e%s) (result%s);", param.ParamClass, param.ParamName));
 
 					case "bool":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Int32 result%s = 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out result" + param.ParamName;
+						callFunctionParameter = "out result" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return (result%s != 0);", param.ParamName));
 						
 						
 					case "struct":
 						defineCommands = append (defineCommands, fmt.Sprintf ("  Internal.internal%s intresult%s;", param.ParamClass, param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out intresult" + param.ParamName;
+						callFunctionParameter = "out intresult" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName));
 												
 
@@ -461,17 +486,29 @@ func writeCSharpClassMethodImplementation (method ComponentDefinitionMethod, w L
 
 					case "class":
 
-						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr new%s = (IntPtr) 0;", param.ParamName));
-						callFunctionParameters = callFunctionParameters + "out new" + param.ParamName;
+						defineCommands = append (defineCommands, fmt.Sprintf ("  IntPtr new%s = IntPtr.Zero;", param.ParamName));
+						callFunctionParameter = "out new" + param.ParamName;
+						initCallParameter = callFunctionParameter;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  return new C%s (new%s );", param.ParamClass, param.ParamName));
 
 					default:
 						return fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName);
-				}
-			
-				
+				}				
 				
 		}
+		
+		
+		if (callFunctionParameters != "") {
+			callFunctionParameters = callFunctionParameters + ", ";
+		}			
+
+		if (initCallParameters != "") {
+			initCallParameters = initCallParameters + ", ";
+		}			
+			
+		callFunctionParameters = callFunctionParameters + callFunctionParameter;
+		initCallParameters = initCallParameters + initCallParameter;
+
 	}
 	
 	
@@ -507,6 +544,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	
 	CSharpBaseClassName := "C" + component.Global.BaseClassName;
 	w.Writeln ("using System;")
+	w.Writeln ("using System.Text;")
 	w.Writeln ("using System.Runtime.InteropServices;")
 	w.Writeln ("")
 
@@ -693,7 +731,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				return err;
 			}
 			
-			w.Writeln ("      [DllImport(\"%s.dll\", EntryPoint = \"%s_%s_%s\", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]", baseName, strings.ToLower (NameSpace), strings.ToLower (class.ClassName), strings.ToLower (method.MethodName));
+			w.Writeln ("      [DllImport(\"%s.dll\", EntryPoint = \"%s_%s_%s\", CallingConvention=CallingConvention.Cdecl)]", baseName, strings.ToLower (NameSpace), strings.ToLower (class.ClassName), strings.ToLower (method.MethodName));
 			
 			if (parameters == "") {
 				parameters = "IntPtr Handle";
@@ -862,9 +900,9 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln ("")
 			w.Writeln ("    ~C%s ()", class.ClassName)
 			w.Writeln ("    {")
-			w.Writeln ("      if (Handle != (IntPtr) 0) {")
+			w.Writeln ("      if (Handle != IntPtr.Zero) {")
 			w.Writeln ("        Internal.%sWrapper.%s (Handle);", NameSpace, component.Global.ReleaseMethod)
-			w.Writeln ("        Handle = (IntPtr) 0;")
+			w.Writeln ("        Handle = IntPtr.Zero;")
 			w.Writeln ("      }")
 			w.Writeln ("    }")
 			w.Writeln ("")
