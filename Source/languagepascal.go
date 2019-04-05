@@ -269,7 +269,7 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 		case "enum":
 			if isPlain {
-				PascalParamTypeName = fmt.Sprintf ("Integer");
+				PascalParamTypeName = fmt.Sprintf ("Cardinal");
 			} else {
 				PascalParamTypeName = fmt.Sprintf ("T%s%s", NameSpace, ParamClass);
 			}

@@ -177,7 +177,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 						return err
 					}
 					if (member.Type == "enum") {
-						memberType = "ctypes.c_int32"
+						memberType = "ctypes.c_uint32"
 					}
 					typeFormatter := "%s"
 					if (member.Rows > 0) {
@@ -520,7 +520,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
 			
 			case "enum":
-				cParams[0].ParamType = "ctypes.POINTER(ctypes.c_int32)";
+				cParams[0].ParamType = "ctypes.POINTER(ctypes.c_uint32)";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -725,7 +725,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				if (retVals != "") {
 					retVals = retVals + ", ";
 				}
-				preCallLines = append(preCallLines, fmt.Sprintf("%s = ctypes.c_int32()", cParams[0].ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = ctypes.c_uint32()", cParams[0].ParamName))
 				cArguments = cArguments + cParams[0].ParamName
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName
 				retVals = retVals + fmt.Sprintf("%s(%s.value)", cParams[0].ParamCallType, cParams[0].ParamName)

@@ -1341,7 +1341,7 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 					journalCall = "addStringParameter(\"" + param.ParamName+ "\", p" + param.ParamName + ")";
 
 				case "enum":
-					journalCall = "addEnumParameter(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(" + variableName + "))";
+					journalCall = "addEnumParameter(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_uint32)(" + variableName + "))";
 					
 				case "class":
 					journalCall = "addHandleParameter(\"" + param.ParamName+ "\", " + variableName + ")";
@@ -1411,7 +1411,7 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 					journalCall = "addStringResult(\"" + param.ParamName+ "\", s" + param.ParamName + ".c_str())";
 
 				case "enum":
-					journalCall = "addEnumResult(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(*p" + param.ParamName + "))";
+					journalCall = "addEnumResult(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_uint32)(*p" + param.ParamName + "))";
 					
 				case "class":
 					journalCall = "addHandleResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";

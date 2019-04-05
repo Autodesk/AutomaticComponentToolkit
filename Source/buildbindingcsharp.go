@@ -358,7 +358,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 
 			case "enum":
-				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 enum%s = (Int32) A%s;", param.ParamName, param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  UInt32 enum%s = (UInt32) A%s;", param.ParamName, param.ParamName))
 				callFunctionParameter = "enum" + param.ParamName
 				initCallParameter = callFunctionParameter
 
@@ -446,7 +446,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  UInt32 result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = (e%s) (result%s);", param.ParamName, param.ParamClass, param.ParamName))
@@ -545,7 +545,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  UInt32 result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
@@ -769,7 +769,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			case "class":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 4*multiplier
 			}
 		}
@@ -889,7 +889,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			case "bool":
 				castSuffix = " (byte)"
 			case "enum":
-				castPrefix = fmt.Sprintf("(Int32) ")
+				castPrefix = fmt.Sprintf("(UInt32) ")
 			}
 
 			if element.Rows > 0 {

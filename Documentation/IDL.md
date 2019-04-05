@@ -266,6 +266,8 @@ The \<enum> element defines an enumerated type (see https://en.wikipedia.org/wik
 It contains a list of at least one [option](#12-option) element.
 The names as well as the values of the options in this list MUST be unique within a \<enum> element.
 
+Enums are passed through the thin layer of a components interface as 4 byte, unsigned integers, i.e. equivalent to a simple type `uint32`.
+
 
 ## 12. Option
 Element **\<option>** of type **CT\_Option**

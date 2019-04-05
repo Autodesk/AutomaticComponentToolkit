@@ -355,7 +355,7 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 		if !nameIsValidIdentifier(option.Name) {
 			return fmt.Errorf("invalid option name \"%s\"", option.Name)
 		}
-		if (math.Abs( float64(option.Value)) > math.Exp2(31) - 1) {
+		if (float64(option.Value) > math.Exp2(32)) || (float64(option.Value) < 0) {
 			return fmt.Errorf("option value out of range \"%d\" in \"%s\"", option.Value, option.Name)
 		}
 		if optionValueList[option.Value] {

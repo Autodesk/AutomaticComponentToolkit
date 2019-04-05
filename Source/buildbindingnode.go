@@ -649,7 +649,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			case "int8", "int16", "int32":
 				valueTypeCall = "Int32Value";		
 			case "enum":
-				valueTypeCall = "Int32Value";
+				valueTypeCall = "UInt32Value";
 				assignmentOperator = ".m_code = ";
 				
 			case "uint64", "int64":
@@ -776,7 +776,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			case "int8", "int16", "int32":
 				conversionCall = "Integer::New";
 			case "enum":
-				conversionCall = "Integer::New";
+				conversionCall = "Integer::NewFromUnsigned";
 				conversionPostfix = ".m_code";
 			case "uint64", "int64":
 				conversionCall = "String::NewFromUtf8";

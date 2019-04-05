@@ -112,8 +112,8 @@ func writeEnumConversionInterface(component ComponentDefinition, w LanguageWrite
 
 		for i := 0; i < len(component.Enums); i++ {
 			enum := component.Enums[i];
-			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
-			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Cardinal;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  function convertConstTo%s (const AValue: Cardinal): T%s%s;", enum.Name, NameSpace, enum.Name);
 		}
 		
 		w.Writeln ("");
@@ -134,11 +134,11 @@ func writeEnumConversionImplementation(component ComponentDefinition, w Language
 
 		for i := 0; i < len(component.Enums); i++ {
 			enum := component.Enums[i];
-			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Integer;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  function convert%sToConst (const AValue: T%s%s): Cardinal;", enum.Name, NameSpace, enum.Name);
 			w.Writeln ("  begin");
 			w.Writeln ("    case AValue of");
 			
-			for j := 0; j < len(enum.Options); j++ {						
+			for j := 0; j < len(enum.Options); j++ {
 				option := enum.Options[j];
 				w.Writeln ("      e%s%s: Result := %d;", enum.Name, option.Name, option.Value);
 			}
@@ -148,7 +148,7 @@ func writeEnumConversionImplementation(component ComponentDefinition, w Language
 			w.Writeln ("    end;");
 			w.Writeln ("  end;");
 			w.Writeln ("  ");
-			w.Writeln ("  function convertConstTo%s (const AValue: Integer): T%s%s;", enum.Name, NameSpace, enum.Name);
+			w.Writeln ("  function convertConstTo%s (const AValue: Cardinal): T%s%s;", enum.Name, NameSpace, enum.Name);
 			w.Writeln ("  begin");
 			w.Writeln ("    case AValue of");
 			
@@ -817,7 +817,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						doInitCall = true;
 						
 					case "enum":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Integer;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
 						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
@@ -893,7 +893,7 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 
 						
 					case "enum":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Integer;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
 						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
