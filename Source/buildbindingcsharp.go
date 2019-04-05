@@ -452,7 +452,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = (e%s) (result%s);", param.ParamName, param.ParamClass, param.ParamName))
 
 			case "bool":
-				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  Byte result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = (result%s != 0);", param.ParamName, param.ParamName))
@@ -551,7 +551,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				resultCommands = append(resultCommands, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
 
 			case "bool":
-				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  Byte result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
 				resultCommands = append(resultCommands, fmt.Sprintf("  return (result%s != 0);", param.ParamName))
@@ -887,7 +887,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			castSuffix := ""
 			switch element.Type {
 			case "bool":
-				castSuffix = " (int)"
+				castSuffix = " (byte)"
 			case "enum":
 				castPrefix = fmt.Sprintf("(Int32) ")
 			}
