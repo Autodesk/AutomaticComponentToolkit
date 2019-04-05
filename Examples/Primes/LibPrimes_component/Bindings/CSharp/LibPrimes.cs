@@ -45,7 +45,7 @@ namespace LibPrimes {
 			public extern static Int32 GetVersion (out UInt32 AMajor, out UInt32 AMinor, out UInt32 AMicro);
 
 			[DllImport("libprimes.dll", EntryPoint = "libprimes_getlasterror", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-			public extern static Int32 GetLastError (IntPtr AInstance, UInt32 sizeErrorMessage, out UInt32 neededErrorMessage, IntPtr dataErrorMessage, out Int32 AHasError);
+			public extern static Int32 GetLastError (IntPtr AInstance, UInt32 sizeErrorMessage, out UInt32 neededErrorMessage, IntPtr dataErrorMessage, out Byte AHasError);
 
 			[DllImport("libprimes.dll", EntryPoint = "libprimes_releaseinstance", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
 			public extern static Int32 ReleaseInstance (IntPtr AInstance);
@@ -81,7 +81,7 @@ namespace LibPrimes {
 				if (Handle != IntPtr.Zero) {
 					UInt32 sizeMessage = 0;
 					UInt32 neededMessage = 0;
-					Int32 hasLastError = 0;
+					Byte hasLastError = 0;
 					Int32 resultCode1 = GetLastError (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);
 					if ((resultCode1 == 0) && (hasLastError != 0)) {
 						sizeMessage = neededMessage + 1;
@@ -231,7 +231,7 @@ namespace LibPrimes {
 
 		public static bool GetLastError (CBase AInstance, out String AErrorMessage)
 		{
-			Int32 resultHasError = 0;
+			Byte resultHasError = 0;
 			UInt32 sizeErrorMessage = 0;
 			UInt32 neededErrorMessage = 0;
 			CheckError (Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, IntPtr.Zero, out resultHasError));

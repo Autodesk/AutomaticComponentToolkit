@@ -137,7 +137,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 	case "bool":
 		if isPlain {
-			CSharpParamTypeName = "Int32"
+			CSharpParamTypeName = "Byte"
 		} else {
 			CSharpParamTypeName = "bool"
 		}
@@ -925,7 +925,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("        if (Handle != IntPtr.Zero) {")
 		w.Writeln("          UInt32 sizeMessage = 0;")
 		w.Writeln("          UInt32 neededMessage = 0;")
-		w.Writeln("          Int32 hasLastError = 0;")
+		w.Writeln("          Byte hasLastError = 0;")
 		w.Writeln("          Int32 resultCode1 = %s (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);", component.Global.ErrorMethod)
 		w.Writeln("          if ((resultCode1 == 0) && (hasLastError != 0)) {")
 		w.Writeln("            sizeMessage = neededMessage + 1;")
