@@ -363,7 +363,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 
 			case "bool":
-				callFunctionParameter = "( A" + param.ParamName + " ? 1 : 0 )"
+				callFunctionParameter = "(Byte)( A" + param.ParamName + " ? 1 : 0 )"
 				initCallParameter = callFunctionParameter
 
 			case "struct":
@@ -1080,12 +1080,14 @@ func buildCSharpExample(componentdefinition ComponentDefinition, w LanguageWrite
 	//w.Writeln("      SetDllDirectory(null);")
 	w.Writeln("      string versionString = string.Format(\"%s.version = {0}.{1}.{2}\", nMajor, nMinor, nMicro);", NameSpace)
 	if len(global.PrereleaseMethod) > 0 {
-		w.Writeln("    if (%s.Wrapper.%s(preReleaseInfo) then", NameSpace, global.PrereleaseMethod)
-		w.Writeln("      versionString = versionString + '-' + preReleaseInfo;")
+		w.Writeln("      string sPreReleaseInfo;")
+		w.Writeln("      if (%s.Wrapper.%s(out sPreReleaseInfo))", NameSpace, global.PrereleaseMethod)
+		w.Writeln("        versionString = versionString + '-' + sPreReleaseInfo;")
 	}
 	if len(global.BuildinfoMethod) > 0 {
-		w.Writeln("    if (%s.Wrapper.%s(buildInfo) then", NameSpace, global.BuildinfoMethod)
-		w.Writeln("      versionString = versionString + '-' + buildInfo;")
+		w.Writeln("      string sBuildInfo;")
+		w.Writeln("      if (%s.Wrapper.%s(out sBuildInfo))", NameSpace, global.BuildinfoMethod)
+		w.Writeln("        versionString = versionString + '-' + sBuildInfo;")
 	}
 	w.Writeln("      Console.WriteLine(versionString);")
 	w.Writeln("      ")
