@@ -81,6 +81,37 @@ func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, 
 
 	}
 
+
+	err = buildCCPPDocumentationExample(component, outputFolder, ClassIdentifier, true, "_dynamic")
+	if err != nil {
+		return err
+	}
+	err = buildCCPPDocumentationExample(component, outputFolder, ClassIdentifier, false, "_implicit")
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func buildCCPPDocumentationExample(component ComponentDefinition, outputFolder string, ClassIdentifier string, ExplicitLinking bool, suffix string) error {
+	NameSpace := component.NameSpace
+
+	DynamicCPPExample := path.Join(outputFolder, NameSpace +"_example"+suffix+".cpp")
+	log.Printf("Creating \"%s\"", DynamicCPPExample)
+	dyncppexamplefile, err := CreateLanguageFile(DynamicCPPExample, "  ")
+	if err != nil {
+		return err
+	}
+	buildDynamicCppExample(component, dyncppexamplefile, outputFolder, ClassIdentifier, ExplicitLinking)
+
+	DynamicCPPCMake := path.Join(outputFolder, "CMakeLists"+suffix+".txt")
+	log.Printf("Creating \"%s\"", DynamicCPPCMake)
+	dyncppcmake, err := CreateLanguageFile(DynamicCPPCMake, "	")
+	if err != nil {
+		return err
+	}
+	buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, ExplicitLinking)
 	return nil
 }
 
@@ -167,10 +198,11 @@ func buildCCPPDocumentationGlobal(component ComponentDefinition, w LanguageWrite
 		w.Writeln("  ")
 	}
 
-	w.Writeln(".. cpp:type:: std::shared_ptr<%s> %s::P%s%s", wrapperName, NameSpace, "Wrapper")
-
+	w.Writeln(".. cpp:type:: std::shared_ptr<%s> %s::P%s%s", wrapperName, NameSpace, ClassIdentifier, "Wrapper")
+	w.Writeln("  ")
+	
 	// Load library functions
-	// check error functions of the base class
+	// Check error functions of the base class
 
 	return nil
 }
@@ -330,6 +362,8 @@ func buildCCPPDocumentationStructs(component ComponentDefinition, w LanguageWrit
 		structinfo := component.Structs[i];
 		w.Writeln("  .. cpp:struct:: s%s", structinfo.Name);
 		w.Writeln("  ");
+		// w.Writeln("    %s", structinfo.Description);
+		// w.Writeln("  ");
 		for j := 0; j < len(structinfo.Members); j++ {
 			member := structinfo.Members[j];
 			arraysuffix := "";

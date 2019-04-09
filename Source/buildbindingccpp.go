@@ -1382,7 +1382,7 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 }
 
 
-func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, ClassIdentifier string, ExplicitLinking bool) error {
+func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, ClassIdentifier string, ExplicitLinking bool) {
 	NameSpace := componentdefinition.NameSpace
 	BaseName := componentdefinition.BaseName
 
@@ -1431,8 +1431,6 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 	w.Writeln("  return 0;")
 	w.Writeln("}")
 	w.Writeln("")
-
-	return nil
 }
 
 func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, outputFolderExample string, ExplicitLinking bool) error {
@@ -1470,7 +1468,6 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
 	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
-	return nil
 }
 
 
