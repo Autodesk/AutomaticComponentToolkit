@@ -450,7 +450,7 @@ func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace
 			}
 			var memberLine string
 			if (useCPPTypes) {
-				memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
+				memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, ";")
 			} else {
 				memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
 			}
@@ -613,6 +613,7 @@ type CParameter struct {
 	ParamType string
 	ParamName string
 	ParamComment string
+	ParamDocumentationLine string
 }
 
 
@@ -636,61 +637,73 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "n" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "bool":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "b" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 				
 			case "single":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "f" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "double":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "d" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "pointer":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 				
 			case "string":
 				cParams[0].ParamType = "const " + cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "enum":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "e" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "struct":
 				cParams[0].ParamType = "const " + cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "basicarray", "structarray":
 				cParams = make([]CParameter,2)
 				cParams[0].ParamType = fmt.Sprintf ("%s_uint64", NameSpace);
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 				cParams[1].ParamType = "const " + cParamTypeName;
 				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
+				cParams[1].ParamDocumentationLine = fmt.Sprintf(":param %s: buffer of %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "class":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			case "functiontype":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
 
 			default:
 				return nil, fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, methodName, param.ParamName);
@@ -704,45 +717,75 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				if ("out" == param.ParamPass) {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
+				} else {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":return: %s", param.ParamDescription)
+				}
 
 			case "struct":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
+				if ("out" == param.ParamPass) {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
+				} else {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":return: %s", param.ParamDescription)
+				}
 				
 			case "basicarray", "structarray":
 				cParams = make([]CParameter,3)
 				cParams[0].ParamType = fmt.Sprintf("const %s_uint64", NameSpace)
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName);
+				paramComment0 := "Number of elements in buffer"
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, paramComment0);
 
 				cParams[1].ParamType = fmt.Sprintf("%s_uint64*", NameSpace)
 				cParams[1].ParamName = "p" + param.ParamName + "NeededCount";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", cParams[1].ParamName);
+				paramComment1 := "will be filled with the count of the written elements, or needed buffer size."
+				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[1].ParamName, paramComment1);
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
+				paramComment2 := "buffer of " + param.ParamDescription
+				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s  %s", cParams[2].ParamName, param.ParamClass, paramComment2);
+
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, paramComment0)
+				cParams[1].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[1].ParamName, paramComment1)
+				cParams[2].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[2].ParamName, paramComment2)
 
 			case "string":
 				cParams = make([]CParameter,3)
 				cParams[0].ParamType = fmt.Sprintf("const %s_uint32", NameSpace)
 				cParams[0].ParamName = "n" + param.ParamName + "BufferSize";
-				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", cParams[0].ParamName);
+				paramComment0 := "size of the buffer (including trailing 0)"
+				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, paramComment0);
 
 				cParams[1].ParamType = fmt.Sprintf("%s_uint32*", NameSpace)
 				cParams[1].ParamName = "p" + param.ParamName + "NeededChars";
-				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", cParams[1].ParamName);
+				paramComment1 := "will be filled with the count of the written bytes, or needed buffer size."
+				cParams[1].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[1].ParamName, paramComment1);
 
 				cParams[2].ParamType = cParamTypeName;
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
-				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
+				paramComment2 := fmt.Sprintf("buffer of %s, may be NULL", param.ParamDescription)
+				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s %s", cParams[2].ParamName, param.ParamClass, paramComment2);
+
+				cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, paramComment0)
+				cParams[1].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[1].ParamName, paramComment1)
+				cParams[2].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[2].ParamName, paramComment2)
 
 			case "class":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
 	
+				if ("out" == param.ParamPass) {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":param %s: %s", cParams[0].ParamName, param.ParamDescription)
+				} else {
+					cParams[0].ParamDocumentationLine = fmt.Sprintf(":return: %s", param.ParamDescription)
+				}
+
 			default:
 				return nil, fmt.Errorf ("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, methodName, param.ParamName);
 		}

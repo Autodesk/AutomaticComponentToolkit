@@ -115,7 +115,8 @@ func BuildBindingCExplicit(component ComponentDefinition, outputFolder string, o
 }
 
 // BuildBindingCppImplicit builds dynamic C++-bindings of a library's API in form of implicitly linked functions handles.
-func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string, outputFolderExample string, indentString string, ClassIdentifier string) error {
+func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string, outputFolderExample string, 
+	outputFolderDocumentation string, indentString string, ClassIdentifier string) error {
 	forceRecreation := false
 	ExplicitLinking := false
 
@@ -168,8 +169,16 @@ func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string,
 			log.Printf("Omitting recreation of C++-example CMakeLists-file \"%s\"", CPPCMake)
 		}
 	}
+
+	err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
+	if err != nil {
+		return err
+	}
+
+
 	return nil
 }
+
 
 func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string,
 	headerOnly bool, useCPPTypes bool) error {
@@ -461,7 +470,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	return nil
 }
 
-func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string) error {
+func getDynamicCPPMethodParameters(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string) (string, string, error) {
 	parameters := ""
 	returntype := "void"
 
@@ -498,12 +507,19 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 		case "return":
 			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
 		default:
-			return fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+			return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 	}
 
-	w.Writeln("  inline %s %s(%s);", returntype, method.MethodName, parameters)
+	return parameters, returntype, nil
+}
 
+func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string) error {
+	parameters, returntype, err := getDynamicCPPMethodParameters(method, NameSpace, ClassIdentifier, ClassName)
+	if (err!= nil) {
+		return err
+	}
+	w.Writeln("  inline %s %s(%s);", returntype, method.MethodName, parameters)
 	return nil
 }
 
@@ -960,6 +976,20 @@ func getBindingCppVariableName(param ComponentDefinitionParam) string {
 }
 
 
+func getCPPInheritanceSpecifier(component ComponentDefinition, class ComponentDefinitionClass, cppClassPrefix string, ClassIdentifier string) (string, string) {
+	cppParentClassName := ""
+	inheritanceSpecifier := ""
+	if !component.isBaseClass(class) {
+		if class.ParentClass == "" {
+			cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
+		} else {
+			cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+		}
+		inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
+	}
+	return cppParentClassName, inheritanceSpecifier
+}
+
 func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, ClassIdentifier string, ExplicitLinking bool) error {
 	useCPPTypes := true
 
@@ -1157,16 +1187,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		class := component.Classes[i]
 		cppClassName := cppClassPrefix + ClassIdentifier + class.ClassName
 
-		cppParentClassName := ""
-		inheritanceSpecifier := ""
-		if !component.isBaseClass(class) {
-			if class.ParentClass == "" {
-				cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
-			} else {
-				cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
-			}
-			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
-		}
+		cppParentClassName, inheritanceSpecifier := getCPPInheritanceSpecifier(component, class, cppClassPrefix, ClassIdentifier)
 
 		w.Writeln("  ")
 		w.Writeln("/*************************************************************************************************************************")

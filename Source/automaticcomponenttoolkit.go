@@ -165,6 +165,7 @@ func main() {
 	outputFolder := path.Join(outfolderBase, component.NameSpace+"_component")
 	outputFolderBindings := path.Join(outputFolder, "Bindings")
 	outputFolderExamples := path.Join(outputFolder, "Examples")
+	outputFolderDocumentation := path.Join(outputFolder, "Documentations")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
 
 	err = os.MkdirAll(outputFolder, os.ModePerm)
@@ -276,6 +277,11 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
+				outputFolderDocumentationCppImplicit := outputFolderDocumentation + "/Cpp"
+				err = os.MkdirAll(outputFolderDocumentationCppImplicit, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
 
 				CPPTypesHeaderName := path.Join(outputFolderBindingCppImplicit, component.BaseName+"_types.hpp")
 				err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
@@ -290,7 +296,7 @@ func main() {
 				}
 
 				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit,
-					indentString, binding.ClassIdentifier)
+					outputFolderDocumentationCppImplicit, indentString, binding.ClassIdentifier)
 				if err != nil {
 					log.Fatal(err)
 				}

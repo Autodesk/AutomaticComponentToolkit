@@ -51,16 +51,16 @@ func CreateCPPTypesHeader(component ComponentDefinition, CTypesHeaderName string
 	return err;
 }
 
-func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string) (string, error) {
+func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string, endCharacter string) (string, error) {
 	switch (member.Type) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 			typeName, err := getCPPParameterTypeName(member.Type, NameSpace, "")
 			if (err != nil) {
 				return "", err
 			}
-			return fmt.Sprintf("%s m_%s%s;", typeName, member.Name, arraysuffix), nil
+			return fmt.Sprintf("%s m_%s%s%s", typeName, member.Name, arraysuffix, endCharacter), nil
 		case "enum":
-			return fmt.Sprintf("e%s m_%s%s;", member.Class, member.Name, arraysuffix), nil
+			return fmt.Sprintf("e%s m_%s%s%s", member.Class, member.Name, arraysuffix, endCharacter), nil
 		default:
 			return "", fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
 		
