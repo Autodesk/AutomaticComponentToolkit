@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -33,9 +33,7 @@ namespace Impl {
 class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator {
 private:
 
-	/**
-	* Put private members here.
-	*/
+	std::vector<sPrimeFactor> primeFactors;
 
 protected:
 
@@ -49,6 +47,7 @@ public:
 	* Put additional public members here. They will not be visible in the external API.
 	*/
 
+	void Calculate();
 
 	/**
 	* Public member functions to implement.

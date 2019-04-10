@@ -1,6 +1,6 @@
 (*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -22,17 +22,15 @@ uses
 	libprimes_types,
 	libprimes_exception,
 	libprimes_interfaces,
-  libprimes_impl_factorizationcalculator,
-	libprimes_impl_sievecalculator,
 	Classes,
 	sysutils;
 
 type
 	TLibPrimesWrapper = class (TObject)
 		public
+			class procedure GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
 			class function GetLastError(AInstance: TObject; out AErrorMessage: String): Boolean;
 			class procedure ReleaseInstance(AInstance: TObject);
-			class procedure GetLibraryVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
 			class function CreateFactorizationCalculator(): TObject;
 			class function CreateSieveCalculator(): TObject;
 			class procedure SetJournal(const AFileName: String);
@@ -41,33 +39,29 @@ type
 
 implementation
 
+class procedure TLibPrimesWrapper.GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
+begin
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+end;
+
 class function TLibPrimesWrapper.GetLastError(AInstance: TObject; out AErrorMessage: String): Boolean;
 begin
-  result := false;
-	if Supports(AInstance, ILibPrimesBase) then
-    result := (AInstance as ILibPrimesBase).GetLastErrorMessage(AErrorMessage);
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 class procedure TLibPrimesWrapper.ReleaseInstance(AInstance: TObject);
 begin
-	FreeAndNil(AInstance);
-end;
-
-class procedure TLibPrimesWrapper.GetLibraryVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
-begin
-	AMajor := LIBPRIMES_VERSION_MAJOR;
-	AMinor := LIBPRIMES_VERSION_MINOR;
-	AMicro := LIBPRIMES_VERSION_MICRO;
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 class function TLibPrimesWrapper.CreateFactorizationCalculator(): TObject;
 begin
-  result := TLibPrimesFactorizationCalculator.Create();
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 class function TLibPrimesWrapper.CreateSieveCalculator(): TObject;
 begin
-	result := TLibPrimesSieveCalculator.Create();
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 class procedure TLibPrimesWrapper.SetJournal(const AFileName: String);

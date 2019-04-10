@@ -1,6 +1,6 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -42,7 +42,9 @@ protected:
 	/**
 	* Put protected members here.
 	*/
+	LibPrimes_uint64 m_value;
 
+	ProgressCallback m_Callback;
 public:
 
 	/**
@@ -54,15 +56,13 @@ public:
 	* Public member functions to implement.
 	*/
 
-	LibPrimes_uint64 GetValue();
+	void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback);
 
-	ICalculator * GetSelf();
+	LibPrimes_uint64 GetValue();
 
 	void SetValue(const LibPrimes_uint64 nValue);
 
 	void Calculate();
-
-	void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback);
 
 };
 

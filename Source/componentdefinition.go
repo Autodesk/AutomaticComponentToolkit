@@ -50,6 +50,8 @@ const (
 	eSpecialMethodVersion = 2
 	eSpecialMethodJournal = 3
 	eSpecialMethodError = 4
+	eSpecialMethodPrerelease = 5
+	eSpecialMethodBuildinfo = 6
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -69,7 +71,6 @@ type ComponentDefinitionMethod struct {
 	XMLName xml.Name `xml:"method"`
 	MethodName string `xml:"name,attr"`
 	MethodDescription string `xml:"description,attr"`
-	DLLSuffix string `xml:"dllsuffix,attr"`
 	Params   []ComponentDefinitionParam `xml:"param"`
 }
 
@@ -113,6 +114,8 @@ type ComponentDefinitionGlobal struct {
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
+	PrereleaseMethod string `xml:"prereleasemethod,attr"`
+	BuildinfoMethod string `xml:"buildinfomethod,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -122,6 +125,7 @@ type ComponentDefinitionBinding struct {
 	XMLName xml.Name `xml:"binding"`
 	Language string `xml:"language,attr"`
 	Indentation string `xml:"indentation,attr"`
+	ClassIdentifier string `xml:"classidentifier,attr"`
 }
 
 // ComponentDefinitionImplementation definition of a specific languages for which bindings to the component's API will be generated
@@ -607,35 +611,35 @@ func isScalarType(typeStr string) bool {
 	return false
 }
 
-func majorVersion (version string) int {
+func majorVersion(version string) int {
 	isValid, versions, _ := decomposeVersionString(version)
 	if (!isValid) {
 		log.Fatal("invalid version")
 	}
 	return versions[0]
 }
-func minorVersion (version string) int {
+func minorVersion(version string) int {
 	isValid, versions, _ := decomposeVersionString(version)
 	if (!isValid) {
 		log.Fatal("invalid version")
 	}
 	return versions[1]
 }
-func microVersion (version string) int {
+func microVersion(version string) int {
 	isValid, versions, _ := decomposeVersionString(version)
 	if (!isValid) {
 		log.Fatal("invalid version")
 	}
 	return versions[2]
 }
-func preReleaseInfo (version string) string {
+func preReleaseInfo(version string) string {
 	isValid, _, additionalData := decomposeVersionString(version)
 	if (!isValid) {
 		log.Fatal("invalid version")
 	}
 	return additionalData[0]
 }
-func buildInfo (version string) string {
+func buildInfo(version string) string {
 	isValid, _, additionalData := decomposeVersionString(version)
 	if (!isValid) {
 		log.Fatal("invalid version")
@@ -643,7 +647,7 @@ func buildInfo (version string) string {
 	return additionalData[1]
 }
 
-func decomposeVersionString (version string) (bool, [3]int, [2]string) {
+func decomposeVersionString(version string) (bool, [3]int, [2]string) {
 	var IsValidVersion = regexp.MustCompile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(\\-[a-zA-Z0-9.\\-]+)?(\\+[a-zA-Z0-9.\\-]+)?$")
 
 	var vers [3]int;
@@ -852,15 +856,13 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 	}
 
 	if (method.MethodName == global.VersionMethod) {
-		if (len (method.Params) != 5) {
+		if (len (method.Params) != 3) {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
 		if (method.Params[0].ParamType != "uint32") || (method.Params[0].ParamPass != "out") || 
 			(method.Params[1].ParamType != "uint32") || (method.Params[1].ParamPass != "out") || 
-			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out") ||
-			(method.Params[3].ParamType != "string") || (method.Params[3].ParamPass != "out") || 
-			(method.Params[4].ParamType != "string") || (method.Params[4].ParamPass != "out") {
+			(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out") {
 			return eSpecialMethodNone, errors.New ("Version method does not match the expected function template");
 		}
 		
@@ -880,6 +882,36 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		}
 		
 		return eSpecialMethodError, nil;
+	}
+
+	if len(global.PrereleaseMethod)>0 && (global.PrereleaseMethod == global.BuildinfoMethod) {
+		return eSpecialMethodNone, errors.New ("Prerelease method can not be the same as the buildinfo method");
+	}
+	
+	if (method.MethodName == global.PrereleaseMethod) {
+		if (len (method.Params) != 2) {
+			return eSpecialMethodNone, errors.New ("Prerelease method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "bool") || (method.Params[0].ParamPass != "return") || 
+			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") {
+			return eSpecialMethodNone, errors.New ("Prerelease method does not match the expected function template");
+		}
+		
+		return eSpecialMethodPrerelease, nil;
+	}
+
+	if (method.MethodName == global.BuildinfoMethod) {
+		if (len (method.Params) != 2) {
+			return eSpecialMethodNone, errors.New ("Buildinfo method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "bool") || (method.Params[0].ParamPass != "return") || 
+			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") {
+			return eSpecialMethodNone, errors.New ("Buildinfo method does not match the expected function template");
+		}
+		
+		return eSpecialMethodBuildinfo, nil;
 	}
 
 	return eSpecialMethodNone, nil;

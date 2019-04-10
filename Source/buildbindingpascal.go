@@ -579,9 +579,8 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln ("  procedure T%sWrapper.checkBinaryVersion();", NameSpace)
 	w.Writeln ("  var")
 	w.Writeln ("    AMajor, AMinor, AMicro: Cardinal;")
-	w.Writeln ("    APreReleaseInfo, ABuildInfo: String;")
 	w.Writeln ("  begin")
-	w.Writeln ("    %s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", global.VersionMethod)
+	w.Writeln ("    %s(AMajor, AMinor, AMicro);", global.VersionMethod)
 	w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
 	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION, '');", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln ("  end;")
@@ -826,11 +825,11 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := convertConstTo%s (Result%s);", param.ParamName, param.ParamClass, param.ParamName));
 
 					case "bool":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Byte;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
-						callFunctionParameters = callFunctionParameters + "PByte (@Result" + param.ParamName + ")^";
-						initCallParameters = initCallParameters + "PByte (@Result" + param.ParamName + ")^";
+						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
+						initCallParameters = initCallParameters + "Result" + param.ParamName
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := Result%s <> 0;", param.ParamName, param.ParamName));
 						
 					case "struct":
@@ -902,11 +901,11 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := convertConstTo%s (Result%s);", param.ParamClass, param.ParamName));
 
 					case "bool":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Byte;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
-						callFunctionParameters = callFunctionParameters + "PByte (@Result" + param.ParamName + ")^";
-						initCallParameters = initCallParameters + "PByte (@Result" + param.ParamName + ")^";
+						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
+						initCallParameters = initCallParameters + "Result" + param.ParamName;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := (Result%s <> 0);", param.ParamName));
 						
 					case "struct":
@@ -1069,21 +1068,27 @@ func buildDynamicPascalExample(w LanguageWriter, global ComponentDefinitionGloba
 	w.Writeln("var")
 	w.Writeln("  A%sWrapper: T%sWrapper;", NameSpace, NameSpace)
 	w.Writeln("  AMajor, AMinor, AMicro: Cardinal;")
-	w.Writeln("  APreReleaseInfo, ABuildInfo, AVersionString: string;")
+	if len(global.PrereleaseMethod)>0 {
+		w.Writeln("  APreReleaseInfo, ABuildInfo: string;")
+	}
+	w.Writeln("  AVersionString: string;")
 	w.Writeln("  ALibPath: string;")
 	w.Writeln("begin")
 	w.Writeln("  writeln ('loading DLL');")
 	w.Writeln("  ALibPath := ''; // TODO add the location of the shared library binary here")
-	w.Writeln("  A%sWrapper := T%sWrapper.Create (ALibPath + '/' + '%s.dll');", NameSpace, NameSpace, BaseName)
+	w.Writeln("  A%sWrapper := T%sWrapper.Create (ALibPath + '/' + '%s.'); // TODO add the extension of the shared library file here", NameSpace, NameSpace, BaseName)
 	w.Writeln("  try")
 	w.Writeln("    writeln ('loading DLL Done');")
-	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro, APreReleaseInfo, ABuildInfo);", NameSpace, global.VersionMethod)
+	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro);", NameSpace, global.VersionMethod)
 	w.Writeln("    AVersionString := Format('%s.version = %s', [AMajor, AMinor, AMicro]);", NameSpace, "%d.%d.%d")
-	w.Writeln("    if (APreReleaseInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
-	w.Writeln("    if (ABuildInfo <> '') then")
-	w.Writeln("      AVersionString := AVersionString + '+' + ABuildInfo;")
-
+	if len(global.PrereleaseMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(APreReleaseInfo) then", NameSpace, global.PrereleaseMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
+	}
+	if len(global.BuildinfoMethod)>0 {
+		w.Writeln("    if (A%sWrapper.%s(ABuildInfo) then", NameSpace, global.BuildinfoMethod)
+		w.Writeln("      AVersionString := AVersionString + '-' + ABuildInfo;")
+	}
 	w.Writeln("    writeln(AVersionString);")
 	w.Writeln("  finally")
 	w.Writeln("    FreeAndNil(A%sWrapper);", NameSpace)

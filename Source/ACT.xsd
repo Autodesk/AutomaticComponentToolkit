@@ -156,6 +156,12 @@
 		<xs:attribute name="errormethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;errormethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="prereleasemethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;prereleasemethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="buildinfomethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;buildinfomethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:attribute name="journalmethod" type="ST_Name" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
@@ -198,6 +204,7 @@
 			<xs:enumeration value="Fortran"/>
 			<xs:enumeration value="Node"/>
 			<xs:enumeration value="Go"/>
+			<xs:enumeration value="CSharp"/>
 		</xs:restriction>
 	</xs:simpleType>
 	

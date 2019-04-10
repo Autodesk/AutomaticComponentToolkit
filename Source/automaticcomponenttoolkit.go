@@ -72,7 +72,7 @@ func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 }
 
 func main() {
-	ACTVersion := "1.5.0-develop5"
+	ACTVersion := "1.5.0"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
 		log.Fatal("Please run with the Interface Description XML as command line parameter.")
@@ -253,7 +253,8 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic, indentString)
+				err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic,
+					indentString, binding.ClassIdentifier)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -284,7 +285,8 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit, indentString)
+				err = BuildBindingCppImplicit(component, outputFolderBindingCppImplicit, outputFolderExampleCppImplicit,
+					indentString, binding.ClassIdentifier)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -351,6 +353,25 @@ func main() {
 				}
 			}
 
+		case "CSharp":
+			{
+				outputFolderBindingCSharp := outputFolderBindings + "/CSharp";
+				err  = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+
+				outputFolderExampleCSharp := outputFolderExamples + "/CSharp";
+				err  = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+				
+				err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString);
+				if (err != nil) {
+					log.Fatal (err);
+				}
+			}
 		case "Python":
 			{
 				outputFolderBindingPython := outputFolderBindings + "/Python"

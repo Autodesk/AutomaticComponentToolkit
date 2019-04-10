@@ -340,7 +340,6 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		class := component.Classes[i]
 
 		writeCPPClassInterface(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName)
-		
 	}
 
 	w.Writeln("")
@@ -353,6 +352,15 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
+
+		// Omit Journal Method
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) {
+			continue
+		}
 
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
 		if err != nil {
@@ -384,6 +392,14 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 
+		// Omit Journal Method
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) {
+			continue
+		}
 		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
 			return err
@@ -555,9 +571,9 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	}
 
 	if isGlobal {
-		CMethodName = fmt.Sprintf("%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	} else {
-		CMethodName = fmt.Sprintf("%s_%s_%s%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName), method.DLLSuffix)
+		CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		if cparameters != "" {
 			cparameters = ", " + cparameters
 		}
@@ -571,19 +587,16 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 		return err
 	}
 	
-	
-	if (isSpecialFunction == eSpecialMethodNone || isSpecialFunction == eSpecialMethodRelease || isSpecialFunction == eSpecialMethodVersion || isSpecialFunction == eSpecialMethodError ) {
-		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
-		if err != nil {
-			return err
-		}
-	}
-	
 	if (isSpecialFunction == eSpecialMethodJournal) {
 		callCPPFunctionCode = fmt.Sprintf(indentString + indentString + "m_GlobalJournal = nullptr;\n") +
 							  fmt.Sprintf(indentString + indentString + "if (s%s != \"\") {\n", method.Params[0].ParamName) +	
 							  fmt.Sprintf(indentString + indentString + indentString + "m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);\n", NameSpace, method.Params[0].ParamName) + 
 							  fmt.Sprintf(indentString + indentString + "}\n");
+	} else {
+		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
+		if err != nil {
+			return err
+		}
 	}
 	
 	journalInitFunctionCode := "";
@@ -817,7 +830,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 			stubimplw.Writeln("%s", implementationdeclaration)
 			stubimplw.Writeln("{")
-			stubimplw.Writeln("  throw E%sInterfaceException (%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
+			stubimplw.Writeln("  throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
 			stubimplw.Writeln("}")
 			stubimplw.Writeln("")
 		}
