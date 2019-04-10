@@ -6,7 +6,7 @@ a [thin C89-API](#thin-c89-api), [implementation stubs](#implementation-stubs) a
 
 ### Interface Description Language (IDL)
 The IDL file defines the types and functions of your API and serves as the source for the automatically generated Code.
-The exact schema of the IDL and explanation of each element is described in the [Documentation/IDL.md](Documentation/IDL.md).
+The exact schema of the IDL and explanation of each element is described in [Documentation/IDL.md](Documentation/IDL.md).
 
 ### Thin C89-API
 A thin C89-API is a C header file that declares all functions, structs, enums and constants exported by your software component. The C89-API unambiguously defines the binary interface (ABI) of the component.
