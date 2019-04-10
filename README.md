@@ -1,12 +1,12 @@
 # Automatic Component Toolkit
-[![Build Status](https://travis-ci.org/Autodesk/AutomaticComponentToolkit.svg?branch=develop)](https://travis-ci.org/Autodesk/AutomaticComponentToolkit)
+[![Build Status](https://travis-ci.org/Autodesk/AutomaticComponentToolkit.svg?branch=master)](https://travis-ci.org/Autodesk/AutomaticComponentToolkit)
 
 The Automatic Component Toolkit (ACT) is a code generator that takes an instance of an [Interface Description Language](#interface-description-language-idl) file and generates 
 a [thin C89-API](#thin-c89-api), [implementation stubs](#implementation-stubs) and [language bindings](#language-bindings) of your desired software component.
 
 ### Interface Description Language (IDL)
 The IDL file defines the types and functions of your API and serves as the source for the automatically generated Code.
-The exact schema of the IDL and explanation of each element is described in [Documentation/IDL.md](Documentation/IDL.md).
+The exact schema of the IDL and explanation of each element is described in the [Documentation/IDL.md](Documentation/IDL.md).
 
 ### Thin C89-API
 A thin C89-API is a C header file that declares all functions, structs, enums and constants exported by your software component. The C89-API unambiguously defines the binary interface (ABI) of the component.
@@ -55,7 +55,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 | Pascal          | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Python3         | ![](Documentation/images/Tick.png) complete (but not very pythonic) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        |
 | Golang          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        |
-| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |     -     |         +        |
+| NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |     ?    |      ?      |     -     |         +        |
 | C#              | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        |
 | PHP             | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |       -    |      -      |     -     |         -        |
 
