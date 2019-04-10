@@ -136,7 +136,7 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 						fmt.Fprintf (w, "    %s%s uint16;\n", member.Name, arraysuffix);
 					case "uint32":
 						fmt.Fprintf (w, "    %s%s uint32;\n", member.Name, arraysuffix);
-					case "uint64":				
+					case "uint64":
 						fmt.Fprintf (w, "    %s%s uint64;\n", member.Name, arraysuffix);
 					case "int8":
 						fmt.Fprintf (w, "    %s%s int8;\n", member.Name, arraysuffix);
@@ -152,9 +152,11 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 						fmt.Fprintf (w, "    %s%s float32;\n", member.Name, arraysuffix);
 					case "double":
 						fmt.Fprintf (w, "    %s%s float64;\n", member.Name, arraysuffix);
+					case "pointer":
+						fmt.Fprintf (w, "    %s%s uint64;\n", member.Name, arraysuffix);
 					case "string":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name);
-					case "handle":
+					case "class":
 						return fmt.Errorf ("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name);
 					case "enum":
 						fmt.Fprintf (w, "    %s%s E%s%s;\n", member.Name, arraysuffix, NameSpace, member.Class);
@@ -204,14 +206,14 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 		class := component.Classes[i];
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j];
-			fmt.Fprintf (implw, "    %s_%s_%s%s uintptr\n", NameSpace, strings.ToLower (class.ClassName), strings.ToLower (method.MethodName), method.DLLSuffix);	
+			fmt.Fprintf (implw, "    %s_%s_%s uintptr\n", NameSpace, strings.ToLower (class.ClassName), strings.ToLower (method.MethodName));
 		}
 	}
 	
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j];
 
-		fmt.Fprintf (implw, "    %s_%s%s uintptr\n", NameSpace, strings.ToLower (method.MethodName), method.DLLSuffix);	
+		fmt.Fprintf (implw, "    %s_%s uintptr\n", NameSpace, strings.ToLower (method.MethodName));	
 	}
 	
 	fmt.Fprintf (implw, "}\n");
@@ -359,8 +361,8 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 		class := component.Classes[i];
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j];
-			functionName := fmt.Sprintf ("%s_%s_%s%s", strings.ToLower (NameSpace), strings.ToLower (class.ClassName), strings.ToLower (method.MethodName), method.DLLSuffix);
-			fmt.Fprintf (implw, "    implementation.%s_%s_%s%s, err = syscall.GetProcAddress (dllHandle, \"%s\");\n", NameSpace, strings.ToLower (class.ClassName), strings.ToLower (method.MethodName), method.DLLSuffix, functionName);
+			functionName := fmt.Sprintf ("%s_%s_%s", strings.ToLower (NameSpace), strings.ToLower (class.ClassName), strings.ToLower (method.MethodName));
+			fmt.Fprintf (implw, "    implementation.%s_%s_%s, err = syscall.GetProcAddress (dllHandle, \"%s\");\n", NameSpace, strings.ToLower (class.ClassName), strings.ToLower (method.MethodName), functionName);
 			fmt.Fprintf (implw, "    if (err != nil) {\n");
 			fmt.Fprintf (implw, "        return errors.New (\"Could not get function %s: \" + err.Error());\n", functionName);
 			fmt.Fprintf (implw, "    }\n");
@@ -371,8 +373,8 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j];
 		
-		functionName := fmt.Sprintf ("%s_%s%s", strings.ToLower (NameSpace), strings.ToLower (method.MethodName), method.DLLSuffix);
-		fmt.Fprintf (implw, "    implementation.%s_%s%s, err = syscall.GetProcAddress (dllHandle, \"%s\");\n", NameSpace, strings.ToLower (method.MethodName), method.DLLSuffix, functionName);
+		functionName := fmt.Sprintf ("%s_%s", strings.ToLower (NameSpace), strings.ToLower (method.MethodName));
+		fmt.Fprintf (implw, "    implementation.%s_%s, err = syscall.GetProcAddress (dllHandle, \"%s\");\n", NameSpace, strings.ToLower (method.MethodName), functionName);
 		fmt.Fprintf (implw, "    if (err != nil) {\n");
 		fmt.Fprintf (implw, "        return errors.New (\"Could not get function %s: \" + err.Error());\n", functionName);
 		fmt.Fprintf (implw, "    }\n");
@@ -535,15 +537,16 @@ func getGoBasicType (paramType string) (string, error) {
 	
 	switch (paramType) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool":
-			return paramType, nil;
+			return paramType, nil
 	
 		case "single":
-			return "float32", nil;
+			return "float32", nil
 			
 		case "double":
-			return "float64", nil;
+			return "float64", nil
 		
-			
+		case "pointer":
+			return "uint64", nil
 	}
 		
 	return "", errors.New ("Invalid basic type: " + paramType);
@@ -574,6 +577,8 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 			switch (param.ParamType) {
 				case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
 					errorreturn = errorreturn + fmt.Sprintf ("0, ")
+				case "pointer":
+					errorreturn = errorreturn + fmt.Sprintf ("0, ")
 				case "enum":
 					errorreturn = errorreturn + fmt.Sprintf ("0, ")
 				case "bool":
@@ -582,7 +587,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					errorreturn = errorreturn + fmt.Sprintf ("\"\", ")
 				case "struct":
 					errorreturn = errorreturn + fmt.Sprintf ("s%s, ", param.ParamName)
-				case "handle":
+				case "class":
 					errorreturn = errorreturn + fmt.Sprintf ("h%s, ", param.ParamName)
 				case "functiontype":
 					errorreturn = errorreturn + fmt.Sprintf ("0, ")
@@ -695,18 +700,24 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt32InValue (n%s)", param.ParamName);
 					callparameters = callparameters + "b" + param.ParamName;
 					
-				case "single":				
+				case "single":
 					comments = comments + fmt.Sprintf("    * @param[in] f%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("f%s float32", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", Float32InValue (f%s)", param.ParamName);
 					callparameters = callparameters + "f" + param.ParamName;
 
-				case "double":				
+				case "double":
 					comments = comments + fmt.Sprintf("    * @param[in] d%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("d%s float64", param.ParamName)
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", Float64InValue (d%s)", param.ParamName);
 					callparameters = callparameters + "d" + param.ParamName;
-												
+				
+				case "pointer":
+					comments = comments + fmt.Sprintf("    * @param[in] n%s - %s\n", param.ParamName, param.ParamDescription);
+					parameters = parameters + fmt.Sprintf ("n%s uint64", param.ParamName)
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64InValue (n%s)", param.ParamName);
+					callparameters = callparameters + "n" + param.ParamName;
+
 				case "string":
 					comments = comments + fmt.Sprintf("    * @param[in] s%s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("s%s string", param.ParamName)
@@ -749,7 +760,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					implcommandparameters = implcommandparameters + fmt.Sprintf (", 0");
 					callparameters = callparameters + "p" + param.ParamName;
 				
-				case "handle":
+				case "class":
 					comments = comments + fmt.Sprintf("    * @param[in] %s - %s\n", param.ParamName, param.ParamDescription);
 					parameters = parameters + fmt.Sprintf ("%s %sHandle", param.ParamName, NameSpace)
 				
@@ -800,6 +811,16 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					classreturntypes = classreturntypes + fmt.Sprintf ("uint32, ");
 					
 				case "uint64":
+					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
+					returnvalues = returnvalues + fmt.Sprintf ("uint64, ")
+					impldeclarations = impldeclarations + fmt.Sprintf ("%svar n%s uint64 = 0;\n", spacing, param.ParamName);
+					implreturnvalues = implreturnvalues + fmt.Sprintf ("n%s, ", param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", UInt64OutValue (&n%s)", param.ParamName);
+					classreturnvariables = classreturnvariables + "n" + param.ParamName + ", ";
+					classreturnstring = classreturnstring + "n" + param.ParamName + ", ";
+					classreturntypes = classreturntypes + fmt.Sprintf ("uint64, ");
+
+				case "pointer":
 					comments = comments + fmt.Sprintf ("    * @return %s\n", param.ParamDescription);
 					returnvalues = returnvalues + fmt.Sprintf ("uint64, ")
 					impldeclarations = impldeclarations + fmt.Sprintf ("%svar n%s uint64 = 0;\n", spacing, param.ParamName);
@@ -884,7 +905,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 				
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%svar neededfor%s int64 = 0;\n", spacing, param.ParamName);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%svar filledin%s int64 = 0;\n", spacing, param.ParamName);
-					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%serr = implementation.CallFunction (implementation.%s_%s_%s%s, implementation_%s.GetDLLInHandle()%s, Int64InValue (0), Int64InValue (0), Int64OutValue (&neededfor%s));\n", spacing, NameSpace, strings.ToLower(ClassName), strings.ToLower(method.MethodName), method.DLLSuffix, strings.ToLower(ClassName), implcommandparameters, param.ParamName);
+					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%serr = implementation.CallFunction (implementation.%s_%s_%s, implementation_%s.GetDLLInHandle()%s, Int64InValue (0), Int64InValue (0), Int64OutValue (&neededfor%s));\n", spacing, NameSpace, strings.ToLower(ClassName), strings.ToLower(method.MethodName), strings.ToLower(ClassName), implcommandparameters, param.ParamName);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%sif (err != nil) {\n", spacing);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%s    return %s;\n", spacing, errorreturn);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%s}\n", spacing);
@@ -967,7 +988,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					classreturnstring = classreturnstring + "s" + param.ParamName + ", ";
 					classreturntypes = classreturntypes + fmt.Sprintf ("s%s%s, ", NameSpace, param.ParamClass);
 					
-				case "handle":
+				case "class":
 					comments = comments + fmt.Sprintf("    * @return %s\n", param.ParamDescription);
 					returnvalues = returnvalues + fmt.Sprintf ("%sHandle, ", NameSpace)
 					impldeclarations = impldeclarations + fmt.Sprintf ("%sh%s := implementation.NewHandle();\n", spacing, param.ParamName);
@@ -1027,7 +1048,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 		fmt.Fprintf (implw, "\n");
 		fmt.Fprintf (implw, implcommandpreparation);
 		
-		fmt.Fprintf (implw, "    err = implementation.CallFunction (implementation.%s_%s%s%s);\n", NameSpace, strings.ToLower (method.MethodName), method.DLLSuffix, implcommandparameters);
+		fmt.Fprintf (implw, "    err = implementation.CallFunction (implementation.%s_%s%s);\n", NameSpace, strings.ToLower (method.MethodName), implcommandparameters);
 		
 	} else {
 	
@@ -1038,7 +1059,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 		fmt.Fprintf (implw, "\n");
 		fmt.Fprintf (implw, implcommandpreparation);
 
-		fmt.Fprintf (implw, "    err = implementation.CallFunction (implementation.%s_%s_%s%s, implementation_%s.GetDLLInHandle()%s);\n", NameSpace, strings.ToLower (ClassName), strings.ToLower (method.MethodName), method.DLLSuffix, strings.ToLower (ClassName), implcommandparameters);
+		fmt.Fprintf (implw, "    err = implementation.CallFunction(implementation.%s_%s_%s, implementation_%s.GetDLLInHandle()%s);\n", NameSpace, strings.ToLower(ClassName), strings.ToLower(method.MethodName), strings.ToLower(ClassName), implcommandparameters);
 	
 	}
 		

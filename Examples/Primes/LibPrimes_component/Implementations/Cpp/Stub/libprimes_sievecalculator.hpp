@@ -1,16 +1,16 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is the class declaration of CLibPrimesSieveCalculator
+Abstract: This is the class declaration of CSieveCalculator
 
 */
 
 
-#ifndef __LIBPRIMES_LIBPRIMESSIEVECALCULATOR
-#define __LIBPRIMES_LIBPRIMESSIEVECALCULATOR
+#ifndef __LIBPRIMES_SIEVECALCULATOR
+#define __LIBPRIMES_SIEVECALCULATOR
 
 #include "libprimes_interfaces.hpp"
 
@@ -21,17 +21,21 @@ Abstract: This is the class declaration of CLibPrimesSieveCalculator
 
 // Include custom headers here.
 
-#include <vector>
 
 namespace LibPrimes {
 namespace Impl {
 
+
 /*************************************************************************************************************************
- Class declaration of CLibPrimesSieveCalculator 
+ Class declaration of CSieveCalculator 
 **************************************************************************************************************************/
 
-class CLibPrimesSieveCalculator : public virtual ILibPrimesSieveCalculator, public virtual CLibPrimesCalculator {
+class CSieveCalculator : public virtual ISieveCalculator, public virtual CCalculator {
 private:
+
+	/**
+	* Put private members here.
+	*/
 
 	std::vector<LibPrimes_uint64> primes;
 
@@ -43,13 +47,18 @@ protected:
 
 public:
 
-	void Calculate();
+	/**
+	* Put additional public members here. They will not be visible in the external API.
+	*/
+
 
 	/**
 	* Public member functions to implement.
 	*/
 
-	void GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
+	void Calculate();
+
+	void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
 
 };
 
@@ -57,4 +66,4 @@ public:
 } // namespace LibPrimes
 
 #pragma warning( pop )
-#endif // __LIBPRIMES_LIBPRIMESSIEVECALCULATOR
+#endif // __LIBPRIMES_SIEVECALCULATOR

@@ -153,6 +153,15 @@
 		<xs:attribute name="versionmethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;versionmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="errormethod" type="ST_Name" use="required">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;errormethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="prereleasemethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;prereleasemethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="buildinfomethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;buildinfomethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:attribute name="journalmethod" type="ST_Name" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
@@ -195,6 +204,7 @@
 			<xs:enumeration value="Fortran"/>
 			<xs:enumeration value="Node"/>
 			<xs:enumeration value="Go"/>
+			<xs:enumeration value="CSharp"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -239,7 +249,7 @@
 
 	<xs:simpleType name="ST_Version">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="[0-9]*\.[0-9]*\.[0-9]*"/>
+			<xs:pattern value="([0-9]+\.[0-9]+\.[0-9])(\-[a-zA-Z0-9.\-]+)?(\+[a-zA-Z0-9.\-]+)?"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -256,6 +266,7 @@
 			<xs:enumeration value="int64"/>
 			<xs:enumeration value="single"/>
 			<xs:enumeration value="double"/>
+			<xs:enumeration value="pointer"/>
 			<xs:enumeration value="struct"/>
 			<xs:enumeration value="enum"/>
 			<xs:enumeration value="basicarray"/>
@@ -263,6 +274,7 @@
 			<xs:enumeration value="structarray"/>
 			<xs:enumeration value="string"/>
 			<xs:enumeration value="handle"/>
+			<xs:enumeration value="class"/>
 			<xs:enumeration value="functiontype"/>
 		</xs:restriction>
 	</xs:simpleType>
@@ -280,6 +292,7 @@
 			<xs:enumeration value="int64"/>
 			<xs:enumeration value="single"/>
 			<xs:enumeration value="double"/>
+			<xs:enumeration value="pointer"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -325,7 +338,6 @@
 			<xs:pattern value="[A-Za-z0-9_]{0,63}"/>
 		</xs:restriction>
 	</xs:simpleType>
-
 
 	<!-- Elements -->
 	<xs:element name="component" type="CT_Component"/>

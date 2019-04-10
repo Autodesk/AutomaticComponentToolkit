@@ -6,7 +6,7 @@ Contributions are welcome and we are looking for people that can improve existin
 You can also contribute by reporting bugs in the [Issue tracker](../../issues), helping review pull requests, participate in discussions about issues and more.
 
 ## Filing issues
-1. When filing an issue to report errors or problems, make sure to answer these five questions:
+1. When filing an [issue](../../issues) to report errors or problems, make sure to answer these five questions:
 	1. Which version of ACT are you using?
 		Run <br/>`act.* -v`<br/> to print ACT's version.
 	2. Which operating system, programming language(s) and development tools (compiler/interpreter) are you using?

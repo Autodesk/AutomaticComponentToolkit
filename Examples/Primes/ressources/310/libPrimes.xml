@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
-	libraryname="Prime numbers Library" namespace="LibPrimes" copyright="PrimeDevelopers" year="2018" basename="libprimes"
+	libraryname="Prime Numbers Library" namespace="LibPrimes" copyright="PrimeDevelopers" year="2019" basename="libprimes"
 	version="1.0.0">
 	<license>
 		<line value="All rights reserved." />
 	</license>
 	
 	<bindings>
-		<binding language="Cpp" indentation="tabs" />
 		<binding language="CppDynamic" indentation="tabs" />
-		<binding language="Pascal" indentation="4spaces" />
+		<binding language="Cpp" indentation="tabs" />
+		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
 	</bindings>
 	<implementations>
@@ -28,15 +28,22 @@
 		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
 	</errors>
 	
-	<global releasemethod="ReleaseInstance" versionmethod="GetLibraryVersion">
-		<method name="ReleaseInstance" description="Releases the memory of an Instance">
-			<param name="Instance" type="handle" class="BaseClass" pass="in" description="Instance Handle" />
+	<class name="Base">	
+	</class>
+	
+	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-
-		<method name="GetLibraryVersion" description = "retrieves the current version of the library.">
-			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
-			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
-			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
 		</method>
 	</global>
 </component>

@@ -1,10 +1,10 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is a stub class definition of CLibPrimesFactorizationCalculator
+Abstract: This is a stub class definition of CFactorizationCalculator
 
 */
 
@@ -17,10 +17,10 @@ Abstract: This is a stub class definition of CLibPrimesFactorizationCalculator
 using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
- Class definition of CLibPrimesFactorizationCalculator 
+ Class definition of CFactorizationCalculator 
 **************************************************************************************************************************/
 
-void CLibPrimesFactorizationCalculator::Calculate()
+void CFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
 
@@ -35,7 +35,7 @@ void CLibPrimesFactorizationCalculator::Calculate()
 			}
 		}
 
-		sLibPrimesPrimeFactor primeFactor;
+		sPrimeFactor primeFactor;
 		primeFactor.m_Prime = i;
 		primeFactor.m_Multiplicity = 0;
 		while (nValue % i == 0) {
@@ -48,18 +48,17 @@ void CLibPrimesFactorizationCalculator::Calculate()
 	}
 }
 
-
-void CLibPrimesFactorizationCalculator::GetPrimeFactors (LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64 * pPrimeFactorsNeededCount, sLibPrimesPrimeFactor * pPrimeFactorsBuffer)
+void CFactorizationCalculator::GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer)
 {
 	if (primeFactors.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
 
 	if (pPrimeFactorsNeededCount)
-		*pPrimeFactorsNeededCount = (unsigned int)primeFactors.size();
+		*pPrimeFactorsNeededCount = (LibPrimes_uint64)primeFactors.size();
 
 	if (nPrimeFactorsBufferSize >= primeFactors.size() && pPrimeFactorsBuffer)
 	{
-		for (size_t i = 0; i < primeFactors.size(); i++)
+		for (int i = 0; i < primeFactors.size(); i++)
 		{
 			pPrimeFactorsBuffer[i] = primeFactors[i];
 		}

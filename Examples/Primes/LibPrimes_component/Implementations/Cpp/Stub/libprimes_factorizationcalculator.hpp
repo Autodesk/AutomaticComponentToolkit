@@ -1,16 +1,16 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is the class declaration of CLibPrimesFactorizationCalculator
+Abstract: This is the class declaration of CFactorizationCalculator
 
 */
 
 
-#ifndef __LIBPRIMES_LIBPRIMESFACTORIZATIONCALCULATOR
-#define __LIBPRIMES_LIBPRIMESFACTORIZATIONCALCULATOR
+#ifndef __LIBPRIMES_FACTORIZATIONCALCULATOR
+#define __LIBPRIMES_FACTORIZATIONCALCULATOR
 
 #include "libprimes_interfaces.hpp"
 
@@ -20,20 +20,20 @@ Abstract: This is the class declaration of CLibPrimesFactorizationCalculator
 #pragma warning( disable : 4250)
 
 // Include custom headers here.
-#include <vector>
+
 
 namespace LibPrimes {
 namespace Impl {
 
 
 /*************************************************************************************************************************
-	Class declaration of CLibPrimesFactorizationCalculator
+ Class declaration of CFactorizationCalculator 
 **************************************************************************************************************************/
 
-class CLibPrimesFactorizationCalculator : public virtual ILibPrimesFactorizationCalculator, public virtual CLibPrimesCalculator {
+class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator {
 private:
 
-	std::vector<sLibPrimesPrimeFactor> primeFactors;
+	std::vector<sPrimeFactor> primeFactors;
 
 protected:
 
@@ -53,7 +53,7 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, sLibPrimesPrimeFactor* pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer);
 
 };
 
@@ -61,4 +61,4 @@ public:
 } // namespace LibPrimes
 
 #pragma warning( pop )
-#endif // __LIBPRIMES_LIBPRIMESFACTORIZATIONCALCULATOR
+#endif // __LIBPRIMES_FACTORIZATIONCALCULATOR

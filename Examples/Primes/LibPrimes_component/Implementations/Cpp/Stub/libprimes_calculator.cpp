@@ -1,10 +1,10 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is a stub class definition of CLibPrimesCalculator
+Abstract: This is a stub class definition of CCalculator
 
 */
 
@@ -17,28 +17,26 @@ Abstract: This is a stub class definition of CLibPrimesCalculator
 using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
- Class definition of CLibPrimesCalculator 
+ Class definition of CCalculator 
 **************************************************************************************************************************/
 
-CLibPrimesCalculator::CLibPrimesCalculator()
-	:m_value(0) , m_Callback(nullptr)
+void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
 {
-
+	m_Callback = pProgressCallback;
 }
 
-
-LibPrimes_uint64  CLibPrimesCalculator::GetValue()
+LibPrimes_uint64 CCalculator::GetValue()
 {
 	return m_value;
 }
 
-void CLibPrimesCalculator::SetValue(const LibPrimes_uint64  nValue)
+void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 {
 	m_value = nValue;
 }
 
-void CLibPrimesCalculator::SetProgressCallback (const LibPrimesProgressCallback pProgressCallback)
+void CCalculator::Calculate()
 {
-	m_Callback = pProgressCallback;
+	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 

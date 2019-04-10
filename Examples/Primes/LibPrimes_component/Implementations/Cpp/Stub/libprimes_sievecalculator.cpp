@@ -1,10 +1,10 @@
 /*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
-Abstract: This is a stub class definition of CLibPrimesSieveCalculator
+Abstract: This is a stub class definition of CSieveCalculator
 
 */
 
@@ -14,14 +14,13 @@ Abstract: This is a stub class definition of CLibPrimesSieveCalculator
 // Include custom headers here.
 #include <cmath>
 
-
 using namespace LibPrimes::Impl;
 
 /*************************************************************************************************************************
- Class definition of CLibPrimesSieveCalculator 
+ Class definition of CSieveCalculator 
 **************************************************************************************************************************/
 
-void CLibPrimesSieveCalculator::Calculate()
+void CSieveCalculator::Calculate()
 {
 	primes.clear();
 
@@ -29,23 +28,8 @@ void CLibPrimesSieveCalculator::Calculate()
 	for (LibPrimes_uint64 i = 0; i <= m_value; i++) {
 		strikenOut[i] = i < 2;
 	}
-
 	LibPrimes_uint64 sqrtValue = (LibPrimes_uint64)(std::sqrt(m_value));
-
-	int progressStep = (int)std::ceil(sqrtValue / 20.0f);
-	
 	for (LibPrimes_uint64 i = 2; i <= sqrtValue; i++) {
-
-		if (m_Callback) {
-			if (i % progressStep == 0) {
-				bool shouldAbort = false;
-				(*m_Callback)(float(i) / sqrtValue, &shouldAbort);
-				if (shouldAbort) {
-					throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_CALCULATIONABORTED);
-				}
-			}
-		}
-
 		if (!strikenOut[i]) {
 			primes.push_back(i);
 			for (LibPrimes_uint64 j = i * i; j < m_value; j += i) {
@@ -53,7 +37,6 @@ void CLibPrimesSieveCalculator::Calculate()
 			}
 		}
 	}
-
 	for (LibPrimes_uint64 i = sqrtValue; i <= m_value; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
@@ -61,21 +44,18 @@ void CLibPrimesSieveCalculator::Calculate()
 	}
 }
 
-void CLibPrimesSieveCalculator::GetPrimes (LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64 * pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
+void CSieveCalculator::GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
 {
 	if (primes.size() == 0)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
-
 	if (pPrimesNeededCount)
-		*pPrimesNeededCount = (unsigned int)primes.size();
-
+		*pPrimesNeededCount = (LibPrimes_uint64)primes.size();
 	if (nPrimesBufferSize >= primes.size() && pPrimesBuffer)
 	{
-		for (size_t i = 0; i < primes.size(); i++)
+		for (int i = 0; i < primes.size(); i++)
 		{
 			pPrimesBuffer[i] = primes[i];
 		}
 	}
-
 }
 

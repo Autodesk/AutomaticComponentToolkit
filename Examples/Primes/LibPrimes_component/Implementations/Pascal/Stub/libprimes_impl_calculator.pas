@@ -1,6 +1,6 @@
 (*++
 
-Copyright (C) 2018 PrimeDevelopers
+Copyright (C) 2019 PrimeDevelopers
 
 All rights reserved.
 
@@ -17,44 +17,43 @@ uses
 	libprimes_types,
 	libprimes_interfaces,
 	libprimes_exception,
-  libprimes_impl_baseclass,
+	libprimes_impl_base,
 	Classes,
 	sysutils;
 
 type
-	TLibPrimesCalculator = class (TLibPrimesBaseClass, ILibPrimesCalculator)
+	TLibPrimesCalculator = class(TLibPrimesBase, ILibPrimesCalculator)
 		private
 
 		protected
-      FValue : QWord;
-      FProgressCallback: PLibPrimes_ProgressCallback;
+
 		public
 			function GetValue(): QWord;
 			procedure SetValue(const AValue: QWord);
+			procedure Calculate();
 			procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
-			procedure Calculate(); virtual;
 	end;
 
 implementation
 
 function TLibPrimesCalculator.GetValue(): QWord;
 begin
-	result := FValue;
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 procedure TLibPrimesCalculator.SetValue(const AValue: QWord);
 begin
-	FValue := AValue;
-end;
-
-procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
-begin
-  FProgressCallback:=AProgressCallback;
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 procedure TLibPrimesCalculator.Calculate();
 begin
-  raise ELibPrimesException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+end;
+
+procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
+begin
+	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 end.
