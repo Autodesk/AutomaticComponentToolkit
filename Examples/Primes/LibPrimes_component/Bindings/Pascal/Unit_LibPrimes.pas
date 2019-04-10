@@ -609,16 +609,16 @@ implementation
     bytesNeededErrorMessage: Cardinal;
     bytesWrittenErrorMessage: Cardinal;
     bufferErrorMessage: array of Char;
-    ResultHasError: Cardinal;
+    ResultHasError: Byte;
   begin
     if not Assigned (AInstance) then
       raise ELibPrimesException.CreateCustomMessage (LIBPRIMES_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
     bytesNeededErrorMessage:= 0;
     bytesWrittenErrorMessage:= 0;
     ResultHasError := 0;
-    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, 0, bytesNeededErrorMessage, nil, PByte (@ResultHasError)^));
+    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
     SetLength (bufferErrorMessage, bytesNeededErrorMessage + 2);
-    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, bytesNeededErrorMessage + 1, bytesWrittenErrorMessage, @bufferErrorMessage[0], PByte (@ResultHasError)^));
+    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, bytesNeededErrorMessage + 1, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
     bufferErrorMessage[bytesNeededErrorMessage + 1] := #0;
     AErrorMessage := StrPas (@bufferErrorMessage[0]);
     Result := (ResultHasError <> 0);

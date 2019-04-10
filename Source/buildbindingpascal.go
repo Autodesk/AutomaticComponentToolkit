@@ -825,11 +825,11 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := convertConstTo%s (Result%s);", param.ParamName, param.ParamClass, param.ParamName));
 
 					case "bool":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Byte;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
-						callFunctionParameters = callFunctionParameters + "PByte (@Result" + param.ParamName + ")^";
-						initCallParameters = initCallParameters + "PByte (@Result" + param.ParamName + ")^";
+						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
+						initCallParameters = initCallParameters + "Result" + param.ParamName
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := Result%s <> 0;", param.ParamName, param.ParamName));
 						
 					case "struct":
@@ -901,11 +901,11 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := convertConstTo%s (Result%s);", param.ParamClass, param.ParamName));
 
 					case "bool":
-						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Cardinal;");
+						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Byte;");
 						initCommands = append (initCommands, "  Result" + param.ParamName + " := 0;");
 			
-						callFunctionParameters = callFunctionParameters + "PByte (@Result" + param.ParamName + ")^";
-						initCallParameters = initCallParameters + "PByte (@Result" + param.ParamName + ")^";
+						callFunctionParameters = callFunctionParameters + "Result" + param.ParamName;
+						initCallParameters = initCallParameters + "Result" + param.ParamName;
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := (Result%s <> 0);", param.ParamName));
 						
 					case "struct":
