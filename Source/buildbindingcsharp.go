@@ -305,6 +305,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 	defineCommands := make([]string, 0)
 	initCommands := make([]string, 0)
 	resultCommands := make([]string, 0)
+	returnCodeLines := []string{}
 	postInitCommands := make([]string, 0)
 
 	doInitCall := false
@@ -524,7 +525,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  %s result%s = 0;", ParamTypeName, param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return result%s;", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return result%s;", param.ParamName))
 
 			case "string":
 
@@ -540,7 +541,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameter = fmt.Sprintf("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName)
 
 				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free();", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("  return Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName))
 
 				doInitCall = true
 
@@ -548,26 +549,26 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
 
 			case "bool":
 				defineCommands = append(defineCommands, fmt.Sprintf("  Byte result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return (result%s != 0);", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return (result%s != 0);", param.ParamName))
 
 			case "struct":
 				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.Internal%s intresult%s;", param.ParamClass, param.ParamName))
 				callFunctionParameter = "out intresult" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
 			case "class":
 
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return new C%s (new%s );", param.ParamClass, param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new C%s (new%s );", param.ParamClass, param.ParamName))
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -597,16 +598,17 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 	}
 
 	if doInitCall {
-		w.Writeln(spacing+"  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, initCallParameters)
+		w.Writeln(spacing+"  CheckError(Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, initCallParameters)
 	}
 
 	w.Writelns(spacing, postInitCommands)
 
 	w.Writeln("")
 
-	w.Writeln(spacing+"  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, callFunctionParameters)
+	w.Writeln(spacing+"  CheckError(Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, callFunctionParameters)
 
 	w.Writelns(spacing, resultCommands)
+	w.Writelns(spacing, returnCodeLines)
 
 	return nil
 }
