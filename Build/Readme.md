@@ -9,9 +9,14 @@
 4. Modify release branch such that all links point to master/Actual.Version.Number
 
 5. build:
-	1. `build/build.bat`
-	2. `build/verpatch.exe ...`
-	3. sign act.exe
+
+	1. Update the properties of the target act.exe by adapting the call to `build/verpatch.exe ...` in `build/build.bat`
+
+	2. `build/build.bat`
+
+	3. Ensure the binary's properties are suitable 
+	
+	4. sign act.exe
 	
 6. Merge release branch into master (squash)
 
