@@ -76,9 +76,10 @@ func BuildBindingGo(component ComponentDefinition, outputFolder string) error {
 func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer, NameSpace string) (error) {
 
 	global := component.Global;
+	packageName := strings.ToLower(component.BaseName)
 
 	fmt.Fprintf (w, "\n");
-	fmt.Fprintf (w, "package main\n");
+	fmt.Fprintf (w, "package %s\n", packageName);
 	fmt.Fprintf (w, "\n");
 
 	fmt.Fprintf (w, "\n");
@@ -183,7 +184,7 @@ func buildGoWrapper (component ComponentDefinition, w io.Writer, implw io.Writer
 
 	
 	fmt.Fprintf (implw, "\n");
-	fmt.Fprintf (implw, "package main\n");
+	fmt.Fprintf (implw, "package %s\n", packageName);
 	fmt.Fprintf (implw, "\n");
 	fmt.Fprintf (implw, "// #include <string.h>\n");
 	fmt.Fprintf (implw, "import \"C\"\n");
@@ -628,6 +629,14 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 	classreturnstring := "";
 	classreturntypes := "";
 	
+	implmethodname := "implementation."+NameSpace+"_" 
+	implGetHandleFunction := ""
+	if !isGlobal {
+		implmethodname += strings.ToLower(ClassName) + "_"
+		implGetHandleFunction = fmt.Sprintf(", implementation_%s.GetDLLInHandle()", strings.ToLower(ClassName))
+	}
+	implmethodname += strings.ToLower(method.MethodName)
+
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
 		switch (param.ParamPass) {				
@@ -905,7 +914,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 				
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%svar neededfor%s int64 = 0;\n", spacing, param.ParamName);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%svar filledin%s int64 = 0;\n", spacing, param.ParamName);
-					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%serr = implementation.CallFunction (implementation.%s_%s_%s, implementation_%s.GetDLLInHandle()%s, Int64InValue (0), Int64InValue (0), Int64OutValue (&neededfor%s));\n", spacing, NameSpace, strings.ToLower(ClassName), strings.ToLower(method.MethodName), strings.ToLower(ClassName), implcommandparameters, param.ParamName);
+					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%serr = implementation.CallFunction (%s%s%s, Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0));\n", spacing, implmethodname, implGetHandleFunction, implcommandparameters, param.ParamName);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%sif (err != nil) {\n", spacing);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%s    return %s;\n", spacing, errorreturn);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%s}\n", spacing);
@@ -919,7 +928,7 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%sbuffer%s := make([]byte, bufferSize%s);\n", spacing, param.ParamName, param.ParamName);
 					implcommandpreparation = implcommandpreparation + fmt.Sprintf ("%s\n", spacing);
 
-					implcommandparameters = implcommandparameters + fmt.Sprintf (", uintptr (unsafe.Pointer (&buffer%s[0])), Int64InValue (bufferSize%s), Int64OutValue (&filledin%s)", param.ParamName, param.ParamName, param.ParamName);
+					implcommandparameters = implcommandparameters + fmt.Sprintf (", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&buffer%s[0]))", param.ParamName, param.ParamName, param.ParamName);
 
 					implcommandpost = implcommandpost + fmt.Sprintf ("%sif (filledin%s < 0) {\n", spacing, param.ParamName);
 					implcommandpost = implcommandpost + fmt.Sprintf ("%s    err = errors.New (\"%s_%s: invalid buffer size (%s)\");\n", spacing, ClassName, method.MethodName, param.ParamName);						
@@ -1026,43 +1035,31 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 	handleparameter := "";
 	
 	if isGlobal {
-		fmt.Fprintf (w, "    %s (%s) (%serror)\n", method.MethodName, parameters, returnvalues);
+		fmt.Fprintf (w, "    %s(%s) (%serror)\n", method.MethodName, parameters, returnvalues);
 	} else {
 		handleparameter = fmt.Sprintf ("%s %sHandle", ClassName, NameSpace);
 		if (parameters != "") {
 			handleparameter = handleparameter + ", ";
 		}
-		
-		fmt.Fprintf (w, "    %s_%s (%s%s) (%serror)\n", ClassName, method.MethodName, handleparameter, parameters, returnvalues);
-
+		fmt.Fprintf (w, "    %s_%s(%s%s) (%serror)\n", ClassName, method.MethodName, handleparameter, parameters, returnvalues);
 	}
-	
-	
-	
-	if isGlobal {
-	
-		// Implementation
+
+	// Implementation
+	if isGlobal {	
 		fmt.Fprintf (implw, "func (implementation *%sImplementation) %s (%s%s) (%serror) {\n", NameSpace, method.MethodName, handleparameter, parameters, returnvalues);
 		fmt.Fprintf (implw, impldeclarations);
 		fmt.Fprintf (implw, implcasts);
 		fmt.Fprintf (implw, "\n");
 		fmt.Fprintf (implw, implcommandpreparation);
-		
-		fmt.Fprintf (implw, "    err = implementation.CallFunction (implementation.%s_%s%s);\n", NameSpace, strings.ToLower (method.MethodName), implcommandparameters);
-		
 	} else {
-	
-		// Implementation
 		fmt.Fprintf (implw, "func (implementation *%sImplementation) %s_%s (%s%s) (%serror) {\n", NameSpace, ClassName, method.MethodName, handleparameter, parameters, returnvalues);
 		fmt.Fprintf (implw, impldeclarations);
 		fmt.Fprintf (implw, implcasts);
 		fmt.Fprintf (implw, "\n");
 		fmt.Fprintf (implw, implcommandpreparation);
-
-		fmt.Fprintf (implw, "    err = implementation.CallFunction(implementation.%s_%s_%s, implementation_%s.GetDLLInHandle()%s);\n", NameSpace, strings.ToLower(ClassName), strings.ToLower(method.MethodName), strings.ToLower(ClassName), implcommandparameters);
-	
 	}
-		
+	fmt.Fprintf (implw, "    err = implementation.CallFunction(%s%s%s);\n", implmethodname, implGetHandleFunction, implcommandparameters);
+	
 	fmt.Fprintf (implw, "    if (err != nil) {\n");
 	fmt.Fprintf (implw, "        return %s;\n", errorreturn);
 	fmt.Fprintf (implw, "    }\n");
@@ -1074,27 +1071,22 @@ func writeGoMethod (method ComponentDefinitionMethod, w io.Writer, implw io.Writ
 
 	
 	if isGlobal {
-	
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%sfunc (instance *%s%s) %s (%s) (%serror) {\n", spacing, NameSpace, ClassName, method.MethodName, parameters, classreturntypes);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s    %serror := instance.Interface.%s (%s);\n", spacing, classreturnvariables, method.MethodName, callparameters);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s", classreturnimplementation);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s    return %serror;\n", spacing, classreturnstring);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s}\n", spacing);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s\n", spacing);
-		
 	} else {
-
 		if (callparameters != "") {
 			callparameters = ", " + callparameters;
 		}
-	
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%sfunc (instance *%s%s) %s (%s) (%serror) {\n", spacing, NameSpace, ClassName, method.MethodName, parameters, classreturntypes);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s    %serror := instance.Interface.%s_%s (instance.Handle%s);\n", spacing, classreturnvariables, ClassName, method.MethodName, callparameters);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s", classreturnimplementation);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s    return %serror;\n", spacing, classreturnstring);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s}\n", spacing);
 		*classdefinitions = *classdefinitions + fmt.Sprintf ("%s\n", spacing);
-	
 	}
 
 	return nil;
