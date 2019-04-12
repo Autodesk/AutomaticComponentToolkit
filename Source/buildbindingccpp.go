@@ -1260,7 +1260,7 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 		DynamicCPPExample := path.Join(outputFolderExample, namespace+"_example"+".cpp")
 		if forceRecreation || !FileExists(DynamicCPPExample) {
 			log.Printf("Creating \"%s\"", DynamicCPPExample)
-			dyncppexamplefile, err := CreateLanguageFile(DynamicCPPExample, "  ")
+			dyncppexamplefile, err := CreateLanguageFile(DynamicCPPExample, "	")
 			if err != nil {
 				return err
 			}
@@ -1275,7 +1275,7 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 		DynamicCPPCMake := path.Join(outputFolderExample, "CMakeLists.txt")
 		if forceRecreation || !FileExists(DynamicCPPCMake) {
 			log.Printf("Creating \"%s\"", DynamicCPPCMake)
-			dyncppcmake, err := CreateLanguageFile(DynamicCPPCMake, "	")
+			dyncppcmake, err := CreateLanguageFile(DynamicCPPCMake, "  ")
 			if err != nil {
 				return err
 			}
