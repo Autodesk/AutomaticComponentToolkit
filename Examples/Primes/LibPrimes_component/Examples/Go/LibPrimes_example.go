@@ -14,12 +14,12 @@ Interface version: 1.2.0
 */
 
 
-package main
+package libprimesexample // TODO: change this to "main" to build
 
 import (
 	"fmt"
 	"log"
-	// "../../Bindings/Go" // TODO: reenable this and ensure the path to the package "libprimes"
+	"../../Bindings/Go"
 )
 
 func main() {
