@@ -14,7 +14,7 @@ Interface version: 1.2.0
 */
 
 
-package libprimesexample // TODO: change this to "main" to build
+package main
 
 import (
 	"fmt"
