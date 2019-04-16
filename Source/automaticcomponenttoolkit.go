@@ -295,13 +295,18 @@ func main() {
 		case "Go":
 			{
 				outputFolderBindingGo := outputFolderBindings + "/Go"
-
 				err = os.MkdirAll(outputFolderBindingGo, os.ModePerm)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				err := BuildBindingGo(component, outputFolderBindingGo)
+				outputFolderExampleGo := outputFolderExamples + "/Go"
+				err = os.MkdirAll(outputFolderExampleGo, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err := BuildBindingGo(component, outputFolderBindingGo, outputFolderExampleGo)
 				if err != nil {
 					log.Fatal(err)
 				}
