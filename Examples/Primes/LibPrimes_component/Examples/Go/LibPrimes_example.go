@@ -19,7 +19,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"../../Bindings/Go"
+	// "../../Bindings/Go" // TODO: reenable this and ensure the path to the package "libprimes"
 )
 
 func main() {
