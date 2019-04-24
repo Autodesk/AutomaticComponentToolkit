@@ -302,8 +302,8 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		if (component.isBaseClass(class)) {
 			w.Writeln (" %s = class (TObject)", pascalBaseClassName);
 			w.Writeln("  private")
-			w.Writeln("    FWrapper: TLibPrimesWrapper;")
-			w.Writeln("    FHandle: TLibPrimesHandle;")
+			w.Writeln("    FWrapper: T%sWrapper;", NameSpace)
+			w.Writeln("    FHandle: T%sHandle;", NameSpace)
 		} else {
 			w.Writeln ("  T%s%s = class (%s)", NameSpace, class.ClassName, pascalParentClassName);	
 		}
