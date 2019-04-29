@@ -264,16 +264,18 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	w.Writeln(" Class interface for %s ", class.ClassName)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	parentClassName := " "
+	parentClassString := " "
 	if (!component.isBaseClass(class)) {
-		parentClassName = fmt.Sprintf(" : public virtual I%s%s", ClassIdentifier, component.Global.BaseClassName)
-		if (class.ParentClass != "") && (component.Global.BaseClassName != class.ParentClass) {
-			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual I%s%s", ClassIdentifier, class.ParentClass)
+		parentClassString = " : public virtual "
+		if (class.ParentClass == "") {
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+		} else {
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
 		}
 	}
 	
 	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-	w.Writeln("class %s%s{", classInterfaceName, parentClassName)
+	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
 	w.Writeln("public:")
 
 	if (component.isBaseClass(class)) {
