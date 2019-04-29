@@ -715,8 +715,10 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		if class.ParentClass != "" {
 			stubheaderw.Writeln("// Parent classes")
 			stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
-			stubheaderw.Writeln("#pragma warning( push)")
-			stubheaderw.Writeln("#pragma warning( disable : 4250)")
+			stubheaderw.Writeln("#ifdef _MSC_VER")
+			stubheaderw.Writeln("#pragma warning(push)")
+			stubheaderw.Writeln("#pragma warning(disable : 4250)")
+			stubheaderw.Writeln("#endif")
 		}
 		stubheaderw.Writeln("")
 
@@ -843,7 +845,9 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 
 		if class.ParentClass != "" {
-			stubheaderw.Writeln("#pragma warning( pop )")
+			stubheaderw.Writeln("#ifdef _MSC_VER")
+			stubheaderw.Writeln("#pragma warning(pop)")
+			stubheaderw.Writeln("#endif")
 		}
 		stubheaderw.Writeln("#endif // __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
 	return nil
@@ -1205,7 +1209,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (int i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
@@ -1241,7 +1245,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (int i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
