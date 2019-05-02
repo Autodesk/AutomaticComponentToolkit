@@ -216,6 +216,11 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wHeader.Writeln("  E%sInterfaceException (%sResult errorCode);", NameSpace, NameSpace);
 	wHeader.Writeln("");
 	wHeader.Writeln("  /**");
+	wHeader.Writeln("  * Custom Exception Constructor.");
+	wHeader.Writeln("  */");
+	wHeader.Writeln("  E%sInterfaceException (%sResult errorCode, std::string errorMessage);", NameSpace, NameSpace);
+	wHeader.Writeln("");
+	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Returns error code");
 	wHeader.Writeln("  */");
 	wHeader.Writeln("  %sResult getErrorCode ();", NameSpace);
@@ -240,6 +245,12 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wImpl.Writeln("**************************************************************************************************************************/");
 	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode)", NameSpace, NameSpace, NameSpace);
 	wImpl.Writeln("  : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace);
+	wImpl.Writeln("{");
+	wImpl.Writeln("  m_errorCode = errorCode;");
+	wImpl.Writeln("}");
+	wImpl.Writeln("");
+	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode, std::string errorMessage)", NameSpace, NameSpace, NameSpace);
+	wImpl.Writeln("  : m_errorMessage(errorMessage + \" (\" + std::to_string (errorCode) + \")\")");
 	wImpl.Writeln("{");
 	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
