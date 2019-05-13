@@ -189,9 +189,6 @@ The `errormethod`-attribute must be the name of a \<method> within the \<global>
 
 If the `journalmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="string"` and `pass="in"`.
 
- **Note**
- `type="handle"` is equivalent to `type="class"` for backwards compatibility. It will be removed in a later version.
-
 ## 8. Class
 Element **\<class>** of type **CT\_Class**
 
@@ -364,8 +361,11 @@ A _signed_ integer vaules ranging from -2<sup>7</sup> - 2<sup>7</sup>-1, -2<sup>
 - `basicarray`: an array of [ST\_ScalarTypes](#17-2-scalartype)
 - `enumarray`: an array of [enums](#11-enum)
 - `structarray`: an array of [structs](#13-struct)
-- `handle`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#8-class)
 - `functiontype`: see [9. Function Type](#9-function-type)
+- `class`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#8-class)
+
+**Note**
+ `type="handle"` is equivalent to `type="class"` for backwards compatibility. It will be removed in a future version.
 
 ### 17.2 ScalarType
 A subset of scalar or integral of ST\_Type:
@@ -375,7 +375,7 @@ A subset of scalar or integral of ST\_Type:
 ### 17.3 ComposedType
 A subset of more complex types, or types composed of other ST\_Types:
 
-`string`, `enum`, `basicarray`, `enumarray`, `structarray`, `handle`, `functiontype`
+`string`, `enum`, `basicarray`, `enumarray`, `structarray`, `class`, `functiontype`
 
 ### 17.4 Name
 ### 17.5 Description
