@@ -1634,12 +1634,12 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("");
 	
 	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle)", NameSpace, NameSpace, NameSpace, NameSpace);
-	implw.Writeln("  : m_sClassName(sClassName), m_sMethodName(sMethodName), m_pJournal (pJournal), m_nInitTimeStamp (0), m_nFinishTimeStamp (0), m_ErrorCode (%s_SUCCESS)", strings.ToUpper (NameSpace));
+	implw.Writeln("  : m_pJournal(pJournal), m_ErrorCode(%s_SUCCESS), m_sClassName(sClassName), m_sMethodName(sMethodName), m_nInitTimeStamp(0), m_nFinishTimeStamp(0)", strings.ToUpper(NameSpace))
 	implw.Writeln("{");
 	implw.Writeln("  if (pJournal == nullptr)");
 	implw.Writeln("    throw E%sInterfaceException(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));
 	implw.Writeln("  m_nInitTimeStamp = m_pJournal->getTimeStamp ();");
-	implw.Writeln("  m_sInstanceHandle = %sHandleToHex (pInstanceHandle);", NameSpace);	
+	implw.Writeln("  m_sInstanceHandle = %sHandleToHex (pInstanceHandle);", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("C%sInterfaceJournalEntry::~C%sInterfaceJournalEntry()", NameSpace, NameSpace);
