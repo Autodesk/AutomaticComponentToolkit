@@ -552,24 +552,11 @@ func buildCCPPFunctionPointers(component ComponentDefinition, w LanguageWriter, 
 			}
 			for _, cParam := range cParams {
 				w.Writeln(cParam.ParamComment);
-			}
-			var cParamTypeName string
-			if (useCPPTypes) {
-				cParamTypeName, err = getCPPParameterTypeName(param.ParamType, NameSpace, param.ParamClass);
-			} else {
-				cParamTypeName, err = getCParameterTypeName(param.ParamType, NameSpace, param.ParamClass);
-			}
 
-			if (err != nil) {
-				return err;
-			}
-			if (parameters != "") {
-				parameters = parameters + ", "
-			}
-			if (param.ParamPass == "in") {
-				parameters = parameters + cParamTypeName
-			} else {
-				parameters = parameters + cParamTypeName + "*"
+				if (parameters != "") {
+					parameters = parameters + ", "
+				}
+				parameters = parameters + cParam.ParamType
 			}
 		}
 		w.Writeln("*/");
