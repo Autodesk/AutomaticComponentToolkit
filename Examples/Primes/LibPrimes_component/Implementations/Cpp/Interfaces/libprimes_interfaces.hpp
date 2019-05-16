@@ -69,7 +69,7 @@ public:
  Class interface for Calculator 
 **************************************************************************************************************************/
 
-class ICalculator : public virtual IBase{
+class ICalculator : public virtual IBase {
 public:
 	/**
 	* ICalculator::GetValue - Returns the current value of this Calculator
@@ -101,7 +101,7 @@ public:
  Class interface for FactorizationCalculator 
 **************************************************************************************************************************/
 
-class IFactorizationCalculator : public virtual IBase, public virtual ICalculator{
+class IFactorizationCalculator : public virtual ICalculator {
 public:
 	/**
 	* IFactorizationCalculator::GetPrimeFactors - Returns the prime factors of this number (without multiplicity)
@@ -118,7 +118,7 @@ public:
  Class interface for SieveCalculator 
 **************************************************************************************************************************/
 
-class ISieveCalculator : public virtual IBase, public virtual ICalculator{
+class ISieveCalculator : public virtual ICalculator {
 public:
 	/**
 	* ISieveCalculator::GetPrimes - Returns all prime numbers lower or equal to the sieve's value
