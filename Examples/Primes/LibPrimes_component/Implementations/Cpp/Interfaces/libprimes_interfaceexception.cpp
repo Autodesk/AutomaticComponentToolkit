@@ -27,6 +27,12 @@ ELibPrimesInterfaceException::ELibPrimesInterfaceException(LibPrimesResult error
 	m_errorCode = errorCode;
 }
 
+ELibPrimesInterfaceException::ELibPrimesInterfaceException(LibPrimesResult errorCode, std::string errorMessage)
+	: m_errorMessage(errorMessage + " (" + std::to_string (errorCode) + ")")
+{
+	m_errorCode = errorCode;
+}
+
 LibPrimesResult ELibPrimesInterfaceException::getErrorCode ()
 {
 	return m_errorCode;

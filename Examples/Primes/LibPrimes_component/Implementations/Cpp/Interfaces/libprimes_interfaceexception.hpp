@@ -43,6 +43,11 @@ public:
 	ELibPrimesInterfaceException (LibPrimesResult errorCode);
 
 	/**
+	* Custom Exception Constructor.
+	*/
+	ELibPrimesInterfaceException (LibPrimesResult errorCode, std::string errorMessage);
+
+	/**
 	* Returns error code
 	*/
 	LibPrimesResult getErrorCode ();

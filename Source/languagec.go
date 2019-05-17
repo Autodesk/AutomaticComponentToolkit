@@ -40,11 +40,11 @@ import (
 	"log"
 )
 
-// BuildBindingC builds C-bindings of a library's API in form of automatically C functions
+// BuildBindingC builds C-bindings of a library's API in form of automatically generated C functions
 func BuildBindingC(component ComponentDefinition, outputFolderBindingC string) error {
 	CTypesHeaderName := path.Join(outputFolderBindingC, component.BaseName + "_types.h");
 	log.Printf("Creating \"%s\"", CTypesHeaderName)
-	err := CreateCTypesHeader (component, CTypesHeaderName);
+	err := CreateCTypesHeader(component, CTypesHeaderName);
 	if (err != nil) {
 		return err;
 	}
@@ -182,6 +182,11 @@ func buildCCPPTypesHeader(component ComponentDefinition, w LanguageWriter, NameS
 	
 	w.Writeln("#ifndef %s", sIncludeGuard);
 	w.Writeln("#define %s", sIncludeGuard);
+	w.Writeln("");
+
+	if (!useCPPTypes) {
+		w.Writeln("#include <stdbool.h>");
+	}
 	w.Writeln("");
 
 	err := buildSharedCCPPTypesHeader(component, w, NameSpace)

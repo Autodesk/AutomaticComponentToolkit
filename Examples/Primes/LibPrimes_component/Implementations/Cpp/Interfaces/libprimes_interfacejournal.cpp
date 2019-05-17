@@ -31,7 +31,7 @@ std::string LibPrimesHandleToHex (LibPrimesHandle pHandle)
 }
 
 CLibPrimesInterfaceJournalEntry::CLibPrimesInterfaceJournalEntry(CLibPrimesInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, LibPrimesHandle pInstanceHandle)
-	: m_sClassName(sClassName), m_sMethodName(sMethodName), m_pJournal (pJournal), m_nInitTimeStamp (0), m_nFinishTimeStamp (0), m_ErrorCode (LIBPRIMES_SUCCESS)
+	: m_pJournal(pJournal), m_ErrorCode(LIBPRIMES_SUCCESS), m_sClassName(sClassName), m_sMethodName(sMethodName), m_nInitTimeStamp(0), m_nFinishTimeStamp(0)
 {
 	if (pJournal == nullptr)
 		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_INVALIDPARAM);
