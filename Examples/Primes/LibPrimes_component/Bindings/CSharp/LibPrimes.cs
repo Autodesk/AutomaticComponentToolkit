@@ -145,26 +145,26 @@ namespace LibPrimes {
 		{
 			UInt64 resultValue = 0;
 
-			CheckError (Internal.LibPrimesWrapper.Calculator_GetValue (Handle, out resultValue));
+			CheckError(Internal.LibPrimesWrapper.Calculator_GetValue (Handle, out resultValue));
 			return resultValue;
 		}
 
 		public void SetValue (UInt64 AValue)
 		{
 
-			CheckError (Internal.LibPrimesWrapper.Calculator_SetValue (Handle, AValue));
+			CheckError(Internal.LibPrimesWrapper.Calculator_SetValue (Handle, AValue));
 		}
 
 		public void Calculate ()
 		{
 
-			CheckError (Internal.LibPrimesWrapper.Calculator_Calculate (Handle));
+			CheckError(Internal.LibPrimesWrapper.Calculator_Calculate (Handle));
 		}
 
 		public void SetProgressCallback (IntPtr AProgressCallback)
 		{
 
-			CheckError (Internal.LibPrimesWrapper.Calculator_SetProgressCallback (Handle, IntPtr.Zero));
+			CheckError(Internal.LibPrimesWrapper.Calculator_SetProgressCallback (Handle, IntPtr.Zero));
 		}
 
 	}
@@ -179,12 +179,12 @@ namespace LibPrimes {
 		{
 			UInt64 sizePrimeFactors = 0;
 			UInt64 neededPrimeFactors = 0;
-			CheckError (Internal.LibPrimesWrapper.FactorizationCalculator_GetPrimeFactors (Handle, sizePrimeFactors, out neededPrimeFactors, IntPtr.Zero));
+			CheckError(Internal.LibPrimesWrapper.FactorizationCalculator_GetPrimeFactors (Handle, sizePrimeFactors, out neededPrimeFactors, IntPtr.Zero));
 			sizePrimeFactors = neededPrimeFactors;
 			var arrayPrimeFactors = new Internal.InternalPrimeFactor[sizePrimeFactors];
 			GCHandle dataPrimeFactors = GCHandle.Alloc(arrayPrimeFactors, GCHandleType.Pinned);
 
-			CheckError (Internal.LibPrimesWrapper.FactorizationCalculator_GetPrimeFactors (Handle, sizePrimeFactors, out neededPrimeFactors, dataPrimeFactors.AddrOfPinnedObject()));
+			CheckError(Internal.LibPrimesWrapper.FactorizationCalculator_GetPrimeFactors (Handle, sizePrimeFactors, out neededPrimeFactors, dataPrimeFactors.AddrOfPinnedObject()));
 			dataPrimeFactors.Free();
 			APrimeFactors = new sPrimeFactor[sizePrimeFactors];
 			for (int index = 0; index < APrimeFactors.Length; index++)
@@ -203,12 +203,12 @@ namespace LibPrimes {
 		{
 			UInt64 sizePrimes = 0;
 			UInt64 neededPrimes = 0;
-			CheckError (Internal.LibPrimesWrapper.SieveCalculator_GetPrimes (Handle, sizePrimes, out neededPrimes, IntPtr.Zero));
+			CheckError(Internal.LibPrimesWrapper.SieveCalculator_GetPrimes (Handle, sizePrimes, out neededPrimes, IntPtr.Zero));
 			sizePrimes = neededPrimes;
 			APrimes = new UInt64[sizePrimes];
 			GCHandle dataPrimes = GCHandle.Alloc(APrimes, GCHandleType.Pinned);
 
-			CheckError (Internal.LibPrimesWrapper.SieveCalculator_GetPrimes (Handle, sizePrimes, out neededPrimes, dataPrimes.AddrOfPinnedObject()));
+			CheckError(Internal.LibPrimesWrapper.SieveCalculator_GetPrimes (Handle, sizePrimes, out neededPrimes, dataPrimes.AddrOfPinnedObject()));
 			dataPrimes.Free();
 		}
 
@@ -226,7 +226,7 @@ namespace LibPrimes {
 		public static void GetVersion (out UInt32 AMajor, out UInt32 AMinor, out UInt32 AMicro)
 		{
 
-			CheckError (Internal.LibPrimesWrapper.GetVersion (out AMajor, out AMinor, out AMicro));
+			CheckError(Internal.LibPrimesWrapper.GetVersion (out AMajor, out AMinor, out AMicro));
 		}
 
 		public static bool GetLastError (CBase AInstance, out String AErrorMessage)
@@ -234,12 +234,12 @@ namespace LibPrimes {
 			Byte resultHasError = 0;
 			UInt32 sizeErrorMessage = 0;
 			UInt32 neededErrorMessage = 0;
-			CheckError (Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, IntPtr.Zero, out resultHasError));
+			CheckError(Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, IntPtr.Zero, out resultHasError));
 			sizeErrorMessage = neededErrorMessage + 1;
 			byte[] bytesErrorMessage = new byte[sizeErrorMessage];
 			GCHandle dataErrorMessage = GCHandle.Alloc(bytesErrorMessage, GCHandleType.Pinned);
 
-			CheckError (Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, dataErrorMessage.AddrOfPinnedObject(), out resultHasError));
+			CheckError(Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, dataErrorMessage.AddrOfPinnedObject(), out resultHasError));
 			dataErrorMessage.Free();
 			AErrorMessage = Encoding.UTF8.GetString(bytesErrorMessage).TrimEnd(char.MinValue);
 			return (resultHasError != 0);
@@ -248,14 +248,14 @@ namespace LibPrimes {
 		public static void ReleaseInstance (CBase AInstance)
 		{
 
-			CheckError (Internal.LibPrimesWrapper.ReleaseInstance (AInstance.GetHandle()));
+			CheckError(Internal.LibPrimesWrapper.ReleaseInstance (AInstance.GetHandle()));
 		}
 
 		public static CFactorizationCalculator CreateFactorizationCalculator ()
 		{
 			IntPtr newInstance = IntPtr.Zero;
 
-			CheckError (Internal.LibPrimesWrapper.CreateFactorizationCalculator (out newInstance));
+			CheckError(Internal.LibPrimesWrapper.CreateFactorizationCalculator (out newInstance));
 			return new CFactorizationCalculator (newInstance );
 		}
 
@@ -263,7 +263,7 @@ namespace LibPrimes {
 		{
 			IntPtr newInstance = IntPtr.Zero;
 
-			CheckError (Internal.LibPrimesWrapper.CreateSieveCalculator (out newInstance));
+			CheckError(Internal.LibPrimesWrapper.CreateSieveCalculator (out newInstance));
 			return new CSieveCalculator (newInstance );
 		}
 
@@ -271,7 +271,7 @@ namespace LibPrimes {
 		{
 			byte[] byteFileName = Encoding.UTF8.GetBytes(AFileName + char.MinValue);
 
-			CheckError (Internal.LibPrimesWrapper.SetJournal (byteFileName));
+			CheckError(Internal.LibPrimesWrapper.SetJournal (byteFileName));
 		}
 
 	}

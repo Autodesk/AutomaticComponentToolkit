@@ -210,8 +210,12 @@ func main() {
 		case "CDynamic":
 			{
 				outputFolderBindingCDynamic := outputFolderBindings + "/CDynamic"
-
 				err = os.MkdirAll(outputFolderBindingCDynamic, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+				outputFolderExampleCDynamic := outputFolderExamples + "/CDynamic"
+				err = os.MkdirAll(outputFolderExampleCDynamic, os.ModePerm)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -222,7 +226,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCExplicit(component, outputFolderBindingCDynamic, indentString)
+				err = BuildBindingCExplicit(component, outputFolderBindingCDynamic, outputFolderExampleCDynamic, indentString)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -295,13 +299,18 @@ func main() {
 		case "Go":
 			{
 				outputFolderBindingGo := outputFolderBindings + "/Go"
-
 				err = os.MkdirAll(outputFolderBindingGo, os.ModePerm)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				err := BuildBindingGo(component, outputFolderBindingGo)
+				outputFolderExampleGo := outputFolderExamples + "/Go"
+				err = os.MkdirAll(outputFolderExampleGo, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err := BuildBindingGo(component, outputFolderBindingGo, outputFolderExampleGo)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -322,7 +331,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				err = BuildBindingCExplicit(component, outputFolderBindingNode, indentString)
+				err = BuildBindingCExplicit(component, outputFolderBindingNode, "", indentString)
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -216,6 +216,11 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wHeader.Writeln("  E%sInterfaceException (%sResult errorCode);", NameSpace, NameSpace);
 	wHeader.Writeln("");
 	wHeader.Writeln("  /**");
+	wHeader.Writeln("  * Custom Exception Constructor.");
+	wHeader.Writeln("  */");
+	wHeader.Writeln("  E%sInterfaceException (%sResult errorCode, std::string errorMessage);", NameSpace, NameSpace);
+	wHeader.Writeln("");
+	wHeader.Writeln("  /**");
 	wHeader.Writeln("  * Returns error code");
 	wHeader.Writeln("  */");
 	wHeader.Writeln("  %sResult getErrorCode ();", NameSpace);
@@ -244,6 +249,12 @@ func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, Na
 	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
+	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode, std::string errorMessage)", NameSpace, NameSpace, NameSpace);
+	wImpl.Writeln("  : m_errorMessage(errorMessage + \" (\" + std::to_string (errorCode) + \")\")");
+	wImpl.Writeln("{");
+	wImpl.Writeln("  m_errorCode = errorCode;");
+	wImpl.Writeln("}");
+	wImpl.Writeln("");
 	wImpl.Writeln("%sResult E%sInterfaceException::getErrorCode ()", NameSpace, NameSpace);
 	wImpl.Writeln("{");
 	wImpl.Writeln("  return m_errorCode;");
@@ -264,16 +275,18 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	w.Writeln(" Class interface for %s ", class.ClassName)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	parentClassName := " "
+	parentClassString := " "
 	if (!component.isBaseClass(class)) {
-		parentClassName = fmt.Sprintf(" : public virtual I%s%s", ClassIdentifier, component.Global.BaseClassName)
-		if (class.ParentClass != "") && (component.Global.BaseClassName != class.ParentClass) {
-			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual I%s%s", ClassIdentifier, class.ParentClass)
+		parentClassString = " : public virtual "
+		if (class.ParentClass == "") {
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+		} else {
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
 		}
 	}
 	
 	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-	w.Writeln("class %s%s{", classInterfaceName, parentClassName)
+	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
 	w.Writeln("public:")
 
 	if (component.isBaseClass(class)) {
@@ -715,8 +728,10 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		if class.ParentClass != "" {
 			stubheaderw.Writeln("// Parent classes")
 			stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
-			stubheaderw.Writeln("#pragma warning( push)")
-			stubheaderw.Writeln("#pragma warning( disable : 4250)")
+			stubheaderw.Writeln("#ifdef _MSC_VER")
+			stubheaderw.Writeln("#pragma warning(push)")
+			stubheaderw.Writeln("#pragma warning(disable : 4250)")
+			stubheaderw.Writeln("#endif")
 		}
 		stubheaderw.Writeln("")
 
@@ -843,7 +858,9 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 
 		if class.ParentClass != "" {
-			stubheaderw.Writeln("#pragma warning( pop )")
+			stubheaderw.Writeln("#ifdef _MSC_VER")
+			stubheaderw.Writeln("#pragma warning(pop)")
+			stubheaderw.Writeln("#endif")
 		}
 		stubheaderw.Writeln("#endif // __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
 	return nil
@@ -1205,7 +1222,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (int i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
@@ -1241,7 +1258,7 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (int i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
@@ -1619,12 +1636,12 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("");
 	
 	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle)", NameSpace, NameSpace, NameSpace, NameSpace);
-	implw.Writeln("  : m_sClassName(sClassName), m_sMethodName(sMethodName), m_pJournal (pJournal), m_nInitTimeStamp (0), m_nFinishTimeStamp (0), m_ErrorCode (%s_SUCCESS)", strings.ToUpper (NameSpace));
+	implw.Writeln("  : m_pJournal(pJournal), m_ErrorCode(%s_SUCCESS), m_sClassName(sClassName), m_sMethodName(sMethodName), m_nInitTimeStamp(0), m_nFinishTimeStamp(0)", strings.ToUpper(NameSpace))
 	implw.Writeln("{");
 	implw.Writeln("  if (pJournal == nullptr)");
 	implw.Writeln("    throw E%sInterfaceException(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));
 	implw.Writeln("  m_nInitTimeStamp = m_pJournal->getTimeStamp ();");
-	implw.Writeln("  m_sInstanceHandle = %sHandleToHex (pInstanceHandle);", NameSpace);	
+	implw.Writeln("  m_sInstanceHandle = %sHandleToHex (pInstanceHandle);", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("C%sInterfaceJournalEntry::~C%sInterfaceJournalEntry()", NameSpace, NameSpace);

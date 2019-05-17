@@ -7,11 +7,13 @@
 	</license>
 	
 	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Cpp" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
 		<binding language="CSharp" indentation="tabs" />
+		<binding language="Go" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>

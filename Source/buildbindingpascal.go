@@ -302,8 +302,8 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		if (component.isBaseClass(class)) {
 			w.Writeln (" %s = class (TObject)", pascalBaseClassName);
 			w.Writeln("  private")
-			w.Writeln("    FWrapper: TLibPrimesWrapper;")
-			w.Writeln("    FHandle: TLibPrimesHandle;")
+			w.Writeln("    FWrapper: T%sWrapper;", NameSpace)
+			w.Writeln("    FHandle: T%sHandle;", NameSpace)
 		} else {
 			w.Writeln ("  T%s%s = class (%s)", NameSpace, class.ClassName, pascalParentClassName);	
 		}
@@ -581,7 +581,11 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln ("    AMajor, AMinor, AMicro: Cardinal;")
 	w.Writeln ("  begin")
 	w.Writeln ("    %s(AMajor, AMinor, AMicro);", global.VersionMethod)
-	w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	if (minorVersion(component.Version) == 0) {
+		w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) then", strings.ToUpper(NameSpace))
+	} else {
+		w.Writeln ("    if (AMajor <> %s_VERSION_MAJOR) or (AMinor < %s_VERSION_MINOR) then", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	}
 	w.Writeln ("      raise E%sException.Create(%s_ERROR_INCOMPATIBLEBINARYVERSION, '');", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln ("  end;")
 	w.Writeln ("  ")
