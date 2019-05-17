@@ -45,7 +45,7 @@ import (
 
 // BuildBindingCExplicit builds dyanmic C-bindings of a library's API in form of explicitly loaded function handles.
 func BuildBindingCExplicit(component ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
-	forceRecreation := true
+	forceRecreation := false
 
 	namespace := component.NameSpace
 	libraryname := component.LibraryName
@@ -1448,7 +1448,7 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 		w.Writeln("find_library(%sLOCATION %s \"%s\")", strings.ToUpper(BaseName), BaseName, linkFolder)
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
-	w.Writeln("target_include_directories(%s PRIVATE \"%s\")", projectName, cmakeBindingFolder)
+	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
 	return nil
 }
 

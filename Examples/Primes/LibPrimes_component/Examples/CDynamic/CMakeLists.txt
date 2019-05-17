@@ -20,10 +20,11 @@ set(CMAKE_CURRENT_BINDING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CDynami
 
 project(LibPrimesExample_CDynamic C)
 
-SET_SOURCE_FILES_PROPERTIES( "${CMAKE_CURRENT_BINDING_DIR}/libprimes_dynamic.cc" PROPERTIES LANGUAGE C)
-add_executable(LibPrimesExample_CDynamic  
-"${CMAKE_CURRENT_SOURCE_DIR}/LibPrimes_example.c"
- "${CMAKE_CURRENT_BINDING_DIR}/libprimes_dynamic.cc"
+SET_SOURCE_FILES_PROPERTIES("${CMAKE_CURRENT_BINDING_DIR}/libprimes_dynamic.cc" PROPERTIES LANGUAGE C)
+add_executable(LibPrimesExample_CDynamic
+  "${CMAKE_CURRENT_SOURCE_DIR}/LibPrimes_example.c"
+  "${CMAKE_CURRENT_BINDING_DIR}/libprimes_dynamic.cc"
+
 )
 set_property(TARGET LibPrimesExample_CDynamic PROPERTY C_STANDARD 99)
 if (UNIX)
