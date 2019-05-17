@@ -16,6 +16,7 @@ Interface version: 1.2.0
 #ifndef __LIBPRIMES_TYPES_HEADER_CPP
 #define __LIBPRIMES_TYPES_HEADER_CPP
 
+
 /*************************************************************************************************************************
  Scalar types definition
 **************************************************************************************************************************/
@@ -117,7 +118,7 @@ namespace LibPrimes {
   * @param[in] fProgressPercentage - How far has the calculation progressed?
   * @param[out] pShouldAbort - Should the calculation be aborted?
   */
-  typedef void(*ProgressCallback)(LibPrimes_single, bool*);
+  typedef void(*ProgressCallback)(LibPrimes_single, bool *);
   
 } // namespace LibPrimes;
 

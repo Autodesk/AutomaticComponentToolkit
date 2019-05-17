@@ -377,7 +377,7 @@ LibPrimesResult libprimes_getlasterror(LibPrimes_Base pInstance, const LibPrimes
 		if (pErrorMessageBuffer) {
 			if (sErrorMessage.size() >= nErrorMessageBufferSize)
 				throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_BUFFERTOOSMALL);
-			for (int iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
 				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
 		}
 

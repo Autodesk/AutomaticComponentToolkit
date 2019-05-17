@@ -7,6 +7,7 @@
 	</license>
 	
 	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Cpp" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
