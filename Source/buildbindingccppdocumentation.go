@@ -111,7 +111,7 @@ func buildCCPPDocumentationExample(component ComponentDefinition, outputFolder s
 	if err != nil {
 		return err
 	}
-	buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, ExplicitLinking)
+	buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, outputFolder, ExplicitLinking)
 	return nil
 }
 

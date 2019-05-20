@@ -1468,6 +1468,8 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
 	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
+
+	return nil;
 }
 
 
