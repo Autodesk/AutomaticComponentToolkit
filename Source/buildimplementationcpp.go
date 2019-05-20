@@ -716,6 +716,8 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
 		if (component.isBaseClass(class)) {
 			stubheaderw.Writeln("#include <vector>")
+			stubheaderw.Writeln("#include <list>")
+			stubheaderw.Writeln("#include <memory>")
 		}
 		stubheaderw.Writeln("")
 
@@ -757,7 +759,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		
 		if (component.isBaseClass(class)) {
-			stubheaderw.Writeln("  std::vector<std::string> m_errors;")
+			stubheaderw.Writeln("  std::unique_ptr<std::list<std::string>> m_pErrors;")
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
@@ -802,16 +804,22 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			methods[2] = RegisterErrorMessageMethod()
 
 			var implementations [3][]string
-			implementations[0] = append(implementations[0], "auto iIterator = m_errors.rbegin();")
-			implementations[0] = append(implementations[0], "if (iIterator != m_errors.rend()) {")
-			implementations[0] = append(implementations[0], "  sErrorMessage = *iIterator;")
+			implementations[0] = append(implementations[0], "if (m_pErrors && !m_pErrors->empty()) {")
+			implementations[0] = append(implementations[0], "  sErrorMessage = m_pErrors->back();")
+			implementations[0] = append(implementations[0], "  m_pErrors->pop_back();")
 			implementations[0] = append(implementations[0], "  return true;")
-			implementations[0] = append(implementations[0], "}else {")
+			implementations[0] = append(implementations[0], "} else {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = \"\";")
 			implementations[0] = append(implementations[0], "  return false;")
 			implementations[0] = append(implementations[0], "}")
-			implementations[1] = append(implementations[1], "m_errors.clear();")
-			implementations[2] = append(implementations[2], "m_errors.push_back(sErrorMessage);")
+
+			implementations[1] = append(implementations[1], "m_pErrors.reset();")
+
+			implementations[2] = append(implementations[2], "if (!m_pErrors) {")
+			implementations[2] = append(implementations[2], "  m_pErrors.reset(new std::list<std::string>());")
+			implementations[2] = append(implementations[2], "}")
+			implementations[2] = append(implementations[2], "m_pErrors->push_back(sErrorMessage);")
+
 			for i := 0; i < len(methods); i++ {
 				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 				if (err!=nil) {
