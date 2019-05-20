@@ -1226,12 +1226,13 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				callParameters = callParameters + variableName
 
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) %s.size();\n", param.ParamName, NameSpace, variableName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) (%s.size()+1);\n", param.ParamName, NameSpace, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "p%sBuffer[%s.size()] = 0;\n", param.ParamName, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
 			default:
@@ -1262,12 +1263,13 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				returnVariable = variableName
 
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) %s.size();\n", param.ParamName, NameSpace, variableName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) (%s.size()+1);\n", param.ParamName, NameSpace, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
+				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "p%sBuffer[%s.size()] = 0;\n", param.ParamName, variableName)
 				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
 
 			case "class":

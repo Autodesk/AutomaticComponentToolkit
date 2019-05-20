@@ -16,7 +16,7 @@ Interface version: 1.2.0
 #include "libprimes_types.h"
 #include "libprimes_dynamic.h"
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #else // _WIN32
 #include <dlfcn.h>
 #endif // _WIN32

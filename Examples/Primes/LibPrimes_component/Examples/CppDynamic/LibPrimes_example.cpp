@@ -29,8 +29,8 @@ int main()
 {
 	try
 	{
-		std::string libpath = (""); // TODO: put the location of the LibPrimes-library file here.
-		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes."); // TODO: add correct suffix of the library
+		std::string libpath = ("D:/PUBLIC/AutomaticComponentToolkit/Examples/Primes/LibPrimes_component/Implementations/Cpp/_build/Debug"); // TODO: put the location of the LibPrimes-library file here.
+		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes.dll"); // TODO: add correct suffix of the library
 		wrapper->SetJournal("journal_cppdynamic.xml");
 		LibPrimes_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);

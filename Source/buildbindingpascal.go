@@ -811,11 +811,10 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						
 						initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
 						
-						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s + 2);", param.ParamName, param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName));
 						
-						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s + 1, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-						resultCommands = append (resultCommands, fmt.Sprintf ("  buffer%s[bytesNeeded%s + 1] := #0;", param.ParamName, param.ParamName));
 						resultCommands = append (resultCommands, fmt.Sprintf ("  A%s := StrPas (@buffer%s[0]);", param.ParamName, param.ParamName));
 
 						doInitCall = true;
@@ -886,15 +885,13 @@ func writePascalClassMethodImplementation (method ComponentDefinitionMethod, w L
 						
 						initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
 
-						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s + 2);", param.ParamName, param.ParamName));
+						postInitCommands = append (postInitCommands, fmt.Sprintf("  SetLength (buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName));
 						
-						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s + 2, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+						callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-						resultCommands = append (resultCommands, fmt.Sprintf ("  buffer%s[bytesNeeded%s + 1] := #0;", param.ParamName, param.ParamName));
 						resultCommands = append (resultCommands, fmt.Sprintf ("  Result := StrPas (@buffer%s[0]);", param.ParamName));
 
 						doInitCall = true;
-
 						
 					case "enum":
 						defineCommands = append (defineCommands, "  Result" + param.ParamName + ": Integer;");

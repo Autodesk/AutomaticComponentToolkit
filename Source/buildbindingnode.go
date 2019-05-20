@@ -388,11 +388,10 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName);
 
 				functioncode = functioncode + fmt.Sprintf("%sstd::vector<char> buffer%s;\n", spacing, param.ParamName)
-				functioncode = functioncode + fmt.Sprintf("%sbuffer%s.resize(bytesNeeded%s + 2);\n", spacing, param.ParamName, param.ParamName)
+				functioncode = functioncode + fmt.Sprintf("%sbuffer%s.resize(bytesNeeded%s);\n", spacing, param.ParamName, param.ParamName)
 
 				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				returncode = returncode + fmt.Sprintf("%sbuffer%s[bytesNeeded%s + 1] = 0;\n", spacing, param.ParamName, param.ParamName);
 				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, &buffer%s[0]));\n", spacing, argsvalue, param.ParamName);
 			
 			case "bool":

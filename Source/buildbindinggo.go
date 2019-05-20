@@ -942,12 +942,12 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				
 				thisInitImplCallParamter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
 
-				implInitCallLines = append(implInitCallLines, fmt.Sprintf("bufferSize%s := neededfor%s + 1", param.ParamName, param.ParamName))
+				implInitCallLines = append(implInitCallLines, fmt.Sprintf("bufferSize%s := neededfor%s", param.ParamName, param.ParamName))
 				implInitCallLines = append(implInitCallLines, fmt.Sprintf("buffer%s := make([]byte, bufferSize%s)", param.ParamName, param.ParamName))
 
 				thisImplCallParamter = fmt.Sprintf(", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&buffer%s[0]))", param.ParamName, param.ParamName, param.ParamName)
 
-				implReturnValues = implReturnValues + fmt.Sprintf("string (buffer%s[:filledin%s]), ", param.ParamName, param.ParamName)
+				implReturnValues = implReturnValues + fmt.Sprintf("string (buffer%s[:(filledin%s-1)]), ", param.ParamName, param.ParamName)
 
 				returnvalues = returnvalues + fmt.Sprintf("string, ")
 				classReturnVariables = classReturnVariables + "s" + param.ParamName + ", "
