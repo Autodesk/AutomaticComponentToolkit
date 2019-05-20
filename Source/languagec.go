@@ -488,7 +488,7 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 		if (useCPPTypes) {
 			w.Writeln("enum class e%s : %s_int32 {", enum.Name, NameSpace);
 		} else {
-			w.Writeln("enum e%s%s {", NameSpace, enum.Name);
+			w.Writeln("typedef enum e%s%s {", NameSpace, enum.Name);
 		}
 		
 		for j := 0; j < len(enum.Options); j++ {
@@ -503,7 +503,11 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 				w.Writeln("  e%s%s = %d%s", enum.Name, option.Name, option.Value, comma);
 			}
 		}
-		w.Writeln("};");
+		if (useCPPTypes) {
+			w.Writeln("};");
+		} else {
+			w.Writeln("} e%s%s;", NameSpace, enum.Name);
+		}
 		w.Writeln("");
 	}
 	
