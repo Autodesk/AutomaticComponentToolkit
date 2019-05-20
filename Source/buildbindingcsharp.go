@@ -435,7 +435,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s + 1;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  byte[] bytes%s = new byte[size%s];", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
@@ -534,7 +534,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s + 1;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  byte[] bytes%s = new byte[size%s];", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
@@ -930,7 +930,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("          Byte hasLastError = 0;")
 		w.Writeln("          Int32 resultCode1 = %s (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);", component.Global.ErrorMethod)
 		w.Writeln("          if ((resultCode1 == 0) && (hasLastError != 0)) {")
-		w.Writeln("            sizeMessage = neededMessage + 1;")
+		w.Writeln("            sizeMessage = neededMessage;")
 		w.Writeln("            byte[] bytesMessage = new byte[sizeMessage];")
 		w.Writeln("")
 		w.Writeln("            GCHandle dataMessage = GCHandle.Alloc(bytesMessage, GCHandleType.Pinned);")
@@ -1076,23 +1076,29 @@ func buildCSharpExample(componentdefinition ComponentDefinition, w LanguageWrite
 	w.Writeln("  {")
 	w.Writeln("    static void Main()")
 	w.Writeln("    {")
-	w.Writeln("      UInt32 nMajor, nMinor, nMicro;")
-	//w.Writeln("      SetDllDirectory(\"\"); // TODO add the location of the shared library binary here")
-	w.Writeln("      %s.Wrapper.%s(out nMajor, out nMinor, out nMicro);", NameSpace, componentdefinition.Global.VersionMethod)
-	//w.Writeln("      SetDllDirectory(null);")
-	w.Writeln("      string versionString = string.Format(\"%s.version = {0}.{1}.{2}\", nMajor, nMinor, nMicro);", NameSpace)
+	w.Writeln("      try")
+	w.Writeln("      {")
+	w.Writeln("        UInt32 nMajor, nMinor, nMicro;")
+	//w.Writeln("        SetDllDirectory(\"\"); // TODO add the location of the shared library binary here")
+	w.Writeln("        %s.Wrapper.%s(out nMajor, out nMinor, out nMicro);", NameSpace, componentdefinition.Global.VersionMethod)
+	//w.Writeln("        SetDllDirectory(null);")
+	w.Writeln("        string versionString = string.Format(\"%s.version = {0}.{1}.{2}\", nMajor, nMinor, nMicro);", NameSpace)
 	if len(global.PrereleaseMethod) > 0 {
-		w.Writeln("      string sPreReleaseInfo;")
-		w.Writeln("      if (%s.Wrapper.%s(out sPreReleaseInfo))", NameSpace, global.PrereleaseMethod)
-		w.Writeln("        versionString = versionString + '-' + sPreReleaseInfo;")
+		w.Writeln("        string sPreReleaseInfo;")
+		w.Writeln("        if (%s.Wrapper.%s(out sPreReleaseInfo))", NameSpace, global.PrereleaseMethod)
+		w.Writeln("          versionString = versionString + '-' + sPreReleaseInfo;")
 	}
 	if len(global.BuildinfoMethod) > 0 {
-		w.Writeln("      string sBuildInfo;")
-		w.Writeln("      if (%s.Wrapper.%s(out sBuildInfo))", NameSpace, global.BuildinfoMethod)
-		w.Writeln("        versionString = versionString + '-' + sBuildInfo;")
+		w.Writeln("        string sBuildInfo;")
+		w.Writeln("        if (%s.Wrapper.%s(out sBuildInfo))", NameSpace, global.BuildinfoMethod)
+		w.Writeln("          versionString = versionString + '-' + sBuildInfo;")
 	}
-	w.Writeln("      Console.WriteLine(versionString);")
-	w.Writeln("      ")
+	w.Writeln("        Console.WriteLine(versionString);")
+	w.Writeln("      }")
+	w.Writeln("      catch (Exception e)")
+	w.Writeln("      {")
+	w.Writeln("        Console.WriteLine(\"Exception: \\\"\" + e.Message + \"\\\"\");")
+	w.Writeln("      }")
 	w.Writeln("      Console.WriteLine(\"Press any key to exit.\");")
 	w.Writeln("      Console.ReadKey();")
 	w.Writeln("    }")

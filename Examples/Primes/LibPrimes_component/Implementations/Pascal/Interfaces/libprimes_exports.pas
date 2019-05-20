@@ -400,11 +400,12 @@ begin
 
 		LenErrorMessage := Length (ResultErrorMessage);
 		if Assigned(pErrorMessageNeededChars) then
-			pErrorMessageNeededChars^ := LenErrorMessage;
+			pErrorMessageNeededChars^ := LenErrorMessage + 1;
 		if Assigned(pErrorMessageBuffer) then begin
 			if (LenErrorMessage >= nErrorMessageBufferSize) then
 				raise ELibPrimesException.Create (LIBPRIMES_ERROR_BUFFERTOOSMALL);
-			Move (PAnsiChar (ResultErrorMessage)^, pErrorMessageBuffer^, LenErrorMessage + 1);
+			Move (PAnsiChar (ResultErrorMessage)^, pErrorMessageBuffer^, LenErrorMessage);
+			pErrorMessageBuffer[LenErrorMessage] := Char(0);
 		end;
 		pHasError^ := Ord (ResultHasError);
 		Result := LIBPRIMES_SUCCESS;

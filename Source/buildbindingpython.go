@@ -683,8 +683,8 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(None)", cParams[2].ParamName, cParams[2].ParamCallType))
 				
 				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
-				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value + 2)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
-				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = (ctypes.c_char * (%s.value + 2))()", cParams[2].ParamName, cParams[1].ParamName))
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = (ctypes.c_char * (%s.value))()", cParams[2].ParamName, cParams[1].ParamName))
 				doCheckCall = true
 				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
 				retVals = retVals + cParams[2].ParamName + ".value.decode()"

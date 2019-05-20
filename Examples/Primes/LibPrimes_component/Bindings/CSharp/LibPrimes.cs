@@ -84,7 +84,7 @@ namespace LibPrimes {
 					Byte hasLastError = 0;
 					Int32 resultCode1 = GetLastError (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);
 					if ((resultCode1 == 0) && (hasLastError != 0)) {
-						sizeMessage = neededMessage + 1;
+						sizeMessage = neededMessage;
 						byte[] bytesMessage = new byte[sizeMessage];
 
 						GCHandle dataMessage = GCHandle.Alloc(bytesMessage, GCHandleType.Pinned);
@@ -235,7 +235,7 @@ namespace LibPrimes {
 			UInt32 sizeErrorMessage = 0;
 			UInt32 neededErrorMessage = 0;
 			CheckError(Internal.LibPrimesWrapper.GetLastError (AInstance.GetHandle(), sizeErrorMessage, out neededErrorMessage, IntPtr.Zero, out resultHasError));
-			sizeErrorMessage = neededErrorMessage + 1;
+			sizeErrorMessage = neededErrorMessage;
 			byte[] bytesErrorMessage = new byte[sizeErrorMessage];
 			GCHandle dataErrorMessage = GCHandle.Alloc(bytesErrorMessage, GCHandleType.Pinned);
 

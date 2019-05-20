@@ -20,7 +20,7 @@ Interface version: 1.2.0
 #include "libprimes_dynamic.h"
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #else // _WIN32
 #include <dlfcn.h>
 #endif // _WIN32
@@ -335,10 +335,8 @@ public:
 		LibPrimes_uint32 bytesWrittenErrorMessage = 0;
 		bool resultHasError = 0;
 		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
-		std::vector<char> bufferErrorMessage;
-		bufferErrorMessage.resize(bytesNeededErrorMessage + 2);
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage + 2, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
-		bufferErrorMessage[bytesNeededErrorMessage + 1] = 0;
+		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
+		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
 		return resultHasError;
 	}

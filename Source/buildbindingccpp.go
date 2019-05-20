@@ -617,12 +617,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
 
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("buffer%s.resize(bytesNeeded%s + 2);", param.ParamName, param.ParamName))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s(bytesNeeded%s);", param.ParamName, param.ParamName))
 
-				callParameter = fmt.Sprintf("bytesNeeded%s + 2, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName))
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName))
 
 			case "class":
@@ -662,12 +660,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
 
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("buffer%s.resize(bytesNeeded%s + 2);", param.ParamName, param.ParamName))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s(bytesNeeded%s);", param.ParamName, param.ParamName))
 
-				callParameter = fmt.Sprintf("bytesNeeded%s + 2, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::string(&buffer%s[0]);", param.ParamName))
 
 			case "enum":

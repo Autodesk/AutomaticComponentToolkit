@@ -373,12 +373,13 @@ LibPrimesResult libprimes_getlasterror(LibPrimes_Base pInstance, const LibPrimes
 		*pHasError = CWrapper::GetLastError(pIInstance, sErrorMessage);
 
 		if (pErrorMessageNeededChars) 
-			*pErrorMessageNeededChars = (LibPrimes_uint32) sErrorMessage.size();
+			*pErrorMessageNeededChars = (LibPrimes_uint32) (sErrorMessage.size()+1);
 		if (pErrorMessageBuffer) {
 			if (sErrorMessage.size() >= nErrorMessageBufferSize)
 				throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_BUFFERTOOSMALL);
 			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
 				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
 		}
 
 		if (pJournalEntry.get() != nullptr) {
