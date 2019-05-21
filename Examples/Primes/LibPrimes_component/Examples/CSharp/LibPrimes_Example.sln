@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.539
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibPrimes_Example", "LibPrimes_Example.csproj", "{88BCAC01-4F12-43A2-84BF-F7FEB394B59C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibPrimes_Example", "LibPrimes_Example.csproj", "{CC8B08F1-CA5B-4AE4-BACC-74B5119FC89A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,15 +10,15 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{88BCAC01-4F12-43A2-84BF-F7FEB394B59C}.Debug|x64.ActiveCfg = Debug|x64
-		{88BCAC01-4F12-43A2-84BF-F7FEB394B59C}.Debug|x64.Build.0 = Debug|x64
-		{88BCAC01-4F12-43A2-84BF-F7FEB394B59C}.Release|x64.ActiveCfg = Release|x64
-		{88BCAC01-4F12-43A2-84BF-F7FEB394B59C}.Release|x64.Build.0 = Release|x64
+		{CC8B08F1-CA5B-4AE4-BACC-74B5119FC89A}.Debug|x64.ActiveCfg = Debug|x64
+		{CC8B08F1-CA5B-4AE4-BACC-74B5119FC89A}.Debug|x64.Build.0 = Debug|x64
+		{CC8B08F1-CA5B-4AE4-BACC-74B5119FC89A}.Release|x64.ActiveCfg = Release|x64
+		{CC8B08F1-CA5B-4AE4-BACC-74B5119FC89A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = 63612a47-03f4-4ce0-9e90-97525e224f06
+		SolutionGuid = 2785aa7c-3a04-4e15-9e14-3090c14a4ca3
 	EndGlobalSection
 EndGlobal

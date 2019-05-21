@@ -606,12 +606,13 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 
 				postCallCode = append (postCallCode, fmt.Sprintf("Len%s := Length (Result%s);", param.ParamName, param.ParamName))
 				postCallCode = append (postCallCode, fmt.Sprintf("if Assigned(%s) then", pascalParams[1].ParamName))
-				postCallCode = append (postCallCode, fmt.Sprintf("  %s^ := Len%s;", pascalParams[1].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  %s^ := Len%s + 1;", pascalParams[1].ParamName, param.ParamName));
 
 				postCallCode = append (postCallCode, fmt.Sprintf("if Assigned(%s) then begin", pascalParams[2].ParamName))
 				postCallCode = append (postCallCode, fmt.Sprintf("  if (Len%s >= %s) then", param.ParamName, pascalParams[0].ParamName));
 				postCallCode = append (postCallCode, fmt.Sprintf("    raise E%sException.Create (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
-				postCallCode = append (postCallCode, fmt.Sprintf("  Move (PAnsiChar (Result%s)^, %s^, Len%s + 1);", param.ParamName, pascalParams[2].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  Move (PAnsiChar (Result%s)^, %s^, Len%s);", param.ParamName, pascalParams[2].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  %s[Len%s] := Char(0);",  pascalParams[2].ParamName, param.ParamName));
 				postCallCode = append (postCallCode, fmt.Sprintf("end;"));
 				
 			default:
@@ -673,12 +674,13 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 
 				postCallCode = append (postCallCode, fmt.Sprintf("Len%s := Length (Result%s);", param.ParamName, param.ParamName))
 				postCallCode = append (postCallCode, fmt.Sprintf("if Assigned(%s) then", pascalParams[1].ParamName))
-				postCallCode = append (postCallCode, fmt.Sprintf("  %s^ := Len%s;", pascalParams[1].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  %s^ := Len%s + 1;", pascalParams[1].ParamName, param.ParamName));
 
 				postCallCode = append (postCallCode, fmt.Sprintf("if Assigned(%s) then begin", pascalParams[2].ParamName))
 				postCallCode = append (postCallCode, fmt.Sprintf("  if (Len%s >= %s) then", param.ParamName, pascalParams[0].ParamName));
 				postCallCode = append (postCallCode, fmt.Sprintf("    raise E%sException.Create (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
-				postCallCode = append (postCallCode, fmt.Sprintf("  Move (PAnsiChar (Result%s)^, %s^, Len%s + 1);", param.ParamName, pascalParams[2].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  Move (PAnsiChar (Result%s)^, %s^, Len%s);", param.ParamName, pascalParams[2].ParamName, param.ParamName));
+				postCallCode = append (postCallCode, fmt.Sprintf("  %s[Len%s] := Char(0);",  pascalParams[2].ParamName, param.ParamName));
 				postCallCode = append (postCallCode, fmt.Sprintf("end;"));
 
 			case "class":

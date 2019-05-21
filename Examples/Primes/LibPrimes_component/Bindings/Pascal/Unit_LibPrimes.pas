@@ -617,9 +617,8 @@ implementation
     bytesWrittenErrorMessage:= 0;
     ResultHasError := 0;
     CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
-    SetLength (bufferErrorMessage, bytesNeededErrorMessage + 2);
-    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, bytesNeededErrorMessage + 1, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
-    bufferErrorMessage[bytesNeededErrorMessage + 1] := #0;
+    SetLength (bufferErrorMessage, bytesNeededErrorMessage);
+    CheckError (nil, LibPrimesGetLastErrorFunc (AInstance.FHandle, bytesNeededErrorMessage, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
     AErrorMessage := StrPas (@bufferErrorMessage[0]);
     Result := (ResultHasError <> 0);
   end;

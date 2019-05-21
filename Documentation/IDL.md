@@ -353,7 +353,8 @@ A _signed_ integer vaules ranging from -2<sup>7</sup> - 2<sup>7</sup>-1, -2<sup>
 -2<sup>31</sup> - 2<sup>31</sup>-1,
 -2<sup>63</sup> - 2<sup>63</sup>-1, respectively.
 - `pointer`: An address in memory without knowledge of the kind of data that resides there. In C++, this corresponds to a `void*`.
-- `string` denotes a null-terminated string. If a component requires arbitrary strings that can contain null-characters, one should use the type `basicarray` of class `uint8`.
+- `string` denotes a null-terminated string. If a component requires arbitrary strings that can contain null-characters, one should use the type `basicarray` of class `uint8`. When using `string` as `out`- or `return`-parameter, the size of the buffer that is passed through the ABI includes the terminating null-character.
+
 - `single`: Single precision floating point number.
 - `double`: Double precision floating point number.
 - `struct`: see [13. Struct](#13-struct)

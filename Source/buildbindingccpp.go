@@ -633,12 +633,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
 
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("buffer%s.resize(bytesNeeded%s + 2);", param.ParamName, param.ParamName))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s(bytesNeeded%s);", param.ParamName, param.ParamName))
 
-				callParameter = fmt.Sprintf("bytesNeeded%s + 2, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName))
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName))
 
 			case "class":
@@ -678,12 +676,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
 
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s;", param.ParamName))
-				functionCodeLines = append(functionCodeLines, fmt.Sprintf("buffer%s.resize(bytesNeeded%s + 2);", param.ParamName, param.ParamName))
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("std::vector<char> buffer%s(bytesNeeded%s);", param.ParamName, param.ParamName))
 
-				callParameter = fmt.Sprintf("bytesNeeded%s + 2, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("buffer%s[bytesNeeded%s + 1] = 0;", param.ParamName, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::string(&buffer%s[0]);", param.ParamName))
 
 			case "enum":
@@ -1478,19 +1474,22 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	BaseName := componentdefinition.BaseName
 
 	w.Writeln("#include <stdio.h>")
+	w.Writeln("#include <stdlib.h>")
 	w.Writeln("#include \"%s_dynamic.h\"", strings.ToLower(BaseName))
 	
 	w.Writeln("")
 	w.Writeln("")
 	w.Writeln("void releaseWrapper(s%sDynamicWrapperTable* pWrapperTable) {", NameSpace)
 	w.Writeln("  %sResult eResult = Release%sWrapperTable(pWrapperTable);", NameSpace, NameSpace)
-	w.Writeln("  printf_s(\"Failed releasing wrapper table\\n\");")
+	w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
+	w.Writeln("    printf_s(\"Failed releasing wrapper table\\n\");")
+	w.Writeln("  }")
 	w.Writeln("}")
 	w.Writeln("")
 
 	w.Writeln("int main()")
 	w.Writeln("{")
-	w.Writeln("  // TODO: put a path the LibPrimes-library file here.")
+	w.Writeln("  // TODO: put a path to %s binary file here:", componentdefinition.LibraryName)
 	w.Writeln("  const char* libpath = \"\";")
 	w.Writeln("  s%sDynamicWrapperTable sWrapperTable;", NameSpace)
 	w.Writeln("  %sResult eResult = %s_SUCCESS;", NameSpace, strings.ToUpper(NameSpace))
@@ -1508,7 +1507,7 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	w.Writeln("  }")
 
 	w.Writeln("  %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
-	w.Writeln("  eResult = sWrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro);")
+	w.Writeln("  eResult = sWrapperTable.m_%s(&nMajor, &nMinor, &nMicro);", componentdefinition.Global.VersionMethod)
 	w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 	w.Writeln("    printf_s(\"Failed to get version\\n\");")
 	w.Writeln("    releaseWrapper(&sWrapperTable);")
@@ -1519,42 +1518,47 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	if len(componentdefinition.Global.PrereleaseMethod)>0 || len(componentdefinition.Global.BuildinfoMethod)>0 {
 		w.Writeln("  %s_uint32 nBufferRequired = 0;", NameSpace)
 		w.Writeln("  %s_uint8* theString = NULL;", NameSpace)
+		w.Writeln("  bool bHasInfo = false;", NameSpace)
 	}
 	if len(componentdefinition.Global.PrereleaseMethod)>0 {
-		w.Writeln("  eResult = sWrapperTable.m_%s(theString, 0, &nBufferRequired);", componentdefinition.Global.PrereleaseMethod)
+		w.Writeln("  eResult = sWrapperTable.m_%s(&bHasInfo, 0, &nBufferRequired, theString);", componentdefinition.Global.PrereleaseMethod)
 		w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 		w.Writeln("	   releaseWrapper(&sWrapperTable);")
 		w.Writeln("    return eResult;")
 		w.Writeln("  }")
-		w.Writeln("  if (nBufferRequired > 0) {")
-		w.Writeln("    theString = malloc(sizeof(%s_uint8)*nBufferRequired);", NameSpace)
-		w.Writeln("    eResult = sWrapperTable.m_%s(theString, nBufferRequired, &nBufferRequired);", componentdefinition.Global.PrereleaseMethod)
+		w.Writeln("  if (bHasInfo && (nBufferRequired > 0)) {")
+		w.Writeln("    theString = malloc(sizeof(%s_uint8)*(nBufferRequired+1));", NameSpace)
+		w.Writeln("    theString[nBufferRequired] = 0;")
+		w.Writeln("    eResult = sWrapperTable.m_%s(&bHasInfo, nBufferRequired + 1, &nBufferRequired, theString);", componentdefinition.Global.PrereleaseMethod)
 		w.Writeln("    if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
+		w.Writeln("      printf_s(\"Failed to get prerelease information\\n\"");
 		w.Writeln("      releaseWrapper(&sWrapperTable);")
 		w.Writeln("      free(theString);")
 		w.Writeln("      return eResult;")
 		w.Writeln("    }")
-		w.Writeln("    printf_s(\"-%s\", theString);")
+		w.Writeln("    printf_s(\"-%%s\", theString);")
 		w.Writeln("    free(theString);")
 		w.Writeln("    theString = NULL;")
 		w.Writeln("  }")
 		w.Writeln("  ")
 	}
 	if len(componentdefinition.Global.BuildinfoMethod)>0 {
-		w.Writeln("  eResult = sWrapperTable.m_%s(theString, 0, &nBufferRequired);", componentdefinition.Global.BuildinfoMethod)
+		w.Writeln("  eResult = sWrapperTable.m_%s(&bHasInfo, 0, &nBufferRequired, theString);", componentdefinition.Global.BuildinfoMethod)
 		w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 		w.Writeln("	   releaseWrapper(&sWrapperTable);")
 		w.Writeln("    return eResult;")
 		w.Writeln("  }")
-		w.Writeln("  if (nBufferRequired > 0) {")
-		w.Writeln("    theString = malloc(sizeof(%s_uint8)*nBufferRequired);", NameSpace)
-		w.Writeln("    eResult = sWrapperTable.m_%s(theString, nBufferRequired, &nBufferRequired);", componentdefinition.Global.BuildinfoMethod)
+		w.Writeln("  if (bHasInfo && (nBufferRequired > 0)) {")
+		w.Writeln("    theString = malloc(sizeof(%s_uint8)*(nBufferRequired+1));", NameSpace)
+		w.Writeln("    theString[nBufferRequired] = 0;")
+		w.Writeln("    eResult = sWrapperTable.m_%s(&bHasInfo, nBufferRequired + 1, &nBufferRequired, theString);", componentdefinition.Global.BuildinfoMethod)
 		w.Writeln("    if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
+		w.Writeln("      printf_s(\"Failed to get build information\\n\"");
 		w.Writeln("      releaseWrapper(&sWrapperTable);")
 		w.Writeln("      free(theString);")
 		w.Writeln("      return eResult;")
 		w.Writeln("    }")
-		w.Writeln("    printf_s(\"+%s\", theString);")
+		w.Writeln("    printf_s(\"+%%s\", theString);")
 		w.Writeln("    free(theString);")
 		w.Writeln("    theString = NULL;")
 		w.Writeln("  }")
@@ -1562,8 +1566,8 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	}
 	w.Writeln("  printf_s(\"\\n\");")
 	w.Writeln("  ")
-	w.Writeln("  eResult = ReleaseLibPrimesWrapperTable(&sWrapperTable);")
-	w.Writeln("  if (LIBPRIMES_SUCCESS != eResult) {")
+	w.Writeln("  eResult = Release%sWrapperTable(&sWrapperTable);", NameSpace)
+	w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 	w.Writeln("    printf_s(\"Failed releasing wrapper table\\n\");")
 	w.Writeln("    return eResult;")
 	w.Writeln("  }")
