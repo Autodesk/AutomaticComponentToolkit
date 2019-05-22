@@ -669,13 +669,13 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 			case "enum":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("e%s%s result%s = (e%s%s) 0;", NameSpace, param.ParamClass, param.ParamName, NameSpace, param.ParamClass))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("e%s result%s = (e%s) 0;", param.ParamClass, param.ParamName, param.ParamClass))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "struct":
 				callParameter = fmt.Sprintf("&result%s", param.ParamName)
 				initCallParameter = callParameter
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s%s result%s;", NameSpace, param.ParamClass, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s result%s;", param.ParamClass, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "class":
