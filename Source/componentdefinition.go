@@ -785,6 +785,12 @@ func CheckComponentDefinition (component ComponentDefinition) (error) {
 		return err
 	}
 
+	for i := 0; i < len(component.Global.Methods); i++ {
+		_, err := CheckHeaderSpecialFunction(component.Global.Methods[i], component.Global)
+		if err != nil {
+			return err
+		}
+	}
 
 	if (component.Global.BaseClassName == "") {
 		return errors.New ("No base class name specified");
