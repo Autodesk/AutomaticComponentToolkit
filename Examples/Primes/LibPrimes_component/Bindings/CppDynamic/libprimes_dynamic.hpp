@@ -584,6 +584,10 @@ public:
 	 * Method definitions for class CCalculator
 	 */
 	
+	/**
+	* CCalculator::GetValue - Returns the current value of this Calculator
+	* @return The current value of this Calculator
+	*/
 	LibPrimes_uint64 CCalculator::GetValue()
 	{
 		LibPrimes_uint64 resultValue = 0;
@@ -591,16 +595,27 @@ public:
 		return resultValue;
 	}
 	
+	/**
+	* CCalculator::SetValue - Sets the value to be factorized
+	* @param[in] nValue - The value to be factorized
+	*/
 	void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 	{
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_SetValue(m_pHandle, nValue));
 	}
 	
+	/**
+	* CCalculator::Calculate - Performs the specific calculation of this Calculator
+	*/
 	void CCalculator::Calculate()
 	{
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_Calculate(m_pHandle));
 	}
 	
+	/**
+	* CCalculator::SetProgressCallback - Sets the progress callback function
+	* @param[in] pProgressCallback - The progress callback
+	*/
 	void CCalculator::SetProgressCallback(const ProgressCallback pProgressCallback)
 	{
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_SetProgressCallback(m_pHandle, pProgressCallback));
@@ -610,6 +625,10 @@ public:
 	 * Method definitions for class CFactorizationCalculator
 	 */
 	
+	/**
+	* CFactorizationCalculator::GetPrimeFactors - Returns the prime factors of this number (without multiplicity)
+	* @param[out] PrimeFactorsBuffer - The prime factors of this number
+	*/
 	void CFactorizationCalculator::GetPrimeFactors(std::vector<sPrimeFactor> & PrimeFactorsBuffer)
 	{
 		LibPrimes_uint64 elementsNeededPrimeFactors = 0;
@@ -623,6 +642,10 @@ public:
 	 * Method definitions for class CSieveCalculator
 	 */
 	
+	/**
+	* CSieveCalculator::GetPrimes - Returns all prime numbers lower or equal to the sieve's value
+	* @param[out] PrimesBuffer - The primes lower or equal to the sieve's value
+	*/
 	void CSieveCalculator::GetPrimes(std::vector<LibPrimes_uint64> & PrimesBuffer)
 	{
 		LibPrimes_uint64 elementsNeededPrimes = 0;
