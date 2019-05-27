@@ -20,60 +20,72 @@ unit libprimes_interfaces;
 interface
 
 uses
-	libprimes_types,
-	Classes,
-	sysutils;
+  libprimes_types,
+  Classes,
+  sysutils;
 
 
 type
 
 (*************************************************************************************************************************
+ Interface definition for Reference Counting
+**************************************************************************************************************************)
+
+
+ILibPrimesReferenceCounted = interface
+  ['{52FDFC07-2182-454F-963F-5F0F9A621D72}']
+  procedure IncRefCount();
+  function DecRefCount(): boolean;
+end;
+
+
+(*************************************************************************************************************************
  Interface definition for Base
 **************************************************************************************************************************)
 
-	ILibPrimesBase = interface
-		['{52FDFC07-2182-454F-963F-5F0F9A621D72}']
+ILibPrimesBase = interface (ILibPrimesReferenceCounted)
+  ['{9566C74D-1003-4C4D-BBBB-0407D1E2C649}']
 
-		function GetLastErrorMessage(out AErrorMessage: String): Boolean;
-		procedure ClearErrorMessages();
-		procedure RegisterErrorMessage(const AErrorMessage: String);
-	end;
+  function GetLastErrorMessage(out AErrorMessage: String): Boolean;
+  procedure ClearErrorMessages();
+  procedure RegisterErrorMessage(const AErrorMessage: String);
+end;
 
 
 (*************************************************************************************************************************
  Interface definition for Calculator
 **************************************************************************************************************************)
 
-	ILibPrimesCalculator = interface (ILibPrimesBase)
-		['{9566C74D-1003-4C4D-BBBB-0407D1E2C649}']
+ILibPrimesCalculator = interface (ILibPrimesBase)
+  ['{81855AD8-681D-4D86-91E9-1E00167939CB}']
 
-		function GetValue(): QWord;
-		procedure SetValue(const AValue: QWord);
-		procedure Calculate();
-		procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
-	end;
+  function GetValue(): QWord;
+  procedure SetValue(const AValue: QWord);
+  procedure Calculate();
+  procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
+end;
 
 
 (*************************************************************************************************************************
  Interface definition for FactorizationCalculator
 **************************************************************************************************************************)
 
-	ILibPrimesFactorizationCalculator = interface (ILibPrimesCalculator)
-		['{81855AD8-681D-4D86-91E9-1E00167939CB}']
+ILibPrimesFactorizationCalculator = interface (ILibPrimesCalculator)
+  ['{6694D2C4-22AC-4208-A007-2939487F6999}']
 
-		procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
-	end;
+  procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
+end;
 
 
 (*************************************************************************************************************************
  Interface definition for SieveCalculator
 **************************************************************************************************************************)
 
-	ILibPrimesSieveCalculator = interface (ILibPrimesCalculator)
-		['{6694D2C4-22AC-4208-A007-2939487F6999}']
+ILibPrimesSieveCalculator = interface (ILibPrimesCalculator)
+  ['{EB9D18A4-4784-445D-87F3-C67CF22746E9}']
 
-		procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
-	end;
+  procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
+end;
 
 implementation
 

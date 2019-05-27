@@ -19,19 +19,19 @@ unit libprimes_types;
 interface
 
 uses
-	Classes,
-	sysutils;
+  Classes,
+  sysutils;
 
 (*************************************************************************************************************************
  Version definition for LibPrimes
 **************************************************************************************************************************)
 
 const
-	LIBPRIMES_VERSION_MAJOR = 1;
-	LIBPRIMES_VERSION_MINOR = 2;
-	LIBPRIMES_VERSION_MICRO = 0;
-	LIBPRIMES_VERSION_PRERELEASEINFO = '';
-	LIBPRIMES_VERSION_BUILDINFO = '';
+  LIBPRIMES_VERSION_MAJOR = 1;
+  LIBPRIMES_VERSION_MINOR = 2;
+  LIBPRIMES_VERSION_MICRO = 0;
+  LIBPRIMES_VERSION_PRERELEASEINFO = '';
+  LIBPRIMES_VERSION_BUILDINFO = '';
 
 
 (*************************************************************************************************************************
@@ -39,28 +39,28 @@ const
 **************************************************************************************************************************)
 
 type
-	TLibPrimesResult = Cardinal;
-	TLibPrimesHandle = Pointer;
+  TLibPrimesResult = Cardinal;
+  TLibPrimesHandle = Pointer;
 
-	PLibPrimesResult = ^TLibPrimesResult;
-	PLibPrimesHandle = ^TLibPrimesHandle;
+  PLibPrimesResult = ^TLibPrimesResult;
+  PLibPrimesHandle = ^TLibPrimesHandle;
 
 (*************************************************************************************************************************
  Error Constants for LibPrimes
 **************************************************************************************************************************)
 
 const
-	LIBPRIMES_SUCCESS = 0;
-	LIBPRIMES_ERROR_NOTIMPLEMENTED = 1;
-	LIBPRIMES_ERROR_INVALIDPARAM = 2;
-	LIBPRIMES_ERROR_INVALIDCAST = 3;
-	LIBPRIMES_ERROR_BUFFERTOOSMALL = 4;
-	LIBPRIMES_ERROR_GENERICEXCEPTION = 5;
-	LIBPRIMES_ERROR_COULDNOTLOADLIBRARY = 6;
-	LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
-	LIBPRIMES_ERROR_INCOMPATIBLEBINARYVERSION = 8;
-	LIBPRIMES_ERROR_NORESULTAVAILABLE = 9;
-	LIBPRIMES_ERROR_CALCULATIONABORTED = 10;
+  LIBPRIMES_SUCCESS = 0;
+  LIBPRIMES_ERROR_NOTIMPLEMENTED = 1;
+  LIBPRIMES_ERROR_INVALIDPARAM = 2;
+  LIBPRIMES_ERROR_INVALIDCAST = 3;
+  LIBPRIMES_ERROR_BUFFERTOOSMALL = 4;
+  LIBPRIMES_ERROR_GENERICEXCEPTION = 5;
+  LIBPRIMES_ERROR_COULDNOTLOADLIBRARY = 6;
+  LIBPRIMES_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
+  LIBPRIMES_ERROR_INCOMPATIBLEBINARYVERSION = 8;
+  LIBPRIMES_ERROR_NORESULTAVAILABLE = 9;
+  LIBPRIMES_ERROR_CALCULATIONABORTED = 10;
 
 (*************************************************************************************************************************
  Declaration of structs
@@ -68,18 +68,18 @@ const
 
 type
 
-	PLibPrimesPrimeFactor = ^TLibPrimesPrimeFactor;
-	TLibPrimesPrimeFactor = packed record
-		FPrime: QWord;
-		FMultiplicity: Cardinal;
-	end;
+  PLibPrimesPrimeFactor = ^TLibPrimesPrimeFactor;
+  TLibPrimesPrimeFactor = packed record
+    FPrime: QWord;
+    FMultiplicity: Cardinal;
+  end;
 
 
 (*************************************************************************************************************************
  Declaration of struct arrays
 **************************************************************************************************************************)
 
-	ArrayOfLibPrimesPrimeFactor = array of TLibPrimesPrimeFactor;
+  ArrayOfLibPrimesPrimeFactor = array of TLibPrimesPrimeFactor;
 
 (*************************************************************************************************************************
  Declaration of function types
@@ -87,7 +87,7 @@ type
 
 type
 
-	PLibPrimes_ProgressCallback = function(const fProgressPercentage: Single; out pShouldAbort: Byte): Integer; cdecl;
+  PLibPrimes_ProgressCallback = function(const fProgressPercentage: Single; out pShouldAbort: Byte): Integer; cdecl;
 
 implementation
 
