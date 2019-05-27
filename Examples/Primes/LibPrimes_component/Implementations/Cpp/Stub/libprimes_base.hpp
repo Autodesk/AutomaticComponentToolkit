@@ -14,6 +14,8 @@ Abstract: This is the class declaration of CBase
 
 #include "libprimes_interfaces.hpp"
 #include <vector>
+#include <list>
+#include <memory>
 
 
 // Include custom headers here.
@@ -30,7 +32,8 @@ namespace Impl {
 class CBase : public virtual IBase {
 private:
 
-	std::vector<std::string> m_errors;
+	std::unique_ptr<std::list<std::string>> m_pErrors;
+	LibPrimes_uint32 m_nReferenceCount = 1;
 
 	/**
 	* Put private members here.
@@ -53,6 +56,10 @@ public:
 	void ClearErrorMessages();
 
 	void RegisterErrorMessage(const std::string & sErrorMessage);
+
+	void IncRefCount();
+
+	bool DecRefCount();
 
 
 	/**

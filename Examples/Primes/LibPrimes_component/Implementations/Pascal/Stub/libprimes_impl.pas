@@ -53,7 +53,7 @@ end;
 
 class procedure TLibPrimesWrapper.ReleaseInstance(AInstance: TObject);
 begin
-  (AInstance as ILibPrimesReferenceCounted).DecRefCount(); 
+  (AInstance as ILibPrimesBase).DecRefCount(); 
 end;
 
 class function TLibPrimesWrapper.CreateFactorizationCalculator(): TObject;

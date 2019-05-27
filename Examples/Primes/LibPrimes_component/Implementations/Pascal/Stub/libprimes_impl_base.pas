@@ -17,14 +17,14 @@ uses
   libprimes_types,
   libprimes_interfaces,
   libprimes_exception,
-  libprimes_referencecounted,
   Classes,
   sysutils;
 
 type
-  TLibPrimesBase = class(TLibPrimesReferenceCounted, ILibPrimesBase)
+  TLibPrimesBase = class(TObject, ILibPrimesBase)
     private
       FMessages: TStringList;
+      FReferenceCount: integer;
 
     protected
 
@@ -34,6 +34,8 @@ type
       function GetLastErrorMessage(out AErrorMessage: String): Boolean;
       procedure ClearErrorMessages();
       procedure RegisterErrorMessage(const AErrorMessage: String);
+      procedure IncRefCount();
+      function DecRefCount(): Boolean;
   end;
 
 implementation
@@ -42,6 +44,7 @@ constructor TLibPrimesBase.Create();
 begin
   inherited Create();
   FMessages := TStringList.Create();
+  FReferenceCount := 1;
 end;
 
 destructor TLibPrimesBase.Destroy();
@@ -65,6 +68,21 @@ end;
 procedure TLibPrimesBase.RegisterErrorMessage(const AErrorMessage: String);
 begin
   FMessages.Add(AErrorMessage);
+end;
+
+procedure TLibPrimesBase.IncRefCount();
+begin
+  inc(FReferenceCount);
+end;
+
+function TLibPrimesBase.DecRefCount(): Boolean;
+begin
+  dec(FReferenceCount);
+  if (FReferenceCount = 0) then begin
+    result := true;
+    self.Destroy();
+  end;
+   result := false;
 end;
 
 end.

@@ -954,6 +954,25 @@ func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
 	return method
 }
 
+// IncRefCountMethod returns the xml definition of the IncRefCount-method
+func IncRefCountMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="IncRefCount" description = "Increases the reference count of a class instance">
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// DecRefCountMethod returns the xml definition of the DecRefCount-method
+func DecRefCountMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="DecRefCount" description = "Decreases the reference count of a class instance and free releases it, if the last reference has been removed">
+	<param name="HasBeenReleased" type="bool" pass="return" description="Has the object been released" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
 func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass) (bool) {
 	return class.ClassName == component.Global.BaseClassName
 }
