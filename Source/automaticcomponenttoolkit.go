@@ -36,7 +36,6 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -46,30 +45,6 @@ const (
 	eACTModeGenerate = 0
 	eACTModeDiff     = 1
 )
-
-func readComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
-	var component ComponentDefinition
-
-	file, err := os.Open(FileName)
-	if err != nil {
-		return component, err
-	}
-
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return component, err
-	}
-
-	component.ACTVersion = ACTVersion
-	err = xml.Unmarshal(bytes, &component)
-	if err != nil {
-		return component, err
-	}
-
-	component.Normalize()
-
-	return component, nil
-}
 
 func main() {
 	ACTVersion := "1.6.0-develop"
@@ -106,7 +81,7 @@ func main() {
 	}
 
 	log.Printf("Loading Component Description File")
-	component, err := readComponentDefinition(os.Args[1], ACTVersion)
+	component, err := ReadComponentDefinition(os.Args[1], ACTVersion)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,7 +94,7 @@ func main() {
 
 	if mode == eACTModeDiff {
 		log.Printf("Loading Component Description File to compare to")
-		componentB, err := readComponentDefinition(diffFile, ACTVersion)
+		componentB, err := ReadComponentDefinition(diffFile, ACTVersion)
 		if err != nil {
 			log.Fatal(err)
 		}

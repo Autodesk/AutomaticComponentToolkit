@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="Calculation library" namespace="Calculation" copyright="Calculation developers" year="2019" basename="calculation"
+	version="1.0.0">
+	
+	<importcomponent uri="Numbers.xml" namespace="Numbers"/>
+	<!-- class="Namespace:*" becomes aware of this.-->
+	
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
+	<bindings>
+		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Pascal" indentation="2spaces" />
+		<binding language="Python" indentation="tabs" />
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs"/>
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
+	</errors>
+	
+	<class name="Base">
+	</class>
+	
+	<class name="Calculator" parent="Base" description="Sums up or multiplies a list of variables">
+		<method name="EnlistVariable" description="Adds a Variable to the list of Variables this calculator works on">
+			<param name="Variable" type="class" class="Numbers:Variable" pass="in" description="The new variable in this calculator" />
+		</method>
+
+		<method name="GetEnlistedVariable" description="Returns an instance of a enlisted variable">
+			<param name="Index" type="uint32" pass="in" description="The index of the variable to query" />
+			<param name="Variable" type="class" class="Numbers:Variable" pass="return" description="The Index-th variable in this calculator" />
+		</method>
+		
+		<method name="ClearVariables" description="Clears all variables in enlisted in this calculator">
+		</method>
+		
+		<method name="Multiply" description="Multiplies all enlisted variables">
+		<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the product of all enlisted Variables" />
+		</method>
+		
+		<method name="Add" description="Sums all enlisted variables">
+			<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the sum of all enlisted Variables" />
+		</method>
+	</class>
+	
+	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+		
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+		</method>
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="CreateCalculator" description="Creates a new Calculator instance">
+			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
+		</method>
+
+		<method name="SetNumbersSymbolAddressMethod" description="Sets the SymbolAddressMethod-method for the Numbers component">
+			<param name="SymbolAddressMethod" type="uint64" pass="in" description="Address of the SymbolAddressMethod of the Numbers component" />
+		</method>
+	</global>
+</component>

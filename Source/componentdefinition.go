@@ -42,6 +42,9 @@ import (
 	"strings"
 	"log"
 	"math"
+	"os"
+	"io/ioutil"
+	"path/filepath"
 )
 
 const (
@@ -170,6 +173,14 @@ type ComponentDefinitionErrors struct {
 	Errors []ComponentDefinitionError `xml:"error"`
 }
 
+// ComponentDefinitionImportComponent definition of errors in the component's API
+type ComponentDefinitionImportComponent struct {
+	ComponentDiffableElement
+	XMLName xml.Name `xml:"importcomponent"`
+	URI string `xml:"uri,attr"`
+	Namespace string `xml:"namespace,attr"`
+}
+
 // ComponentDefinitionMember definition of a single struct provided by the component's API
 type ComponentDefinitionMember struct {
 	ComponentDiffableElement
@@ -222,6 +233,8 @@ type ComponentDefinition struct {
 	Structs []ComponentDefinitionStruct `xml:"struct"`
 	Global ComponentDefinitionGlobal `xml:"global"`
 	Errors ComponentDefinitionErrors `xml:"errors"`
+	ImportComponents []ComponentDefinitionImportComponent `xml:"importcomponent"`
+	ImportedComponentDefinitions map[string]ComponentDefinition
 }
 
 // Normalize adds default values, changes deprecated constants to their later versions
@@ -230,6 +243,10 @@ func (component *ComponentDefinition) Normalize() {
 		component.Classes[i].Normalize()
 	}
 	component.Global.Normalize()
+	
+	for _, importedComponent := range component.ImportedComponentDefinitions { 
+		importedComponent.Normalize()
+	}
 }
 
 // Normalize adds default values, changes deprecated constants to their later versions
@@ -258,6 +275,51 @@ func (param *ComponentDefinitionParam) Normalize() {
 	if param.ParamType == "handle" {
 		param.ParamType = "class"
 	}
+}
+
+// ReadComponentDefinition reads a ComponentDefinition from a file
+func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
+	var component ComponentDefinition
+	component.ImportedComponentDefinitions = make(map[string]ComponentDefinition)
+
+	absFileName, err := filepath.Abs(FileName)
+	if err != nil {
+		return component, err
+	}
+	directory := filepath.Dir(absFileName)
+
+	file, err := os.Open(FileName)
+	if err != nil {
+		return component, err
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return component, err
+	}
+
+	component.ACTVersion = ACTVersion
+	err = xml.Unmarshal(bytes, &component)
+	if err != nil {
+		return component, err
+	}
+
+	for i := 0; i < len(component.ImportComponents); i++ {
+		importComponent := component.ImportComponents[i]
+		subFileName := filepath.Join(directory, importComponent.URI)
+
+		subComponent, err := ReadComponentDefinition(subFileName, ACTVersion)
+		if err != nil {
+			return component, err
+		}
+		if (subComponent.NameSpace != importComponent.Namespace) {
+			return component, fmt.Errorf("External Namespace of importcomponent \"%s\" does not match internal namespace \"%s\"", importComponent.Namespace, subComponent.NameSpace);
+		}
+		component.ImportedComponentDefinitions[importComponent.Namespace] = subComponent
+	}
+	component.Normalize()
+
+	return component, nil
 }
 
 func getIndentationString (str string) string {
