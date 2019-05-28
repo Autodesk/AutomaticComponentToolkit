@@ -37,7 +37,7 @@ bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
 
 void CWrapper::ReleaseInstance(IBase* pInstance)
 {
-	pInstance->DecRefCount();
+	IBase::ReleaseBaseClassInterface(pInstance);
 }
 
 IVariable * CWrapper::CreateVariable(const Calculator_double dInitialValue)

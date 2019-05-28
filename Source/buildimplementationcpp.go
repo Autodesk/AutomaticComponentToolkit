@@ -477,7 +477,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		if (isSpecialFunction == eSpecialMethodRelease) {
 			var releaseImplementation []string
 			releaseImplementation = append(releaseImplementation,
-				fmt.Sprintf("p%s->DecRefCount();", method.Params[0].ParamName))
+				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
 			thisMethodDefaultImpl = releaseImplementation
 		}
 
