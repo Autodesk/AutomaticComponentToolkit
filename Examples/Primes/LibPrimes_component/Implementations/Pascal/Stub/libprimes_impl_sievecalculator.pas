@@ -14,28 +14,28 @@ unit libprimes_impl_sievecalculator;
 interface
 
 uses
-	libprimes_types,
-	libprimes_interfaces,
-	libprimes_exception,
-	libprimes_impl_calculator,
-	Classes,
-	sysutils;
+  libprimes_types,
+  libprimes_interfaces,
+  libprimes_exception,
+  libprimes_impl_calculator,
+  Classes,
+  sysutils;
 
 type
-	TLibPrimesSieveCalculator = class(TLibPrimesCalculator, ILibPrimesSieveCalculator)
-		private
+  TLibPrimesSieveCalculator = class(TLibPrimesCalculator, ILibPrimesSieveCalculator)
+    private
 
-		protected
+    protected
 
-		public
-			procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
-	end;
+    public
+      procedure GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
+  end;
 
 implementation
 
 procedure TLibPrimesSieveCalculator.GetPrimes(const APrimesCount: QWord; PPrimesNeededCount: PQWord; APrimes: PQWord);
 begin
-	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 end.

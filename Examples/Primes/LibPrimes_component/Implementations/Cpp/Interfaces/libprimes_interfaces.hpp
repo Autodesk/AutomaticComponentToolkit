@@ -62,6 +62,17 @@ public:
 	* @param[in] sErrorMessage - Error message to register
 	*/
 	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
+
+	/**
+	* IBase::IncRefCount - Increases the reference count of a class instance
+	*/
+	virtual void IncRefCount() = 0;
+
+	/**
+	* IBase::DecRefCount - Decreases the reference count of a class instance and free releases it, if the last reference has been removed
+	* @return Has the object been released
+	*/
+	virtual bool DecRefCount() = 0;
 };
 
 

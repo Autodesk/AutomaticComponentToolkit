@@ -18,27 +18,27 @@ library libprimes;
 
 uses
 {$IFDEF UNIX}
-	cthreads,
+  cthreads,
 {$ENDIF UNIX}
-	syncobjs,
-	libprimes_types,
-	libprimes_exports,
-	Classes,
-	sysutils;
+  syncobjs,
+  libprimes_types,
+  libprimes_exports,
+  Classes,
+  sysutils;
 
 exports
-	libprimes_calculator_getvalue,
-	libprimes_calculator_setvalue,
-	libprimes_calculator_calculate,
-	libprimes_calculator_setprogresscallback,
-	libprimes_factorizationcalculator_getprimefactors,
-	libprimes_sievecalculator_getprimes,
-	libprimes_getversion,
-	libprimes_getlasterror,
-	libprimes_releaseinstance,
-	libprimes_createfactorizationcalculator,
-	libprimes_createsievecalculator,
-	libprimes_setjournal;
+  libprimes_calculator_getvalue,
+  libprimes_calculator_setvalue,
+  libprimes_calculator_calculate,
+  libprimes_calculator_setprogresscallback,
+  libprimes_factorizationcalculator_getprimefactors,
+  libprimes_sievecalculator_getprimes,
+  libprimes_getversion,
+  libprimes_getlasterror,
+  libprimes_releaseinstance,
+  libprimes_createfactorizationcalculator,
+  libprimes_createsievecalculator,
+  libprimes_setjournal;
 
 begin
 

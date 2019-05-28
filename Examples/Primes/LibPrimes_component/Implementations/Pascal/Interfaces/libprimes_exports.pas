@@ -19,12 +19,12 @@ unit libprimes_exports;
 interface
 
 uses
-	libprimes_impl,
-	libprimes_types,
-	libprimes_interfaces,
-	libprimes_exception,
-	Classes,
-	sysutils;
+  libprimes_impl,
+  libprimes_types,
+  libprimes_interfaces,
+  libprimes_exception,
+  Classes,
+  sysutils;
 
 (*************************************************************************************************************************
  Class export definition of Base 
@@ -161,348 +161,348 @@ implementation
 
 function libprimes_calculator_getvalue (pCalculator: TLibPrimesHandle; pValue: PQWord): TLibPrimesResult; cdecl;
 var
-	ResultValue: QWord;
-	ObjectCalculator: TObject;
-	IntfCalculator: ILibPrimesCalculator;
+  ResultValue: QWord;
+  ObjectCalculator: TObject;
+  IntfCalculator: ILibPrimesCalculator;
 begin
-	try
-		if not Assigned (pValue) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
-		if not Assigned (pCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned (pValue) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if not Assigned (pCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectCalculator := TObject (pCalculator);
-		if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
-			IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
-			ResultValue := IntfCalculator.GetValue();
+    ObjectCalculator := TObject (pCalculator);
+    if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
+      IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
+      ResultValue := IntfCalculator.GetValue();
 
-			pValue^ := ResultValue;
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+      pValue^ := ResultValue;
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectCalculator);
+    end;
+  end;
 end;
 
 function libprimes_calculator_setvalue (pCalculator: TLibPrimesHandle; nValue: QWord): TLibPrimesResult; cdecl;
 var
-	ObjectCalculator: TObject;
-	IntfCalculator: ILibPrimesCalculator;
+  ObjectCalculator: TObject;
+  IntfCalculator: ILibPrimesCalculator;
 begin
-	try
-		if not Assigned (pCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned (pCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectCalculator := TObject (pCalculator);
-		if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
-			IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
-			IntfCalculator.SetValue(nValue);
+    ObjectCalculator := TObject (pCalculator);
+    if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
+      IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
+      IntfCalculator.SetValue(nValue);
 
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectCalculator);
+    end;
+  end;
 end;
 
 function libprimes_calculator_calculate (pCalculator: TLibPrimesHandle): TLibPrimesResult; cdecl;
 var
-	ObjectCalculator: TObject;
-	IntfCalculator: ILibPrimesCalculator;
+  ObjectCalculator: TObject;
+  IntfCalculator: ILibPrimesCalculator;
 begin
-	try
-		if not Assigned (pCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned (pCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectCalculator := TObject (pCalculator);
-		if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
-			IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
-			IntfCalculator.Calculate();
+    ObjectCalculator := TObject (pCalculator);
+    if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
+      IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
+      IntfCalculator.Calculate();
 
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectCalculator);
+    end;
+  end;
 end;
 
 function libprimes_calculator_setprogresscallback (pCalculator: TLibPrimesHandle; pProgressCallback: PLibPrimes_ProgressCallback): TLibPrimesResult; cdecl;
 var
-	ObjectCalculator: TObject;
-	IntfCalculator: ILibPrimesCalculator;
+  ObjectCalculator: TObject;
+  IntfCalculator: ILibPrimesCalculator;
 begin
-	try
-		if not Assigned (pCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned (pCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectCalculator := TObject (pCalculator);
-		if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
-			IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
-			IntfCalculator.SetProgressCallback(pProgressCallback);
+    ObjectCalculator := TObject (pCalculator);
+    if Supports (ObjectCalculator, ILibPrimesCalculator) then begin
+      IntfCalculator := ObjectCalculator as ILibPrimesCalculator;
+      IntfCalculator.SetProgressCallback(pProgressCallback);
 
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectCalculator);
+    end;
+  end;
 end;
 
 function libprimes_factorizationcalculator_getprimefactors (pFactorizationCalculator: TLibPrimesHandle; nPrimeFactorsCount: QWord; pPrimeFactorsNeededCount: PQWord; pPrimeFactorsBuffer: PLibPrimesPrimeFactor): TLibPrimesResult; cdecl;
 var
-	ObjectFactorizationCalculator: TObject;
-	IntfFactorizationCalculator: ILibPrimesFactorizationCalculator;
+  ObjectFactorizationCalculator: TObject;
+  IntfFactorizationCalculator: ILibPrimesFactorizationCalculator;
 begin
-	try
-		if ((not Assigned (pPrimeFactorsNeededCount)) and (not Assigned(pPrimeFactorsBuffer))) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
-		if not Assigned (pFactorizationCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if ((not Assigned (pPrimeFactorsNeededCount)) and (not Assigned(pPrimeFactorsBuffer))) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if not Assigned (pFactorizationCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectFactorizationCalculator := TObject (pFactorizationCalculator);
-		if Supports (ObjectFactorizationCalculator, ILibPrimesFactorizationCalculator) then begin
-			IntfFactorizationCalculator := ObjectFactorizationCalculator as ILibPrimesFactorizationCalculator;
-			IntfFactorizationCalculator.GetPrimeFactors(nPrimeFactorsCount, pPrimeFactorsNeededCount, pPrimeFactorsBuffer);
+    ObjectFactorizationCalculator := TObject (pFactorizationCalculator);
+    if Supports (ObjectFactorizationCalculator, ILibPrimesFactorizationCalculator) then begin
+      IntfFactorizationCalculator := ObjectFactorizationCalculator as ILibPrimesFactorizationCalculator;
+      IntfFactorizationCalculator.GetPrimeFactors(nPrimeFactorsCount, pPrimeFactorsNeededCount, pPrimeFactorsBuffer);
 
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectFactorizationCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectFactorizationCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectFactorizationCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectFactorizationCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectFactorizationCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectFactorizationCalculator);
+    end;
+  end;
 end;
 
 function libprimes_sievecalculator_getprimes (pSieveCalculator: TLibPrimesHandle; nPrimesCount: QWord; pPrimesNeededCount: PQWord; pPrimesBuffer: PQWord): TLibPrimesResult; cdecl;
 var
-	ObjectSieveCalculator: TObject;
-	IntfSieveCalculator: ILibPrimesSieveCalculator;
+  ObjectSieveCalculator: TObject;
+  IntfSieveCalculator: ILibPrimesSieveCalculator;
 begin
-	try
-		if ((not Assigned (pPrimesNeededCount)) and (not Assigned(pPrimesBuffer))) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
-		if not Assigned (pSieveCalculator) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if ((not Assigned (pPrimesNeededCount)) and (not Assigned(pPrimesBuffer))) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if not Assigned (pSieveCalculator) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ObjectSieveCalculator := TObject (pSieveCalculator);
-		if Supports (ObjectSieveCalculator, ILibPrimesSieveCalculator) then begin
-			IntfSieveCalculator := ObjectSieveCalculator as ILibPrimesSieveCalculator;
-			IntfSieveCalculator.GetPrimes(nPrimesCount, pPrimesNeededCount, pPrimesBuffer);
+    ObjectSieveCalculator := TObject (pSieveCalculator);
+    if Supports (ObjectSieveCalculator, ILibPrimesSieveCalculator) then begin
+      IntfSieveCalculator := ObjectSieveCalculator as ILibPrimesSieveCalculator;
+      IntfSieveCalculator.GetPrimes(nPrimesCount, pPrimesNeededCount, pPrimesBuffer);
 
-		end else
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    end else
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := HandleLibPrimesException(ObjectSieveCalculator , E);
-		end;
-		On E: Exception do begin
-			Result := HandleStdException(ObjectSieveCalculator , E);
-		end
-		else begin
-			Result := HandleUnhandledException(ObjectSieveCalculator);
-		end;
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := HandleLibPrimesException(ObjectSieveCalculator , E);
+    end;
+    On E: Exception do begin
+      Result := HandleStdException(ObjectSieveCalculator , E);
+    end
+    else begin
+      Result := HandleUnhandledException(ObjectSieveCalculator);
+    end;
+  end;
 end;
 
 function libprimes_getversion (pMajor: PCardinal; pMinor: PCardinal; pMicro: PCardinal): TLibPrimesResult; cdecl;
 begin
-	try
-		if (not Assigned (pMajor)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if (not Assigned (pMajor)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		if (not Assigned (pMinor)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if (not Assigned (pMinor)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		if (not Assigned (pMicro)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if (not Assigned (pMicro)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
 
-		TLibPrimesWrapper.GetVersion(pMajor^, pMinor^, pMicro^);
+    TLibPrimesWrapper.GetVersion(pMajor^, pMinor^, pMicro^);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 function libprimes_getlasterror (pInstance: TLibPrimesHandle; nErrorMessageBufferSize: Cardinal; pErrorMessageNeededChars: PCardinal; pErrorMessageBuffer: PAnsiChar; pHasError: PByte): TLibPrimesResult; cdecl;
 var
-	ObjectInstance: TObject;
-	ResultErrorMessage: String;
-	LenErrorMessage: Cardinal;
-	ResultHasError: Boolean;
+  ObjectInstance: TObject;
+  ResultErrorMessage: String;
+  LenErrorMessage: Cardinal;
+  ResultHasError: Boolean;
 begin
-	try
-		ObjectInstance := TObject (pInstance);
-		if (not Supports (ObjectInstance, ILibPrimesBase)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
-		
-		if ((not Assigned (pErrorMessageBuffer)) and (not Assigned(pErrorMessageNeededChars))) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
-		if not Assigned (pHasError) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    ObjectInstance := TObject (pInstance);
+    if (not Supports (ObjectInstance, ILibPrimesBase)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    
+    if ((not Assigned (pErrorMessageBuffer)) and (not Assigned(pErrorMessageNeededChars))) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+    if not Assigned (pHasError) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ResultHasError := TLibPrimesWrapper.GetLastError(ObjectInstance, ResultErrorMessage);
+    ResultHasError := TLibPrimesWrapper.GetLastError(ObjectInstance, ResultErrorMessage);
 
-		LenErrorMessage := Length (ResultErrorMessage);
-		if Assigned(pErrorMessageNeededChars) then
-			pErrorMessageNeededChars^ := LenErrorMessage + 1;
-		if Assigned(pErrorMessageBuffer) then begin
-			if (LenErrorMessage >= nErrorMessageBufferSize) then
-				raise ELibPrimesException.Create (LIBPRIMES_ERROR_BUFFERTOOSMALL);
-			Move (PAnsiChar (ResultErrorMessage)^, pErrorMessageBuffer^, LenErrorMessage);
-			pErrorMessageBuffer[LenErrorMessage] := Char(0);
-		end;
-		pHasError^ := Ord (ResultHasError);
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    LenErrorMessage := Length (ResultErrorMessage);
+    if Assigned(pErrorMessageNeededChars) then
+      pErrorMessageNeededChars^ := LenErrorMessage + 1;
+    if Assigned(pErrorMessageBuffer) then begin
+      if (LenErrorMessage >= nErrorMessageBufferSize) then
+        raise ELibPrimesException.Create (LIBPRIMES_ERROR_BUFFERTOOSMALL);
+      Move (PAnsiChar (ResultErrorMessage)^, pErrorMessageBuffer^, LenErrorMessage);
+      pErrorMessageBuffer[LenErrorMessage] := Char(0);
+    end;
+    pHasError^ := Ord (ResultHasError);
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 function libprimes_releaseinstance (pInstance: TLibPrimesHandle): TLibPrimesResult; cdecl;
 var
-	ObjectInstance: TObject;
+  ObjectInstance: TObject;
 begin
-	try
-		ObjectInstance := TObject (pInstance);
-		if (not Supports (ObjectInstance, ILibPrimesBase)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
-		
+  try
+    ObjectInstance := TObject (pInstance);
+    if (not Supports (ObjectInstance, ILibPrimesBase)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDCAST);
+    
 
-		TLibPrimesWrapper.ReleaseInstance(ObjectInstance);
+    TLibPrimesWrapper.ReleaseInstance(ObjectInstance);
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 function libprimes_createfactorizationcalculator (pInstance: PLibPrimesHandle): TLibPrimesResult; cdecl;
 var
-	ResultInstance: TObject;
+  ResultInstance: TObject;
 begin
-	try
-		if not Assigned(pInstance) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned(pInstance) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ResultInstance := TLibPrimesWrapper.CreateFactorizationCalculator();
+    ResultInstance := TLibPrimesWrapper.CreateFactorizationCalculator();
 
-		pInstance^ := ResultInstance;
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    pInstance^ := ResultInstance;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 function libprimes_createsievecalculator (pInstance: PLibPrimesHandle): TLibPrimesResult; cdecl;
 var
-	ResultInstance: TObject;
+  ResultInstance: TObject;
 begin
-	try
-		if not Assigned(pInstance) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if not Assigned(pInstance) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		ResultInstance := TLibPrimesWrapper.CreateSieveCalculator();
+    ResultInstance := TLibPrimesWrapper.CreateSieveCalculator();
 
-		pInstance^ := ResultInstance;
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    pInstance^ := ResultInstance;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 function libprimes_setjournal (pFileName: PAnsiChar): TLibPrimesResult; cdecl;
 begin
-	try
-		if (not Assigned (pFileName)) then
-			raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
+  try
+    if (not Assigned (pFileName)) then
+      raise ELibPrimesException.Create (LIBPRIMES_ERROR_INVALIDPARAM);
 
-		TLibPrimesWrapper.SetJournal(StrPas (pFileName));
+    TLibPrimesWrapper.SetJournal(StrPas (pFileName));
 
-		Result := LIBPRIMES_SUCCESS;
-	except
-		On E: ELibPrimesException do begin
-			Result := E.ErrorCode;
-		end
-		else begin
-			Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
-		end
-	end;
+    Result := LIBPRIMES_SUCCESS;
+  except
+    On E: ELibPrimesException do begin
+      Result := E.ErrorCode;
+    end
+    else begin
+      Result := LIBPRIMES_ERROR_GENERICEXCEPTION;
+    end
+  end;
 end;
 
 

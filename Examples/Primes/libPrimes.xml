@@ -17,7 +17,7 @@
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
-		<implementation language="Pascal" indentation="tabs" stubidentifier="impl"/>
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
 	</implementations>
 	
 	<errors>

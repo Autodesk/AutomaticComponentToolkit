@@ -294,20 +294,36 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  * %s::~%s - virtual destructor of %s", classInterfaceName, classInterfaceName, classInterfaceName)
 		w.Writeln("  */")
 		w.Writeln("  virtual ~%s() {};", classInterfaceName)
-		var methods [3]ComponentDefinitionMethod
+		w.Writeln("")
+
+		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(releaseBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		if err != nil {
+			return err
+		}
+		w.Writeln("%s", methodstring)
+		argument := "p"+releaseBaseClassInterfaceMethod.Params[0].ParamName
+		w.Writeln("  {")
+		w.Writeln("    if (%s) {", argument)
+		w.Writeln("      %s->%s();", argument, DecRefCountMethod().MethodName)
+		w.Writeln("    }")
+		w.Writeln("  };")
+		w.Writeln("")
+
+		var methods [5]ComponentDefinitionMethod
 		methods[0] = GetLastErrorMessageMethod()
 		methods[1] = ClearErrorMessageMethod()
 		methods[2] = RegisterErrorMessageMethod()
+		methods[3] = IncRefCountMethod()
+		methods[4] = DecRefCountMethod()
 		for j := 0; j < len(methods); j++ {
 			methodstring, _, err := buildCPPInterfaceMethodDeclaration(methods[j], class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 			if err != nil {
 				return err
 			}
 			w.Writeln("")
-			w.Writeln("%s", methodstring)
+			w.Writeln("%s;", methodstring)
 		}
-
-		
 	}
 
 	for j := 0; j < len(class.Methods); j++ {
@@ -316,11 +332,13 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		if err != nil {
 			return err
 		}
-		w.Writeln("%s", methodstring)
+		w.Writeln("%s;", methodstring)
 		w.Writeln("")
 	}
 
 	w.Writeln("};")
+	w.Writeln("")
+	w.Writeln("typedef I%s%sSharedPtr<%s> P%s;", ClassIdentifier, component.Global.BaseClassName, classInterfaceName, classInterfaceName)
 	w.Writeln("")
 	return nil
 }
@@ -347,6 +365,37 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		class := component.Classes[i]
 		w.Writeln("class I%s%s;", ClassIdentifier, class.ClassName);
 	}
+	IBaseClassName := "I" + ClassIdentifier + component.Global.BaseClassName
+	w.Writeln("")
+	w.Writeln("")
+	w.Writeln("/**")
+	w.Writeln(" Definition of a shared pointer class for %s", IBaseClassName)
+	w.Writeln("*/")
+	IBaseSharedPtrName := "I" + component.Global.BaseClassName + "SharedPtr"
+	DeleteBaseMethodStr := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName
+	w.Writeln("template<class T>")
+	w.Writeln("struct %s : public std::shared_ptr<T>", IBaseSharedPtrName)
+	w.Writeln("{")
+	w.Writeln("  explicit %s(T* t = nullptr)", IBaseSharedPtrName)
+	w.Writeln("	   : std::shared_ptr<T>(t, %s::%s)", IBaseClassName, DeleteBaseMethodStr)
+	w.Writeln("	 {")
+	w.Writeln("	   t->%s();", IncRefCountMethod().MethodName)
+	w.Writeln("	 }")
+	w.Writeln("")
+	w.Writeln("  // Reset function, as it also needs to properly set the deleter.")
+	w.Writeln("  void reset(T* t = nullptr)")
+	w.Writeln("  {")
+	w.Writeln("    std::shared_ptr<T>::reset(t, %s::%s);", IBaseClassName, DeleteBaseMethodStr)
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  // Get-function that increases the Base class's reference count")
+	w.Writeln("  T* getCoOwningPtr()")
+	w.Writeln("  {")
+	w.Writeln("    T* t = this->get();")
+	w.Writeln("    t->%s();", IncRefCountMethod().MethodName)
+	w.Writeln("    return t;")
+	w.Writeln("  }")
+	w.Writeln("};")
 	w.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -379,7 +428,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		if err != nil {
 			return err
 		}
-		w.Writeln("%s", methodstring)
+		w.Writeln("%s;", methodstring)
 		w.Writeln("")
 	}
 	w.Writeln("};")
@@ -394,6 +443,9 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 }
 
 func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) error {
+	var defaultImplementation []string
+	defaultImplementation = append(defaultImplementation, fmt.Sprintf("throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace)))
+
 	stubfile.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	stubfile.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
 	stubfile.Writeln("#include \"%s_interfaceexception.hpp\"", BaseName)
@@ -405,6 +457,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 
+		thisMethodDefaultImpl := defaultImplementation
 		// Omit Journal Method
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
 		if err != nil {
@@ -413,6 +466,21 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		if (isSpecialFunction == eSpecialMethodJournal) {
 			continue
 		}
+		if (isSpecialFunction == eSpecialMethodVersion) {
+			var versionImplementation []string
+			versionImplementation = append(versionImplementation,
+				fmt.Sprintf("n%s = %s_VERSION_MAJOR;", method.Params[0].ParamName, strings.ToUpper(NameSpace)),
+				fmt.Sprintf("n%s = %s_VERSION_MINOR;", method.Params[1].ParamName, strings.ToUpper(NameSpace)),
+				fmt.Sprintf("n%s = %s_VERSION_MICRO;", method.Params[2].ParamName, strings.ToUpper(NameSpace)) )
+			thisMethodDefaultImpl = versionImplementation
+		}
+		if (isSpecialFunction == eSpecialMethodRelease) {
+			var releaseImplementation []string
+			releaseImplementation = append(releaseImplementation,
+				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
+			thisMethodDefaultImpl = releaseImplementation
+		}
+
 		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
 			return err
@@ -420,7 +488,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 
 		stubfile.Writeln("%s", implementationdeclaration)
 		stubfile.Writeln("{")
-		stubfile.Writeln("  throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
+		stubfile.Writelns("  ", thisMethodDefaultImpl)
 		stubfile.Writeln("}")
 		stubfile.Writeln("")
 	}
@@ -760,6 +828,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		
 		if (component.isBaseClass(class)) {
 			stubheaderw.Writeln("  std::unique_ptr<std::list<std::string>> m_pErrors;")
+			stubheaderw.Writeln("  %s_uint32 m_nReferenceCount = 1;", NameSpace)
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
@@ -798,12 +867,14 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubimplw.Writeln("")
 
 		if (component.isBaseClass(class)) {
-			var methods [3]ComponentDefinitionMethod
+			var methods [5]ComponentDefinitionMethod
 			methods[0] = GetLastErrorMessageMethod()
 			methods[1] = ClearErrorMessageMethod()
 			methods[2] = RegisterErrorMessageMethod()
+			methods[3] = IncRefCountMethod()
+			methods[4] = DecRefCountMethod()
 
-			var implementations [3][]string
+			var implementations [5][]string
 			implementations[0] = append(implementations[0], "if (m_pErrors && !m_pErrors->empty()) {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = m_pErrors->back();")
 			implementations[0] = append(implementations[0], "  m_pErrors->pop_back();")
@@ -820,12 +891,21 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[2] = append(implementations[2], "}")
 			implementations[2] = append(implementations[2], "m_pErrors->push_back(sErrorMessage);")
 
+			implementations[3] = append(implementations[3], "++m_nReferenceCount;")
+
+			implementations[4] = append(implementations[4], "m_nReferenceCount--;")
+			implementations[4] = append(implementations[4], "if (!m_nReferenceCount) {;")
+			implementations[4] = append(implementations[4], "  delete this;")
+			implementations[4] = append(implementations[4], "  return true;")
+			implementations[4] = append(implementations[4], "}")
+			implementations[4] = append(implementations[4], "return false;")
+
 			for i := 0; i < len(methods); i++ {
 				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 				if (err!=nil) {
 					return err
 				}
-				stubheaderw.Writeln("%s", methodstring)
+				stubheaderw.Writeln("%s;", methodstring)
 				stubheaderw.Writeln("")
 
 				stubimplw.Writeln("%s", implementationdeclaration)
@@ -848,7 +928,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			if err != nil {
 				return err
 			}
-			stubheaderw.Writeln("%s", methodstring)
+			stubheaderw.Writeln("%s;", methodstring)
 			stubheaderw.Writeln("")
 
 			stubimplw.Writeln("%s", implementationdeclaration)
@@ -1082,15 +1162,15 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	
 	if isGlobal {
 		if isVirtual {
-			outstring = outstring + fmt.Sprintf(indentString + "virtual static %s %s(%s) = 0;", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "virtual static %s %s(%s) = 0", returntype, method.MethodName, parameters)
 		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "static %s %s(%s);", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "static %s %s(%s)", returntype, method.MethodName, parameters)
 		}
 	} else {
 		if isVirtual {
-			outstring = outstring + fmt.Sprintf(indentString + "virtual %s %s(%s) = 0;", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "virtual %s %s(%s) = 0", returntype, method.MethodName, parameters)
 		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "%s %s(%s);", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "%s %s(%s)", returntype, method.MethodName, parameters)
 		}
 	}
 
