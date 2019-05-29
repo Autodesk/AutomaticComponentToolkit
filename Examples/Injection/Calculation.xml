@@ -48,7 +48,7 @@
 		</method>
 		
 		<method name="Multiply" description="Multiplies all enlisted variables">
-		<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the product of all enlisted Variables" />
+			<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the product of all enlisted Variables" />
 		</method>
 		
 		<method name="Add" description="Sums all enlisted variables">
