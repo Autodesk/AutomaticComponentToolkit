@@ -282,7 +282,13 @@ func (param *ComponentDefinitionParam) Normalize() {
 // ReadComponentDefinition reads a ComponentDefinition from a file
 func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
 	var component ComponentDefinition
-	component.ImportedComponentDefinitions = make(map[string]ComponentDefinition)
+	component.ImportedComponentDefinitions = make(map[string]ComponentDefinition, 0)
+	component.NameMapsLookup = NameMaps{
+		enumMap : make(map[string]bool, 0),
+		structMap : make(map[string]bool, 0),
+		classMap : make(map[string]bool, 0),
+		functionTypeMap : make(map[string]bool, 0),
+	}
 
 	absFileName, err := filepath.Abs(FileName)
 	if err != nil {
@@ -436,80 +442,81 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 	return nil
 }
 
-func (component *ComponentDefinition) checkEnums() (map[string]bool, error) {
+func (component *ComponentDefinition) checkEnums() (error) {
 	enums := component.Enums
+	var enumNameList = &component.NameMapsLookup.structMap
 	enumLowerNameList := make(map[string]bool, 0);
-	enumNameList := make(map[string]bool, 0);
 
 	for i := 0; i < len(enums); i++ {
 		enum := enums[i];
 		if !nameIsValidIdentifier(enum.Name) {
-			return nil, fmt.Errorf( "invalid enum name \"%s\"", enum.Name);
+			return fmt.Errorf( "invalid enum name \"%s\"", enum.Name);
 		}
 		
 		if (enumLowerNameList[strings.ToLower(enum.Name)]) {
-			return nil, fmt.Errorf("duplicate enum name \"%s\"", enum.Name);
+			return fmt.Errorf("duplicate enum name \"%s\"", enum.Name);
 		}
 
 		err := checkOptions(enum.Options)
 		if err != nil {
-			return nil, fmt.Errorf(err.Error() + " in enum = \"%s\"", enum.Name);
+			return fmt.Errorf(err.Error() + " in enum = \"%s\"", enum.Name);
 		}
 
 		enumLowerNameList[strings.ToLower(enum.Name)] = true
-		enumNameList[enum.Name] = true
+		(*enumNameList)[enum.Name] = true
 	}
 
-	return enumNameList, nil
+	return nil
 }
 	
-func (component *ComponentDefinition) checkStructs() (map[string]bool, error) {
+func (component *ComponentDefinition) checkStructs() (error) {
 	structs := component.Structs
+	var structNameList = &component.NameMapsLookup.structMap
 	structLowerNameList := make(map[string]bool, 0)
-	structNameList := make(map[string]bool, 0)
+	
 
 	for i := 0; i < len(structs); i++ {
 		mstruct := structs[i];
 		if !nameIsValidIdentifier(mstruct.Name) {
-			return nil, fmt.Errorf ("invalid struct name \"%s\"", mstruct.Name)
+			return fmt.Errorf ("invalid struct name \"%s\"", mstruct.Name)
 		}
 		if structLowerNameList[mstruct.Name] == true {
-			return nil, fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
+			return fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
 		}
-		structNameList[mstruct.Name] = true
+		(*structNameList)[mstruct.Name] = true
 		structLowerNameList[strings.ToLower(mstruct.Name)] = true
 
 		for j := 0; j < len(mstruct.Members); j++ {
 			member := mstruct.Members[j]
 			if !nameIsValidIdentifier(member.Name) {
-				return nil, fmt.Errorf ("invalid member name \"%s\"", member.Name);
+				return fmt.Errorf ("invalid member name \"%s\"", member.Name);
 			}
 		}
 	}
-	return structNameList, nil
+	return nil
 }
 
-func (component *ComponentDefinition) checkClasses() (map[string]bool, error) {
+func (component *ComponentDefinition) checkClasses() (error) {
 	classes := component.Classes
 	baseClassName := component.Global.BaseClassName
+	var classNameList = &component.NameMapsLookup.classMap
 
 	classLowerNameList := make(map[string]bool, 0)
-	classNameList := make(map[string]bool, 0)
 	classNameIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		if !nameIsValidIdentifier(class.ClassName) {
-			return nil, fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
+			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
 		if classLowerNameList[strings.ToLower(class.ClassName)] == true {
-			return nil, fmt.Errorf ("duplicate class name \"%s\"", class.ClassName);
+			return fmt.Errorf ("duplicate class name \"%s\"", class.ClassName);
 		}
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
-			return nil, fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
+			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
-		classNameList[class.ClassName] = true
+		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
 	}
 
@@ -522,44 +529,44 @@ func (component *ComponentDefinition) checkClasses() (map[string]bool, error) {
 		}
 		if (len(parentClass) > 0) {
 			if !nameIsValidIdentifier(parentClass) {
-				return nil, fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
+				return fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
 			}
-			if (classNameList[parentClass] == false) {
-				return nil, fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
+			if ( (*classNameList)[parentClass] == false) {
+				return fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
 			}
 			if (classNameIndex[parentClass] >= i) {
-				return nil, fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+				return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
 			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
-				return nil, fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
+				return fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
 			}
 		}
 	}
 
-	return classNameList, nil
+	return nil
 }
 
-func (component *ComponentDefinition) checkFunctionTypes() (map[string]bool, error) {
+func (component *ComponentDefinition) checkFunctionTypes() ( error) {
 	functions := component.Functions
+	var functionNameList = &component.NameMapsLookup.functionTypeMap
 
 	functionLowerNameList := make(map[string]bool, 0)
-	functionNameList := make(map[string]bool, 0)
 	for i := 0; i < len(functions); i++ {
 		function := functions[i];
 		if !nameIsValidIdentifier(function.FunctionName) {
-			return nil, fmt.Errorf ("invalid functiontype name \"%s\"", function.FunctionName);
+			return fmt.Errorf ("invalid functiontype name \"%s\"", function.FunctionName);
 		}
 		if functionLowerNameList[strings.ToLower(function.FunctionName)] == true {
-			return nil, fmt.Errorf ("duplicate functiontype name \"%s\"", function.FunctionName);
+			return fmt.Errorf ("duplicate functiontype name \"%s\"", function.FunctionName);
 		}
 		if len(function.FunctionDescription) > 0 && !descriptionIsValid(function.FunctionDescription) {
-			return nil, fmt.Errorf ("invalid function description \"%s\" in functiontype \"%s\"", function.FunctionDescription, function.FunctionName);
+			return fmt.Errorf ("invalid function description \"%s\" in functiontype \"%s\"", function.FunctionDescription, function.FunctionName);
 		}
 		
 		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
-		functionNameList[function.FunctionName] = true
+		(*functionNameList)[function.FunctionName] = true
 	}
-	return functionNameList, nil
+	return nil
 }
 
 func checkDuplicateNames(nameMaps NameMaps) (error) {
@@ -884,13 +891,6 @@ type NameMaps struct {
 
 // CheckComponentDefinition checks a component and returns an error, if it fails
 func (component *ComponentDefinition) CheckComponentDefinition() (error) {
-	component.NameMapsLookup = NameMaps{
-		enumMap : make(map[string]bool, 0),
-		structMap : make(map[string]bool, 0),
-		classMap : make(map[string]bool, 0),
-		functionTypeMap : make(map[string]bool, 0),
-	}
-
 	err := component.checkComponentHeader()
 	if err != nil {
 		return err
@@ -913,22 +913,22 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 		return err
 	}
 
-	component.NameMapsLookup.enumMap, err = component.checkEnums()
+	err = component.checkEnums()
 	if err != nil {
 		return err
 	}
 	
-	component.NameMapsLookup.structMap, err = component.checkStructs()
+	err = component.checkStructs()
 	if err != nil {
 		return err
 	}
 
-	component.NameMapsLookup.classMap, err = component.checkClasses()
+	err = component.checkClasses()
 	if err != nil {
 		return err
 	}
 
-	component.NameMapsLookup.functionTypeMap, err = component.checkFunctionTypes()
+	err = component.checkFunctionTypes()
 	if err != nil {
 		return err
 	}
