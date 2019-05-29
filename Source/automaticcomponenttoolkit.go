@@ -87,7 +87,7 @@ func main() {
 	}
 
 	log.Printf("Checking Component Description")
-	_,err = component.CheckComponentDefinition()
+	err = component.CheckComponentDefinition()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func main() {
 			log.Fatal(err)
 		}
 		log.Printf("Checking Component Description B")
-		_,err = componentB.CheckComponentDefinition()
+		err = componentB.CheckComponentDefinition()
 		if err != nil {
 			log.Fatal(err)
 		}
