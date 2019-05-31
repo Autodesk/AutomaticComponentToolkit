@@ -42,21 +42,21 @@ import (
 
 // BuildBindingC builds C-bindings of a library's API in form of automatically generated C functions
 func BuildBindingC(component ComponentDefinition, outputFolderBindingC string) error {
-	CTypesHeaderName := path.Join(outputFolderBindingC, component.BaseName + "_types.h");
+	CTypesHeaderName := path.Join(outputFolderBindingC, component.BaseName + "_types.h")
 	log.Printf("Creating \"%s\"", CTypesHeaderName)
-	err := CreateCTypesHeader(component, CTypesHeaderName);
+	err := CreateCTypesHeader(component, CTypesHeaderName)
 	if (err != nil) {
 		return err;
 	}
 
-	CHeaderName := path.Join(outputFolderBindingC, component.BaseName + ".h");
+	CHeaderName := path.Join(outputFolderBindingC, component.BaseName + ".h")
 	log.Printf("Creating \"%s\"", CTypesHeaderName)
-	err = CreateCAbiHeader(component, CHeaderName);
+	err = CreateCAbiHeader(component, CHeaderName)
 	if (err != nil) {
-		return err;
+		return err
 	}
 
-	return nil;
+	return nil
 }
 
 // CreateCTypesHeader creates a C header file for the types in component's API
@@ -776,15 +776,15 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 
 // GenerateCParameters generates an array of cParameters for a method
 func GenerateCParameters(method ComponentDefinitionMethod, className string, NameSpace string) ([]CParameter, error) {
-	parameters := []CParameter{};
+	parameters := []CParameter{}
 	for k := 0; k < len(method.Params); k++ {
-		param := method.Params [k];
+		param := method.Params [k]
 		
 		cParam, err := generateCCPPParameter(param, className, method.MethodName, NameSpace, false);
 		if err != nil {
-			return nil, err;
+			return nil, err
 		}
-		parameters = append(parameters, cParam...);
+		parameters = append(parameters, cParam...)
 	}
 
 	return parameters, nil;

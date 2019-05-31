@@ -56,15 +56,7 @@
 		</method>
 	</class>
 	
-	<global baseclassname="Base"
-		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
-		versionmethod="GetVersion" errormethod="GetLastError"
-		injectionmethod="InjectComponent"
-		symboladdressmethod="GetSymbolAddress"
-		>
-		<method name="CreateCalculator" description="Creates a new Calculator instance">
-			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
-		</method>
+	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
 		
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
@@ -76,20 +68,15 @@
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+		<method name="ReleaseInstance" description="Releases the memory of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
-			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		<method name="CreateCalculator" description="Creates a new Calculator instance">
+			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
 		</method>
-		<method name="InjectComponent" description="Injects an imported component for usage within this component">
-			<param name="NameSpace" type="string" pass="in" description="NameSpace of the injected component" />
-			<param name="SymbolAddressMethod" type="uint64" pass="in" description="Address of the SymbolAddressMethod of the injected component" />
-		</method>
-		<method name="GetSymbolAddress" description="Returns the address of an exported symbol by name">
-			<param name="Name" type="string" pass="in" description="Name of the symbol queried" />
-			<param name="Address" type="pointer" pass="return" description="Address of the symbol queried" />
+
+		<method name="SetNumbersSymbolAddressMethod" description="Sets the SymbolAddressMethod-method for the Numbers component">
+			<param name="SymbolAddressMethod" type="uint64" pass="in" description="Address of the SymbolAddressMethod of the Numbers component" />
 		</method>
 	</global>
-	
 </component>

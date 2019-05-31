@@ -39,8 +39,15 @@
 		</method>
 	</class>
 	
-	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError"
+	<global baseclassname="Base"
+		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
+		versionmethod="GetVersion" errormethod="GetLastError"
 		symboladdressmethod="GetSymbolAddress">
+		
+		<method name="CreateVariable" description="Creates a new Variable instance">
+			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
+			<param name="Instance" type="class" class="Variable" pass="return" description="New Variable instance" />
+		</method>
 		
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
@@ -52,18 +59,16 @@
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="CreateVariable" description="Creates a new Variable instance">
-			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
-			<param name="Instance" type="class" class="Variable" pass="return" description="New Variable instance" />
+		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-
+		
 		<method name="GetSymbolAddress" description="Returns the address of an exported symbol by name">
 			<param name="Name" type="string" pass="in" description="Name of the symbol queried" />
 			<param name="Address" type="pointer" pass="return" description="Address of the symbol queried" />
 		</method>
-
 	</global>
 </component>

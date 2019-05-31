@@ -50,11 +50,12 @@ import (
 const (
 	eSpecialMethodNone = 0
 	eSpecialMethodRelease = 1
-	eSpecialMethodVersion = 2
-	eSpecialMethodJournal = 3
-	eSpecialMethodError = 4
-	eSpecialMethodPrerelease = 5
-	eSpecialMethodBuildinfo = 6
+	eSpecialMethodAcquire = 2
+	eSpecialMethodVersion = 3
+	eSpecialMethodJournal = 4
+	eSpecialMethodError = 5
+	eSpecialMethodPrerelease = 6
+	eSpecialMethodBuildinfo = 7
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -115,6 +116,7 @@ type ComponentDefinitionGlobal struct {
 	BaseClassName string `xml:"baseclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
+	AcquireMethod string `xml:"acquiremethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
 	PrereleaseMethod string `xml:"prereleasemethod,attr"`
@@ -992,6 +994,10 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("No release method specified");
 	}
 
+	if (global.AcquireMethod == "") {
+		return eSpecialMethodNone, errors.New ("No acquire method specified");
+	}
+
 	if (global.VersionMethod == "") {
 		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
@@ -1008,8 +1014,16 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Version method");
 	}
 
+	if (global.ReleaseMethod == global.AcquireMethod) {
+		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Acquire method");
+	}
+
 	if (global.JournalMethod == global.VersionMethod) {
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
+	}
+
+	if (global.JournalMethod == global.AcquireMethod) {
+		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Acquire method");
 	}
 
 	if (method.MethodName == global.ReleaseMethod) {
@@ -1023,6 +1037,19 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 
 		return eSpecialMethodRelease, nil;
 	}
+
+	if (method.MethodName == global.AcquireMethod) {
+		if (len (method.Params) != 1) {
+			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
+			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
+		}
+
+		return eSpecialMethodAcquire, nil;
+	}
+
 
 	if (method.MethodName == global.JournalMethod) {
 		if (len (method.Params) != 1) {
@@ -1153,6 +1180,16 @@ func ReleaseBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionM
 	var method ComponentDefinitionMethod
 	source := `<method name="ReleaseBaseClassInterface" description = "Releases ownership of a base class interface. Deletes the reference, if necessary.">
 		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to release" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// AcquireBaseClassInterfaceMethod returns the xml definition of a method that should increase the reference count of a BaseClass interface.
+func AcquireBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="AcquireBaseClassInterface" description = "Acquires shared ownership of a base class interface.">
+		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to acquire" />
 	</method>`
 	xml.Unmarshal([]byte(source), &method)
 	return method

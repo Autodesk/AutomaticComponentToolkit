@@ -310,6 +310,20 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  };")
 		w.Writeln("")
 
+		acquireBaseClassInterfaceMethod := AcquireBaseClassInterfaceMethod(component.Global.BaseClassName)
+		methodstring, _, err = buildCPPInterfaceMethodDeclaration(acquireBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		if err != nil {
+			return err
+		}
+		w.Writeln("%s", methodstring)
+		argument = "p"+acquireBaseClassInterfaceMethod.Params[0].ParamName
+		w.Writeln("  {")
+		w.Writeln("    if (%s) {", argument)
+		w.Writeln("      %s->%s();", argument, IncRefCountMethod().MethodName)
+		w.Writeln("    }")
+		w.Writeln("  };")
+		w.Writeln("")
+
 		var methods [5]ComponentDefinitionMethod
 		methods[0] = GetLastErrorMessageMethod()
 		methods[1] = ClearErrorMessageMethod()
@@ -494,6 +508,12 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
 			thisMethodDefaultImpl = releaseImplementation
 		}
+		if (isSpecialFunction == eSpecialMethodAcquire) {
+			var acquireImplementation []string
+			acquireImplementation = append(acquireImplementation,
+				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, AcquireBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
+			thisMethodDefaultImpl = acquireImplementation
+		}
 
 		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
@@ -520,7 +540,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		err := writeCImplementationMethod(method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone)
+		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone)
 		if err != nil {
 			return err
 		}
@@ -638,7 +658,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		}
 
 		// Write Static function implementation
-		err = writeCImplementationMethod(method, w, BaseName, NameSpace, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction)
+		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction)
 		if err != nil {
 			return err
 		}
@@ -649,7 +669,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	return nil
 }
 
-func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int) error {
+func writeCImplementationMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int) error {
 	CMethodName := ""
 	cParams, err := GenerateCParameters(method, ClassName, NameSpace)
 	if err != nil {
@@ -676,7 +696,7 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 
 	callCPPFunctionCode := make([]string, 0)
 	
-	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
+	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(component, method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
 	if err != nil {
 		return err
 	}
@@ -1259,7 +1279,7 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 	return "";
 }
 
-func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
 	preCallCode := make([]string, 0)
 	postCallCode := make([]string, 0)
 	callParameters := ""
@@ -1294,8 +1314,18 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 
 			case "class":
-				preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
-				preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					theWrapper := "gP" + paramNameSpace + "Wrapper"
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s pI%s = std::make_shared<%s::C%s>(%s.get(), p%s);", paramNameSpace, paramClassName, param.ParamName, paramNameSpace, paramClassName, theWrapper, param.ParamName))
+					
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
+				} else {
+					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+				}
+
 				preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
 				preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
 				preCallCode = append(preCallCode, "")
@@ -1389,10 +1419,20 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
+					theWrapper := "gP" + paramNameSpace + "Wrapper"
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
+					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->GetHandle();", variableName, paramNameSpace, param.ParamName));
+				} else {
+					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+				}
 
-				returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
-				postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 			default:
 				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}

@@ -1402,6 +1402,12 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 				fmt.Sprintf("(A%s as I%s%s).DecRefCount(); ", method.Params[0].ParamName, NameSpace, global.BaseClassName));
 			thisMethodDefaultImpl = releaseImplementation
 		}
+		if (isSpecialFunction == eSpecialMethodAcquire) {
+			var acquireImplementation []string
+			acquireImplementation = append(acquireImplementation,
+				fmt.Sprintf("(A%s as I%s%s).IncRefCount(); ", method.Params[0].ParamName, NameSpace, global.BaseClassName));
+			thisMethodDefaultImpl = acquireImplementation
+		}
 		if (isSpecialFunction == eSpecialMethodJournal) {
 			var journalImplementation []string
 			thisMethodDefaultImpl = journalImplementation
