@@ -188,6 +188,10 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 		w.Writeln("#include \"%s_types.h\"", BaseName)
 	}
 	w.Writeln("")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("#include \"../../../%s_component/Bindings/CppDynamic/%s_types.hpp\"", subComponent.NameSpace, subComponent.BaseName)
+	}
+	w.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -521,11 +525,11 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	if isGlobal {
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_WrapperTable.m_%s", method.MethodName)
-		} else {	
+		} else {
 			CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		}
 		checkErrorCodeBegin = "CheckError(nullptr,"
-		makeSharedParameter = "this, "
+		makeSharedParameter = "this"
 	} else {
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_pWrapper->m_WrapperTable.m_%s_%s", ClassName, method.MethodName)
@@ -535,7 +539,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 		callParameters = "m_pHandle"
 		initCallParameters = "m_pHandle"
 		checkErrorCodeBegin = "CheckError("
-		makeSharedParameter = "m_pWrapper, "
+		makeSharedParameter = "m_pWrapper"
 	}
 	if doNotThrow {
 		checkErrorCodeBegin = ""
@@ -586,7 +590,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName)
 			case "class":
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
+				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) == 0 {
+					paramNameSpace = NameSpace
+				}
+
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", paramNameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle();", param.ParamName, variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
@@ -624,7 +633,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName))
 
 			case "class":
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
+				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) == 0 {
+					paramNameSpace = NameSpace
+				}
+
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", paramNameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
@@ -679,10 +693,21 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
 			case "class":
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				paramNameSpaceCPP, _, _ := decomposeParamClassNameCPP(param.ParamClass)
+				CPPClass := cppClassPrefix + ClassIdentifier + paramClassName
+				if len(paramNameSpace) == 0 {
+					paramNameSpace = NameSpace
+				} else {
+					CPPClass = paramNameSpaceCPP + CPPClass
+					makeSharedParameter = makeSharedParameter + "->m_p" + paramNameSpace + "Wrapper.get()"
+				}
+				
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
-				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s%s%s>(%sh%s);", cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+				
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
 
 			case "basicarray":
 				return fmt.Errorf("can not return basicarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
@@ -878,8 +903,21 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string, ClassIdentifier str
 	return nil
 }
 
+func decomposeParamClassNameCPP(paramClassName string) (string, string, error) {
+	paramNameSpace, paramClassName, err := decomposeParamClassName(paramClassName)
+	if (err != nil) {
+		return "", "", err
+	}
+	if (len(paramNameSpace) >0 ) {
+		paramNameSpace = paramNameSpace + "::"
+	}
+	return paramNameSpace, paramClassName, err
+}
 
 func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool) string {
+
+	paramNameSpace, paramClassName, _ := decomposeParamClassNameCPP(paramClass)
+
 	cppClassPrefix := "C"
 	switch paramType {
 	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
@@ -904,21 +942,22 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		}
 		return fmt.Sprintf("std::vector<%s>", cppBasicType)
 	case "structarray":
+		typeName := paramNameSpace + "s"+paramClassName
 		if isInput {
-			return fmt.Sprintf("C%sInputVector<s%s>", ClassIdentifier, paramClass)
+			return fmt.Sprintf("C%sInputVector<%s>", ClassIdentifier, typeName)
 		}
-		return fmt.Sprintf("std::vector<s%s>", paramClass)
+		return fmt.Sprintf("std::vector<%s>", typeName)
 	case "enum":
-		return fmt.Sprintf("e%s", paramClass)
+		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "struct":
-		return fmt.Sprintf("s%s", paramClass)
+		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class":
 		if isInput {
-			return fmt.Sprintf("%s%s%s *", cppClassPrefix, ClassIdentifier, paramClass)
+			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
-		return fmt.Sprintf("P%s%s", ClassIdentifier, paramClass)
+		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
 	case "functiontype":
-		return fmt.Sprintf("%s", paramClass)
+		return fmt.Sprintf(paramNameSpace + paramClassName)
 	}
 	log.Fatal("Invalid parameter type: ", paramType)
 	return ""
@@ -988,6 +1027,10 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	}
 	
+	w.Writeln("")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("#include \"../../../%s_component/Bindings/CppDynamic/%s_dynamic.hpp\"", subComponent.NameSpace, subComponent.BaseName)
+	}
 	w.Writeln("")
 
 	w.Writeln("#ifdef _WIN32")
@@ -1120,6 +1163,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	if ExplicitLinking {
 		w.Writeln("  s%sDynamicWrapperTable m_WrapperTable;", NameSpace)
 	}
+
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("  // Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("  %s::PWrapper m_p%sWrapper;", subNameSpace, subNameSpace)
+		}
+		w.Writeln("")
+	}
+	
 	
 	w.Writeln("  ")
 	w.Writeln("  %sResult checkBinaryVersion()", NameSpace)

@@ -580,32 +580,41 @@ func buildCCPPFunctionPointers(component ComponentDefinition, w LanguageWriter, 
 }
 
 func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string)(string, error) {
+	paramNameSpace, paramClassName, err := decomposeParamClassName(ParamClass)
+	if (err != nil) {
+		return "", err
+	}
+	if len(paramNameSpace) == 0 {
+		paramNameSpace = NameSpace
+	}
+
+
 	cParamTypeName := "";
 	switch (ParamTypeName) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
-			cParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamTypeName);
+			cParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, ParamTypeName);
 		case "bool":
 			cParamTypeName = "bool";
 		case "pointer":
-			cParamTypeName = fmt.Sprintf ("%s_pvoid", NameSpace);
+			cParamTypeName = fmt.Sprintf ("%s_pvoid", paramNameSpace);
 		case "string":
 			cParamTypeName = "char *";
 		case "enum":
-			cParamTypeName = fmt.Sprintf ("e%s%s", NameSpace, ParamClass);
+			cParamTypeName = fmt.Sprintf ("e%s%s", paramNameSpace, paramClassName);
 		case "struct":
-			cParamTypeName = fmt.Sprintf ("s%s%s *", NameSpace, ParamClass);
+			cParamTypeName = fmt.Sprintf ("s%s%s *", paramNameSpace, paramClassName);
 		case "basicarray":
-			basicTypeName, err := getCParameterTypeName(ParamClass, NameSpace, "");
+			basicTypeName, err := getCParameterTypeName(paramClassName, paramNameSpace, "");
 			if (err != nil) {
 				return "", err;
 			}
 			cParamTypeName = fmt.Sprintf ("%s *", basicTypeName);
 		case "structarray":
-			cParamTypeName = fmt.Sprintf ("s%s%s *", NameSpace, ParamClass)
+			cParamTypeName = fmt.Sprintf ("s%s%s *", paramNameSpace, paramClassName)
 		case "class":
-			cParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamClass)
+			cParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, paramClassName)
 		case "functiontype":
-			cParamTypeName = fmt.Sprintf ("%s%s", NameSpace, ParamClass)
+			cParamTypeName = fmt.Sprintf ("%s%s", paramNameSpace, paramClassName)
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for C-parameter", ParamTypeName);
 	}

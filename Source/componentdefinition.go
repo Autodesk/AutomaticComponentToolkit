@@ -716,6 +716,10 @@ func (component *ComponentDefinition) checkClassMethods() (error) {
 
 // decomposeParamClassName decomposes a classname into a namespace and the actual classname within this namespace
 func decomposeParamClassName(paramClassName string) (string, string, error) {
+	if len(paramClassName) == 0 {
+		return "", paramClassName, nil
+	}
+
 	namespaceRegexp := "[A-Z][a-zA-Z0-9_]{0,63}"
 	var IsValidParamClassName = regexp.MustCompile(fmt.Sprintf("^((%s):){0,1}([A-Z][a-zA-Z0-9_]{0,63})$", namespaceRegexp) )
 	
