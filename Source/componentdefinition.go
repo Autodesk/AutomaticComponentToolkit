@@ -49,13 +49,15 @@ import (
 
 const (
 	eSpecialMethodNone = 0
-	eSpecialMethodRelease = 1
-	eSpecialMethodAcquire = 2
-	eSpecialMethodVersion = 3
-	eSpecialMethodJournal = 4
-	eSpecialMethodError = 5
-	eSpecialMethodPrerelease = 6
-	eSpecialMethodBuildinfo = 7
+	eSpecialMethodVersion = 1
+	eSpecialMethodRelease = 2
+	eSpecialMethodAcquire = 3
+	eSpecialMethodError = 4
+	eSpecialMethodInjection = 5
+	eSpecialMethodSymbolLookup = 6
+	eSpecialMethodJournal = 7
+	eSpecialMethodPrerelease = 8
+	eSpecialMethodBuildinfo = 9
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -117,6 +119,8 @@ type ComponentDefinitionGlobal struct {
 	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
+	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
+	InjectionMethod string `xml:"injectionmethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
 	PrereleaseMethod string `xml:"prereleasemethod,attr"`
@@ -1050,6 +1054,28 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodAcquire, nil;
 	}
 
+	if (method.MethodName == global.SymbolLookupMethod) {
+		if (len (method.Params) != 1) {
+			return eSpecialMethodNone, errors.New ("SymbolLookup method does not match the expected function template");
+		}
+		if (method.Params[0].ParamType != "pointer") || (method.Params[0].ParamPass != "return") {
+			return eSpecialMethodNone, errors.New ("SymbolLookup method does not match the expected function template");
+		}
+		
+		return eSpecialMethodSymbolLookup, nil
+	}
+
+	if (method.MethodName == global.InjectionMethod) {
+		if (len (method.Params) != 2) {
+			return eSpecialMethodNone, errors.New ("Injection method does not match the expected function template");
+		}
+		if (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "in") ||
+			(method.Params[1].ParamType != "pointer") || (method.Params[1].ParamPass != "in") {
+			return eSpecialMethodNone, errors.New ("Injection method does not match the expected function template");
+		}
+		
+		return eSpecialMethodInjection, nil
+	}
 
 	if (method.MethodName == global.JournalMethod) {
 		if (len (method.Params) != 1) {
@@ -1121,6 +1147,8 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		
 		return eSpecialMethodBuildinfo, nil;
 	}
+
+	
 
 	return eSpecialMethodNone, nil;
 }

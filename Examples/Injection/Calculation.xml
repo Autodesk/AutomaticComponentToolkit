@@ -60,7 +60,7 @@
 		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
 		versionmethod="GetVersion" errormethod="GetLastError"
 		injectionmethod="InjectComponent"
-		symboladdressmethod="GetSymbolAddress"
+		symbollookupmethod="GetSymbolLookupMethod"
 		>
 		<method name="CreateCalculator" description="Creates a new Calculator instance">
 			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
@@ -84,11 +84,10 @@
 		</method>
 		<method name="InjectComponent" description="Injects an imported component for usage within this component">
 			<param name="NameSpace" type="string" pass="in" description="NameSpace of the injected component" />
-			<param name="SymbolAddressMethod" type="uint64" pass="in" description="Address of the SymbolAddressMethod of the injected component" />
+			<param name="SymbolAddressMethod" type="pointer" pass="in" description="Address of the SymbolAddressMethod of the injected component" />
 		</method>
-		<method name="GetSymbolAddress" description="Returns the address of an exported symbol by name">
-			<param name="Name" type="string" pass="in" description="Name of the symbol queried" />
-			<param name="Address" type="pointer" pass="return" description="Address of the symbol queried" />
+		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
+			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
 		</method>
 	</global>
 	

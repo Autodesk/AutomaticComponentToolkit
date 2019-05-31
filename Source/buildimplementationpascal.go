@@ -1408,9 +1408,10 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 				fmt.Sprintf("(A%s as I%s%s).IncRefCount(); ", method.Params[0].ParamName, NameSpace, global.BaseClassName));
 			thisMethodDefaultImpl = acquireImplementation
 		}
-		if (isSpecialFunction == eSpecialMethodJournal) {
-			var journalImplementation []string
-			thisMethodDefaultImpl = journalImplementation
+		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
+			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			var noopImplementation []string
+			thisMethodDefaultImpl = noopImplementation
 		}
 		if (isSpecialFunction == eSpecialMethodVersion) {
 			var versionImplementation []string

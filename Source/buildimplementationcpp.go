@@ -448,7 +448,8 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		if err != nil {
 			return err
 		}
-		if (isSpecialFunction == eSpecialMethodJournal) {
+		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
+			(isSpecialFunction == eSpecialMethodSymbolLookup) {
 			continue
 		}
 
@@ -486,12 +487,14 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		method := component.Global.Methods[j]
 
 		thisMethodDefaultImpl := defaultImplementation
-		// Omit Journal Method
+		
+		// Treat special functions
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
 		if err != nil {
 			return err
 		}
-		if (isSpecialFunction == eSpecialMethodJournal) {
+		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
+			(isSpecialFunction == eSpecialMethodSymbolLookup) {
 			continue
 		}
 		if (isSpecialFunction == eSpecialMethodVersion) {
@@ -548,6 +551,66 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
+func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter, NameSpace string) error {
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Function table lookup implementation")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("%sResult _%s_getprocaddress_internal(const char * pProcName, void ** ppProcAddress)", NameSpace, strings.ToLower (NameSpace))
+	w.Writeln("{")
+
+	w.AddIndentationLevel(1)
+	w.Writeln("static bool sbProcAddressMapHasBeenInitialized = false;")
+	w.Writeln("static std::map<std::string, void*> sProcAddressMap;")
+	w.Writeln("if (!sbProcAddressMapHasBeenInitialized) {")
+
+	w.AddIndentationLevel(1)
+	
+	global := component.Global;
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
+			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s\"] = &%s_%s;", procName, strings.ToLower(NameSpace), procName))
+		}
+	}
+	for j := 0; j < len(global.Methods); j++ {
+		method := global.Methods[j]
+		procName := strings.ToLower(method.MethodName)
+
+		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s\"] = &%s_%s;", procName, strings.ToLower(NameSpace), procName))
+	}
+
+	w.AddIndentationLevel(-1)
+
+	w.Writeln("  ")
+	w.Writeln("  sbProcAddressMapHasBeenInitialized = true;")
+	w.Writeln("}")
+
+	w.Writeln("if (pProcName == nullptr)")		
+	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
+	w.Writeln("if (ppProcAddress == nullptr)")		
+	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
+	w.Writeln("*ppProcAddress = nullptr;")
+	w.Writeln("std::string sProcName (pProcName);")
+	w.Writeln("")
+
+	w.Writeln("auto procPair = sProcAddressMap.find(sProcName);")
+	w.Writeln("if (procPair == sProcAddressMap.end()) {")
+	w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
+	w.Writeln("}")
+	w.Writeln("else {")
+	w.Writeln("  *ppProcAddress = procPair->second;")
+	w.Writeln("  return %s_SUCCESS;", strings.ToUpper (NameSpace))
+	w.Writeln("}")
+	w.Writeln("")
+	w.AddIndentationLevel(-1)
+	w.Writeln("}")
+	return nil;
+}
+
 func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, doJournal bool) error {
 	w.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	w.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
@@ -555,6 +618,8 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	if (doJournal) {
 		w.Writeln("#include \"%s_interfacejournal.hpp\"", BaseName)
 	}
+	w.Writeln("")
+	w.Writeln("#include <map>")
 	w.Writeln("")
 	w.Writeln("using namespace %s::%s;", NameSpace, NameSpaceImplementation)
 	w.Writeln("")
@@ -638,6 +703,12 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	}
 
 	w.Writeln("")
+	err := buildCPPGetSymbolAddressMethod(component, w, NameSpace);
+	if err != nil {
+		return err
+	}
+
+	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Global functions implementation")
 	w.Writeln("**************************************************************************************************************************/")
@@ -706,6 +777,23 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s != \"\") {", method.Params[0].ParamName))
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);", NameSpace, method.Params[0].ParamName))
 		callCPPFunctionCode = append(callCPPFunctionCode, "}")
+	} else if (isSpecialFunction == eSpecialMethodInjection) {
+		callCPPFunctionCode = append(callCPPFunctionCode, "")
+		callCPPFunctionCode = append(callCPPFunctionCode, "bool bNameSpaceFound = false;")
+		callCPPFunctionCode = append(callCPPFunctionCode, "")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			theNameSpace := subComponent.NameSpace
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  gP%sWrapper = %s::CWrapper::loadLibraryFromMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
+		}
+		callCPPFunctionCode = append(callCPPFunctionCode, "")
+		callCPPFunctionCode = append(callCPPFunctionCode, "if (!bNameSpaceFound)")
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  throw E%sInterfaceException(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)) )
+		callCPPFunctionCode = append(callCPPFunctionCode, "")
+	} else if (isSpecialFunction == eSpecialMethodSymbolLookup) {
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = &_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
 	} else {
 		callCode, err := generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal)
 		if err != nil {
