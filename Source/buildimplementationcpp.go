@@ -182,7 +182,7 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 	return nil
 }
 
-func buildCPPInternalException (wHeader LanguageWriter, wImpl LanguageWriter, NameSpace string, BaseName string) (error) {
+func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, NameSpace string, BaseName string) (error) {
 	wHeader.Writeln("#ifndef __%s_INTERFACEEXCEPTION_HEADER", strings.ToUpper (NameSpace));
 	wHeader.Writeln("#define __%s_INTERFACEEXCEPTION_HEADER", strings.ToUpper (NameSpace));
 	wHeader.Writeln("");
@@ -353,11 +353,25 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("")
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
 	w.Writeln("")
+	w.Writeln("")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("#include \"../../../../%s_component/Bindings/CppDynamic/%s_dynamic.hpp\"", subComponent.NameSpace, subComponent.BaseName)
+	}
+	w.Writeln("")
 
 	w.Writeln("namespace %s {", NameSpace)
 	w.Writeln("namespace %s {", NameSpaceImplementation)
 
 	w.Writeln("")
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("  // Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("static %s::PWrapper gP%sWrapper;", subNameSpace, subNameSpace)
+		}
+		w.Writeln("")
+	}
+
 	w.Writeln("/**")
 	w.Writeln(" Forward declarations of class interfaces")
 	w.Writeln("*/")
@@ -636,7 +650,6 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 }
 
 func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int) error {
-	indentString := w.IndentString
 	CMethodName := ""
 	cParams, err := GenerateCParameters(method, ClassName, NameSpace)
 	if err != nil {
@@ -661,29 +674,30 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 		cparameters = fmt.Sprintf("%s_%s p%s", NameSpace, ClassName, ClassName) + cparameters
 	}
 
-	callCPPFunctionCode := "";
+	callCPPFunctionCode := make([]string, 0)
 	
-	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, BaseClassName, w.IndentString)
+	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
 	if err != nil {
 		return err
 	}
 	
 	if (isSpecialFunction == eSpecialMethodJournal) {
-		callCPPFunctionCode = fmt.Sprintf(indentString + indentString + "m_GlobalJournal = nullptr;\n") +
-							  fmt.Sprintf(indentString + indentString + "if (s%s != \"\") {\n", method.Params[0].ParamName) +	
-							  fmt.Sprintf(indentString + indentString + indentString + "m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);\n", NameSpace, method.Params[0].ParamName) + 
-							  fmt.Sprintf(indentString + indentString + "}\n");
+		callCPPFunctionCode = append(callCPPFunctionCode, "m_GlobalJournal = nullptr;")
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s != \"\") {", method.Params[0].ParamName))
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);", NameSpace, method.Params[0].ParamName))
+		callCPPFunctionCode = append(callCPPFunctionCode, "}")
 	} else {
-		callCPPFunctionCode, err = generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal, w.IndentString)
+		callCode, err := generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal)
 		if err != nil {
 			return err
 		}
+		callCPPFunctionCode = append(callCPPFunctionCode, callCode)
 	}
 	
-	journalInitFunctionCode := "";
-	journalSuccessFunctionCode := "";
+	journalInitFunctionCode := make([]string, 0)
+	journalSuccessFunctionCode := make([]string, 0)
 	if (doJournal) {
-		journalInitFunctionCode, journalSuccessFunctionCode, err = generateJournalFunctionCode(method, NameSpace, ClassName, isGlobal, indentString)
+		journalInitFunctionCode, journalSuccessFunctionCode, err = generateJournalFunctionCode(method, NameSpace, ClassName, isGlobal)
 		if err != nil {
 			return err
 		}
@@ -691,10 +705,10 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	
 
 	if !isGlobal {
-		preCallCPPFunctionCode =  fmt.Sprintf(indentString + indentString + "I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass);\n", ClassIdentifier, ClassName, ClassName, ClassIdentifier, ClassName) +
-			fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", ClassName) +
-			fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException(%s_ERROR_INVALIDCAST);\n\n", NameSpace, strings.ToUpper(NameSpace)) +
-			preCallCPPFunctionCode
+		preCallCPPFunctionCode = append(preCallCPPFunctionCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass);", ClassIdentifier, ClassName, ClassName, ClassIdentifier, ClassName))
+		preCallCPPFunctionCode = append(preCallCPPFunctionCode, fmt.Sprintf("if (!pI%s)", ClassName))
+		preCallCPPFunctionCode = append(preCallCPPFunctionCode, fmt.Sprintf("  throw E%sInterfaceException(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)) )
+		preCallCPPFunctionCode = append(preCallCPPFunctionCode, "")
 	}
 
 	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
@@ -715,18 +729,18 @@ func writeCImplementationMethod(method ComponentDefinitionMethod, w LanguageWrit
 	w.Writeln("  try {")
 
 	if (doJournal) {
-		w.Writeln("%s", journalInitFunctionCode)
+		w.Writelns("    ", journalInitFunctionCode)
 	}
 
-	w.Writeln("%s", checkInputCPPFunctionCode)
-	w.Writeln("%s", preCallCPPFunctionCode)
-	w.Writeln("%s", callCPPFunctionCode)
-	w.Writeln("%s", postCallCPPFunctionCode)
+	w.Writelns("    ", checkInputCPPFunctionCode)
+	w.Writelns("    ", preCallCPPFunctionCode)
+	w.Writelns("    ", callCPPFunctionCode)
+	w.Writelns("    ", postCallCPPFunctionCode)
 
 	journalHandleParam := "";
 	
 	if (doJournal) {
-		w.Writeln("%s", journalSuccessFunctionCode)
+		w.Writelns("    ", journalSuccessFunctionCode)
 		journalHandleParam = ", pJournalEntry.get()";
 	}
 	
@@ -810,7 +824,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 		stubheaderw.Writeln("")
 		stubheaderw.Writeln("namespace %s {", NameSpace)
-		stubheaderw.Writeln("namespace Impl {")
+		stubheaderw.Writeln("namespace %s {", NameSpaceImplementation)
 		stubheaderw.Writeln("")
 
 		stubheaderw.Writeln("")
@@ -1008,6 +1022,8 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	for k := 0; k < len(method.Params); k++ {
 
 		param := method.Params[k]
+		paramNameSpaceCPP, paramClassNameCPP, _ := decomposeParamClassNameCPP(param.ParamClass)
+
 		switch param.ParamPass {
 		case "in":
 
@@ -1052,7 +1068,12 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 
 			case "class":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
-				parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+				if len(paramNameSpaceCPP) > 0 {
+					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+				} else {
+					parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+				}
 
 			case "basicarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
@@ -1126,8 +1147,14 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
 			case "class":
-				parameters = parameters + fmt.Sprintf("I%s%s * p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
+				if len(paramNameSpaceCPP) > 0 {
+					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+				} else {
+					parameters = parameters + fmt.Sprintf("I%s%s * p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+				}
+				
 
 			default:
 				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
@@ -1141,8 +1168,13 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
 			case "class":
-				returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
+				if len(paramNameSpaceCPP) > 0 {
+					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+					returntype = fmt.Sprintf("%sP%s%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP)
+				} else {
+					returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
+				}
 
 			default:
 				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
@@ -1227,12 +1259,12 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 	return "";
 }
 
-func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string, indentString string) (string, string, string, string, string, error) {
-	preCallCode := ""
-	postCallCode := ""
+func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+	preCallCode := make([]string, 0)
+	postCallCode := make([]string, 0)
 	callParameters := ""
 	returnVariable := ""
-	checkInputCode := ""
+	checkInputCode := make([]string, 0)
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
@@ -1253,32 +1285,33 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 			case "struct":
 				callParameters = callParameters + "*p" + param.ParamName
 			case "basicarray":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ( (!p%sBuffer) && (n%sBufferSize>0)) \n", param.ParamName, param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 			case "structarray":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ( (!p%sBuffer) && (n%sBufferSize>0)) \n", param.ParamName, param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 
 			case "class":
-				preCallCode = fmt.Sprintf(indentString + indentString + "%s* pIBaseClass%s = (%s *)p%s;\n", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName) +
-					fmt.Sprintf(indentString + indentString + "I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);\n", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName) +
-					fmt.Sprintf(indentString + indentString + "if (!pI%s)\n", param.ParamName) +
-					fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDCAST);\n\n", NameSpace, strings.ToUpper(NameSpace)) +
-					preCallCode
+				preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
+				preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+				preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
+				preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+				preCallCode = append(preCallCode, "")
+					
 				callParameters = callParameters + fmt.Sprintf("pI%s", param.ParamName)
 			case "string":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr) \n", param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
-				preCallCode = preCallCode + fmt.Sprintf(indentString + indentString + "std::string %s(p%s);\n", variableName, param.ParamName)
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(p%s);", variableName, param.ParamName))
 				callParameters = callParameters + variableName
 
 			case "functiontype":
 				callParameters = callParameters + variableName
 
 			default:
-				return "", "", "", "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
 
 		case "out":
@@ -1289,34 +1322,34 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 			switch param.ParamType {
 
 			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "enum", "struct", "pointer":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (!p%s)\n", param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (!p%s)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + "*p" + param.ParamName
 
 			case "basicarray", "structarray":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ((!p%sBuffer) && !(p%sNeededCount))\n", param.ParamName, param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((!p%sBuffer) && !(p%sNeededCount))", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, p%sNeededCount, ", param.ParamName, param.ParamName) + variableName
 
 			case "string":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ( (!p%sBuffer) && !(p%sNeededChars) )\n", param.ParamName, param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				preCallCode = preCallCode + fmt.Sprintf(indentString + indentString + "std::string %s(\"\");\n", variableName)
+				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				callParameters = callParameters + variableName
 
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) (%s.size()+1);\n", param.ParamName, NameSpace, variableName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "p%sBuffer[%s.size()] = 0;\n", param.ParamName, variableName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
+				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sNeededChars)", param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
+				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sBuffer) {", param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  if (%s.size() >= n%sBufferSize)", variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("    throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
+				postCallCode = append(postCallCode, fmt.Sprintf("  for (size_t i%s = 0; i%s < %s.size(); i%s++)", param.ParamName, param.ParamName, variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("    p%sBuffer[i%s] = %s[i%s];", param.ParamName, param.ParamName, variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
+				postCallCode = append(postCallCode, fmt.Sprintf("}"))
 
 			default:
-				return "", "", "", "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
 
 		case "return":
@@ -1324,80 +1357,80 @@ func generatePrePostCallCPPFunctionCode(method ComponentDefinitionMethod, NameSp
 			switch param.ParamType {
 
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum", "pointer":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr)\n", param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
 
 			case "struct":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr)\n", param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
 
 			case "string":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if ( (!p%sBuffer) && !(p%sNeededChars) )\n", param.ParamName, param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				preCallCode = preCallCode + fmt.Sprintf(indentString + indentString + "std::string %s(\"\");\n", variableName)
+				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				returnVariable = variableName
 
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sNeededChars) \n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "*p%sNeededChars = (%s_uint32) (%s.size()+1);\n", param.ParamName, NameSpace, variableName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "if (p%sBuffer) {\n", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "if (%s.size() >= n%sBufferSize)\n", variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);\n", NameSpace, strings.ToUpper(NameSpace))
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "for (size_t i%s = 0; i%s < %s.size(); i%s++)\n", param.ParamName, param.ParamName, variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + indentString + "p%sBuffer[i%s] = %s[i%s];\n", param.ParamName, param.ParamName, variableName, param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + indentString + "p%sBuffer[%s.size()] = 0;\n", param.ParamName, variableName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "}\n")
+				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sNeededChars)", param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
+				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sBuffer) {", param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  if (%s.size() >= n%sBufferSize)", variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("    throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
+				postCallCode = append(postCallCode, fmt.Sprintf("  for (size_t i%s = 0; i%s < %s.size(); i%s++)", param.ParamName, param.ParamName, variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("    p%sBuffer[i%s] = %s[i%s];", param.ParamName, param.ParamName, variableName, param.ParamName))
+				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
+				postCallCode = append(postCallCode, fmt.Sprintf("}"))
 
 			case "class":
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + "if (p%s == nullptr)\n", param.ParamName)
-				checkInputCode = checkInputCode + fmt.Sprintf(indentString + indentString + indentString + "throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);\n", NameSpace, strings.ToUpper(NameSpace))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				preCallCode = preCallCode + fmt.Sprintf(indentString + indentString + "%s* pBase%s(nullptr);\n", IBaseClassName, param.ParamName)
+				preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 
 				returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
-				postCallCode = postCallCode + fmt.Sprintf(indentString + indentString + "*%s = (%s*)(pBase%s);\n", variableName, IBaseClassName, param.ParamName);
+				postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 			default:
-				return "", "", "", "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
 
 		default:
-			return "", "", "", "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+			return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 	}
 
 	return checkInputCode, preCallCode, postCallCode, returnVariable, callParameters, nil
 }
 
-func generateCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, returnVariable string, callParameters string, isGlobal bool, indentString string) (string, error) {
+func generateCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, returnVariable string, callParameters string, isGlobal bool) (string, error) {
 	returnValueCode := ""
 	if returnVariable != "" {
 		returnValueCode = returnVariable + " = "
 	}
 	callFunctionCode := ""
 	if isGlobal {
-		callFunctionCode = fmt.Sprintf(indentString + indentString + "%sC%s%s::%s(%s);\n", returnValueCode, ClassIdentifier, ClassName, method.MethodName, callParameters)
+		callFunctionCode = fmt.Sprintf("%sC%s%s::%s(%s);\n", returnValueCode, ClassIdentifier, ClassName, method.MethodName, callParameters)
 	} else {
-		callFunctionCode = fmt.Sprintf(indentString + indentString + "%spI%s->%s(%s);\n", returnValueCode, ClassName, method.MethodName, callParameters)
+		callFunctionCode = fmt.Sprintf("%spI%s->%s(%s);\n", returnValueCode, ClassName, method.MethodName, callParameters)
 	}
 	return callFunctionCode, nil
 }
 
 
-func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool, indentString string) (string, string, error) {
+func generateJournalFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool) ([]string, []string, error) {
 
-	journalInitFunctionCode := "";
-	journalSuccessFunctionCode := "";
+	journalInitFunctionCode := make([]string,0)
+	journalSuccessFunctionCode := make([]string,0)
 	
 	
-	journalInitFunctionCode = journalInitFunctionCode + fmt.Sprintf(indentString + indentString + "if (m_GlobalJournal.get() != nullptr)  {\n");
+	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("    if (m_GlobalJournal.get() != nullptr)  {"))
 	if (isGlobal) {
-		journalInitFunctionCode = journalInitFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry = m_GlobalJournal->beginStaticFunction(\"%s\");\n", method.MethodName);
+		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = m_GlobalJournal->beginStaticFunction(\"%s\");", method.MethodName))
 	} else {
-		journalInitFunctionCode = journalInitFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry = m_GlobalJournal->beginClassMethod(p%s, \"%s\", \"%s\");\n", ClassName, ClassName, method.MethodName);
+		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = m_GlobalJournal->beginClassMethod(p%s, \"%s\", \"%s\");", ClassName, ClassName, method.MethodName))
 	}
 	
 	for k := 0; k < len(method.Params); k++ {
@@ -1459,18 +1492,18 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 				case "functiontype":
 				
 				default:
-					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+					return journalInitFunctionCode, journalSuccessFunctionCode, fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 				
 			}
 			if journalCall != "" {
-				journalInitFunctionCode = journalInitFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry->%s;\n", journalCall);
+				journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry->%s;", journalCall))
 			}
 		}		
 	}
 	
-	journalInitFunctionCode = journalInitFunctionCode + fmt.Sprintf(indentString + indentString + "}\n");
+	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("}"))
 
-	journalSuccessFunctionCode = journalSuccessFunctionCode + fmt.Sprintf(indentString + indentString + "if (pJournalEntry.get() != nullptr) {\n");
+	journalSuccessFunctionCode = append(journalSuccessFunctionCode, fmt.Sprintf("if (pJournalEntry.get() != nullptr) {"))
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		
@@ -1528,17 +1561,17 @@ func generateJournalFunctionCode (method ComponentDefinitionMethod, NameSpace st
 				case "structarray":
 				
 				default:
-					return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+					return journalInitFunctionCode, journalSuccessFunctionCode, fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 				
 			}
 			if journalCall != "" {
-				journalSuccessFunctionCode = journalSuccessFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry->%s;\n", journalCall);
+				journalSuccessFunctionCode = append(journalSuccessFunctionCode, fmt.Sprintf("  pJournalEntry->%s;", journalCall))
 			}
 		}
 	}
 
-	journalSuccessFunctionCode = journalSuccessFunctionCode + fmt.Sprintf(indentString + indentString + indentString + "pJournalEntry->writeSuccess();\n");
-	journalSuccessFunctionCode = journalSuccessFunctionCode + fmt.Sprintf(indentString + indentString + "}\n");
+	journalSuccessFunctionCode = append(journalSuccessFunctionCode, fmt.Sprintf("  pJournalEntry->writeSuccess();"))
+	journalSuccessFunctionCode = append(journalSuccessFunctionCode, fmt.Sprintf("}"))
 	
 	return journalInitFunctionCode, journalSuccessFunctionCode, nil;
 

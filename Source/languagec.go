@@ -315,12 +315,19 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	w.Writeln("#endif // __%s_EXPORTS", strings.ToUpper (NameSpace));
 	w.Writeln("");
 
+	incPath := "../../.."
 	if (useCPPTypes) {
 		w.Writeln("#include \"%s_types.hpp\"", BaseName);
+		incPath = incPath + "/.."
 	} else {
 		w.Writeln("#include \"%s_types.h\"", BaseName);
 	}
 	w.Writeln("");
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("#include \"%s/%s_component/Bindings/CppDynamic/%s_dynamic.hpp\"", incPath, subComponent.NameSpace, subComponent.BaseName)
+	}
+	w.Writeln("")
+
 
 	w.Writeln("extern \"C\" {");
 
