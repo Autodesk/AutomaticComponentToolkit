@@ -567,7 +567,7 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 }
 
 func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string,
-	isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool) error {
+	implementationLines []string, isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool) error {
 
 	CMethodName := ""
 	requiresInitCall := false
@@ -812,7 +812,16 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	w.Writelns("    ", functionCodeLines)
 	w.Writeln("    %s%s(%s)%s;", checkErrorCodeBegin, CMethodName, callParameters, checkErrorCodeEnd)
 	w.Writelns("    ", postCallCodeLines)
-	w.Writelns("    ", returnCodeLines)
+
+	if (len(implementationLines) >0) {
+		w.Writeln("    ")
+		w.Writelns("    ", implementationLines)
+	}
+
+	if (len(returnCodeLines) >0) {
+		w.Writeln("    ")
+		w.Writelns("    ", returnCodeLines)
+	}
 	w.Writeln("  }")
 
 	return nil
@@ -1330,30 +1339,24 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		if err != nil {
 			return err
 		}
-		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", true, true, false, useCPPTypes, ExplicitLinking)
-		if err != nil {
-			return err
-		}
-
+		
+		implementationLines := make([]string, 0)
 		if (isSpecialFunction == eSpecialMethodInjection) {
-			w.Writeln("// TODO: read the wraper")
-
-			callCPPFunctionCode := make([]string, 0)
-			callCPPFunctionCode = append(callCPPFunctionCode, "")
-			callCPPFunctionCode = append(callCPPFunctionCode, "bool bNameSpaceFound = false;")
-			callCPPFunctionCode = append(callCPPFunctionCode, "")
+			implementationLines = append(implementationLines, "bool bNameSpaceFound = false;")
 			for _, subComponent := range(component.ImportedComponentDefinitions) {
 				theNameSpace := subComponent.NameSpace
-				callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
-				callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  m_p%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
-				callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
-				callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
+				implementationLines = append(implementationLines, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("  m_p%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
+				implementationLines = append(implementationLines, fmt.Sprintf("  bNameSpaceFound = true;"))
+				implementationLines = append(implementationLines, fmt.Sprintf("}"))
 			}
-			callCPPFunctionCode = append(callCPPFunctionCode, "")
-			callCPPFunctionCode = append(callCPPFunctionCode, "if (!bNameSpaceFound)")
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"\");", NameSpace, strings.ToUpper(NameSpace)) )
-			callCPPFunctionCode = append(callCPPFunctionCode, "")
-			w.Writelns("  //", callCPPFunctionCode)
+			implementationLines = append(implementationLines, "if (!bNameSpaceFound)")
+			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"\");", NameSpace, strings.ToUpper(NameSpace)) )
+		}
+
+		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking)
+		if err != nil {
+			return err
 		}
 
 	}
@@ -1428,7 +1431,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, false, true, false, useCPPTypes, ExplicitLinking)
+			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking)
 			if err != nil {
 				return err
 			}

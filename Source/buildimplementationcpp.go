@@ -364,6 +364,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("")
 
 	w.Writeln("#include <string>")
+	w.Writeln("#include <memory>")
 	w.Writeln("")
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
 	w.Writeln("")
@@ -377,14 +378,6 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("namespace %s {", NameSpaceImplementation)
 
 	w.Writeln("")
-	if len(component.ImportedComponentDefinitions) > 0 {
-		w.Writeln("  // Injected Components")
-		for _, subComponent := range(component.ImportedComponentDefinitions) {
-			subNameSpace := subComponent.NameSpace
-			w.Writeln("static %s::PWrapper gP%sWrapper;", subNameSpace, subNameSpace)
-		}
-		w.Writeln("")
-	}
 
 	w.Writeln("/**")
 	w.Writeln(" Forward declarations of class interfaces")
@@ -402,13 +395,14 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	IBaseSharedPtrName := "I" + component.Global.BaseClassName + "SharedPtr"
 	DeleteBaseMethodStr := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName
 	w.Writeln("template<class T>")
-	w.Writeln("struct %s : public std::shared_ptr<T>", IBaseSharedPtrName)
+	w.Writeln("class %s : public std::shared_ptr<T>", IBaseSharedPtrName)
 	w.Writeln("{")
+	w.Writeln("public:")
 	w.Writeln("  explicit %s(T* t = nullptr)", IBaseSharedPtrName)
-	w.Writeln("	   : std::shared_ptr<T>(t, %s::%s)", IBaseClassName, DeleteBaseMethodStr)
-	w.Writeln("	 {")
-	w.Writeln("	   t->%s();", IncRefCountMethod().MethodName)
-	w.Writeln("	 }")
+	w.Writeln("    : std::shared_ptr<T>(t, %s::%s)", IBaseClassName, DeleteBaseMethodStr)
+	w.Writeln("  {")
+	w.Writeln("    t->%s();", IncRefCountMethod().MethodName)
+	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  // Reset function, as it also needs to properly set the deleter.")
 	w.Writeln("  void reset(T* t = nullptr)")
@@ -439,6 +433,16 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 
 	w.Writeln("class C%sWrapper {", ClassIdentifier)
 	w.Writeln("public:")
+
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("  // Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("  static %s::PWrapper sP%sWrapper;", subNameSpace, subNameSpace)
+		}
+		w.Writeln("")
+	}
+
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
@@ -482,6 +486,15 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	stubfile.Writeln("using namespace %s;", NameSpace)
 	stubfile.Writeln("using namespace %s::%s;", NameSpace, NameSpaceImplementation)
 	stubfile.Writeln("")
+
+	if len(component.ImportedComponentDefinitions) > 0 {
+		stubfile.Writeln("// Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			stubfile.Writeln("%s::PWrapper C%sWrapper::sP%sWrapper;", subNameSpace, ClassIdentifier, subNameSpace)
+		}
+		stubfile.Writeln("")
+	}
 
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
@@ -573,14 +586,14 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s\"] = &%s_%s;", procName, strings.ToLower(NameSpace), procName))
+			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = &%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
 		}
 	}
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s\"] = &%s_%s;", procName, strings.ToLower(NameSpace), procName))
+		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = &%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
 	}
 
 	w.AddIndentationLevel(-1)
@@ -784,7 +797,8 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		for _, subComponent := range(component.ImportedComponentDefinitions) {
 			theNameSpace := subComponent.NameSpace
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  gP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
+			wrapperName := "C" + ClassIdentifier + "Wrapper"
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  %s::sP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
 		}
@@ -1404,11 +1418,11 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 			case "class":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
-					theWrapper := "gP" + paramNameSpace + "Wrapper"
+					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s pI%s = std::make_shared<%s::C%s>(%s.get(), p%s);", paramNameSpace, paramClassName, param.ParamName, paramNameSpace, paramClassName, theWrapper, param.ParamName))
 					
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
-					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
@@ -1510,10 +1524,10 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
-					theWrapper := "gP" + paramNameSpace + "Wrapper"
+					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
-					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
 					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->GetHandle();", variableName, paramNameSpace, param.ParamName));
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
