@@ -240,6 +240,13 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		}
 	}
 
+	w.Writeln("")
+	w.Writeln("(*************************************************************************************************************************")
+	w.Writeln(" Helper function pointer definitions ")
+	w.Writeln("**************************************************************************************************************************)")
+	w.Writeln("T%sSymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Pointer): T%sResult; cdecl;", NameSpace, NameSpace)
+	w.Writeln("")
+
 	w.Writeln("(*************************************************************************************************************************")
 	w.Writeln(" Exception definition")
 	w.Writeln("**************************************************************************************************************************)")
@@ -295,13 +302,15 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("    property TheHandle: T%sHandle read FHandle;", NameSpace)
 		}
 
+		w.AddIndentationLevel(2)
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writePascalClassMethodDefinition(method, w, NameSpace, class.ClassName, false, "    ", false)
+			err := writePascalClassMethodDefinition(method, w, NameSpace, class.ClassName, false, false)
 			if err != nil {
 				return err
 			}
 		}
+		w.AddIndentationLevel(-2)
 
 		w.Writeln("  end;")
 		w.Writeln("")
@@ -377,6 +386,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("  public")
 
 	w.Writeln("    constructor Create(ADLLName: String);")
+	w.Writeln("    constructor CreateFromSymbolLookupMethod(ALookupMethod: T%sSymbolLookupMethod);", NameSpace)
 	w.Writeln("    destructor Destroy; override;")
 
 	if len(component.ImportedComponentDefinitions) > 0 {
@@ -387,14 +397,17 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("    ")
 	}
 
+	w.AddIndentationLevel(2)
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writePascalClassMethodDefinition(method, w, NameSpace, "Wrapper", true, "    ", false)
+		err = writePascalClassMethodDefinition(method, w, NameSpace, "Wrapper", true, false)
 		if err != nil {
 			return err
 		}
+		
 	}
+	w.AddIndentationLevel(-2)
 	w.Writeln("  end;")
 	w.Writeln("")
 
@@ -479,7 +492,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 
-			err := writePascalClassMethodImplementation(method, w, NameSpace, class.ClassName, false, "  ")
+			err := writePascalClassMethodImplementation(method, w, NameSpace, class.ClassName, make([]string, 0), make([]string, 0), false)
 			if err != nil {
 				return err
 			}
@@ -498,6 +511,11 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("  {$ENDIF MSWINDOWS}")
 	w.Writeln("  begin")
 	w.Writeln("    inherited Create;")
+	w.Writeln("    ")
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		w.Writeln("    F%sWrapper := nil;", subComponent.NameSpace)
+	}
+	w.Writeln("    ")
 	w.Writeln("    {$IFDEF MSWINDOWS}")
 	w.Writeln("      AWideString := UTF8Decode(ADLLName + #0);")
 	w.Writeln("      FModule := LoadLibraryW(PWideChar(AWideString));")
@@ -510,24 +528,55 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-
 			w.Writeln("    F%s%s_%sFunc := LoadFunction('%s');", NameSpace, class.ClassName, method.MethodName, GetCExportName(NameSpace, class.ClassName, method, false))
 		}
-
 	}
 
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
-
 		w.Writeln("    F%s%sFunc := LoadFunction('%s');", NameSpace, method.MethodName, GetCExportName(NameSpace, "Wrapper", method, true))
 	}
 	w.Writeln("    ")
 	w.Writeln("    checkBinaryVersion();")
 	w.Writeln("  end;")
 	w.Writeln("")
+
+
+	w.Writeln("  constructor T%sWrapper.CreateFromSymbolLookupMethod(ALookupMethod: T%sSymbolLookupMethod);", NameSpace, NameSpace)
+	w.Writeln("  var")
+	w.Writeln("    AResult : T%sResult;", NameSpace)
+	w.Writeln("  begin")
+	w.Writeln("    inherited Create;")
+	w.Writeln("    ")
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		w.Writeln("    F%sWrapper := nil;", subComponent.NameSpace)
+	}
+	w.Writeln("    ")
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			w.Writeln("    AResult := ALookupMethod(PAnsiChar('%s'), @F%s%s_%sFunc);", GetCExportName(NameSpace, class.ClassName, method, false), NameSpace, class.ClassName, method.MethodName)
+			w.Writeln("    if AResult <> %s_SUCCESS then", strings.ToUpper(NameSpace))
+			w.Writeln("      raise E%sException.CreateCustomMessage(%s_ERROR_COULDNOTLOADLIBRARY, '');", NameSpace, strings.ToUpper(NameSpace))
+		}
+	}
+
+	for j := 0; j < len(global.Methods); j++ {
+		method := global.Methods[j]
+		w.Writeln("    AResult := ALookupMethod(PAnsiChar('%s'), @F%s%sFunc);", GetCExportName(NameSpace, "Wrapper", method, true), NameSpace, method.MethodName)
+		w.Writeln("    if AResult <> %s_SUCCESS then", strings.ToUpper(NameSpace))
+		w.Writeln("      raise E%sException.CreateCustomMessage(%s_ERROR_COULDNOTLOADLIBRARY, '');", NameSpace, strings.ToUpper(NameSpace))
+	}
+	w.Writeln("    ")
+	w.Writeln("    checkBinaryVersion();")
+	w.Writeln("  end;")
+	w.Writeln("")
+
+
 	w.Writeln("  destructor T%sWrapper.Destroy;", NameSpace)
 	w.Writeln("  begin")
 	w.Writeln("    {$IFDEF MSWINDOWS}")
@@ -607,7 +656,32 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writePascalClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "  ")
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
+		if err != nil {
+			return err
+		}
+		
+		definitionLines := make([]string, 0)
+		implementationLines := make([]string, 0)
+		if (isSpecialFunction == eSpecialMethodInjection) {
+			sParamName := "A" + method.Params[0].ParamName
+			for _, subComponent := range(component.ImportedComponentDefinitions) {
+				theNameSpace := subComponent.NameSpace
+				definitionLines = append(definitionLines, "ANameSpaceFound: boolean;")
+
+				implementationLines = append(implementationLines, fmt.Sprintf("ANameSpaceFound := False;"))
+				implementationLines = append(implementationLines, fmt.Sprintf("if (%s = '%s') then begin", sParamName, theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("  if assigned(F%sWrapper) then", theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("    raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Library with namespace ' + %s + ' is already registered.');", NameSpace, strings.ToUpper(NameSpace), sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("  F%sWrapper := T%sWrapper.CreateFromSymbolLookupMethod(A%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
+				implementationLines = append(implementationLines, fmt.Sprintf("  ANameSpaceFound := True;"))
+				implementationLines = append(implementationLines, fmt.Sprintf("end;"))
+			}
+			implementationLines = append(implementationLines, "if not ANameSpaceFound then")
+			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
+		}
+
+		err = writePascalClassMethodImplementation(method, w, NameSpace, "Wrapper", definitionLines, implementationLines, true)
 		if err != nil {
 			return err
 		}
@@ -654,7 +728,7 @@ func getPascalClassParameters(method ComponentDefinitionMethod, NameSpace string
 	return parameters, returnType, nil
 }
 
-func writePascalClassMethodDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, spacing string, isImplementation bool) error {
+func writePascalClassMethodDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, isImplementation bool) error {
 
 	parameters, returnType, err := getPascalClassParameters(method, NameSpace, ClassName, isGlobal, isImplementation)
 	if err != nil {
@@ -667,15 +741,15 @@ func writePascalClassMethodDefinition(method ComponentDefinitionMethod, w Langua
 	}
 
 	if returnType == "" {
-		w.Writeln(spacing+"%sprocedure %s(%s);", classPrefix, method.MethodName, parameters)
+		w.Writeln("%sprocedure %s(%s);", classPrefix, method.MethodName, parameters)
 	} else {
-		w.Writeln(spacing+"%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType)
+		w.Writeln("%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType)
 	}
 
 	return nil
 }
 
-func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, spacing string) error {
+func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, definitionLines []string, implementationLines []string, isGlobal bool) error {
 
 	parameters, returnType, err := getPascalClassParameters(method, NameSpace, ClassName, isGlobal, false)
 	if err != nil {
@@ -755,15 +829,15 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 					return err
 				}
 
-				defineCommands = append(defineCommands, "  Ptr"+param.ParamName+": P"+basicPlainTypeName+";")
-				defineCommands = append(defineCommands, "  Len"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, fmt.Sprintf("  Len%s := Length(A%s);", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  if Len%s > $FFFFFFFF then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'array has too many entries.');", NameSpace, strings.ToUpper(NameSpace)))
-				initCommands = append(initCommands, fmt.Sprintf("  if Len%s > 0 then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  else"))
-				initCommands = append(initCommands, fmt.Sprintf("    Ptr%s := nil;", param.ParamName))
+				defineCommands = append(defineCommands, "Ptr"+param.ParamName+": P"+basicPlainTypeName+";")
+				defineCommands = append(defineCommands, "Len"+param.ParamName+": QWord;")
+				initCommands = append(initCommands, fmt.Sprintf("Len%s := Length(A%s);", param.ParamName, param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("if Len%s > $FFFFFFFF then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'array has too many entries.');", NameSpace, strings.ToUpper(NameSpace)))
+				initCommands = append(initCommands, fmt.Sprintf("if Len%s > 0 then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("else"))
+				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := nil;", param.ParamName))
 				initCommands = append(initCommands, "")
 
 				callFunctionParameters = callFunctionParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
@@ -771,29 +845,29 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 			case "structarray":
 
-				defineCommands = append(defineCommands, "  Ptr"+param.ParamName+": P"+NameSpace+param.ParamClass+";")
-				defineCommands = append(defineCommands, "  Len"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, fmt.Sprintf("  Len%s := Length(A%s);", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  if Len%s > $FFFFFFFF then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'array has too many entries.');", NameSpace, strings.ToUpper(NameSpace)))
-				initCommands = append(initCommands, fmt.Sprintf("  if Len%s > 0 then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  else"))
-				initCommands = append(initCommands, fmt.Sprintf("    Ptr%s := nil;", param.ParamName))
+				defineCommands = append(defineCommands, "Ptr"+param.ParamName+": P"+NameSpace+param.ParamClass+";")
+				defineCommands = append(defineCommands, "Len"+param.ParamName+": QWord;")
+				initCommands = append(initCommands, fmt.Sprintf("Len%s := Length(A%s);", param.ParamName, param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("if Len%s > $FFFFFFFF then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'array has too many entries.');", NameSpace, strings.ToUpper(NameSpace)))
+				initCommands = append(initCommands, fmt.Sprintf("if Len%s > 0 then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("else"))
+				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := nil;", param.ParamName))
 				initCommands = append(initCommands, "")
 
 				callFunctionParameters = callFunctionParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
 				initCallParameters = initCallParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
 
 			case "functiontype":
-				initCommands = append(initCommands, fmt.Sprintf("  if not Assigned(A%s) then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("if not Assigned(A%s) then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
 				callFunctionParameters = callFunctionParameters + "A" + param.ParamName
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
 			case "class":
-				initCommands = append(initCommands, fmt.Sprintf("  if not Assigned(A%s) then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("    raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("if not Assigned(A%s) then", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
 				callFunctionParameters = callFunctionParameters + "A" + param.ParamName + ".TheHandle"
 				initCallParameters = initCallParameters + "A" + param.ParamName + ".TheHandle"
 
@@ -809,15 +883,15 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
 			case "string":
-				defineCommands = append(defineCommands, "  bytesNeeded"+param.ParamName+": Cardinal;")
-				defineCommands = append(defineCommands, "  bytesWritten"+param.ParamName+": Cardinal;")
-				defineCommands = append(defineCommands, "  buffer"+param.ParamName+": array of Char;")
-				initCommands = append(initCommands, "  bytesNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "  bytesWritten"+param.ParamName+":= 0;")
+				defineCommands = append(defineCommands, "bytesNeeded"+param.ParamName+": Cardinal;")
+				defineCommands = append(defineCommands, "bytesWritten"+param.ParamName+": Cardinal;")
+				defineCommands = append(defineCommands, "buffer"+param.ParamName+": array of Char;")
+				initCommands = append(initCommands, "bytesNeeded"+param.ParamName+":= 0;")
+				initCommands = append(initCommands, "bytesWritten"+param.ParamName+":= 0;")
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  SetLength(buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
@@ -826,16 +900,16 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, "  Result"+param.ParamName+": Integer;")
-				initCommands = append(initCommands, "  Result"+param.ParamName+" := 0;")
+				defineCommands = append(defineCommands, "Result"+param.ParamName+": Integer;")
+				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
 
 				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
 				initCallParameters = initCallParameters + "Result" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("  A%s := convertConstTo%s(Result%s);", param.ParamName, param.ParamClass, param.ParamName))
 
 			case "bool":
-				defineCommands = append(defineCommands, "  Result"+param.ParamName+": Byte;")
-				initCommands = append(initCommands, "  Result"+param.ParamName+" := 0;")
+				defineCommands = append(defineCommands, "Result"+param.ParamName+": Byte;")
+				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
 
 				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
 				initCallParameters = initCallParameters + "Result" + param.ParamName
@@ -847,14 +921,14 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 			case "basicarray", "structarray":
 
-				defineCommands = append(defineCommands, "  countNeeded"+param.ParamName+": QWord;")
-				defineCommands = append(defineCommands, "  countWritten"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, "  countNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "  countWritten"+param.ParamName+":= 0;")
+				defineCommands = append(defineCommands, "countNeeded"+param.ParamName+": QWord;")
+				defineCommands = append(defineCommands, "countWritten"+param.ParamName+": QWord;")
+				initCommands = append(initCommands, "countNeeded"+param.ParamName+":= 0;")
+				initCommands = append(initCommands, "countWritten"+param.ParamName+":= 0;")
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  SetLength(A%s, countNeeded%s);", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(A%s, countNeeded%s);", param.ParamName, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @A%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
@@ -869,10 +943,10 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 					theNameSpace = NameSpace
 				}
 
-				defineCommands = append(defineCommands, "  H"+param.ParamName+": "+PlainParamTypeName+";")
-				initCommands = append(initCommands, "  Result := nil;")
-				initCommands = append(initCommands, "  A%s := nil;", param.ParamName)
-				initCommands = append(initCommands, "  H"+param.ParamName+" := nil;")
+				defineCommands = append(defineCommands, "H"+param.ParamName+": "+PlainParamTypeName+";")
+				initCommands = append(initCommands, "Result := nil;")
+				initCommands = append(initCommands, "A%s := nil;", param.ParamName)
+				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				initCallParameters = initCallParameters + "nil"
 
@@ -890,15 +964,15 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameters = callFunctionParameters + "Result"
 
 			case "string":
-				defineCommands = append(defineCommands, "  bytesNeeded"+param.ParamName+": Cardinal;")
-				defineCommands = append(defineCommands, "  bytesWritten"+param.ParamName+": Cardinal;")
-				defineCommands = append(defineCommands, "  buffer"+param.ParamName+": array of Char;")
-				initCommands = append(initCommands, "  bytesNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "  bytesWritten"+param.ParamName+":= 0;")
+				defineCommands = append(defineCommands, "bytesNeeded"+param.ParamName+": Cardinal;")
+				defineCommands = append(defineCommands, "bytesWritten"+param.ParamName+": Cardinal;")
+				defineCommands = append(defineCommands, "buffer"+param.ParamName+": array of Char;")
+				initCommands = append(initCommands, "bytesNeeded"+param.ParamName+":= 0;")
+				initCommands = append(initCommands, "bytesWritten"+param.ParamName+":= 0;")
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, nil", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  SetLength(buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(buffer%s, bytesNeeded%s);", param.ParamName, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("bytesNeeded%s, bytesWritten%s, @buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
@@ -907,16 +981,16 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, "  Result"+param.ParamName+": Integer;")
-				initCommands = append(initCommands, "  Result"+param.ParamName+" := 0;")
+				defineCommands = append(defineCommands, "Result"+param.ParamName+": Integer;")
+				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
 
 				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
 				initCallParameters = initCallParameters + "Result" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("  Result := convertConstTo%s(Result%s);", param.ParamClass, param.ParamName))
 
 			case "bool":
-				defineCommands = append(defineCommands, "  Result"+param.ParamName+": Byte;")
-				initCommands = append(initCommands, "  Result"+param.ParamName+" := 0;")
+				defineCommands = append(defineCommands, "Result"+param.ParamName+": Byte;")
+				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
 
 				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
 				initCallParameters = initCallParameters + "Result" + param.ParamName
@@ -926,14 +1000,14 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameters = callFunctionParameters + "@Result"
 
 			case "basicarray", "structarray":
-				defineCommands = append(defineCommands, "  countNeeded"+param.ParamName+": QWord;")
-				defineCommands = append(defineCommands, "  countWritten"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, "  countNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "  countWritten"+param.ParamName+":= 0;")
+				defineCommands = append(defineCommands, "countNeeded"+param.ParamName+": QWord;")
+				defineCommands = append(defineCommands, "countWritten"+param.ParamName+": QWord;")
+				initCommands = append(initCommands, "countNeeded"+param.ParamName+":= 0;")
+				initCommands = append(initCommands, "countWritten"+param.ParamName+":= 0;")
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  SetLength(Result, countNeeded%s);", param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(Result, countNeeded%s);", param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @Result[0]", param.ParamName, param.ParamName)
 
@@ -947,9 +1021,9 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				} else {
 					theNameSpace = NameSpace
 				}
-				defineCommands = append(defineCommands, "  H"+param.ParamName+": "+PlainParamTypeName+";")
-				initCommands = append(initCommands, "  Result := nil;")
-				initCommands = append(initCommands, "  H"+param.ParamName+" := nil;")
+				defineCommands = append(defineCommands, "H"+param.ParamName+": "+PlainParamTypeName+";")
+				initCommands = append(initCommands, "Result := nil;")
+				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s) then", param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("    Result := T%s%s.Create(%s, H%s);", theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
@@ -962,30 +1036,35 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 	}
 
 	if returnType == "" {
-		w.Writeln(spacing+"procedure T%s%s.%s(%s);", NameSpace, ClassName, method.MethodName, parameters)
+		w.Writeln("  procedure T%s%s.%s(%s);", NameSpace, ClassName, method.MethodName, parameters)
 	} else {
-		w.Writeln(spacing+"function T%s%s.%s(%s): %s;", NameSpace, ClassName, method.MethodName, parameters, returnType)
+		w.Writeln("  function T%s%s.%s(%s): %s;", NameSpace, ClassName, method.MethodName, parameters, returnType)
 	}
 
-	if len(defineCommands) > 0 {
-		w.Writeln(spacing + "var")
-		w.Writelns(spacing, defineCommands)
+	if len(defineCommands) + len(definitionLines)> 0 {
+		w.Writeln("  var")
+		w.Writelns("    ", defineCommands)
+		w.Writelns("    ", definitionLines)
 	}
 
-	w.Writeln(spacing + "begin")
-	w.Writelns(spacing, initCommands)
+	w.Writeln("  begin")
+	w.Writelns("    ", initCommands)
 
 	if doInitCall {
-		w.Writeln(spacing+"  %sCheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
+		w.Writeln("    %sCheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
 	}
 
-	w.Writelns(spacing, postInitCommands)
+	w.Writelns("    ", postInitCommands)
 
-	w.Writeln(spacing+"  %sCheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
+	w.Writeln("    %sCheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
 
-	w.Writelns(spacing, resultCommands)
+	if len(implementationLines) > 0 {
+		w.Writelns("    ", implementationLines)
+		w.Writeln("   ")
+	}
+	w.Writelns("  ", resultCommands)
 
-	w.Writeln(spacing + "end;")
+	w.Writeln("  end;")
 	w.Writeln("")
 
 	return nil
