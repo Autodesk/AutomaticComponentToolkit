@@ -1343,15 +1343,20 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		implementationLines := make([]string, 0)
 		if (isSpecialFunction == eSpecialMethodInjection) {
 			implementationLines = append(implementationLines, "bool bNameSpaceFound = false;")
+			sParamName := "s" + method.Params[0].ParamName
 			for _, subComponent := range(component.ImportedComponentDefinitions) {
 				theNameSpace := subComponent.NameSpace
-				implementationLines = append(implementationLines, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("if (%s == \"%s\") {", sParamName, theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("  if (m_p%sWrapper != nullptr) {", theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("    throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\");", NameSpace, strings.ToUpper(NameSpace), sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("  }"))
+
 				implementationLines = append(implementationLines, fmt.Sprintf("  m_p%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
 				implementationLines = append(implementationLines, fmt.Sprintf("  bNameSpaceFound = true;"))
 				implementationLines = append(implementationLines, fmt.Sprintf("}"))
 			}
 			implementationLines = append(implementationLines, "if (!bNameSpaceFound)")
-			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"\");", NameSpace, strings.ToUpper(NameSpace)) )
+			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
 		}
 
 		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking)
