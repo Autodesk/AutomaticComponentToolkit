@@ -369,7 +369,7 @@ public:
 		bool bNameSpaceFound = false;
 		if (sNameSpace == "Numbers") {
 			if (m_pNumbersWrapper != nullptr) {
-				throw ECalculationException(CALCULATION_ERROR_COULDNOTLOADLIBRARY, "Library with namespace " + sNameSpace + " is already registered");
+				throw ECalculationException(CALCULATION_ERROR_COULDNOTLOADLIBRARY, "Library with namespace " + sNameSpace + " is already registered.");
 			}
 			m_pNumbersWrapper = Numbers::CWrapper::loadLibraryFromSymbolLookupMethod(pSymbolAddressMethod);
 			bNameSpaceFound = true;
