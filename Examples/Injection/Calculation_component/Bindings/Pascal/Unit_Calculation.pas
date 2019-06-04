@@ -641,7 +641,7 @@ implementation
       FNumbersWrapper := TNumbersWrapper.CreateFromSymbolLookupMethod(ASymbolAddressMethod);
       ANameSpaceFound := True;
     end;
-    if not ANameSpaceFound then
+      if not ANameSpaceFound then
       raise ECalculationException.Create(CALCULATION_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + ANameSpace);
    
   end;

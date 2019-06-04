@@ -677,7 +677,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 				implementationLines = append(implementationLines, fmt.Sprintf("  ANameSpaceFound := True;"))
 				implementationLines = append(implementationLines, fmt.Sprintf("end;"))
 			}
-			implementationLines = append(implementationLines, "if not ANameSpaceFound then")
+			implementationLines = append(implementationLines, fmt.Sprintf("  if not ANameSpaceFound then"))
 			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
 		}
 
