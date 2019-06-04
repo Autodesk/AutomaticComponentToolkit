@@ -405,7 +405,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		if err != nil {
 			return err
 		}
-		
+
 	}
 	w.AddIndentationLevel(-2)
 	w.Writeln("  end;")
@@ -543,7 +543,6 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("  end;")
 	w.Writeln("")
 
-
 	w.Writeln("  constructor T%sWrapper.CreateFromSymbolLookupMethod(ALookupMethod: T%sSymbolLookupMethod);", NameSpace, NameSpace)
 	w.Writeln("  var")
 	w.Writeln("    AResult : T%sResult;", NameSpace)
@@ -575,7 +574,6 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("    checkBinaryVersion();")
 	w.Writeln("  end;")
 	w.Writeln("")
-
 
 	w.Writeln("  destructor T%sWrapper.Destroy;", NameSpace)
 	w.Writeln("  begin")
@@ -656,29 +654,29 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global)
 		if err != nil {
 			return err
 		}
-		
+
 		definitionLines := make([]string, 0)
 		implementationLines := make([]string, 0)
-		if (isSpecialFunction == eSpecialMethodInjection) {
+		if isSpecialFunction == eSpecialMethodInjection {
 			sParamName := "A" + method.Params[0].ParamName
-			for _, subComponent := range(component.ImportedComponentDefinitions) {
+			for _, subComponent := range component.ImportedComponentDefinitions {
 				theNameSpace := subComponent.NameSpace
 				definitionLines = append(definitionLines, "ANameSpaceFound: boolean;")
 
 				implementationLines = append(implementationLines, fmt.Sprintf("ANameSpaceFound := False;"))
 				implementationLines = append(implementationLines, fmt.Sprintf("if (%s = '%s') then begin", sParamName, theNameSpace))
 				implementationLines = append(implementationLines, fmt.Sprintf("  if assigned(F%sWrapper) then", theNameSpace))
-				implementationLines = append(implementationLines, fmt.Sprintf("    raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Library with namespace ' + %s + ' is already registered.');", NameSpace, strings.ToUpper(NameSpace), sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("    raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Library with namespace ' + %s + ' is already registered.');", NameSpace, strings.ToUpper(NameSpace), sParamName))
 				implementationLines = append(implementationLines, fmt.Sprintf("  F%sWrapper := T%sWrapper.CreateFromSymbolLookupMethod(A%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
 				implementationLines = append(implementationLines, fmt.Sprintf("  ANameSpaceFound := True;"))
 				implementationLines = append(implementationLines, fmt.Sprintf("end;"))
 			}
-			implementationLines = append(implementationLines, fmt.Sprintf("  if not ANameSpaceFound then"))
-			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
+			implementationLines = append(implementationLines, fmt.Sprintf("if not ANameSpaceFound then"))
+			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
 		}
 
 		err = writePascalClassMethodImplementation(method, w, NameSpace, "Wrapper", definitionLines, implementationLines, true)
@@ -1041,7 +1039,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 		w.Writeln("  function T%s%s.%s(%s): %s;", NameSpace, ClassName, method.MethodName, parameters, returnType)
 	}
 
-	if len(defineCommands) + len(definitionLines)> 0 {
+	if len(defineCommands)+len(definitionLines) > 0 {
 		w.Writeln("  var")
 		w.Writelns("    ", defineCommands)
 		w.Writelns("    ", definitionLines)

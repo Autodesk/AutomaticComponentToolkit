@@ -47,7 +47,8 @@ var
   AVar1, AVar2, AVar2Again, AResult1, AResult2: TNumbersVariable;
 begin
   writeln ('loading DLL');
-  ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Calculation_component/Implementations/Cpp/_build/Debug'; // TODO add the location of the shared library binary here
+  // ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Calculation_component/Implementations/Cpp/_build/Debug'; // TODO add the location of the shared library binary here
+  ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Calculation_component/Implementations/Pascal/bin/x86_64-win64/Release'; // TODO add the location of the shared library binary here
   ACalculationWrapper := TCalculationWrapper.Create (ALibPath + '/' + 'calculation.dll'); // TODO add the extension of the shared library file here
   try
     writeln ('loading DLL Done');
@@ -55,7 +56,8 @@ begin
     AVersionString := Format('Calculation.version = %d.%d.%d', [AMajor, AMinor, AMicro]);
     writeln(AVersionString);
 
-    ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Cpp/_build/Debug'; // TODO add the location of the shared library binary here
+    // ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Cpp/_build/Debug'; // TODO add the location of the shared library binary here
+    ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Pascal/bin/x86_64-win64/Release';
     ANumbersWrapper := TNumbersWrapper.Create (ALibPath + '/' + 'numbers.dll'); // TODO add the extension of the shared library file here
     ANumbersWrapper.GetVersion(AMajor, AMinor, AMicro);
     AVersionString := Format('Numbers.version = %d.%d.%d', [AMajor, AMinor, AMicro]);

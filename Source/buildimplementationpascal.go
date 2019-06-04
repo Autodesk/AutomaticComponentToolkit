@@ -345,6 +345,7 @@ func buildPascalInterfaceDefinition(component ComponentDefinition, w LanguageWri
 	w.Writeln("")
 	w.Writeln("uses")
 	w.Writeln("  %s_types,", BaseName)
+	writeSubComponentUses(component, w, false)
 	w.Writeln("  Classes,")
 	w.Writeln("  sysutils;")
 	w.Writeln("")
@@ -432,13 +433,13 @@ func buildPascalInterfaceDefinition(component ComponentDefinition, w LanguageWri
 
 }
 
-func writePascalExportDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, doComment bool) error {
+func writePascalExportDefinition(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, ClassName string, isGlobal bool, doComment bool) error {
+	NameSpace := component.NameSpace
 
 	PascalExportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
 
 	parameters := ""
-	if isGlobal {
-	} else {
+	if !isGlobal {
 		parameters = fmt.Sprintf("p%s: T%sHandle", ClassName, NameSpace)
 	}
 
@@ -481,7 +482,9 @@ func writePascalExportDefinition(method ComponentDefinitionMethod, w LanguageWri
 	return nil
 }
 
-func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string) ([]string, []string, []string, []string, string, string, error) {
+func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, ClassIdentifier string, ClassName string) ([]string, []string, []string, []string, string, string, error) {
+	NameSpace := component.NameSpace
+
 	variableDefinitions := make([]string, 0)
 	preCallCode := make([]string, 0)
 	postCallCode := make([]string, 0)
@@ -522,10 +525,21 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				callParameters = callParameters + fmt.Sprintf("%s, %s", pascalParams[0].ParamName, pascalParams[1].ParamName)
 
 			case "class":
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Object%s: TObject;", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					theSubWrapper := fmt.Sprintf("T%sWrapper.%sWrapper", NameSpace, paramNameSpace)
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: T%s%s;", param.ParamName, paramNameSpace, paramClassName))
+					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := T%s%s.Create(%s, %s);", param.ParamName, paramNameSpace, paramClassName, theSubWrapper, pascalParams[0].ParamName))
+					checkInputCode = append(checkInputCode, fmt.Sprintf("%s.%s(Object%s);", theSubWrapper, acqurireMethod, param.ParamName))
+				} else {
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", param.ParamName))
+
+					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
+					checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
+					checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+				}
+
 				checkInputCode = append(checkInputCode, "")
 
 				callParameters = callParameters + fmt.Sprintf("Object%s", param.ParamName)
@@ -560,7 +574,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
 
 				callParameters = callParameters + fmt.Sprintf("Result%s", param.ParamName)
 
@@ -570,7 +584,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: Boolean;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: Boolean;", param.ParamName))
 
 				callParameters = callParameters + fmt.Sprintf("Result%s", param.ParamName)
 
@@ -586,8 +600,8 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((not Assigned(%s)) and (not Assigned(%s))) then", pascalParams[2].ParamName, pascalParams[1].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: String;", param.ParamName))
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Len%s: Cardinal;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: String;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Len%s: Cardinal;", param.ParamName))
 
 				callParameters = callParameters + "Result" + param.ParamName
 
@@ -614,7 +628,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: %s;", param.ParamName, pascalParams[0].ParamType))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: %s;", param.ParamName, pascalParams[0].ParamType))
 
 				postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
 
@@ -624,7 +638,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: Boolean;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: Boolean;", param.ParamName))
 
 				postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Ord(Result%s);", pascalParams[0].ParamName, param.ParamName))
 
@@ -634,7 +648,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
 
 				postCallCode = append(postCallCode, fmt.Sprintf("%s^ := convert%sToConst(Result%s);", pascalParams[0].ParamName, param.ParamClass, param.ParamName))
 
@@ -644,7 +658,7 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(%s) then", pascalParams[0].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: T%s%s;", param.ParamName, NameSpace, param.ParamClass))
 
 				postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
 
@@ -654,8 +668,8 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((not Assigned(%s)) and (not Assigned(%s))) then", pascalParams[2].ParamName, pascalParams[1].ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: String;", param.ParamName))
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Len%s: Cardinal;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: String;", param.ParamName))
+				variableDefinitions = append(variableDefinitions, fmt.Sprintf("Len%s: Cardinal;", param.ParamName))
 
 				resultVariable = fmt.Sprintf("Result%s", param.ParamName)
 
@@ -674,12 +688,20 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(p%s) then", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
-				variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Result%s: TObject;", param.ParamName))
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					theSubWrapper := fmt.Sprintf("T%sWrapper.%sWrapper", NameSpace, paramNameSpace)
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: T%s%s;", param.ParamName, paramNameSpace, paramClassName))
+
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					postCallCode = append(postCallCode, fmt.Sprintf("%s.%s(Result%s);", theSubWrapper, acqurireMethod, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s.TheHandle;", pascalParams[0].ParamName, param.ParamName))
+				} else {
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: TObject;", param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
+				}
 
 				resultVariable = fmt.Sprintf("Result%s", param.ParamName)
-
-				postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
-
 			default:
 				return make([]string, 0), make([]string, 0), make([]string, 0), make([]string, 0), "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
@@ -692,25 +714,34 @@ func generatePrePostCallPascalFunctionCode(method ComponentDefinitionMethod, Nam
 	return variableDefinitions, checkInputCode, preCallCode, postCallCode, callParameters, resultVariable, nil
 }
 
-func writePascalClassExportImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, ClassIdentifier string) error {
-	variableDefinitions, parameterChecks, preCallCode, postCallCode, callParameters, resultVariable, err := generatePrePostCallPascalFunctionCode(method, NameSpace, ClassIdentifier, ClassName)
+func writePascalClassExportImplementation(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, defaultDefinitionLines []string, defaultImplementationLines []string, ClassName string, isGlobal bool, ClassIdentifier string) error {
+	NameSpace := component.NameSpace
+	variableDefinitions, parameterChecks, preCallCode, postCallCode, callParameters, resultVariable, err := generatePrePostCallPascalFunctionCode(component, method, ClassIdentifier, ClassName)
 	if err != nil {
 		return err
 	}
 
 	if !isGlobal {
 		// Define variables
-		variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Object%s: TObject;", ClassName))
-		variableDefinitions = append(variableDefinitions, fmt.Sprintf("  Intf%s: I%s%s;", ClassName, NameSpace, ClassName))
+		variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", ClassName))
+		variableDefinitions = append(variableDefinitions, fmt.Sprintf("Intf%s: I%s%s;", ClassName, NameSpace, ClassName))
 
 		parameterChecks = append(parameterChecks, fmt.Sprintf("if not Assigned(p%s) then", ClassName))
 		parameterChecks = append(parameterChecks, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 	}
 
-	if len(variableDefinitions) > 0 {
-		w.Writeln("var")
-		w.Writelns("", variableDefinitions)
+	if len(defaultDefinitionLines)+len(defaultImplementationLines) > 0 {
+		if len(defaultDefinitionLines) > 0 {
+			w.Writeln("var")
+			w.Writelns("  ", defaultDefinitionLines)
+		}
+	} else {
+		if len(variableDefinitions) > 0 {
+			w.Writeln("var")
+			w.Writelns("  ", variableDefinitions)
+		}
 	}
+
 	w.Writeln("begin")
 	w.Writeln("  try")
 	w.Writelns("    ", parameterChecks)
@@ -718,7 +749,7 @@ func writePascalClassExportImplementation(method ComponentDefinitionMethod, w La
 	w.Writeln("")
 	if !isGlobal {
 		w.Writeln("    Object%s := TObject(p%s);", ClassName, ClassName)
-		w.Writeln("    if Supports (Object%s, I%s%s) then begin", ClassName, NameSpace, ClassName)
+		w.Writeln("    if Supports(Object%s, I%s%s) then begin", ClassName, NameSpace, ClassName)
 		w.Writeln("      Intf%s := Object%s as I%s%s;", ClassName, ClassName, NameSpace, ClassName)
 	}
 
@@ -738,10 +769,13 @@ func writePascalClassExportImplementation(method ComponentDefinitionMethod, w La
 		postCallCodeSpacing = "    "
 	}
 
-	w.Writeln(classInstanceSpacing+"%s%s.%s(%s);", resultVariableAssignment, classInstanceToCall, method.MethodName, callParameters)
-	w.Writeln("")
-
-	w.Writelns(postCallCodeSpacing, postCallCode)
+	if len(defaultImplementationLines) > 0 {
+		w.Writelns(classInstanceSpacing, defaultImplementationLines)
+	} else {
+		w.Writeln(classInstanceSpacing+"%s%s.%s(%s);", resultVariableAssignment, classInstanceToCall, method.MethodName, callParameters)
+		w.Writeln("")
+		w.Writelns(postCallCodeSpacing, postCallCode)
+	}
 
 	if !isGlobal {
 		w.Writeln("    end else")
@@ -776,6 +810,59 @@ func writePascalClassExportImplementation(method ComponentDefinitionMethod, w La
 	return nil
 }
 
+func buildPascalGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter, DeclarationOnly bool) {
+	NameSpace := component.NameSpace
+	w.Writeln("")
+	w.Writeln("(*************************************************************************************************************************")
+	w.Writeln(" Function table lookup implementation")
+	w.Writeln("**************************************************************************************************************************)")
+	w.Writeln("")
+
+	w.Writeln("function _%s_getprocaddress_internal(pProcName: PAnsiChar; out ppProcAddress: Pointer): T%sResult cdecl;", strings.ToLower(NameSpace), NameSpace)
+	w.Writeln("")
+	if DeclarationOnly {
+		return
+	}
+	w.Writeln("begin")
+	w.AddIndentationLevel(1)
+	w.Writeln("result := %s_SUCCESS;", strings.ToUpper(NameSpace))
+	w.Writeln("ppProcAddress := nil;")
+	w.Writeln("")
+
+	isFirst := true
+	beginString := "if"
+	global := component.Global
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			procName := strings.ToLower(NameSpace + "_" + class.ClassName + "_" + method.MethodName)
+
+			w.Writeln("%s (pProcName = '%s') then", beginString, procName)
+			w.Writeln("  ppProcAddress := @%s", procName)
+			if isFirst {
+				isFirst = false
+				beginString = "else if"
+			}
+		}
+	}
+	for j := 0; j < len(global.Methods); j++ {
+		method := global.Methods[j]
+		procName := strings.ToLower(NameSpace + "_" + method.MethodName)
+		w.Writeln("%s (pProcName = '%s') then", beginString, procName)
+		w.Writeln("  ppProcAddress := @%s", procName)
+		if isFirst {
+			isFirst = false
+			beginString = "else if"
+		}
+	}
+	w.Writeln("else")
+	w.Writeln("  result := %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
+
+	w.AddIndentationLevel(-1)
+	w.Writeln("end;")
+}
+
 func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, stubIdentifier string, ClassIdentifier string) error {
 
 	global := component.Global
@@ -791,6 +878,7 @@ func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWrite
 	w.Writeln("  %s_interfaces,", BaseName)
 	w.Writeln("  %s_exception,", BaseName)
 	w.Writeln("  Classes,")
+	writeSubComponentUses(component, w, false)
 	w.Writeln("  sysutils;")
 	w.Writeln("")
 
@@ -805,14 +893,13 @@ func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWrite
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 
-			err := writePascalExportDefinition(method, w, NameSpace, class.ClassName, false, true)
+			err := writePascalExportDefinition(component, method, w, class.ClassName, false, true)
 			if err != nil {
 				return err
 			}
 
 			w.Writeln("")
 		}
-
 	}
 
 	w.Writeln("(*************************************************************************************************************************")
@@ -823,13 +910,14 @@ func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWrite
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writePascalExportDefinition(method, w, NameSpace, "Wrapper", true, true)
+		err := writePascalExportDefinition(component, method, w, "Wrapper", true, true)
 		if err != nil {
 			return err
 		}
-
 		w.Writeln("")
 	}
+
+	buildPascalGetSymbolAddressMethod(component, w, true)
 
 	w.Writeln("implementation")
 	w.Writeln("")
@@ -841,12 +929,12 @@ func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWrite
 
 			method := class.Methods[j]
 
-			err := writePascalExportDefinition(method, w, NameSpace, class.ClassName, false, false)
+			err := writePascalExportDefinition(component, method, w, class.ClassName, false, false)
 			if err != nil {
 				return err
 			}
 
-			err = writePascalClassExportImplementation(method, w, NameSpace, class.ClassName, false, ClassIdentifier)
+			err = writePascalClassExportImplementation(component, method, w, make([]string, 0), make([]string, 0), class.ClassName, false, ClassIdentifier)
 			if err != nil {
 				return err
 			}
@@ -857,18 +945,59 @@ func buildPascalExportsDefinition(component ComponentDefinition, w LanguageWrite
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		err := writePascalExportDefinition(method, w, NameSpace, "Wrapper", true, false)
+		err := writePascalExportDefinition(component, method, w, "Wrapper", true, false)
 		if err != nil {
 			return err
 		}
 
-		err = writePascalClassExportImplementation(method, w, NameSpace, "Wrapper", true, ClassIdentifier)
+		thisMethodDefaultImpl := []string{}
+		thisMethodDefinitionLines := []string{}
+
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global)
+		if err != nil {
+			return err
+		}
+		if isSpecialFunction == eSpecialMethodSymbolLookup {
+			var symbolLookupImplementation []string
+			symbolLookupImplementation = append(symbolLookupImplementation,
+				fmt.Sprintf("p%s^ := @_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
+			thisMethodDefaultImpl = symbolLookupImplementation
+		} else if isSpecialFunction == eSpecialMethodJournal {
+			var definitionLines []string
+			thisMethodDefinitionLines = definitionLines
+
+			var journalImplementation []string
+			journalImplementation = append(journalImplementation, fmt.Sprintf(""))
+			thisMethodDefaultImpl = journalImplementation
+		} else if isSpecialFunction == eSpecialMethodInjection {
+			var definitionLines []string
+			definitionLines = append(definitionLines, "ANameSpaceFound: boolean;")
+			thisMethodDefinitionLines = definitionLines
+
+			var injectionImplementation []string
+			sParamName := "StrPas(p" + method.Params[0].ParamName + ")"
+			for _, subComponent := range component.ImportedComponentDefinitions {
+				theNameSpace := subComponent.NameSpace
+
+				injectionImplementation = append(injectionImplementation, fmt.Sprintf("ANameSpaceFound := False;"))
+				injectionImplementation = append(injectionImplementation, fmt.Sprintf("if (%s = '%s') then begin", sParamName, theNameSpace))
+				injectionImplementation = append(injectionImplementation, fmt.Sprintf("  T%sWrapper.%sWrapper := T%sWrapper.CreateFromSymbolLookupMethod(p%s);", NameSpace, theNameSpace, theNameSpace, method.Params[1].ParamName))
+				injectionImplementation = append(injectionImplementation, fmt.Sprintf("  ANameSpaceFound := True;"))
+				injectionImplementation = append(injectionImplementation, fmt.Sprintf("end;"))
+			}
+			injectionImplementation = append(injectionImplementation, fmt.Sprintf("if not ANameSpaceFound then"))
+			injectionImplementation = append(injectionImplementation, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)))
+			thisMethodDefaultImpl = injectionImplementation
+		}
+
+		err = writePascalClassExportImplementation(component, method, w, thisMethodDefinitionLines, thisMethodDefaultImpl, "Wrapper", true, ClassIdentifier)
 		if err != nil {
 			return err
 		}
 
 	}
-
+	w.Writeln("")
+	buildPascalGetSymbolAddressMethod(component, w, false)
 	w.Writeln("")
 	w.Writeln("end.")
 	w.Writeln("")
@@ -932,6 +1061,11 @@ func buildLPRImplementation(component ComponentDefinition, w LanguageWriter, Nam
 
 func buildLPIImplementation(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 
+	otherUnitFiles := ""
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		otherUnitFiles = otherUnitFiles + fmt.Sprintf(";..\\..\\..\\%s_Component\\Bindings\\Pascal", subComponent.NameSpace)
+	}
+
 	w.Writeln("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
 	w.Writeln("<CONFIG>")
 	w.Writeln("  <ProjectOptions>")
@@ -961,7 +1095,7 @@ func buildLPIImplementation(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("          </Target>")
 	w.Writeln("          <SearchPaths>")
 	w.Writeln("            <IncludeFiles Value=\"$(ProjOutDir)\"/>")
-	w.Writeln("            <OtherUnitFiles Value=\"Stub;Interfaces\"/>")
+	w.Writeln("            <OtherUnitFiles Value=\"Stub;Interfaces%s\"/>", otherUnitFiles)
 	w.Writeln("            <UnitOutputDirectory Value=\"lib\\$(TargetCPU)-$(TargetOS)\"/>")
 	w.Writeln("          </SearchPaths>")
 	w.Writeln("          <Parsing>")
@@ -1010,7 +1144,7 @@ func buildLPIImplementation(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("    </Target>")
 	w.Writeln("    <SearchPaths>")
 	w.Writeln("      <IncludeFiles Value=\"$(ProjOutDir)\"/>")
-	w.Writeln("      <OtherUnitFiles Value=\"Stub;Interfaces\"/>")
+	w.Writeln("      <OtherUnitFiles Value=\"Stub;Interfaces%s\"/>", otherUnitFiles)
 	w.Writeln("      <UnitOutputDirectory Value=\"lib\\$(TargetCPU)-$(TargetOS)\"/>")
 	w.Writeln("    </SearchPaths>")
 	w.Writeln("    <Parsing>")
@@ -1206,6 +1340,8 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 			w.Writeln("  %s%s_%s,", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
 		}
 
+		writeSubComponentUses(component, w, true)
+
 		w.Writeln("  Classes,")
 		w.Writeln("  sysutils;")
 		w.Writeln("")
@@ -1317,6 +1453,15 @@ func writePascalImplClassMethodDefinition(method ComponentDefinitionMethod, w La
 	return nil
 }
 
+func writeSubComponentUses(component ComponentDefinition, w LanguageWriter, onlyUsedOnes bool) {
+	// TODO: check if component is used
+	if len(component.ImportedComponentDefinitions) > 0 {
+		for _, subComponent := range component.ImportedComponentDefinitions {
+			w.Writeln("  Unit_%s,", subComponent.NameSpace)
+		}
+	}
+}
+
 func buildStubImplementation(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, stubIdentifier string, defaultImplementation []string) error {
 
 	global := component.Global
@@ -1331,27 +1476,67 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 	w.Writeln("  %s_exception,", BaseName)
 	w.Writeln("  %s_interfaces,", BaseName)
 	w.Writeln("  Classes,")
+	writeSubComponentUses(component, w, false)
 	w.Writeln("  sysutils;")
 	w.Writeln("")
 	w.Writeln("type")
 	w.Writeln("  T%sWrapper = class(TObject)", NameSpace)
-	w.Writeln("    public")
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("    private")
+		for _, subComponent := range component.ImportedComponentDefinitions {
+			w.Writeln("      class var G%sWrapper: T%sWrapper;", subComponent.NameSpace, subComponent.NameSpace)
+		}
+		for _, subComponent := range component.ImportedComponentDefinitions {
+			w.Writeln("      class function Get%sWrapper: T%sWrapper; static;", subComponent.NameSpace, subComponent.NameSpace)
+			w.Writeln("      class procedure Set%sWrapper(A%sWrapper: T%sWrapper); static;", subComponent.NameSpace, subComponent.NameSpace, subComponent.NameSpace)
+		}
+	}
 
+	w.Writeln("    public")
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		w.Writeln("      class property %sWrapper: T%sWrapper read Get%sWrapper write Set%sWrapper;", subComponent.NameSpace, subComponent.NameSpace, subComponent.NameSpace, subComponent.NameSpace)
+	}
+	w.AddIndentationLevel(3)
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
-		w.AddIndentationLevel(3)
-		err := writePascalImplClassMethodDefinition(method, w, NameSpace, "Wrapper", true)
-		w.AddIndentationLevel(-3)
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global)
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
+			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			continue
+		}
+		err = writePascalImplClassMethodDefinition(method, w, NameSpace, "Wrapper", true)
 		if err != nil {
 			return err
 		}
 	}
+	w.AddIndentationLevel(-3)
 
 	w.Writeln("  end;")
 	w.Writeln("")
 	w.Writeln("")
 	w.Writeln("implementation")
 	w.Writeln("")
+
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		theNameSpace := subComponent.NameSpace
+		w.Writeln("class procedure T%sWrapper.Set%sWrapper(A%sWrapper: T%sWrapper);", NameSpace, theNameSpace, theNameSpace, theNameSpace)
+		w.Writeln("  begin")
+		w.Writeln("  if assigned(G%sWrapper) then", theNameSpace)
+		w.Writeln("    raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace))
+		w.Writeln("  G%sWrapper := A%sWrapper;", theNameSpace, theNameSpace)
+		w.Writeln("end;")
+		w.Writeln("")
+		w.Writeln("class function T%sWrapper.Get%sWrapper(): T%sWrapper;", NameSpace, theNameSpace, theNameSpace)
+		w.Writeln("begin")
+		w.Writeln("  if not assigned(G%sWrapper) then", theNameSpace)
+		w.Writeln("    raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace))
+		w.Writeln("  result := G%sWrapper;", theNameSpace)
+		w.Writeln("end;")
+		w.Writeln("")
+	}
 
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
@@ -1375,8 +1560,7 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 		}
 		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
 			(isSpecialFunction == eSpecialMethodSymbolLookup) {
-			var noopImplementation []string
-			thisMethodDefaultImpl = noopImplementation
+			continue
 		}
 		if isSpecialFunction == eSpecialMethodVersion {
 			var versionImplementation []string

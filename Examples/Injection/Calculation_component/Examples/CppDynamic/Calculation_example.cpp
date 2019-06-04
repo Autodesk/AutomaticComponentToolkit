@@ -24,8 +24,9 @@ int main()
 		std::string libpath = "D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Calculation_component/Implementations/Cpp/_build/Debug"; // TODO: put the location of the Calculation-library file here.
 		auto wrapper = Calculation::CWrapper::loadLibrary(libpath + "/calculation.dll"); // TODO: add correct suffix of the library
 
-		libpath = "D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Cpp/_build/Debug";
-		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/numbers.dll");
+		// libpath = "D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Cpp/_build/Debug";
+		libpath = "D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Pascal/bin/x86_64-win64/Release";
+		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/projectnumbers.dll");
 
 		Calculation_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);

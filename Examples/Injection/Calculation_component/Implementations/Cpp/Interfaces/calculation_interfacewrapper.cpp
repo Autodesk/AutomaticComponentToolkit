@@ -66,6 +66,7 @@ CalculationResult calculation_calculator_enlistvariable(Calculation_Calculator p
 
 	try {
 		Numbers::PVariable pIVariable = std::make_shared<Numbers::CVariable>(CWrapper::sPNumbersWrapper.get(), pVariable);
+		CWrapper::sPNumbersWrapper->AcquireInstance(pIVariable.get());
 		if (!pIVariable)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDCAST);
 		
@@ -75,7 +76,6 @@ CalculationResult calculation_calculator_enlistvariable(Calculation_Calculator p
 		
 		pICalculator->EnlistVariable(pIVariable);
 
-		CWrapper::sPNumbersWrapper->AcquireInstance(pIVariable.get());
 		return CALCULATION_SUCCESS;
 	}
 	catch (ECalculationInterfaceException & Exception) {

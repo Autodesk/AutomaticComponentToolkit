@@ -317,11 +317,14 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 		if isPlain {
 			PascalParamTypeName = fmt.Sprintf("T%sHandle", NameSpace)
 		} else {
+			SubNameSpace, SubClassName, _ := decomposeParamClassName(ParamClass)
 			if isImplementation {
-				PascalParamTypeName = "TObject"
+				if len(SubNameSpace) > 0 {
+					PascalParamTypeName = fmt.Sprintf("T%s%s", SubNameSpace, SubClassName)
+				} else {
+					PascalParamTypeName = "TObject"
+				}
 			} else {
-
-				SubNameSpace, SubClassName, _ := decomposeParamClassName(ParamClass)
 				if len(SubNameSpace) > 0 {
 					PascalParamTypeName = fmt.Sprintf("T%s%s", SubNameSpace, SubClassName)
 				} else {

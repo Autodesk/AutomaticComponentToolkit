@@ -564,7 +564,8 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
-func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter, NameSpace string) error {
+func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter) error {
+	NameSpace := component.NameSpace
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Function table lookup implementation")
@@ -716,7 +717,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	}
 
 	w.Writeln("")
-	err := buildCPPGetSymbolAddressMethod(component, w, NameSpace);
+	err := buildCPPGetSymbolAddressMethod(component, w);
 	if err != nil {
 		return err
 	}
@@ -1423,9 +1424,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				if len(paramNameSpace) > 0 {
 					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s pI%s = std::make_shared<%s::C%s>(%s.get(), p%s);", paramNameSpace, paramClassName, param.ParamName, paramNameSpace, paramClassName, theWrapper, param.ParamName))
-					
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
-					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
