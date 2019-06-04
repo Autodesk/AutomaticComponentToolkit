@@ -18,7 +18,7 @@ Interface version: 1.0.0
 
 #include "calculation_types.hpp"
 
-#include "../../../Numbers_component/Bindings/CppDynamic/numbers_types.hpp"
+#include "numbers_types.hpp"
 
 
 /*************************************************************************************************************************

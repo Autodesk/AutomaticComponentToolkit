@@ -19,7 +19,7 @@ Interface version: 1.0.0
 #include "calculation_types.hpp"
 #include "calculation_dynamic.h"
 
-#include "../../../Numbers_component/Bindings/CppDynamic/numbers_dynamic.hpp"
+#include "numbers_dynamic.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

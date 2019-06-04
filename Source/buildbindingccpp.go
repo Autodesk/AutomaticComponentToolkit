@@ -189,7 +189,7 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	}
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
-		w.Writeln("#include \"../../../%s_component/Bindings/CppDynamic/%s_types.hpp\"", subComponent.NameSpace, subComponent.BaseName)
+		w.Writeln("#include \"%s_types.hpp\"", subComponent.BaseName)
 	}
 	w.Writeln("")
 
@@ -1093,7 +1093,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
-		w.Writeln("#include \"../../../%s_component/Bindings/CppDynamic/%s_dynamic.hpp\"", subComponent.NameSpace, subComponent.BaseName)
+		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
 	}
 	w.Writeln("")
 
@@ -1615,6 +1615,9 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
 	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
+	for _, subComponent := range(componentdefinition.ImportedComponentDefinitions) {
+		w.Writeln("target_include_directories(%s PRIVATE \"${%s}/../../../%s_component/Bindings/CppDynamic\")", projectName, cmakeBindingFolder, subComponent.NameSpace)
+	}
 	return nil
 }
 
