@@ -450,7 +450,7 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 
 func (component *ComponentDefinition) checkEnums() (error) {
 	enums := component.Enums
-	var enumNameList = &component.NameMapsLookup.structMap
+	var enumNameList = &component.NameMapsLookup.enumMap
 	enumLowerNameList := make(map[string]bool, 0);
 
 	for i := 0; i < len(enums); i++ {
