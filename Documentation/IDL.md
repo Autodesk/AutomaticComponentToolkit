@@ -178,7 +178,8 @@ Element **\<global>** of type **CT\_Global**
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
 | baseclassname | **ST\_Name** | required | | Specifies the name of a class that is the base class for all classes of the generated component. |
-| releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release a class instance owned by the generated component. |
+| releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release ownership of a class instance owned by the generated component. |
+| releasemethod | **ST\_Name** | required | | Specifies the name of the method used to acquire ownership of a class instance owned by the generated component. |
 | versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the major, minor and micro version of the component. |
 | prereleasemethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the prerelease information of the component. |
 | buildinfomethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the build information of the component. |
@@ -193,7 +194,7 @@ The names of the \<method> elements MUST be unique within the \<global> element.
 The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
 This class will be the base class for all classes of the generated component.
 
-The `releasemethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
+The `releasemethod`- and `acquiremethod`-attributes must each be the name of a \<method> within the \<global> element of a component that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
 The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly three parameters. The three parameters MUST be of type `type="uint32"` and `pass="out"`.
 The `prereleasemethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
 The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.

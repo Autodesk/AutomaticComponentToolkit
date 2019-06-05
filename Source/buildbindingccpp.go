@@ -1012,7 +1012,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		}
 		return fmt.Sprintf("std::vector<%s>", typeName)
 	case "enum":
-		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
+		return fmt.Sprintf(paramNameSpace + "e"+paramClassName)
 	case "struct":
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class":

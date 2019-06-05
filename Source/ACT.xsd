@@ -157,6 +157,9 @@
 		<xs:attribute name="releasemethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;releasemethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="acquiremethod" type="ST_Name" use="required">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;acquiremethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:attribute name="versionmethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;versionmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
@@ -247,7 +250,7 @@
 
 	<xs:simpleType name="ST_NameSpacedClassName">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="^(([A-Z][a-zA-Z0-9_]{0,63}):){0,1}([A-Z][a-zA-Z0-9_]{0,63})"/>
+			<xs:pattern value="^(([A-Z][a-zA-Z0-9_]{0,63}):){0,1}([a-zA-Z0-9_]{0,64})"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -265,7 +268,7 @@
 
 	<xs:simpleType name="ST_Description">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="[a-zA-Z][a-zA-Z0-9_\\/+\-:,.=!?()'; ]*"/>
+			<xs:pattern value="[a-zA-Z][a-zA-Z0-9_\\/+\-:,.=!?()'; |]*"/>
 		</xs:restriction>
 	</xs:simpleType>
 

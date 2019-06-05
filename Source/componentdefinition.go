@@ -727,7 +727,7 @@ func decomposeParamClassName(paramClassName string) (string, string, error) {
 	}
 
 	namespaceRegexp := "[A-Z][a-zA-Z0-9_]{0,63}"
-	var IsValidParamClassName = regexp.MustCompile(fmt.Sprintf("^((%s):){0,1}([A-Z][a-zA-Z0-9_]{0,63})$", namespaceRegexp) )
+	var IsValidParamClassName = regexp.MustCompile(fmt.Sprintf("^((%s):){0,1}([a-zA-Z0-9_]{0,64})$", namespaceRegexp) )
 	
 	if !(IsValidParamClassName.MatchString(paramClassName)) {
 		return "","", fmt.Errorf("param class name \"%s\" is ill formatted", paramClassName);
@@ -752,7 +752,7 @@ func nameIsValidIdentifier(name string) bool {
 }
 
 func descriptionIsValid(description string) bool {
-	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; ]*$").MatchString
+	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; |]*$").MatchString
 	if (description != "") {
 		return IsValidMethodDescription(description);
 	}
