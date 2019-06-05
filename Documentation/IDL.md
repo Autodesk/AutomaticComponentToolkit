@@ -18,22 +18,23 @@ THESE MATERIALS ARE PROVIDED "AS IS." The contributors expressly disclaim any wa
    * [Language Notes](#language-notes)
  - [Elements and types in the ACT-IDL](#elements-and-types-in-the-act-idl)
    * [1. Component](#1-component)
-   * [2. License](#2-license)
-   * [3. License Line](#3-license-line)
-   * [4. Bindings](#4-bindings)
-   * [5. Implementations](#5-implementations)
-   * [6. Export](#6-export)
-   * [7. Global](#7-global)
-   * [8. Class](#8-class)
-   * [9. Function Type](#9-function-type)
-   * [10. Param](#10-param)
-   * [11. Enum](#11-enum)
-   * [12. Option](#12-option)
-   * [13. Struct](#13-struct)
-   * [14. Member](#14-member)
-   * [15. Errors](#15-errors)
-   * [16. Error](#16-error)
-   * [17. Simple Types](#17-simple-types)
+   * [2. Import Component](#2-import-component)
+   * [3. License](#3-license)
+   * [4. License Line](#4-license-line)
+   * [5. Bindings](#5-bindings)
+   * [6. Implementations](#6-implementations)
+   * [7. Export](#7-export)
+   * [8. Global](#8-global)
+   * [9. Class](#9-class)
+   * [10. Function Type](#10-function-type)
+   * [11. Param](#11-param)
+   * [12. Enum](#12-enum)
+   * [13. Option](#13-option)
+   * [14. Struct](#14-struct)
+   * [15. Member](#15-member)
+   * [16. Errors](#16-errors)
+   * [17. Error](#17-error)
+   * [18. Simple Types](#18-simple-types)
  - [Appendix A. XSD Schema of ACT-IDL](#appendix-a-xsd-schema-of-act-idl)
  - [Appendix B. Example of ACT-IDL](#appendix-b-example-of-act-idl)
 
@@ -85,18 +86,34 @@ The "version" attribute encodes the semantic version of this component. Major, M
 
 The \<component> element is the root element of a ACT-IDL file.
 There MUST be exactly one \<component> element in a ACT-IDL file.
-A component MUST have exactly one child [license](#2-license) element, 
-one child [bindings](#4-bindings) element, 
-one child [implementations](#5-implementations) element, 
-one child [errors](#15-errors) element and 
-one child [global](#7-global) element.
+A component MUST have exactly one child [license](#3-license) element, 
+one child [bindings](#5-bindings) element, 
+one child [implementations](#6-implementations) element, 
+one child [errors](#16-errors) element and 
+one child [global](#8-global) element.
 
 The names of the \<struct>-, \<enum>-, \<functiontype>- and \<class>-elements MUST be unique within the \<component>.
 
 >**Note:** Regarding the \"uniqueness\" of attributes of type **xs:string**.
 >Within this specification strings are considered equal regardless of the case of the individual letters.
 
-## 2. License
+## 2. Import Component
+Element **\<importcomponent>** of type **CT\_ImportComponent**
+![element importcomponent](images/element_importcomponent.png)
+
+The \<importcomponent> element defines the namespace and the relative location of another ACT-IDL-file and is the mechanism that allows injecting another ACT-component into the ACT-component at hand.
+
+The `namespace` attribute of the \<importcomponent> element MUST match the `namespace` of the \<component> element within the file at location of the `uri` attribute.
+
+The `class`es, `functiontype`s, `struct`s and `enum`s of the importend component with will be available as `param`s of methods in this ACT-component. 
+To use an entity with name `Y` from another ACT component (with namespace `X`) as `class` of a `param` in this ACT component set the `class`-attribute to `class="X:Y"`.
+
+To be able to inject a component `Inner` into a component `Outer`, component `Inner` must define the `symbollookupmethod` in its global section and component `Outer` must define the `injectionmethod`.
+
+>**Note:** Component injection is an advanced feature. Not all bindings support it.
+> See [the Injection example](../Examples/Injection) for a minimal working example.
+
+## 3. License
 Element **\<license>** of type **CT\_License**
 
 ![element license](images/element_license.png)
@@ -104,7 +121,7 @@ Element **\<license>** of type **CT\_License**
 The \<license> element contains a list of at least one child [line](#3-line) element.
 The license lines will be included as comments at the start of all generated source code files.
 
-## 3. Line
+## 4. Line
 Element **\<line>** of type **CT\_LicenseLine**
 
 ![element line](images/element_line.png)
@@ -114,23 +131,23 @@ Element **\<line>** of type **CT\_LicenseLine**
 | --- | --- | --- | --- | --- |
 | value | **xs:string** | required | | A line of the license. |
 
-## 4. Bindings
+## 5. Bindings
 Element **\<bindings>** of type **CT\_BindingList**
 
 ![element bindings](images/element_bindings.png)
 
-The CT\_BindingList type contains a list of [binding](#6-export) elements.
+The CT\_BindingList type contains a list of [binding](#7-export) elements.
 The \<binding> elements in the \<bindings> element determine the language bindings that will be generated.
 
-## 5. Implementations
+## 6. Implementations
 Element **\<implementations>** of type **CT\_ImplementationsList**
 
 ![element implementation](images/element_implementations.png)
 
-The CT\_ImplementationsList type contains a list of [implementation](#6-export) elements.
+The CT\_ImplementationsList type contains a list of [implementation](#7-export) elements.
 The \<implementation> elements in the \<implementations> element determine the languages for which implementation stubs will be generated.
 
-## 6. Export
+## 7. Export
 Element **\<binding>**
 <br/>
 ![element binding](images/element_binding.png)
@@ -152,7 +169,7 @@ of type **CT\_Export**
 | stubidentifier | **ST\_StubIdentifier** | optional | "" | Generated sources files of this export will follow the naming schme "...${BaseName}_${stubidentifier}...". Only used in \<implementation> right now. |
 | classidentifier | **ST\_ClassIdentifier** | optional | "" | Generated classes of this export will follow the naming schme "...${ClassIdentifier}_${ClassName}...". The only binding that supports this are the C++-bindings.|
 
-## 7. Global
+## 8. Global
 Element **\<global>** of type **CT\_Global**
 
 ![element global](images/element_global.png)
@@ -166,9 +183,11 @@ Element **\<global>** of type **CT\_Global**
 | prereleasemethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the prerelease information of the component. |
 | buildinfomethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the build information of the component. |
 | errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
+| injectionmethod | **ST\_Name** | optional | | Specifies the name of the method used to inject the symbollookupmethod another ACT component into this component at runtime. |
+| symbollookupmethod | **ST\_Name** | optional | | Specifies the name of the method that returns the address of a given symbol exported by this component. |
 | journalmethod | **ST\_Name** | optional | | Specifies the name of the method used to set the journal file. If ommitted, journalling will not be built into the component. |
 
-The \<global> element contains a list of [method](#9-function-type) elements that define the exported global functions of the component.
+The \<global> element contains a list of [method](#10-function-type) elements that define the exported global functions of the component.
 The names of the \<method> elements MUST be unique within the \<global> element.
 
 The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
@@ -187,9 +206,13 @@ The `errormethod`-attribute must be the name of a \<method> within the \<global>
 2. `type="string"` and `pass="out"`: outputs the last error message
 3. `type="bool"` and `pass="return"`: returns the instance of the baseclass has an error.
 
+If the `injectionmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly two parameters with `type="string"` and `pass="in"` and `type="pointer"` and `pass="in"`.
+
+If the `symbollookupmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="pointer"` and `pass="return"`. The implemntation of this method is fully autogenerated and returns the address of another internal lookup method. This internal lookup method in turn is similar to a `GetProcAddress`- or `dlsym`-method: given the name of a method in this component, it provides the address of a method in this component with this name. The return value of the `symbollookupmethod` is usually passed into the `injectionmethod` of another component.
+
 If the `journalmethod` attribute is given, it must be the name of a \<method> within the \<global> element of a method that has exactly one parameter with `type="string"` and `pass="in"`.
 
-## 8. Class
+## 9. Class
 Element **\<class>** of type **CT\_Class**
 
 ![element class](images/element_class.png)
@@ -201,14 +224,14 @@ Element **\<class>** of type **CT\_Class**
 | parent | **ST\_Name** | optional | | The name of the parent class of this class. |
 | description | **ST\_Description** | optional | | A description of this class. |
 
-The \<class> element contains a list of [method](#9-function-type) elements that define the exported member functions of this class.
+The \<class> element contains a list of [method](#10-function-type) elements that define the exported member functions of this class.
 The names of the \<method> elements MUST be unique in this list.
 
 If the `parent`-attribute is empty, and the name of this class differs from the `baseclassname`-attribute of the \<global> element, `baseclassname` will be considered as the parent class of this class.
 
 A class MUST be defined in the list of \<class> elements before it is used as parent-class of another class. This restiction rules out circular inheritance. Moreover, the default `baseclassname` MUST be defined as the first \<class> within the IDL-file.
 
-## 9. Function Type
+## 10. Function Type
 Element **\<functiontype>**
 <br/>
 ![element functiontype](images/element_functiontype.png)
@@ -228,13 +251,13 @@ of Complex type **CT\_FunctionType**
 | description | **ST\_Description** | required | | A description of this function type. |
 
 The CT\_FunctionType-type describes the signature of a function in the interface.
-Each element of type CT\_FunctionType contains a list of [param](#10-param) elements.
+Each element of type CT\_FunctionType contains a list of [param](#11-param) elements.
 The names of the param in this list MUST be unique.
 This list MUST contain zero or one param-elements with the pass-value \"return\".
 
 The \<functiontype>-element can be used to define callback functions into the consumer's code.
 
-## 10. Param
+## 11. Param
 Element **\<param>** of type **CT\_Param**
 
 ![element param](images/element_param.png)
@@ -249,7 +272,7 @@ Element **\<param>** of type **CT\_Param**
 | class | **ST\_Name** | optional | | Required if the type is an [**ST\_ComposedType**](#173-composedtype) |
 
 
-## 11. Enum
+## 12. Enum
 Element **\<enum>** of type **CT\_Enum**
 
 ![element enum](images/element_enum.png)
@@ -260,11 +283,11 @@ Element **\<enum>** of type **CT\_Enum**
 | name | **ST\_Name** | required | | The name of this Enumeration. |
 
 The \<enum> element defines an enumerated type (see https://en.wikipedia.org/wiki/Enumerated_type), i.e. a set of named values.<br/>
-It contains a list of at least one [option](#12-option) element.
+It contains a list of at least one [option](#13-option) element.
 The names as well as the values of the options in this list MUST be unique within a \<enum> element.
 
 
-## 12. Option
+## 13. Option
 Element **\<option>** of type **CT\_Option**
 
 ![element option](images/element_option.png)
@@ -276,7 +299,7 @@ Element **\<option>** of type **CT\_Option**
 | value | **xs:nonNegativeInteger** | required | | The numerical value of this option. |
 
 
-## 13. Struct
+## 14. Struct
 Element **\<struct>** of type **CT\_Struct**
 
 ![element struct](images/element_struct.png)
@@ -287,11 +310,11 @@ Element **\<struct>** of type **CT\_Struct**
 | name | **ST\_Name** | required | | The name of this struct. |
 
 The \<struct> element defines a composite data type (see https://en.wikipedia.org/wiki/Composite_data_type). <br/>
-It contains a list of at least one [member](#14-member) element.
+It contains a list of at least one [member](#15-member) element.
 The names of the member elements MUST be unique within a struct element.
 
 
-## 14. Member
+## 15. Member
 Element **\<member>** of type **CT\_Member**
 
 ![element member](images/element_member.png)
@@ -309,19 +332,19 @@ By default, the member defines a single value of its type within the enclusing s
 defined by setting the rows and colums attributes to the desired size of the array.
 
 
-## 15. Errors
+## 16. Errors
 Element **\<errors>** of type **CT\_ErrorList**
 
 ![element errors](images/element_errors.png)
 
-The \<errors> element contains a list of [\<error>](#16-error) elements.
+The \<errors> element contains a list of [\<error>](#17-error) elements.
 The names and codes of the \<error> elements in this list MUST be unique within the \<errors> element.
 
 Each ACT-component MUST contain at least the following 8 error codes:
 
 `NOTIMPLEMENTED`, `INVALIDPARAM`, `INVALIDCAST`, `BUFFERTOOSMALL`, `GENERICEXCEPTION`, `COULDNOTLOADLIBRARY`, `COULDNOTFINDLIBRARYEXPORT`, `INCOMPATIBLEBINARYVERSION`
 
-## 16. Error
+## 17. Error
 Element **\<error>** of type **CT\_Error**
 
 ![element error](images/element_error.png)
@@ -334,13 +357,13 @@ Element **\<error>** of type **CT\_Error**
 | description | **ST\_ErrorDescription** | otpional | | A short description of this error. |
 
 
-## 17. Simple Types
+## 18. Simple Types
 The simple types of this specification encode features, concepts, data types,
 and naming rules used in or required by programming languages.
 
 For now, please look the up in the [ACT.xsd](../Source/ACT.xsd).
 
-### 17.1 Type
+### 18.1 Type
 Supported types are:
 - `bool`: denotes a boolean value (`true` or `false`).
 Although this can be encoded in a single bit, the thin C89-layer APIs generated by ACT will use an unsigned 8 bit value (a `uint8` in ACT terms) to encode a boolean value.
@@ -357,41 +380,41 @@ A _signed_ integer vaules ranging from -2<sup>7</sup> - 2<sup>7</sup>-1, -2<sup>
 
 - `single`: Single precision floating point number.
 - `double`: Double precision floating point number.
-- `struct`: see [13. Struct](#13-struct)
-- `enum`: see [11. Enum](#11-enum)
-- `basicarray`: an array of [ST\_ScalarTypes](#17-2-scalartype)
-- `enumarray`: an array of [enums](#11-enum)
-- `structarray`: an array of [structs](#13-struct)
-- `functiontype`: see [9. Function Type](#9-function-type)
-- `class`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#8-class)
+- `struct`: see [13. Struct](#14-struct)
+- `enum`: see [11. Enum](#12-enum)
+- `basicarray`: an array of [ST\_ScalarTypes](#18-2-scalartype)
+- `enumarray`: an array of [enums](#12-enum)
+- `structarray`: an array of [structs](#14-struct)
+- `functiontype`: see [9. Function Type](#10-function-type)
+- `class`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#9-class)
 
 **Note**
  `type="handle"` is equivalent to `type="class"` for backwards compatibility. It will be removed in a future version.
 
-### 17.2 ScalarType
+### 18.2 ScalarType
 A subset of scalar or integral of ST\_Type:
 
 `bool`, `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`, `single`, `double`, `pointer`.
 
-### 17.3 ComposedType
+### 18.3 ComposedType
 A subset of more complex types, or types composed of other ST\_Types:
 
 `string`, `enum`, `basicarray`, `enumarray`, `structarray`, `class`, `functiontype`
 
-### 17.4 Name
-### 17.5 Description
-### 17.6 ErrorName
-### 17.7 ErrorDescription
-### 17.8 Pass
-### 17.9 Language
-### 17.10 Indentation
-### 17.11 Year
-### 17.12 Version
-### 17.13 Stub Identifier
-### 17.14 Class Identifier
-### 17.16 NameSpace
-### 17.15 Library Name
-### 17.16 Base Name
+### 18.4 Name
+### 18.5 Description
+### 18.6 ErrorName
+### 18.7 ErrorDescription
+### 18.8 Pass
+### 18.9 Language
+### 18.10 Indentation
+### 18.11 Year
+### 18.12 Version
+### 18.13 Stub Identifier
+### 18.14 Class Identifier
+### 18.16 NameSpace
+### 18.15 Library Name
+### 18.16 Base Name
 
 
 # Appendix A. XSD Schema of ACT-IDL

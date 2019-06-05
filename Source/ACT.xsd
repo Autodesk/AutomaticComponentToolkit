@@ -18,6 +18,7 @@
 	<!-- Complex Types -->
 	<xs:complexType name="CT_Component">
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element ref="importcomponent" minOccurs="0" maxOccurs="99999"/>
 			<xs:element ref="license" minOccurs="1" maxOccurs="1"/>
 			<xs:element ref="bindings" minOccurs="1" maxOccurs="1"/>
 			<xs:element ref="implementations" minOccurs="1" maxOccurs="1"/>
@@ -38,6 +39,12 @@
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
+	<xs:complexType name="CT_ImportComponent">
+		<xs:attribute name="uri" type="xs:string"/>
+		<xs:attribute name="namespace" type="ST_NameSpace"/>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+
 	<xs:complexType name="CT_License">
 		<xs:sequence>
 			<xs:element ref="line" minOccurs="1" maxOccurs="99999"/>
@@ -138,7 +145,7 @@
 		<xs:attribute name="description" type="ST_Description" use="required"/>
 		<xs:attribute name="pass" type="ST_Pass" use="required"/>
 		<xs:attribute name="type" type="ST_Type" use="required"/>
-		<xs:attribute name="class" type="xs:string" use="optional"/>
+		<xs:attribute name="class" type="ST_NameSpacedClassName" use="optional"/>
 	</xs:complexType>
 	
 	<xs:complexType name="CT_Global">
@@ -162,7 +169,15 @@
 		<xs:attribute name="buildinfomethod" type="ST_Name" use="optional">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;buildinfomethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="journalmethod" type="ST_Name" use="optional"/>
+		<xs:attribute name="journalmethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;journalmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="injectionmethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;injectionmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="symbollookupmethod" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;symbollookupmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
@@ -226,6 +241,13 @@
 	<xs:simpleType name="ST_Name">
 		<xs:restriction base="xs:string">
 			<xs:pattern value="[A-Z][a-zA-Z0-9_]{0,63}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+
+	<xs:simpleType name="ST_NameSpacedClassName">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="^(([A-Z][a-zA-Z0-9_]{0,63}):){0,1}([A-Z][a-zA-Z0-9_]{0,63})"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -341,6 +363,7 @@
 
 	<!-- Elements -->
 	<xs:element name="component" type="CT_Component"/>
+	<xs:element name="importcomponent" type="CT_ImportComponent"/>
 	<xs:element name="license" type="CT_License"/>
 	<xs:element name="line" type="CT_LicenseLine"/>
 	<xs:element name="bindings" type="CT_BindingList"/>
