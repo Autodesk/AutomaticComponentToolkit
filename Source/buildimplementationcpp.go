@@ -1034,7 +1034,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[3] = append(implementations[3], "++m_nReferenceCount;")
 
 			implementations[4] = append(implementations[4], "m_nReferenceCount--;")
-			implementations[4] = append(implementations[4], "if (!m_nReferenceCount) {;")
+			implementations[4] = append(implementations[4], "if (!m_nReferenceCount) {")
 			implementations[4] = append(implementations[4], "  delete this;")
 			implementations[4] = append(implementations[4], "  return true;")
 			implementations[4] = append(implementations[4], "}")
