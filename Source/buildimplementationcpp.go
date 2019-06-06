@@ -606,14 +606,14 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = &%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
 		}
 	}
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = &%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
 	}
 
 	w.AddIndentationLevel(-1)
