@@ -91,7 +91,7 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 		<method name="ReleaseInstance" description="Releases the memory of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="GetLibraryVersion" description = "retrieves the binary version of this library.">
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
@@ -1056,7 +1056,7 @@ int main()
 		wrapper->SetJournal("journal_cppdynamic.xml");
 		LibPrimes_uint32 nMajor, nMinor, nMicro;
 		std::string sPreReleaseInfo, sBuildInfo;
-		wrapper->GetLibraryVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
+		wrapper->GetVersion(nMajor, nMinor, nMicro, sPreReleaseInfo, sBuildInfo);
 		/*..*/
 	}
 	/*..*/
