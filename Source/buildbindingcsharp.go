@@ -202,7 +202,12 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 		if isPlain {
 			CSharpParamTypeName = "IntPtr"
 		} else {
-			CSharpParamTypeName = "C" + ParamClass
+			paramNameSpace, _, _ := decomposeParamClassName(ParamClass)
+			if len(paramNameSpace) > 0 {
+				CSharpParamTypeName = "IntPtr"
+			} else {
+				CSharpParamTypeName = "C" + ParamClass
+			}
 		}
 
 	default:
@@ -399,7 +404,12 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 
 			case "class":
-				callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
+				if (ParamTypeName == "IntPtr") {
+					callFunctionParameter = "A" + param.ParamName
+				} else {
+					callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
+				}
+				
 				initCallParameter = callFunctionParameter
 
 			default:
@@ -564,11 +574,14 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
 			case "class":
-
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new C%s (new%s );", param.ParamClass, param.ParamName))
+				if (ParamTypeName == "IntPtr") {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
+				} else {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new %s (new%s );", ParamTypeName, param.ParamName))
+				}
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -1050,8 +1063,16 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("    public static %s %s (%s)", returnType, method.MethodName, parameters)
 		w.Writeln("    {")
 
-		writeCSharpClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "    ")
-
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global)
+		if err != nil {
+			return err
+		}
+		if isSpecialFunction == eSpecialMethodInjection {
+			w.Writeln("    throw new Exception(\"Component injection is not supported in CSharp.\");")
+		} else {
+			writeCSharpClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "    ")
+		}
+		
 		w.Writeln("    }")
 		w.Writeln("")
 	}

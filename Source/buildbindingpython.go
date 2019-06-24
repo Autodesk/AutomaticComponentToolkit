@@ -38,6 +38,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"strings"
 )
 
 // BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of explicitly loaded
@@ -94,7 +95,20 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("import ctypes")
 	w.Writeln("import platform")
 	w.Writeln("import enum")
+	w.Writeln("import os")
 	w.Writeln("")
+
+
+	if len(componentdefinition.ImportedComponentDefinitions) > 0 {
+		w.Writeln("import sys")
+		w.Writeln("# Injected Components")
+		for _, subComponent := range(componentdefinition.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), \"..\", \"..\", \"..\", \"%s_component\", \"Bindings\", \"Python\"))", subNameSpace)
+			w.Writeln("import %s", subNameSpace)
+		}
+		w.Writeln("")
+	}
 
 	w.Writeln("name = \"%s\"", BaseName)
 	w.Writeln("")
@@ -128,6 +142,22 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	for i := 0; i<len(componentdefinition.Errors.Errors); i++ {
 		merror := componentdefinition.Errors.Errors[i]
 		w.Writeln("  %s = %d", merror.Name, merror.Code)
+	}
+	w.Writeln("")
+
+	w.Writeln("'''Definition of Function Table")
+	w.Writeln("'''")
+	w.Writeln("class FunctionTable:")
+	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
+		method := componentdefinition.Global.Methods[j]
+		w.Writeln("  %s_%s = None", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+	}
+	for i:=0; i<len(componentdefinition.Classes); i++ {
+		class := componentdefinition.Classes[i]
+		for j:=0; j<len(class.Methods); j++ {
+			method := class.Methods[j]
+			w.Writeln("  %s_%s_%s = None", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
+		}
 	}
 	w.Writeln("")
 
@@ -226,8 +256,17 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("'''")
 	w.Writeln("class Wrapper:")
 	w.Writeln("")
+	
+	if len(componentdefinition.ImportedComponentDefinitions) > 0 {
+		w.Writeln("# Injected Components")
+		for _, subComponent := range(componentdefinition.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("  _%sWrapper = None", subNameSpace)
+		}
+		w.Writeln("")
+	}
 
-	w.Writeln("  def __init__(self, libraryName = None):")
+	w.Writeln("  def __init__(self, libraryName = None, symbolLookupMethodAddress = None):")
 	w.Writeln("    ending = ''")
 	w.Writeln("    if platform.system() == 'Windows':")
 	w.Writeln("      ending = 'dll'")
@@ -238,23 +277,41 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    else:")
 	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY)", NameSpace)
 	w.Writeln("    ")
-	w.Writeln("    if (not libraryName):")
+	w.Writeln("    if (not libraryName) and (not symbolLookupMethodAddress):")
 	w.Writeln("      libraryName = os.path.join(os.path.dirname(os.path.realpath(__file__)),'%s')", BaseName)
-	w.Writeln("    path = libraryName + '.' + ending")
 	w.Writeln("    ")
-	w.Writeln("    try:")
-	w.Writeln("      self.lib = ctypes.CDLL(path)")
-	w.Writeln("    except Exception as e:")
-	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace )
-	w.Writeln("    ")
-	w.Writeln("    self._loadFunctionTable()")
+	w.Writeln("    if libraryName is not None:")
+	w.Writeln("      path = libraryName + '.' + ending")
+	w.Writeln("      try:")
+	w.Writeln("        self.lib = ctypes.CDLL(path)")
+	w.Writeln("      except Exception as e:")
+	w.Writeln("        raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(e) + '| \"'+path + '\"' )", NameSpace )
+	w.Writeln("      ")
+	w.Writeln("      self._loadFunctionTable()")
+	w.Writeln("    elif symbolLookupMethodAddress is not None:")
+	w.Writeln("        self.lib = FunctionTable()")
+	w.Writeln("        self._loadFunctionTableFromMethod(symbolLookupMethodAddress)")
+	w.Writeln("    else:")
+	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(e))", NameSpace )
 	w.Writeln("    ")
 	w.Writeln("    self._checkBinaryVersion()")
 	w.Writeln("  ")
 
+	w.Writeln("  def _loadFunctionTableFromMethod(self, symbolLookupMethodAddress):")
+	w.Writeln("    try:")
+	w.AddIndentationLevel(3)
+	err := loadFunctionTableFromMethod(componentdefinition, w)
+	if (err!=nil) {
+		return err
+	}
+	w.AddIndentationLevel(-3)
+	w.Writeln("    except AttributeError as ae:")
+	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])", NameSpace)
+	w.Writeln("    ")
+
 	w.Writeln("  def _loadFunctionTable(self):")
 	w.Writeln("    try:")
-	err := loadFunctionTable(componentdefinition, w)
+	err = loadFunctionTable(componentdefinition, w)
 	if (err!=nil) {
 		return err
 	}
@@ -280,7 +337,29 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
 		method := componentdefinition.Global.Methods[j]
-		err = writeMethod(method, w, NameSpace, "Wrapper", true)
+
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, componentdefinition.Global);
+		if err != nil {
+			return err
+		}
+		
+		implementationLines := make([]string, 0)
+		if (isSpecialFunction == eSpecialMethodInjection) {
+			implementationLines = append(implementationLines, "bNameSpaceFound = False")
+			sParamName := method.Params[0].ParamName
+			for _, subComponent := range(componentdefinition.ImportedComponentDefinitions) {
+				theNameSpace := subComponent.NameSpace
+				implementationLines = append(implementationLines, fmt.Sprintf("if %s == \"%s\":", sParamName, theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("  if self._%sWrapper is not None:", theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("    raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\")", NameSpace, sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("  self._%sWrapper = %s.Wrapper(symbolLookupMethodAddress = %s)", theNameSpace, theNameSpace, method.Params[1].ParamName))
+				implementationLines = append(implementationLines, fmt.Sprintf("  bNameSpaceFound = True"))
+			}
+			implementationLines = append(implementationLines, "if not bNameSpaceFound:")
+			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s)", NameSpace, sParamName ))
+		}
+
+		err = writeMethod(method, w, NameSpace, "Wrapper", implementationLines, true)
 		if (err!=nil) {
 			return err
 		}
@@ -320,9 +399,41 @@ func generateCTypeParemeters(method ComponentDefinitionMethod, w LanguageWriter,
 	return parameters, nil
 }
 
-func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeCDLLFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
-	w.Writeln("      self.lib.%s.restype = ctypes.c_int64", exportName)
+	w.Writeln("      self.lib.%s.restype = ctypes.c_int32", exportName)
+	parameters, err := getMethodCParams(method, NameSpace, ClassName, isGlobal)
+	if err != nil {
+		return err
+	}
+	w.Writeln("      self.lib.%s.argtypes = [%s]", exportName, parameters)
+	w.Writeln("      ")
+	return nil
+}
+
+func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+	linearMethodName := ""
+	if (isGlobal) {
+		linearMethodName = strings.ToLower(NameSpace + "_" + method.MethodName)
+	} else {
+		linearMethodName = strings.ToLower(NameSpace + "_" + ClassName + "_" + method.MethodName)
+	}
+	
+	params, err := getMethodCParams(method, NameSpace, ClassName, isGlobal)
+	if err != nil {
+		return err
+	}
+
+	w.Writeln("err = symbolLookupMethod(ctypes.c_char_p(str.encode(\"%s\")), methodAddress)", linearMethodName)
+	w.Writeln("if err != 0:")
+	w.Writeln("  raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))", NameSpace)
+	w.Writeln("methodType = ctypes.CFUNCTYPE(ctypes.c_int32, " + params + ")")
+	w.Writeln("self.lib.%s = methodType(int(methodAddress.value))", linearMethodName)
+	w.Writeln("")
+	return nil
+}
+
+func getMethodCParams(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool) (string, error) {
 	parameters := ""
 	if (!isGlobal) {
 		parameters = "ctypes.c_void_p"
@@ -331,7 +442,7 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 		param := method.Params[k]
 		cparams, err := generateCTypesParameter(param, ClassName, method.MethodName, NameSpace)
 		if (err != nil) {
-			return err
+			return "", err
 		}
 		for _, cparam := range cparams {
 			if (parameters != "") {
@@ -340,14 +451,20 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 			parameters = parameters + cparam.ParamType
 		}
 	}
-	w.Writeln("      self.lib.%s.argtypes = [%s]", exportName, parameters)
-	w.Writeln("      ")
-	return nil
+
+	return parameters, nil
 }
 
-func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter) error {
+func loadFunctionTableFromMethod(componentdefinition ComponentDefinition, w LanguageWriter) error {
+	w.Writeln("symbolLookupMethodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_char_p, ctypes.POINTER(ctypes.c_void_p))")
+	w.Writeln("symbolLookupMethod = symbolLookupMethodType(int(symbolLookupMethodAddress))")
+	w.Writeln("")
+	w.Writeln("methodAddress = ctypes.c_void_p()")
+	w.Writeln("")
+
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
-		err := writeFunctionTableMethod(componentdefinition.Global.Methods[j], w, componentdefinition.NameSpace, "Wrapper", true)
+		method := componentdefinition.Global.Methods[j]
+		err := writeFunctionTableMethod(method, w, componentdefinition.NameSpace, "Wrapper", true)
 		if err != nil {
 			return err
 		}
@@ -357,6 +474,27 @@ func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter
 		class := componentdefinition.Classes[i]
 		for j:=0; j<len(class.Methods); j++ {
 			err := writeFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter) error {
+	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
+		err := writeCDLLFunctionTableMethod(componentdefinition.Global.Methods[j], w, componentdefinition.NameSpace, "Wrapper", true)
+		if err != nil {
+			return err
+		}
+	}
+
+	for i:=0; i<len(componentdefinition.Classes); i++ {
+		class := componentdefinition.Classes[i]
+		for j:=0; j<len(class.Methods); j++ {
+			err := writeCDLLFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, false)
 			if err != nil {
 				return err
 			}
@@ -613,7 +751,7 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 	}
 
 	for i:=0; i<len(class.Methods); i++ {
-		err := writeMethod(class.Methods[i], w, NameSpace, class.ClassName, false)
+		err := writeMethod(class.Methods[i], w, NameSpace, class.ClassName, []string{}, false)
 		if (err != nil) {
 			return err
 		}
@@ -621,7 +759,7 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 	return nil
 }
 
-func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, implementationLines []string, isGlobal bool) error {
 	preCallLines := []string{}
 	checkCallLines := []string{}
 	postCallLines := []string{}
@@ -669,9 +807,16 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				newArgument := fmt.Sprintf("%sHandle", param.ParamName)
 				cArguments = cArguments + newArgument
 				cCheckArguments = cCheckArguments + newArgument
+
+				theWrapperReference := wrapperReference
+				subNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(subNameSpace) > 0 {
+					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
+					subNameSpace = subNameSpace + "."
+				}
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("%sObject = %s(%sHandle, %s)",
-					param.ParamName, param.ParamClass, param.ParamName, wrapperReference))
+					fmt.Sprintf("%sObject = %s%s(%sHandle, %s)",
+					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
 			case "string": {
@@ -814,14 +959,21 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 	
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
 	
-	w.Writeln ("  def %s(self%s):", method.MethodName, pythonInParams)
+	w.Writeln("  def %s(self%s):", method.MethodName, pythonInParams)
 	w.Writelns("    ", preCallLines)
 	if (doCheckCall) {
-		w.Writeln ("    %s.checkError(%s, %s.lib.%s(%s))", wrapperReference, selfReference, wrapperReference, exportName, cCheckArguments)
+		w.Writeln("    %s.checkError(%s, %s.lib.%s(%s))", wrapperReference, selfReference, wrapperReference, exportName, cCheckArguments)
 		w.Writelns("    ", checkCallLines)
 	}
 	w.Writeln("    %s.checkError(%s, %s.lib.%s(%s))", wrapperReference, selfReference, wrapperReference, exportName, cArguments)
 	w.Writelns("    ", postCallLines)
+	w.Writeln("    ")
+
+	if len(implementationLines) > 0 {
+		w.Writelns("    ", implementationLines)
+		w.Writeln("    ")
+	}
+
 	if len(retVals) > 0 {
 		w.Writeln("    return %s", retVals)
 	}
@@ -844,7 +996,7 @@ func buildDynamicPythonExample(componentdefinition ComponentDefinition, w Langua
 
 	w.Writeln("def main():")
 	w.Writeln("  libpath = '' # TODO add the location of the shared library binary here")
-	w.Writeln("  wrapper = %s.Wrapper(os.path.join(libpath, \"%s\"))", NameSpace, BaseName)
+	w.Writeln("  wrapper = %s.Wrapper(libraryName = os.path.join(libpath, \"%s\"))", NameSpace, BaseName)
 	w.Writeln("  ")
 	w.Writeln("  major, minor, micro = wrapper.%s()", componentdefinition.Global.VersionMethod)
 	w.Writeln("  print(\"%s version: {:d}.{:d}.{:d}\".format(major, minor, micro), end=\"\")", NameSpace)

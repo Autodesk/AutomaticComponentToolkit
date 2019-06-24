@@ -67,7 +67,7 @@ func (writer *LanguageWriter) ResetIndentationLevel () (error) {
 	return nil
 }
 
-// Writeln formats a string and writes it to a line. Pairs of leadin spaces will be replaced by the indent IndentString.
+// Writeln formats a string and writes it to a line. Pairs of leading spaces will be replaced by the indent IndentString.
 func (writer *LanguageWriter) Writeln (format string, a ...interface{}) (int, error) {	
 
 	leadingSpaces := 0;

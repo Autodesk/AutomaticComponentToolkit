@@ -1,0 +1,9 @@
+EXPORTS
+numbers_createvariable
+numbers_getversion
+numbers_getlasterror
+numbers_releaseinstance
+numbers_acquireinstance
+numbers_getsymbollookupmethod
+numbers_variable_getvalue
+numbers_variable_setvalue

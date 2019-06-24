@@ -14,28 +14,28 @@ unit libprimes_impl_factorizationcalculator;
 interface
 
 uses
-	libprimes_types,
-	libprimes_interfaces,
-	libprimes_exception,
-	libprimes_impl_calculator,
-	Classes,
-	sysutils;
+  libprimes_types,
+  libprimes_interfaces,
+  libprimes_exception,
+  libprimes_impl_calculator,
+  Classes,
+  sysutils;
 
 type
-	TLibPrimesFactorizationCalculator = class(TLibPrimesCalculator, ILibPrimesFactorizationCalculator)
-		private
+  TLibPrimesFactorizationCalculator = class(TLibPrimesCalculator, ILibPrimesFactorizationCalculator)
+    private
 
-		protected
+    protected
 
-		public
-			procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
-	end;
+    public
+      procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
+  end;
 
 implementation
 
 procedure TLibPrimesFactorizationCalculator.GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
 begin
-	raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 end.

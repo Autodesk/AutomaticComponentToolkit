@@ -42,16 +42,22 @@ import (
 	"strings"
 	"log"
 	"math"
+	"os"
+	"io/ioutil"
+	"path/filepath"
 )
 
 const (
 	eSpecialMethodNone = 0
-	eSpecialMethodRelease = 1
-	eSpecialMethodVersion = 2
-	eSpecialMethodJournal = 3
+	eSpecialMethodVersion = 1
+	eSpecialMethodRelease = 2
+	eSpecialMethodAcquire = 3
 	eSpecialMethodError = 4
-	eSpecialMethodPrerelease = 5
-	eSpecialMethodBuildinfo = 6
+	eSpecialMethodInjection = 5
+	eSpecialMethodSymbolLookup = 6
+	eSpecialMethodJournal = 7
+	eSpecialMethodPrerelease = 8
+	eSpecialMethodBuildinfo = 9
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -112,6 +118,9 @@ type ComponentDefinitionGlobal struct {
 	BaseClassName string `xml:"baseclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
+	AcquireMethod string `xml:"acquiremethod,attr"`
+	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
+	InjectionMethod string `xml:"injectionmethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
 	PrereleaseMethod string `xml:"prereleasemethod,attr"`
@@ -170,6 +179,14 @@ type ComponentDefinitionErrors struct {
 	Errors []ComponentDefinitionError `xml:"error"`
 }
 
+// ComponentDefinitionImportComponent definition of errors in the component's API
+type ComponentDefinitionImportComponent struct {
+	ComponentDiffableElement
+	XMLName xml.Name `xml:"importcomponent"`
+	URI string `xml:"uri,attr"`
+	Namespace string `xml:"namespace,attr"`
+}
+
 // ComponentDefinitionMember definition of a single struct provided by the component's API
 type ComponentDefinitionMember struct {
 	ComponentDiffableElement
@@ -222,6 +239,10 @@ type ComponentDefinition struct {
 	Structs []ComponentDefinitionStruct `xml:"struct"`
 	Global ComponentDefinitionGlobal `xml:"global"`
 	Errors ComponentDefinitionErrors `xml:"errors"`
+	ImportComponents []ComponentDefinitionImportComponent `xml:"importcomponent"`
+
+	ImportedComponentDefinitions map[string]ComponentDefinition
+	NameMapsLookup NameMaps
 }
 
 // Normalize adds default values, changes deprecated constants to their later versions
@@ -230,6 +251,10 @@ func (component *ComponentDefinition) Normalize() {
 		component.Classes[i].Normalize()
 	}
 	component.Global.Normalize()
+	
+	for _, importedComponent := range component.ImportedComponentDefinitions { 
+		importedComponent.Normalize()
+	}
 }
 
 // Normalize adds default values, changes deprecated constants to their later versions
@@ -260,7 +285,58 @@ func (param *ComponentDefinitionParam) Normalize() {
 	}
 }
 
-func getIndentationString (str string) string {
+// ReadComponentDefinition reads a ComponentDefinition from a file
+func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
+	var component ComponentDefinition
+	component.ImportedComponentDefinitions = make(map[string]ComponentDefinition, 0)
+	component.NameMapsLookup = NameMaps{
+		enumMap : make(map[string]bool, 0),
+		structMap : make(map[string]bool, 0),
+		classMap : make(map[string]bool, 0),
+		functionTypeMap : make(map[string]bool, 0),
+	}
+
+	absFileName, err := filepath.Abs(FileName)
+	if err != nil {
+		return component, err
+	}
+	directory := filepath.Dir(absFileName)
+
+	file, err := os.Open(FileName)
+	if err != nil {
+		return component, err
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return component, err
+	}
+
+	component.ACTVersion = ACTVersion
+	err = xml.Unmarshal(bytes, &component)
+	if err != nil {
+		return component, err
+	}
+
+	for i := 0; i < len(component.ImportComponents); i++ {
+		importComponent := component.ImportComponents[i]
+		subFileName := filepath.Join(directory, importComponent.URI)
+
+		subComponent, err := ReadComponentDefinition(subFileName, ACTVersion)
+		if err != nil {
+			return component, err
+		}
+		if (subComponent.NameSpace != importComponent.Namespace) {
+			return component, fmt.Errorf("Namespace of imported component \"%s\" does not match declared namespace \"%s\"", importComponent.Namespace, subComponent.NameSpace);
+		}
+		component.ImportedComponentDefinitions[importComponent.Namespace] = subComponent
+	}
+	component.Normalize()
+
+	return component, nil
+}
+
+func getIndentationString(str string) string {
 	if str == "tabs" {
 		return "\t";
 	}
@@ -283,7 +359,8 @@ func getIndentationString (str string) string {
 	return indentString;
 }
 
-func checkImplementations(implementations[] ComponentDefinitionImplementation) error {
+func (component *ComponentDefinition) checkImplementations() error {
+	implementations := component.ImplementationList.Implementations
 	for i := 0; i < len(implementations); i++ {
 		implementation := implementations[i]
 
@@ -301,10 +378,11 @@ func checkImplementations(implementations[] ComponentDefinitionImplementation) e
 	return nil
 }
 
-func checkErrors(errors ComponentDefinitionErrors) error {
+func (component *ComponentDefinition) checkErrors() error {
 	errorNameList := make(map[string]bool, 0);
 	errorCodeList := make(map[int]bool, 0);
 
+	errors := component.Errors
 	for i := 0; i < len(errors.Errors); i++ {
 		merror := errors.Errors[i];
 		if !nameIsValidIdentifier(merror.Name) {
@@ -340,7 +418,7 @@ func errorDescriptionIsValid (name string) bool {
 	var IsValidIdentifier = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_+\\-:,.=!/ ]*$").MatchString
 
 	if (name != "") {
-		return IsValidIdentifier (name);
+		return IsValidIdentifier(name);
 	}
 	
 	return false;
@@ -370,75 +448,81 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 	return nil
 }
 
-func checkEnums(enums[] ComponentDefinitionEnum) (map[string]bool, error) {
+func (component *ComponentDefinition) checkEnums() (error) {
+	enums := component.Enums
+	var enumNameList = &component.NameMapsLookup.enumMap
 	enumLowerNameList := make(map[string]bool, 0);
-	enumNameList := make(map[string]bool, 0);
 
 	for i := 0; i < len(enums); i++ {
 		enum := enums[i];
 		if !nameIsValidIdentifier(enum.Name) {
-			return nil, fmt.Errorf( "invalid enum name \"%s\"", enum.Name);
+			return fmt.Errorf( "invalid enum name \"%s\"", enum.Name);
 		}
 		
 		if (enumLowerNameList[strings.ToLower(enum.Name)]) {
-			return nil, fmt.Errorf("duplicate enum name \"%s\"", enum.Name);
+			return fmt.Errorf("duplicate enum name \"%s\"", enum.Name);
 		}
 
 		err := checkOptions(enum.Options)
 		if err != nil {
-			return nil, fmt.Errorf(err.Error() + " in enum = \"%s\"", enum.Name);
+			return fmt.Errorf(err.Error() + " in enum = \"%s\"", enum.Name);
 		}
 
 		enumLowerNameList[strings.ToLower(enum.Name)] = true
-		enumNameList[enum.Name] = true
+		(*enumNameList)[enum.Name] = true
 	}
 
-	return enumNameList, nil
+	return nil
 }
 	
-func checkStructs(structs[] ComponentDefinitionStruct) (map[string]bool, error) {
+func (component *ComponentDefinition) checkStructs() (error) {
+	structs := component.Structs
+	var structNameList = &component.NameMapsLookup.structMap
 	structLowerNameList := make(map[string]bool, 0)
-	structNameList := make(map[string]bool, 0)
+	
 
 	for i := 0; i < len(structs); i++ {
 		mstruct := structs[i];
 		if !nameIsValidIdentifier(mstruct.Name) {
-			return nil, fmt.Errorf ("invalid struct name \"%s\"", mstruct.Name)
+			return fmt.Errorf ("invalid struct name \"%s\"", mstruct.Name)
 		}
 		if structLowerNameList[mstruct.Name] == true {
-			return nil, fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
+			return fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
 		}
-		structNameList[mstruct.Name] = true
+		(*structNameList)[mstruct.Name] = true
 		structLowerNameList[strings.ToLower(mstruct.Name)] = true
 
 		for j := 0; j < len(mstruct.Members); j++ {
 			member := mstruct.Members[j]
 			if !nameIsValidIdentifier(member.Name) {
-				return nil, fmt.Errorf ("invalid member name \"%s\"", member.Name);
+				return fmt.Errorf ("invalid member name \"%s\"", member.Name);
 			}
 		}
 	}
-	return structNameList, nil
+	return nil
 }
 
-func checkClasses(classes[] ComponentDefinitionClass, baseClassName string) (map[string]bool, error) {
+func (component *ComponentDefinition) checkClasses() (error) {
+	classes := component.Classes
+	baseClassName := component.Global.BaseClassName
+	var classNameList = &component.NameMapsLookup.classMap
+
 	classLowerNameList := make(map[string]bool, 0)
-	classNameList := make(map[string]bool, 0)
 	classNameIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
 		if !nameIsValidIdentifier(class.ClassName) {
-			return nil, fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
+			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
 		if classLowerNameList[strings.ToLower(class.ClassName)] == true {
-			return nil, fmt.Errorf ("duplicate class name \"%s\"", class.ClassName);
+			return fmt.Errorf ("duplicate class name \"%s\"", class.ClassName);
 		}
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
-			return nil, fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
+			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
-		classNameList[class.ClassName] = true
+		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
 	}
 
@@ -451,154 +535,226 @@ func checkClasses(classes[] ComponentDefinitionClass, baseClassName string) (map
 		}
 		if (len(parentClass) > 0) {
 			if !nameIsValidIdentifier(parentClass) {
-				return nil, fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
+				return fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
 			}
-			if (classNameList[parentClass] == false) {
-				return nil, fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
+			if ( (*classNameList)[parentClass] == false) {
+				return fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
 			}
 			if (classNameIndex[parentClass] >= i) {
-				return nil, fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+				return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
 			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
-				return nil, fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
+				return fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
 			}
 		}
 	}
-
-	return classNameList, nil
-}
-
-func checkFunctionTypes(functions[] ComponentDefinitionFunctionType) (map[string]bool, error) {
-	functionLowerNameList := make(map[string]bool, 0)
-	functionNameList := make(map[string]bool, 0)
-	for i := 0; i < len(functions); i++ {
-		function := functions[i];
-		if !nameIsValidIdentifier(function.FunctionName) {
-			return nil, fmt.Errorf ("invalid functiontype name \"%s\"", function.FunctionName);
-		}
-		if functionLowerNameList[strings.ToLower(function.FunctionName)] == true {
-			return nil, fmt.Errorf ("duplicate functiontype name \"%s\"", function.FunctionName);
-		}
-		if len(function.FunctionDescription) > 0 && !descriptionIsValid(function.FunctionDescription) {
-			return nil, fmt.Errorf ("invalid function description \"%s\" in functiontype \"%s\"", function.FunctionDescription, function.FunctionName);
-		}
-		
-		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
-		functionNameList[function.FunctionName] = true
-	}
-	return functionNameList, nil
-}
-
-func checkDuplicateNames(enumList map[string]bool, structList map[string]bool, classList map[string]bool) (error) {
-	allLowerList := make(map[string]string, 0)
-	for k := range structList {
-		if allLowerList[strings.ToLower(k)] == "struct" {
-			return fmt.Errorf ("duplicate struct name \"%s\"", k)
-		}
-		allLowerList[strings.ToLower(k)] = "struct"
-	}
-	
-	for k := range classList {
-		if allLowerList[strings.ToLower(k)] == "struct" {
-			return fmt.Errorf ("Class with name \"%s\" conflicts with struct of same name", k)
-		}
-		if allLowerList[strings.ToLower(k)] == "class" {
-			return fmt.Errorf ("duplicate class name \"%s\"", k)
-		}
-		allLowerList[strings.ToLower(k)] = "class"
-	}
-	
-	for k := range enumList {
-		if allLowerList[strings.ToLower(k)] == "struct" {
-			return fmt.Errorf ("Class with name \"%s\" conflicts with struct of same name", k)
-		}
-		if allLowerList[strings.ToLower(k)] == "class" {
-			return fmt.Errorf ("enum with name \"%s\" conflicts with class of same name", k)
-		}
-		if allLowerList[strings.ToLower(k)] == "enum" {
-			return fmt.Errorf ("duplicate enum name \"%s\"", k)
-		}
-		allLowerList[strings.ToLower(k)] = "enum"
-    }
 
 	return nil
 }
 
-func checkClassMethods(classes[] ComponentDefinitionClass, enumList map[string]bool, structList map[string]bool, classList map[string]bool, functionTypeList map[string]bool,) (error) {
+func (component *ComponentDefinition) checkFunctionTypes() ( error) {
+	functions := component.Functions
+	var functionNameList = &component.NameMapsLookup.functionTypeMap
+
+	functionLowerNameList := make(map[string]bool, 0)
+	for i := 0; i < len(functions); i++ {
+		function := functions[i];
+		if !nameIsValidIdentifier(function.FunctionName) {
+			return fmt.Errorf ("invalid functiontype name \"%s\"", function.FunctionName);
+		}
+		if functionLowerNameList[strings.ToLower(function.FunctionName)] == true {
+			return fmt.Errorf ("duplicate functiontype name \"%s\"", function.FunctionName);
+		}
+		if len(function.FunctionDescription) > 0 && !descriptionIsValid(function.FunctionDescription) {
+			return fmt.Errorf ("invalid function description \"%s\" in functiontype \"%s\"", function.FunctionDescription, function.FunctionName);
+		}
+		
+		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
+		(*functionNameList)[function.FunctionName] = true
+	}
+	return nil
+}
+
+func checkDuplicateNames(nameMaps NameMaps) (error) {
+	enumList := nameMaps.enumMap
+	structList := nameMaps.structMap
+	classList := nameMaps.classMap
+	functionTypeList := nameMaps.functionTypeMap
+
+	allLowerList := make(map[string]string, 0)
+	
+	for k := range structList {
+		if val, ok := allLowerList[strings.ToLower(k)]; ok {
+			if (val == "struct") {
+				return fmt.Errorf ("duplicate struct name \"%s\"", k)
+			}
+			return fmt.Errorf("struct with name \"%s\" conflicts with %s of same name", k, val)
+		}
+		allLowerList[strings.ToLower(k)] = "struct"
+	}
+
+	for k := range enumList {
+		if val, ok := allLowerList[strings.ToLower(k)]; ok {
+			if (val == "enum") {
+				return fmt.Errorf ("duplicate class name \"%s\"", k)
+			}
+			return fmt.Errorf("enum with name \"%s\" conflicts with %s of same name", k, val)
+		}
+		allLowerList[strings.ToLower(k)] = "enum"
+	}
+
+	for k := range classList {
+		if val, ok := allLowerList[strings.ToLower(k)]; ok {
+			if (val == "class") {
+				return fmt.Errorf ("duplicate class name \"%s\"", k)
+			}
+			return fmt.Errorf("class with name \"%s\" conflicts with %s of same name", k, val)
+		}
+		allLowerList[strings.ToLower(k)] = "class"
+	}
+
+	for k := range functionTypeList {
+		if val, ok := allLowerList[strings.ToLower(k)]; ok {
+			if (val == "functiontype") {
+				return fmt.Errorf ("duplicate functiontype name \"%s\"", k)
+			}
+			return fmt.Errorf("functiontype with name \"%s\" conflicts with %s of same name", k, val)
+		}
+		allLowerList[strings.ToLower(k)] = "functiontype"
+	}
+	return nil
+}
+
+func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMethod, className string) (error) {
+	if !nameIsValidIdentifier(method.MethodName) {
+		return fmt.Errorf ("invalid name for method \"%s.%s\"", className, method.MethodName);
+	}
+	if !descriptionIsValid(method.MethodDescription) {
+		return fmt.Errorf ("invalid description for method \"%s.%s\"", className, method.MethodName);
+	}
+
+	paramNameList := make(map[string]bool, 0)
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k]
+		if !nameIsValidIdentifier(param.ParamName) {
+			return fmt.Errorf("invalid param name \"%s\" in method \"%s.%s\"", param.ParamName, className, method.MethodName);
+		}
+		if !descriptionIsValid(method.MethodDescription) {
+			return fmt.Errorf("invalid description for parameter \"%s.%s(... %s ...)\"", className, method.MethodName, param.ParamName);
+		}
+		if (paramNameList[strings.ToLower(param.ParamName)]) {
+			return fmt.Errorf("duplicate name \"%s\" for parameter in method \"%s.%s\"", param.ParamName, className, method.MethodName)
+		}
+		paramNameList[strings.ToLower(param.ParamName)] = true
+
+		if (isScalarType(param.ParamType) || param.ParamType == "string") {
+			// okay
+		} else if (param.ParamType == "basicarray") {
+			if !isScalarType(param.ParamClass) {
+				return fmt.Errorf("parameter \"%s\" for method \"%s.%s\" is an unknown basic type \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass);
+			}
+		} else {
+			currentNameMaps := component.NameMapsLookup
+
+			namespace, paramClassName, err := decomposeParamClassName(param.ParamClass)
+			if err != nil {
+				return err
+			}
+			if len(namespace)>0 {
+				if subComponent, ok := component.ImportedComponentDefinitions[namespace]; ok {
+					currentNameMaps = subComponent.NameMapsLookup
+				} else {
+					return fmt.Errorf("parameter \"%s\" of method \"%s.%s\" is of unknown class \"%s\": unknown namespace \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass, namespace)
+				}
+			}
+
+			if (param.ParamType == "class") {
+				if (currentNameMaps.classMap[paramClassName] != true) {
+					return fmt.Errorf("parameter \"%s\" of method \"%s.%s\" is of unknown class \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass)
+				}
+			} else if (param.ParamType == "enum") || (param.ParamType == "enumarray") {
+				if (currentNameMaps.enumMap[paramClassName] != true) {
+					return fmt.Errorf("parameter \"%s\" for method \"%s.%s\" is an unknown enum \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass)
+				}
+			} else if (param.ParamType == "structarray") || (param.ParamType == "struct") {
+				if (currentNameMaps.structMap[paramClassName] != true) {
+					return fmt.Errorf("parameter \"%s\" for method \"%s.%s\" is an unknown struct \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass)
+				}
+			} else if (param.ParamType == "functiontype") {
+				if (currentNameMaps.functionTypeMap[paramClassName] != true) {
+					return fmt.Errorf("parameter \"%s\" for method \"%s.%s\" is an unknown function type \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass)
+				}
+			} else {
+				return fmt.Errorf("parameter \"%s\" of method \"%s.%s\" is of unknown type \"%s\"", param.ParamName, className, method.MethodName, param.ParamType)
+			}
+		}
+
+	}
+
+
+	return nil
+}
+
+
+func (component *ComponentDefinition) checkClassMethods() (error) {
+	classes := component.Classes
+
 	for i := 0; i < len(classes); i++ {
-		class := classes[i];				
+		class := classes[i]
+
 		methodNameList := make(map[string]bool, 0)
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			if !nameIsValidIdentifier(method.MethodName) {
-				return fmt.Errorf ("invalid name for method \"%s.%s\"", class.ClassName, method.MethodName);
-			}
-			if !descriptionIsValid(method.MethodDescription) {
-				return fmt.Errorf ("invalid description for method \"%s.%s\"", class.ClassName, method.MethodName);
-			}
+
 			if (methodNameList[strings.ToLower(method.MethodName)]) {
 				return fmt.Errorf ("duplicate name for method \"%s.%s\"", class.ClassName, method.MethodName)
 			}
 			methodNameList[strings.ToLower(method.MethodName)] = true
 			
-			paramNameList := make(map[string]bool, 0)
-			for k := 0; k < len(method.Params); k++ {
-				param := method.Params[k]
-				if !nameIsValidIdentifier(param.ParamName) {
-					return fmt.Errorf ("invalid param name \"%s\" in method \"%s.%s\"", param.ParamName, class.ClassName, method.MethodName);
-				}
-				if !descriptionIsValid(method.MethodDescription) {
-					return fmt.Errorf ("invalid description for parameter \"%s.%s(... %s ...)\"", class.ClassName, method.MethodName, param.ParamName);
-				}
-				if (paramNameList[strings.ToLower(param.ParamName)]) {
-					return fmt.Errorf ("duplicate name \"%s\" for parameter in method \"%s.%s\"", param.ParamName, class.ClassName, method.MethodName)
-				}
-				paramNameList[strings.ToLower(param.ParamName)] = true
-
-				if (isScalarType(param.ParamType) || param.ParamType == "string") {
-					// okay
-				} else if (param.ParamType == "class") {
-					if (classList[param.ParamClass] != true) {
-						return fmt.Errorf ("parameter \"%s\" of method \"%s.%s\" is of unknown class \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
-					}
-				} else if (param.ParamType == "enum") || (param.ParamType == "enumarray") {
-					if (enumList[param.ParamClass] != true) {
-						return fmt.Errorf ("parameter \"%s\" for method \"%s.%s\" is an unknown enum \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
-					}
-				} else if (param.ParamType == "structarray") || (param.ParamType == "struct") {
-					if (structList[param.ParamClass] != true) {
-						return fmt.Errorf ("parameter \"%s\" for method \"%s.%s\" is an unknown struct \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
-					}
-				} else if (param.ParamType == "basicarray") {
-					if !isScalarType(param.ParamClass) {
-						return fmt.Errorf ("parameter \"%s\" for method \"%s.%s\" is an unknown basic type \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
-					}
-				} else if (param.ParamType == "functiontype") {
-					if (functionTypeList[param.ParamClass] != true) {
-						return fmt.Errorf ("parameter \"%s\" for method \"%s.%s\" is an unknown function type \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamClass);
-					}
-				} else {
-					return fmt.Errorf ("parameter \"%s\" of method \"%s.%s\" is of unknown type \"%s\"", param.ParamName, class.ClassName, method.MethodName, param.ParamType);
-				}
-
+			err := component.checkMethod(method, class.ClassName)
+			if err != nil {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
-func nameIsValidIdentifier (name string) bool {
+// decomposeParamClassName decomposes a classname into a namespace and the actual classname within this namespace
+func decomposeParamClassName(paramClassName string) (string, string, error) {
+	if len(paramClassName) == 0 {
+		return "", paramClassName, nil
+	}
+
+	namespaceRegexp := "[A-Z][a-zA-Z0-9_]{0,63}"
+	var IsValidParamClassName = regexp.MustCompile(fmt.Sprintf("^((%s):){0,1}([a-zA-Z0-9_]{0,64})$", namespaceRegexp) )
+	
+	if !(IsValidParamClassName.MatchString(paramClassName)) {
+		return "","", fmt.Errorf("param class name \"%s\" is ill formatted", paramClassName);
+	}
+	slices := IsValidParamClassName.FindStringSubmatch(paramClassName)
+	if (len(slices) != 4) {
+		return "","", fmt.Errorf("param class name \"%s\" is ill formatted", paramClassName);
+	}
+
+	namespace := slices[2]
+	className := slices[3]
+	
+	return namespace, className, nil
+}
+
+func nameIsValidIdentifier(name string) bool {
 	var IsValidIdentifier = regexp.MustCompile("^[A-Z][a-zA-Z0-9_]{0,63}$").MatchString
 	if (name != "") {
-		return IsValidIdentifier (name);
+		return IsValidIdentifier(name);
 	}
 	return false;
 }
 
-func descriptionIsValid (description string) bool {
-	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; ]*$").MatchString
+func descriptionIsValid(description string) bool {
+	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; |]*$").MatchString
 	if (description != "") {
-		return IsValidMethodDescription (description);
+		return IsValidMethodDescription(description);
 	}
 	return false;
 }
@@ -676,15 +832,15 @@ func decomposeVersionString(version string) (bool, [3]int, [2]string) {
 	return true, vers, data;
 }
 
-func nameSpaceIsValid (namespace string) bool {
+func nameSpaceIsValid(namespace string) bool {
 	var IsValidNamespace = regexp.MustCompile("^[A-Z][a-zA-Z0-9_]{0,63}$").MatchString
 	if (namespace != "") {
-		return IsValidNamespace (namespace);
+		return IsValidNamespace(namespace);
 	}
 	return false;
 }
 
-func stubIdentifierIsValid (stubIdentifier string) bool {
+func stubIdentifierIsValid(stubIdentifier string) bool {
 	var IsValidStubIdentifier = regexp.MustCompile("[a-zA-Z0-9_]{0,63}$").MatchString
 	if (stubIdentifier != "") {
 		return IsValidStubIdentifier (stubIdentifier);
@@ -692,7 +848,7 @@ func stubIdentifierIsValid (stubIdentifier string) bool {
 	return false;
 }
 
-func libraryNameIsValid (libraryname string) bool {
+func libraryNameIsValid(libraryname string) bool {
 	var IsLibraryNameValid = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_+\\-:,.=!/ ]*$").MatchString
 	if (libraryname != "") {
 		return IsLibraryNameValid (libraryname);
@@ -700,7 +856,7 @@ func libraryNameIsValid (libraryname string) bool {
 	return false;
 }
 
-func baseNameIsValid (baseName string) bool {
+func baseNameIsValid(baseName string) bool {
 	var IsBaseNameValid = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\-.]*$").MatchString
 	if (baseName != "") {
 		return IsBaseNameValid (baseName);
@@ -708,7 +864,7 @@ func baseNameIsValid (baseName string) bool {
 	return false;
 }
 
-func checkComponentHeader(component ComponentDefinition) (error) {
+func (component *ComponentDefinition) checkComponentHeader() (error) {
 	versionIsValid, _, _ := decomposeVersionString(component.Version)
 	if !versionIsValid {
 		return fmt.Errorf("Version \"%s\" is invalid", component.Version)
@@ -734,57 +890,88 @@ func checkComponentHeader(component ComponentDefinition) (error) {
 	return nil
 }
 
+// NameMaps contains maps of names of elements in a component
+type NameMaps struct {
+	enumMap map[string]bool
+	structMap map[string]bool
+	classMap map[string]bool
+	functionTypeMap map[string]bool
+}
+
+
 // CheckComponentDefinition checks a component and returns an error, if it fails
-func CheckComponentDefinition (component ComponentDefinition) (error) {
-	err := checkComponentHeader(component)
+func (component *ComponentDefinition) CheckComponentDefinition() (error) {
+	err := component.checkComponentHeader()
 	if err != nil {
 		return err
 	}
 
-	err = checkErrors(component.Errors)
+	for _, subComponent := range component.ImportedComponentDefinitions {
+		err := subComponent.CheckComponentDefinition()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = component.checkErrors()
 	if err != nil {
 		return err
 	}
 
-	err = checkImplementations(component.ImplementationList.Implementations)
+	err = component.checkImplementations()
 	if err != nil {
 		return err
 	}
 
-	var enumList = make(map[string]bool, 0)
-	enumList, err = checkEnums(component.Enums)
+	err = component.checkEnums()
 	if err != nil {
 		return err
 	}
 	
-	var structList = make(map[string]bool, 0)
-	structList, err = checkStructs(component.Structs)
+	err = component.checkStructs()
 	if err != nil {
 		return err
 	}
 
-	var classList = make(map[string]bool, 0)
-	classList, err = checkClasses(component.Classes, component.Global.BaseClassName)
+	err = component.checkClasses()
 	if err != nil {
 		return err
 	}
 
-	var functionTypeList = make(map[string]bool, 0)
-	functionTypeList, err = checkFunctionTypes(component.Functions)
+	err = component.checkFunctionTypes()
 	if err != nil {
 		return err
 	}
 
-	err = checkDuplicateNames(enumList, structList, classList)
+	err = checkDuplicateNames(component.NameMapsLookup)
 	if err != nil {
 		return err
 	}
 
-	err = checkClassMethods(component.Classes, enumList, structList, classList, functionTypeList)
+	err = component.checkClassMethods()
 	if err != nil {
 		return err
 	}
 
+	globalMethodNameList := make(map[string]bool, 0)
+	for i := 0; i < len(component.Global.Methods); i++ {
+		method := component.Global.Methods[i]
+
+		if (globalMethodNameList[strings.ToLower(method.MethodName)]) {
+			return fmt.Errorf ("duplicate name for method \"%s.%s\"", "global", method.MethodName)
+		}
+		globalMethodNameList[strings.ToLower(method.MethodName)] = true
+
+		_, err := CheckHeaderSpecialFunction(method, component.Global)
+		if err != nil {
+			return err
+		}
+
+		err = component.checkMethod(method, "global")
+		if err != nil {
+			return err
+		}
+	}
 
 	if (component.Global.BaseClassName == "") {
 		return errors.New ("No base class name specified");
@@ -811,6 +998,10 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 		return eSpecialMethodNone, errors.New ("No release method specified");
 	}
 
+	if (global.AcquireMethod == "") {
+		return eSpecialMethodNone, errors.New ("No acquire method specified");
+	}
+
 	if (global.VersionMethod == "") {
 		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
@@ -827,8 +1018,16 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Version method");
 	}
 
+	if (global.ReleaseMethod == global.AcquireMethod) {
+		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Acquire method");
+	}
+
 	if (global.JournalMethod == global.VersionMethod) {
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
+	}
+
+	if (global.JournalMethod == global.AcquireMethod) {
+		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Acquire method");
 	}
 
 	if (method.MethodName == global.ReleaseMethod) {
@@ -841,6 +1040,41 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 		}
 
 		return eSpecialMethodRelease, nil;
+	}
+
+	if (method.MethodName == global.AcquireMethod) {
+		if (len (method.Params) != 1) {
+			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
+		}
+		
+		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
+			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
+		}
+
+		return eSpecialMethodAcquire, nil;
+	}
+
+	if (method.MethodName == global.SymbolLookupMethod) {
+		if (len (method.Params) != 1) {
+			return eSpecialMethodNone, errors.New ("SymbolLookup method does not match the expected function template");
+		}
+		if (method.Params[0].ParamType != "pointer") || (method.Params[0].ParamPass != "return") {
+			return eSpecialMethodNone, errors.New ("SymbolLookup method does not match the expected function template");
+		}
+		
+		return eSpecialMethodSymbolLookup, nil
+	}
+
+	if (method.MethodName == global.InjectionMethod) {
+		if (len (method.Params) != 2) {
+			return eSpecialMethodNone, errors.New ("Injection method does not match the expected function template");
+		}
+		if (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "in") ||
+			(method.Params[1].ParamType != "pointer") || (method.Params[1].ParamPass != "in") {
+			return eSpecialMethodNone, errors.New ("Injection method does not match the expected function template");
+		}
+		
+		return eSpecialMethodInjection, nil
 	}
 
 	if (method.MethodName == global.JournalMethod) {
@@ -914,6 +1148,8 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 		return eSpecialMethodBuildinfo, nil;
 	}
 
+	
+
 	return eSpecialMethodNone, nil;
 }
 
@@ -943,6 +1179,45 @@ func RegisterErrorMessageMethod() (ComponentDefinitionMethod) {
 func ClearErrorMessageMethod() (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `	<method name="ClearErrorMessages" description = "Clears all registered messages of this class instance">
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// IncRefCountMethod returns the xml definition of the IncRefCount-method
+func IncRefCountMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="IncRefCount" description = "Increases the reference count of a class instance">
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// DecRefCountMethod returns the xml definition of the DecRefCount-method
+func DecRefCountMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="DecRefCount" description = "Decreases the reference count of a class instance and free releases it, if the last reference has been removed">
+	<param name="HasBeenReleased" type="bool" pass="return" description="Has the object been released" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// ReleaseBaseClassInterfaceMethod returns the xml definition of a method that should decrease the reference count of a BaseClass interface.
+func ReleaseBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="ReleaseBaseClassInterface" description = "Releases ownership of a base class interface. Deletes the reference, if necessary.">
+		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to release" />
+	</method>`
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+// AcquireBaseClassInterfaceMethod returns the xml definition of a method that should increase the reference count of a BaseClass interface.
+func AcquireBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	source := `<method name="AcquireBaseClassInterface" description = "Acquires shared ownership of a base class interface.">
+		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to acquire" />
 	</method>`
 	xml.Unmarshal([]byte(source), &method)
 	return method
