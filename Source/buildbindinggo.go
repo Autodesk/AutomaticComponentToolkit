@@ -295,7 +295,7 @@ func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWr
 	implw.Writeln("func (handle *%sImplementationHandleStruct) Close() (error) {", NameSpace)
 	implw.Writeln("  if (handle.DLLhandle != 0) {")
 	implw.Writeln("    if (handle.Implementation == nil) {")
-	implw.Writeln("      return errors.New (\"Uninitialized DLL Implementation Handle\")")
+	implw.Writeln("      return errors.New(\"Uninitialized DLL Implementation Handle\")")
 	implw.Writeln("    }")
 	implw.Writeln("    ")
 	implw.Writeln("    dllhandle := handle.DLLhandle")
@@ -312,7 +312,7 @@ func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWr
 	implw.Writeln("}")
 	implw.Writeln("")
 	implw.Writeln("func (handle *%sImplementationHandleStruct) GetDLLOutHandle() (uintptr) {", NameSpace)
-	implw.Writeln("  return uintptr (unsafe.Pointer (&handle.DLLhandle));")
+	implw.Writeln("  return uintptr(unsafe.Pointer(&handle.DLLhandle));")
 	implw.Writeln("}")
 	implw.Writeln("")
 	implw.Writeln("func (handle *%sImplementationHandleStruct) GetWrapper() (*%sImplementation) {", NameSpace, NameSpace)
@@ -347,7 +347,7 @@ func buildGoHelperFunctions(implw LanguageWriter) {
 	}
 
 	implw.Writeln("func StringInValue (value string) uintptr {")
-	implw.Writeln("  bytePtr, err := syscall.BytePtrFromString (value)")
+	implw.Writeln("  bytePtr, err := syscall.BytePtrFromString(value)")
 	implw.Writeln("  if err != nil {")
 	implw.Writeln("    return 0")
 	implw.Writeln("  }")
@@ -401,7 +401,7 @@ func buildGoInitialize(component ComponentDefinition, implw LanguageWriter) {
 			functionName := fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 			implw.Writeln("  implementation.%s_%s_%s, err = syscall.GetProcAddress(dllHandle, \"%s\")", NameSpace, strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), functionName)
 			implw.Writeln("  if (err != nil) {")
-			implw.Writeln("    return errors.New (\"Could not get function %s: \" + err.Error())", functionName)
+			implw.Writeln("    return errors.New(\"Could not get function %s: \" + err.Error())", functionName)
 			implw.Writeln("  }")
 			implw.Writeln("  ")
 		}
@@ -413,7 +413,7 @@ func buildGoInitialize(component ComponentDefinition, implw LanguageWriter) {
 		functionName := fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		implw.Writeln("  implementation.%s_%s, err = syscall.GetProcAddress(dllHandle, \"%s\")", NameSpace, strings.ToLower(method.MethodName), functionName)
 		implw.Writeln("  if (err != nil) {")
-		implw.Writeln("    return errors.New (\"Could not get function %s: \" + err.Error())", functionName)
+		implw.Writeln("    return errors.New(\"Could not get function %s: \" + err.Error())", functionName)
 		implw.Writeln("  }")
 		implw.Writeln("  ")
 	}
@@ -430,29 +430,29 @@ func buildGoCallFunction(component ComponentDefinition, implw LanguageWriter) {
 	implw.Writeln("func (implementation *%sImplementation) CallFunction(funcptr uintptr, parameters ... uintptr) (error) {", NameSpace)
 	implw.Writeln("  var ret uintptr;")
 	implw.Writeln("  if (!implementation.Initialized) {")
-	implw.Writeln("    return errors.New (\"%s Implementation has not been initialized!\")", NameSpace)
+	implw.Writeln("    return errors.New(\"%s Implementation has not been initialized!\")", NameSpace)
 	implw.Writeln("  }")
 	implw.Writeln("  ")
 	implw.Writeln("  switch len(parameters) { ")
-	implw.Writeln("    case 0: ret, _, _ = syscall.Syscall (funcptr, 0, 0, 0, 0)")
-	implw.Writeln("    case 1: ret, _, _ = syscall.Syscall (funcptr, 1, uintptr (parameters[0]), 0, 0)")
-	implw.Writeln("    case 2: ret, _, _ = syscall.Syscall (funcptr, 2, uintptr (parameters[0]), uintptr (parameters[1]), 0)")
-	implw.Writeln("    case 3: ret, _, _ = syscall.Syscall (funcptr, 3, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]))")
-	implw.Writeln("    case 4: ret, _, _ = syscall.Syscall6 (funcptr, 4, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), 0, 0)")
-	implw.Writeln("    case 5: ret, _, _ = syscall.Syscall6 (funcptr, 5, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), 0)")
-	implw.Writeln("    case 6: ret, _, _ = syscall.Syscall6 (funcptr, 6, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]))")
-	implw.Writeln("    case 7: ret, _, _ = syscall.Syscall9 (funcptr, 7, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), 0, 0)")
-	implw.Writeln("    case 8: ret, _, _ = syscall.Syscall9 (funcptr, 8, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), uintptr (parameters[7]), 0)")
-	implw.Writeln("    case 9: ret, _, _ = syscall.Syscall9 (funcptr, 9, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), uintptr (parameters[7]), uintptr (parameters[8]))")
-	implw.Writeln("    case 10: ret, _, _ = syscall.Syscall12 (funcptr, 10, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), uintptr (parameters[7]), uintptr (parameters[8]), uintptr (parameters[9]), 0, 0)")
-	implw.Writeln("    case 11: ret, _, _ = syscall.Syscall12 (funcptr, 11, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), uintptr (parameters[7]), uintptr (parameters[8]), uintptr (parameters[9]), uintptr (parameters[10]), 0)")
-	implw.Writeln("    case 12: ret, _, _ = syscall.Syscall12 (funcptr, 12, uintptr (parameters[0]), uintptr (parameters[1]), uintptr (parameters[2]), uintptr (parameters[3]), uintptr (parameters[4]), uintptr (parameters[5]), uintptr (parameters[6]), uintptr (parameters[7]), uintptr (parameters[8]), uintptr (parameters[9]), uintptr (parameters[10]), uintptr (parameters[11]))")
+	implw.Writeln("    case 0: ret, _, _ = syscall.Syscall(funcptr, 0, 0, 0, 0)")
+	implw.Writeln("    case 1: ret, _, _ = syscall.Syscall(funcptr, 1, uintptr(parameters[0]), 0, 0)")
+	implw.Writeln("    case 2: ret, _, _ = syscall.Syscall(funcptr, 2, uintptr(parameters[0]), uintptr(parameters[1]), 0)")
+	implw.Writeln("    case 3: ret, _, _ = syscall.Syscall(funcptr, 3, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]))")
+	implw.Writeln("    case 4: ret, _, _ = syscall.Syscall6(funcptr, 4, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), 0, 0)")
+	implw.Writeln("    case 5: ret, _, _ = syscall.Syscall6(funcptr, 5, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), 0)")
+	implw.Writeln("    case 6: ret, _, _ = syscall.Syscall6(funcptr, 6, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]))")
+	implw.Writeln("    case 7: ret, _, _ = syscall.Syscall9(funcptr, 7, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), 0, 0)")
+	implw.Writeln("    case 8: ret, _, _ = syscall.Syscall9(funcptr, 8, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), 0)")
+	implw.Writeln("    case 9: ret, _, _ = syscall.Syscall9(funcptr, 9, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]))")
+	implw.Writeln("    case 10: ret, _, _ = syscall.Syscall12(funcptr, 10, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), 0, 0)")
+	implw.Writeln("    case 11: ret, _, _ = syscall.Syscall12(funcptr, 11, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), 0)")
+	implw.Writeln("    case 12: ret, _, _ = syscall.Syscall12(funcptr, 12, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]))")
 	implw.Writeln("    default: ")
-	implw.Writeln("      return errors.New (\"Invalid DLL function parameter count!\");")
+	implw.Writeln("      return errors.New(\"Invalid DLL function parameter count!\");")
 	implw.Writeln("  }")
 	implw.Writeln("  ")
 	implw.Writeln("  if (int(ret) != 0) {")
-	implw.Writeln("    return errors.New (fmt.Sprintf (\"%s Error: %%.04x (%%s)\", int(ret), Get%sErrorMessage(uint32(ret))))", NameSpace, NameSpace)
+	implw.Writeln("    return errors.New(fmt.Sprintf(\"%s Error: %%.04x (%%s)\", int(ret), Get%sErrorMessage(uint32(ret))))", NameSpace, NameSpace)
 	implw.Writeln("  }")
 	implw.Writeln("  ")
 	implw.Writeln("  return nil")
@@ -544,9 +544,9 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter, implw Langu
 	implw.Writeln("    if (handle_implementation == implementation) {")
 	implw.Writeln("      return implementation_handle, nil")
 	implw.Writeln("    }")
-	implw.Writeln("    return nil, errors.New (\"Invalid Implementation for DLL handle.\")")
+	implw.Writeln("    return nil, errors.New(\"Invalid Implementation for DLL handle.\")")
 	implw.Writeln("  }")
-	implw.Writeln("  return nil, errors.New (\"Could not cast DLL handle.\")")
+	implw.Writeln("  return nil, errors.New(\"Could not cast DLL handle.\")")
 	implw.Writeln("}")
 	implw.Writeln("")
 
@@ -580,18 +580,18 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter, implw Langu
 	implw.Writeln("/*************************************************************************************************************************")
 	implw.Writeln("  Class definition %sWrapper", NameSpace)
 	implw.Writeln("**************************************************************************************************************************/")
-	implw.Writeln("  type %sWrapper struct {", NameSpace)
-	implw.Writeln("    Interface %sGoInterface", NameSpace)
-	implw.Writeln("  }")
+	implw.Writeln("type %sWrapper struct {", NameSpace)
+	implw.Writeln("  Interface %sGoInterface", NameSpace)
+	implw.Writeln("}")
 
 	global = component.Global
 	for j := 0; j < len(global.Methods); j++ {
-	 	method := global.Methods[j]
+		method := global.Methods[j]
 
-	 	err := writeGoMethod(method, w, implw, NameSpace, "Wrapper", true, &classdefinitions)
-	 	if err != nil {
-	 		return err
-	 	}
+		err := writeGoMethod(method, w, implw, NameSpace, "Wrapper", true, &classdefinitions)
+		if err != nil {
+			return err
+		}
 	}
 
 	w.Writeln("")
@@ -609,7 +609,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter, implw Langu
 	implw.Writeln("      return err;")
 	implw.Writeln("  }")
 	implw.Writeln("  if ( (nMajor != nBindingMajor) || (nMinor < nBindingMinor) ) {")
-	implw.Writeln("    return fmt.Errorf(\"%s Error: %.04x (%s)\", int(0), Get%sErrorMessage (uint32(0)));", NameSpace, "%", "%s", NameSpace)
+	implw.Writeln("    return fmt.Errorf(\"%s Error: %.04x (%s)\", int(0), Get%sErrorMessage(uint32(0)));", NameSpace, "%", "%s", NameSpace)
 	implw.Writeln("  }")
 	implw.Writeln("  return nil")
 	implw.Writeln("}")
@@ -721,9 +721,9 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				if err != nil {
 					return err
 				}
-				errorReturn = errorReturn + fmt.Sprintf("make ([]%s, 0), ", basicType)
+				errorReturn = errorReturn + fmt.Sprintf("make([]%s, 0), ", basicType)
 			case "structarray":
-				errorReturn = errorReturn + fmt.Sprintf("make ([]s%s%s, 0), ", NameSpace, param.ParamClass)
+				errorReturn = errorReturn + fmt.Sprintf("make([]s%s%s, 0), ", NameSpace, param.ParamClass)
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
@@ -853,7 +853,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implCasts = append(implCasts, fmt.Sprintf("}"))
 				implCasts = append(implCasts, fmt.Sprintf(""))
 
-				thisImplCallParamter = fmt.Sprintf(", implementation_%s.GetDLLInHandle ()", strings.ToLower(param.ParamName))
+				thisImplCallParamter = fmt.Sprintf(", implementation_%s.GetDLLInHandle()", strings.ToLower(param.ParamName))
 				callparameters = callparameters + param.ParamName
 
 			default:
@@ -947,7 +947,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 
 				thisImplCallParamter = fmt.Sprintf(", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&buffer%s[0]))", param.ParamName, param.ParamName, param.ParamName)
 
-				implReturnValues = implReturnValues + fmt.Sprintf("string (buffer%s[:(filledin%s-1)]), ", param.ParamName, param.ParamName)
+				implReturnValues = implReturnValues + fmt.Sprintf("string(buffer%s[:(filledin%s-1)]), ", param.ParamName, param.ParamName)
 
 				returnvalues = returnvalues + fmt.Sprintf("string, ")
 				classReturnVariables = classReturnVariables + "s" + param.ParamName + ", "
@@ -975,7 +975,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var filledin%s int64 = 0", param.ParamName))
 
 				bufferName := fmt.Sprintf("buffer%s", param.ParamName)
-				implDeclarations = append(implDeclarations, fmt.Sprintf("%s := make ([]%s, 0)", bufferName, basicType))
+				implDeclarations = append(implDeclarations, fmt.Sprintf("%s := make([]%s, 0)", bufferName, basicType))
 
 				thisInitImplCallParamter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
 
@@ -994,7 +994,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 			case "structarray":
 				requiresInitCall = true
 				returnvalues = returnvalues + fmt.Sprintf("[]s%s%s, ", NameSpace, param.ParamClass)
-				implDeclarations = append(implDeclarations, fmt.Sprintf("array%s := make ([]s%s%s, 0)", param.ParamName, NameSpace, param.ParamClass))
+				implDeclarations = append(implDeclarations, fmt.Sprintf("array%s := make([]s%s%s, 0)", param.ParamName, NameSpace, param.ParamClass))
 				implReturnValues = implReturnValues + fmt.Sprintf("array%s, ", param.ParamName)
 				thisImplCallParamter = fmt.Sprintf(", 0, 0, 0")
 				thisInitImplCallParamter = thisImplCallParamter
@@ -1109,13 +1109,13 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 
 	if isGlobal {
 		*classdefinitions = append(*classdefinitions, fmt.Sprintf("func (instance *%s%s) %s(%s) (%serror) {", NameSpace, ClassName, method.MethodName, parameters, classReturnTypes))
-		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %serror := instance.Interface.%s (%s)", classReturnVariables, method.MethodName, callparameters))
+		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %serror := instance.Interface.%s(%s)", classReturnVariables, method.MethodName, callparameters))
 	} else {
 		if callparameters != "" {
 			callparameters = ", " + callparameters
 		}
 		*classdefinitions = append(*classdefinitions, fmt.Sprintf("func (instance *%s%s) %s(%s) (%serror) {", NameSpace, ClassName, method.MethodName, parameters, classReturnTypes))
-		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %serror := instance.Interface.%s_%s (instance.Handle%s)", classReturnVariables, ClassName, method.MethodName, callparameters))
+		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %serror := instance.Interface.%s_%s(instance.Handle%s)", classReturnVariables, ClassName, method.MethodName, callparameters))
 	}
 	for _, line := range classReturnImplementation {
 		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %s", line ))
