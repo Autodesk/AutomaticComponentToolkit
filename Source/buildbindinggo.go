@@ -229,7 +229,7 @@ func buildGoStructs(component ComponentDefinition, w LanguageWriter) (error) {
 				w.Writeln("    %s%s uint64;", member.Name, arraysuffix)
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				w.Writeln("    %s%s E%s%s;", member.Name, arraysuffix, NameSpace, member.Class)
@@ -712,7 +712,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				errorReturn = errorReturn + fmt.Sprintf("\"\", ")
 			case "struct":
 				errorReturn = errorReturn + fmt.Sprintf("s%s, ", param.ParamName)
-			case "class":
+			case "class", "optionalclass":
 				errorReturn = errorReturn + fmt.Sprintf("h%s, ", param.ParamName)
 			case "functiontype":
 				errorReturn = errorReturn + fmt.Sprintf("0, ")
@@ -843,7 +843,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				thisImplCallParamter = fmt.Sprintf(", 0")
 				callparameters = callparameters + "p" + param.ParamName
 
-			case "class":
+			case "class", "optionalclass":
 				comments = append(comments, fmt.Sprintf("* @param[in] %s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("%s %sHandle", param.ParamName, NameSpace)
 
@@ -1025,7 +1025,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				classReturnString = classReturnString + "s" + param.ParamName + ", "
 				classReturnTypes = classReturnTypes + fmt.Sprintf("s%s%s, ", NameSpace, param.ParamClass)
 
-			case "class":
+			case "class", "optionalclass":
 				returnvalues = returnvalues + fmt.Sprintf("%sHandle, ", NameSpace)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("h%s := implementation.NewHandle()", param.ParamName))
 

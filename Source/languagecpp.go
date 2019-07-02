@@ -97,7 +97,7 @@ func getCPPParameterTypeName(ParamTypeName string, NameSpace string, ParamClass 
 			cppParamTypeName = fmt.Sprintf ("%s::s%s *", paramNameSpace, paramClassName);
 		case "structarray":
 			cppParamTypeName = fmt.Sprintf ("%s::s%s *", paramNameSpace, paramClassName)
-		case "class":
+		case "class", "optionalclass":
 			cppParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, paramClassName)
 		case "functiontype":
 			cppParamTypeName = fmt.Sprintf ("%s::%s", paramNameSpace, paramClassName)

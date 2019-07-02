@@ -532,7 +532,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 
 				callParameters = callParameters + fmt.Sprintf("%s, %s", pascalParams[0].ParamName, pascalParams[1].ParamName)
 
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					theSubWrapper := fmt.Sprintf("T%sWrapper.%sWrapper", NameSpace, paramNameSpace)
@@ -692,7 +692,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 				postCallCode = append(postCallCode, fmt.Sprintf("  %s[Len%s] := Char(0);", pascalParams[2].ParamName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("end;"))
 
-			case "class":
+			case "class", "optionalclass":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(p%s) then", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
@@ -1213,7 +1213,7 @@ func getPascalImplClassParameters(method ComponentDefinitionMethod, NameSpace st
 				}
 				parameters = parameters + "const A" + param.ParamName + "Count: QWord"
 				parameters = parameters + "; const A" + param.ParamName + ": " + ParamTypeName
-			case "class":
+			case "class", "optionalclass":
 				if parameters != "" {
 					parameters = parameters + "; "
 				}

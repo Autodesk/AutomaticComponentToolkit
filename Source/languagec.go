@@ -255,7 +255,7 @@ func GetCMemberDefaultValue(memberType string, memberClass string, NameSpace str
 			return "0", nil;
 		case "string":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a string value");
-		case "class":
+		case "class", "optionalclass":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a handle value");
 		default:
 			return "", fmt.Errorf ("unknown member type %s", memberType);
@@ -616,7 +616,7 @@ func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass st
 			cParamTypeName = fmt.Sprintf ("%s *", basicTypeName);
 		case "structarray":
 			cParamTypeName = fmt.Sprintf ("s%s%s *", paramNameSpace, paramClassName)
-		case "class":
+		case "class", "optionalclass":
 			cParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, paramClassName)
 		case "functiontype":
 			cParamTypeName = fmt.Sprintf ("%s%s", paramNameSpace, paramClassName)
@@ -700,7 +700,7 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -756,7 +756,7 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
