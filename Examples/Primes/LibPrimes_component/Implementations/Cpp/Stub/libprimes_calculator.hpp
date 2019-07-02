@@ -56,13 +56,13 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback);
+	void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback) override;
 
-	LibPrimes_uint64 GetValue();
+	LibPrimes_uint64 GetValue() override;
 
-	void SetValue(const LibPrimes_uint64 nValue);
+	void SetValue(const LibPrimes_uint64 nValue) override;
 
-	void Calculate();
+	void Calculate() override;
 
 };
 

@@ -1339,15 +1339,14 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	
 	if isGlobal {
 		if isVirtual {
-			outstring = outstring + fmt.Sprintf(indentString + "virtual static %s %s(%s) = 0", returntype, method.MethodName, parameters)
-		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "static %s %s(%s)", returntype, method.MethodName, parameters)
+			return "", "", fmt.Errorf("Method \"%s\"can not be virtual static", method.MethodName)
 		}
+		outstring = outstring + fmt.Sprintf(indentString + "static %s %s(%s)", returntype, method.MethodName, parameters)
 	} else {
 		if isVirtual {
 			outstring = outstring + fmt.Sprintf(indentString + "virtual %s %s(%s) = 0", returntype, method.MethodName, parameters)
 		} else {
-			outstring = outstring + fmt.Sprintf(indentString + "%s %s(%s)", returntype, method.MethodName, parameters)
+			outstring = outstring + fmt.Sprintf(indentString + "%s %s(%s) override", returntype, method.MethodName, parameters)
 		}
 	}
 
