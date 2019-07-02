@@ -56,9 +56,9 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void Calculate();
+	void Calculate() override;
 
-	void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer);
+	void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer) override;
 
 };
 

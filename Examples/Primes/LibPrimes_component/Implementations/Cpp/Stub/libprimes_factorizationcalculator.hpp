@@ -47,13 +47,13 @@ public:
 	* Put additional public members here. They will not be visible in the external API.
 	*/
 
-	void Calculate();
+	void Calculate() override;
 
 	/**
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) override;
 
 };
 
