@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="Optional Class Library" namespace="OptClass" copyright="ACT Developers" year="2019" basename="optclass"
+	version="1.0.0">
+	<license>
+	</license>
+	
+	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
+		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Cpp" indentation="tabs" />
+		<binding language="Pascal" indentation="2spaces" />
+		<binding language="Python" indentation="tabs" />
+		<binding language="CSharp" indentation="tabs" />
+		<binding language="Go" indentation="tabs" />
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs"/>
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
+	</errors>
+	
+	<class name="Base">
+	</class>
+	
+	<global baseclassname="Base"
+		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
+		versionmethod="GetVersion" errormethod="GetLastError"
+		journalmethod="SetJournal" >
+		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+		</method>
+		<method name="SetJournal" description="Handles Library Journaling">
+			<param name="FileName" type="string" pass="in" description="Journal FileName" />
+		</method>
+		<method name="CreateInstanceWithName" description="Creates an instance of Base class with a given identifier (but does not return it)">
+			<param name="Identifier" type="string" pass="in" description="Identifier of the new instance" />
+		</method>
+		<method name="FindInstanceA" description="Finds a Base class instance by Identifier">
+			<param name="Identifier" type="string" pass="in" description="Identifier of the tnstance to query" />
+			<param name="Instance" type="optionalclass" class="Base" pass="return" description="Base class instance" />
+		</method>
+		<method name="FindInstanceB" description="Finds a Base class instance by Identifier">
+			<param name="Identifier" type="string" pass="in" description="Identifier of the tnstance to query" />
+			<param name="Instance" type="optionalclass" class="Base" pass="out" description="Base class instance" />
+		</method>
+		<method name="UseInstanceMaybe" description="Uses a Base class instance">
+			<param name="Instance" type="optionalclass" class="Base" pass="in" description="Base class instance" />
+			<param name="IsUsed" type="bool" pass="return" description="Was the Instance used?" />
+		</method>
+	</global>
+</component>

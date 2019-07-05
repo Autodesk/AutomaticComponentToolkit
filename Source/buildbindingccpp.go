@@ -697,9 +697,9 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 
-				if (param.ParamClass == "optionalclass") {
+				if (param.ParamType == "optionalclass") {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
@@ -707,7 +707,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  CheckError(nullptr, %s_ERROR_INVALIDPARAM);", strings.ToUpper(NameSpace)))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				}
 
@@ -775,7 +775,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				
-				if (param.ParamClass == "optionalclass") {
+				if (param.ParamType == "optionalclass") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
@@ -865,7 +865,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    if (m_pWrapper != nullptr)")
 	w.Writeln("      m_pWrapper->CheckError(this, nResult);")
 	w.Writeln("  }")
-	w.Writeln("")
+	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - Constructor for Base class.", cppBaseClassName, cppBaseClassName)
 	w.Writeln("  */")
@@ -877,7 +877,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  /**")
 	w.Writeln("  * %s::~%s - Destructor for Base class.", cppBaseClassName, cppBaseClassName)
 	w.Writeln("  */")
-
 	w.Writeln("  virtual ~%s()", cppBaseClassName)
 	w.Writeln("  {")
 	w.Writeln("    if (m_pWrapper != nullptr)")
@@ -885,7 +884,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("public:")
+	w.Writeln("protected:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
