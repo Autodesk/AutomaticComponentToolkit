@@ -814,9 +814,18 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
 					subNameSpace = subNameSpace + "."
 				}
+				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("%sObject = %s%s(%sHandle, %s)",
+					fmt.Sprintf("  %sObject = %s%s(%sHandle, %s)",
 					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
+				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
+				if (param.ParamType == "optionalclass") {
+					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))
+				} else {
+					postCallLines = append(postCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')", NameSpace))
+				}
+
+				
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
 			case "string": {
@@ -942,8 +951,15 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			}
 			case "class", "optionalclass": {
 				pythonInParams = pythonInParams + param.ParamName + "Object"
-				cArguments = cArguments + param.ParamName + "Object._handle"
-				cCheckArguments = cCheckArguments  + param.ParamName + "Object._handle"
+				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = None", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("if %sObject:", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("  %sHandle = %sObject._handle", param.ParamName, param.ParamName))
+				if (param.ParamType == "class") {
+					preCallLines = append(preCallLines, fmt.Sprintf("else:"))
+					preCallLines = append(preCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')", NameSpace))
+				}
+				cArguments = cArguments + param.ParamName + "Handle"
+				cCheckArguments = cCheckArguments  + param.ParamName + param.ParamName+"Handle"
 			}
 			case "functiontype": {
 				pythonInParams = pythonInParams + param.ParamName + "Func"

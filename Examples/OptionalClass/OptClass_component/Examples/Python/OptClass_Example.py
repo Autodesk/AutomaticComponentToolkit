@@ -21,12 +21,32 @@ import OptClass
 
 def main():
 	libpath = '' # TODO add the location of the shared library binary here
-	wrapper = OptClass.Wrapper(libraryName = os.path.join(libpath, "optclass"))
+	wrapper = OptClass.Wrapper(libraryName = os.path.join(libpath, "projectoptclass"))
 	
 	major, minor, micro = wrapper.GetVersion()
 	print("OptClass version: {:d}.{:d}.{:d}".format(major, minor, micro), end="")
 	print("")
 
+	wrapper.CreateInstanceWithName("A")
+	baseA = wrapper.FindInstanceA("A")
+	if baseA is None:
+		print("Error: Expected to find Instance \"A\".")
+		return 1
+
+	baseB = wrapper.FindInstanceB("DoesNotExist")
+	if baseB is not None:
+		print("Error: Did not expect to find Instance \"DoesNotExist\".")
+		return 1
+
+	if not wrapper.UseInstanceMaybe(baseA):
+		print("Error: Expected to use Instance \"A\".")
+		return 1
+
+	if wrapper.UseInstanceMaybe(baseB):
+		print("Error: Expected to use Instance \"DoesNotExist\".")
+		return 1
+
+	print("Passed.")
 
 if __name__ == "__main__":
 	try:

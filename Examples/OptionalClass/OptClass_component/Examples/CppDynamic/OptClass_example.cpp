@@ -46,7 +46,7 @@ int main()
 			return 1;
 		}
 		if (wrapper->UseInstanceMaybe(baseB.get())) {
-			std::cout << "Error: Did not expect to use Instance \"A\"." << std::endl;
+			std::cout << "Error: Did not expect to use Instance \"DoesNotExist\"." << std::endl;
 			return 1;
 		}
 

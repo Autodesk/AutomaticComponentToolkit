@@ -158,7 +158,7 @@ class Wrapper:
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("optclass_useinstancemaybe")), methodAddress)
 			if err != 0:
 				raise EOptClassException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p)
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_bool))
 			self.lib.optclass_useinstancemaybe = methodType(int(methodAddress.value))
 			
 		except AttributeError as ae:
@@ -191,7 +191,7 @@ class Wrapper:
 			self.lib.optclass_findinstanceb.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_void_p)]
 			
 			self.lib.optclass_useinstancemaybe.restype = ctypes.c_int32
-			self.lib.optclass_useinstancemaybe.argtypes = [ctypes.c_void_p]
+			self.lib.optclass_useinstancemaybe.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_bool)]
 			
 		except AttributeError as ae:
 			raise EOptClassException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])
@@ -210,11 +210,21 @@ class Wrapper:
 			raise EOptClassException(errorCode, message)
 	
 	def AcquireInstance(self, InstanceObject):
-		self.checkError(None, self.lib.optclass_acquireinstance(InstanceObject._handle))
+		InstanceHandle = None
+		if InstanceObject:
+			InstanceHandle = InstanceObject._handle
+		else:
+			raise EOptClassException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
+		self.checkError(None, self.lib.optclass_acquireinstance(InstanceHandle))
 		
 	
 	def ReleaseInstance(self, InstanceObject):
-		self.checkError(None, self.lib.optclass_releaseinstance(InstanceObject._handle))
+		InstanceHandle = None
+		if InstanceObject:
+			InstanceHandle = InstanceObject._handle
+		else:
+			raise EOptClassException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
+		self.checkError(None, self.lib.optclass_releaseinstance(InstanceHandle))
 		
 	
 	def GetVersion(self):
@@ -226,14 +236,19 @@ class Wrapper:
 		return pMajor.value, pMinor.value, pMicro.value
 	
 	def GetLastError(self, InstanceObject):
+		InstanceHandle = None
+		if InstanceObject:
+			InstanceHandle = InstanceObject._handle
+		else:
+			raise EOptClassException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
 		nErrorMessageBufferSize = ctypes.c_uint64(0)
 		nErrorMessageNeededChars = ctypes.c_uint64(0)
 		pErrorMessageBuffer = ctypes.c_char_p(None)
 		pHasError = ctypes.c_bool()
-		self.checkError(None, self.lib.optclass_getlasterror(InstanceObject._handle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
+		self.checkError(None, self.lib.optclass_getlasterror(InstanceInstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
 		nErrorMessageBufferSize = ctypes.c_uint64(nErrorMessageNeededChars.value)
 		pErrorMessageBuffer = (ctypes.c_char * (nErrorMessageNeededChars.value))()
-		self.checkError(None, self.lib.optclass_getlasterror(InstanceObject._handle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
+		self.checkError(None, self.lib.optclass_getlasterror(InstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
 		
 		return pErrorMessageBuffer.value.decode(), pHasError.value
 	
@@ -251,7 +266,10 @@ class Wrapper:
 		pIdentifier = ctypes.c_char_p(str.encode(Identifier))
 		InstanceHandle = ctypes.c_void_p()
 		self.checkError(None, self.lib.optclass_findinstancea(pIdentifier, InstanceHandle))
-		InstanceObject = Base(InstanceHandle, self)
+		if InstanceHandle:
+			InstanceObject = Base(InstanceHandle, self)
+		else:
+			InstanceObject = None
 		
 		return InstanceObject
 	
@@ -259,13 +277,21 @@ class Wrapper:
 		pIdentifier = ctypes.c_char_p(str.encode(Identifier))
 		InstanceHandle = ctypes.c_void_p()
 		self.checkError(None, self.lib.optclass_findinstanceb(pIdentifier, InstanceHandle))
-		InstanceObject = Base(InstanceHandle, self)
+		if InstanceHandle:
+			InstanceObject = Base(InstanceHandle, self)
+		else:
+			InstanceObject = None
 		
 		return InstanceObject
 	
 	def UseInstanceMaybe(self, InstanceObject):
-		self.checkError(None, self.lib.optclass_useinstancemaybe(InstanceObject._handle))
+		InstanceHandle = None
+		if InstanceObject:
+			InstanceHandle = InstanceObject._handle
+		pIsUsed = ctypes.c_bool()
+		self.checkError(None, self.lib.optclass_useinstancemaybe(InstanceHandle, pIsUsed))
 		
+		return pIsUsed.value
 	
 
 
