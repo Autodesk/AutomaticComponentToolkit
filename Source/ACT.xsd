@@ -103,6 +103,7 @@
 			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="99999"/>
 		</xs:sequence>
 		<xs:attribute name="name" type="ST_Name" use="required"/>
+		<xs:attribute name="description" type="ST_ErrorDescription" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
@@ -111,6 +112,7 @@
 		<xs:attribute name="type" type="ST_ScalarType" use="required"/>
 		<xs:attribute name="rows" type="xs:positiveInteger" use="optional" default="1"/>
 		<xs:attribute name="columns" type="xs:positiveInteger" use="optional" default="1"/>
+		<xs:attribute name="description" type="ST_ErrorDescription" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
@@ -120,12 +122,14 @@
 			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="99999"/>
 		</xs:sequence>
 		<xs:attribute name="name" type="ST_Name" use="required"/>
+		<xs:attribute name="description" type="ST_ErrorDescription" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
 	<xs:complexType name="CT_Option">
 		<xs:attribute name="name" type="ST_Name" use="required"/>
 		<xs:attribute name="value" type="xs:nonNegativeInteger" use="required"/>
+		<xs:attribute name="description" type="ST_ErrorDescription" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
@@ -142,10 +146,10 @@
 	
 	<xs:complexType name="CT_Param">
 		<xs:attribute name="name" type="ST_Name" use="required"/>
-		<xs:attribute name="description" type="ST_Description" use="required"/>
 		<xs:attribute name="pass" type="ST_Pass" use="required"/>
 		<xs:attribute name="type" type="ST_Type" use="required"/>
 		<xs:attribute name="class" type="ST_NameSpacedClassName" use="optional"/>
+		<xs:attribute name="description" type="ST_Description" use="optional"/>
 	</xs:complexType>
 	
 	<xs:complexType name="CT_Global">
@@ -154,11 +158,14 @@
 			<xs:element ref="method" minOccurs="2" maxOccurs="99999"/>
 			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="99999"/>
 		</xs:sequence>
-		<xs:attribute name="releasemethod" type="ST_Name" use="required">
-			<xs:annotation><xs:documentation xml:lang="en">The &lt;releasemethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		<xs:attribute name="baseclassname" type="ST_Name" use="required">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;baseclassname&gt; must match a class with the same name and specifies the name of a class that is the base class for all classes of the generated component.</xs:documentation></xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="acquiremethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;acquiremethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="releasemethod" type="ST_Name" use="required">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;releasemethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="versionmethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;versionmethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
@@ -190,7 +197,7 @@
 			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="99999"/>
 		</xs:sequence>
 		<xs:attribute name="name" type="ST_Name" use="required"/>
-		<xs:attribute name="description" type="ST_Description" use="required"/>
+		<xs:attribute name="description" type="ST_ErrorDescription" use="optional"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
@@ -300,6 +307,7 @@
 			<xs:enumeration value="string"/>
 			<xs:enumeration value="handle"/>
 			<xs:enumeration value="class"/>
+			<xs:enumeration value="optionalclass"/>
 			<xs:enumeration value="functiontype"/>
 		</xs:restriction>
 	</xs:simpleType>
@@ -329,6 +337,8 @@
 			<xs:enumeration value="enumarray"/>
 			<xs:enumeration value="structarray"/>
 			<xs:enumeration value="handle"/>
+			<xs:enumeration value="class"/>
+			<xs:enumeration value="optionalclass"/>
 			<xs:enumeration value="functiontype"/>
 		</xs:restriction>
 	</xs:simpleType>
