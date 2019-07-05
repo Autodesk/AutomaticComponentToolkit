@@ -436,17 +436,25 @@ implementation
   end;
   
   procedure TOptClassWrapper.AcquireInstance(const AInstance: TOptClassBase);
+  var
+    AInstanceHandle: TOptClassHandle;
   begin
-    if not Assigned(AInstance) then
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
       raise EOptClassException.CreateCustomMessage(OPTCLASS_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
-    CheckError(nil, OptClassAcquireInstanceFunc(AInstance.TheHandle));
+    CheckError(nil, OptClassAcquireInstanceFunc(AInstanceHandle));
   end;
 
   procedure TOptClassWrapper.ReleaseInstance(const AInstance: TOptClassBase);
+  var
+    AInstanceHandle: TOptClassHandle;
   begin
-    if not Assigned(AInstance) then
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
       raise EOptClassException.CreateCustomMessage(OPTCLASS_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
-    CheckError(nil, OptClassReleaseInstanceFunc(AInstance.TheHandle));
+    CheckError(nil, OptClassReleaseInstanceFunc(AInstanceHandle));
   end;
 
   procedure TOptClassWrapper.GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
@@ -456,19 +464,22 @@ implementation
 
   function TOptClassWrapper.GetLastError(const AInstance: TOptClassBase; out AErrorMessage: String): Boolean;
   var
+    AInstanceHandle: TOptClassHandle;
     bytesNeededErrorMessage: Cardinal;
     bytesWrittenErrorMessage: Cardinal;
     bufferErrorMessage: array of Char;
     ResultHasError: Byte;
   begin
-    if not Assigned(AInstance) then
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
       raise EOptClassException.CreateCustomMessage(OPTCLASS_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
     bytesNeededErrorMessage:= 0;
     bytesWrittenErrorMessage:= 0;
     ResultHasError := 0;
-    CheckError(nil, OptClassGetLastErrorFunc(AInstance.TheHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
+    CheckError(nil, OptClassGetLastErrorFunc(AInstanceHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
     SetLength(bufferErrorMessage, bytesNeededErrorMessage);
-    CheckError(nil, OptClassGetLastErrorFunc(AInstance.TheHandle, bytesNeededErrorMessage, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
+    CheckError(nil, OptClassGetLastErrorFunc(AInstanceHandle, bytesNeededErrorMessage, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
     AErrorMessage := StrPas(@bufferErrorMessage[0]);
     Result := (ResultHasError <> 0);
   end;
@@ -498,9 +509,7 @@ implementation
   var
     HInstance: TOptClassHandle;
   begin
-    Result := nil;
-    A%!s(MISSING) := nil;
-    Instance
+    AInstance := nil;
     HInstance := nil;
     CheckError(nil, OptClassFindInstanceBFunc(PAnsiChar(AIdentifier), HInstance));
     if Assigned(HInstance) then
@@ -509,12 +518,15 @@ implementation
 
   function TOptClassWrapper.UseInstanceMaybe(const AInstance: TOptClassBase): Boolean;
   var
+    AInstanceHandle: TOptClassHandle;
     ResultIsUsed: Byte;
   begin
-    if not Assigned(AInstance) then
-      raise EOptClassException.CreateCustomMessage(OPTCLASS_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
+    AInstanceHandle := nil;
     ResultIsUsed := 0;
-    CheckError(nil, OptClassUseInstanceMaybeFunc(AInstance.TheHandle, ResultIsUsed));
+    CheckError(nil, OptClassUseInstanceMaybeFunc(AInstanceHandle, ResultIsUsed));
     Result := (ResultIsUsed <> 0);
   end;
 

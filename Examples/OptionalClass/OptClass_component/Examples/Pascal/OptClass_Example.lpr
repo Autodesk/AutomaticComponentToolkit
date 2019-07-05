@@ -40,15 +40,37 @@ var
   AMajor, AMinor, AMicro: Cardinal;
   AVersionString: string;
   ALibPath: string;
+  ABaseA, ABaseB: TOptClassBase;
 begin
   writeln('loading DLL');
-  ALibPath := ''; // TODO add the location of the shared library binary here
-  AOptClassWrapper := TOptClassWrapper.Create(ALibPath + '/' + 'optclass.'); // TODO add the extension of the shared library file here
+  ALibPath := 'D:/PUBLIC/AutomaticComponentToolkit/Examples/OptionalClass/OptClass_component/Implementations/Cpp/build/Debug/'; // TODO add the location of the shared library binary here
+  AOptClassWrapper := TOptClassWrapper.Create(ALibPath + '/' + 'optclass.dll'); // TODO add the extension of the shared library file here
   try
     writeln('loading DLL Done');
     AOptClassWrapper.GetVersion(AMajor, AMinor, AMicro);
     AVersionString := Format('OptClass.version = %d.%d.%d', [AMajor, AMinor, AMicro]);
     writeln(AVersionString);
+
+    AOptClassWrapper.CreateInstanceWithName('A');
+    ABaseA := AOptClassWrapper.FindInstanceA('A');
+    if not assigned(ABaseA) then begin
+      WriteLn('Error: Expected to find Instance "A".');
+      exit;
+    end;
+    AOptClassWrapper.FindInstanceB('DoesNotExist', ABaseB);
+    if assigned(ABaseB) then begin
+      WriteLn('Error: Did not expect to find Instance "DoesNotExist".');
+      exit;
+    end;
+    if not AOptClassWrapper.UseInstanceMaybe(ABaseA) then begin
+      WriteLn('Error: Expected to use Instance "A".');
+      exit;
+    end;
+     if AOptClassWrapper.UseInstanceMaybe(ABaseB) then begin
+      WriteLn('Error: Expected to not use Instance "DoesNotExist".');
+      exit;
+    end;
+    WriteLn('Passed');
   finally
     FreeAndNil(AOptClassWrapper);
   end;
