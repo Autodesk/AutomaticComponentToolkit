@@ -52,11 +52,6 @@ Alternatively to 1) build ACT from source ([master](../../tree/master) for a rel
 2. Build automaticcomponenttoolkit.go:
 <br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
 
-## Contributing
-The Automatic Component Toolkit is an open source project.
-
-Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs. Have a look at the [contributor's guide](CONTRIBUTING.md) for details.
-
 ## Language Support
 ACT supports generation of bindings or implementation stubs for C++, C, Pascal, Golang, NodeJS and Python3. However, not all features of the IDL are yet supported by the individual binding or implementation language:
   
@@ -111,3 +106,8 @@ A very detailed introduction the topic this presentation: https://www.youtube.co
 
 ### Difficulty of the hourglass pattern:
 Generating (and maintaining!) the required layers of interfaces (language bindings, thin API and domain code-API) and their consistency is labor-intensive and error prone _if_ it is not automated. That's what ACT is here for.
+
+## Contributing
+The Automatic Component Toolkit is an open source project.
+
+Contributions are welcome and we are looking for people that can improve existing language bindings or create new bindings or implementation stubs. Have a look at the [contributor's guide](CONTRIBUTING.md) for details.
