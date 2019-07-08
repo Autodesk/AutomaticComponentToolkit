@@ -16,8 +16,10 @@ Abstract: This is the class declaration of CCalculator
 
 // Parent classes
 #include "libprimes_base.hpp"
-#pragma warning( push)
-#pragma warning( disable : 4250)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4250)
+#endif
 
 // Include custom headers here.
 
@@ -43,7 +45,6 @@ protected:
 	* Put protected members here.
 	*/
 	LibPrimes_uint64 m_value;
-
 	ProgressCallback m_Callback;
 public:
 
@@ -56,18 +57,20 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback) override;
-
 	LibPrimes_uint64 GetValue() override;
 
 	void SetValue(const LibPrimes_uint64 nValue) override;
 
 	void Calculate() override;
 
+	void SetProgressCallback(const ProgressCallback pProgressCallback) override;
+
 };
 
 } // namespace Impl
 } // namespace LibPrimes
 
-#pragma warning( pop )
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #endif // __LIBPRIMES_CALCULATOR

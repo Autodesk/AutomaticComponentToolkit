@@ -53,7 +53,7 @@ void CBase::IncRefCount()
 bool CBase::DecRefCount()
 {
 	m_nReferenceCount--;
-	if (!m_nReferenceCount) {;
+	if (!m_nReferenceCount) {
 		delete this;
 		return true;
 	}

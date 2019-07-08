@@ -38,7 +38,7 @@ _There are much more efficient algorithms and more suitable software packages to
 # 2. Requirements
  - CMake
  - A C++ compiler / development environment. This tutorial was tested with Visual Studio 2017, but should also work with `GCC` and `make` or other development tools.
- - ACT: This tutorial is tested to work with release 1.5.0 of ACT. You can get it from [the releases page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
+ - ACT: This tutorial is tested to work with release 1.6.0 of ACT. You can get it from [the releases page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
 Decide on a location for your tutorial's component to live in, and download the binary for your platform into this folder. Alternatively, stick it somwhere in your `$PATH`.
 
 
@@ -56,18 +56,19 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 	<license>
 		<line value="All rights reserved." />
 	</license>
-	
 	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Cpp" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
+		<binding language="CSharp" indentation="tabs" />
+		<binding language="Go" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
-		<implementation language="Pascal" indentation="tabs" stubidentifier="impl"/>
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
 	</implementations>
-	
 	<errors>
 		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
 		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
@@ -78,23 +79,25 @@ First, copy the snippet, a bare-bone IDL-file, and save it into libPrimes.xml in
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
 		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
 	</errors>
-	
-	<class name="Base">	
+	<class name="Base">
 	</class>
-	
-	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+	<global baseclassname="Base" acquiremethod="AcquireInstance"
+		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
 		<method name="GetLastError" description="Returns the last error recorded on this object">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="GetVersion" description = "retrieves the binary version of this library.">
-			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
-			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
-			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
 	</global>
 </component>
@@ -105,7 +108,7 @@ It's elements define the following:
 - `\<error>` define the error codes to be used in the library that will be exposed for it's consumers.
 The errors listed in this snippet are required.
 - `\<global>` defines the global functions that can be used as entry points into the component.
-It must contain a `versionmethod`, a `releasemethod` and a `errormethod` with the signatures in this snippet.
+It must contain an `acquiremethod`, a `releasemethod`, a `versionmethod`, and an `errormethod` with the signatures in this snippet.
 They will be explained in [this section](#331-required-steps-for-every-act-component).
 The syntax for methods will be explained when we add new classes and functions to the IDL-file now.
 - The `baseclassname`-attribute of the `\<global>`-section points to the `\<class>` "Base", which will be the baseclass for all other classes defined in this component.
@@ -134,7 +137,7 @@ the different calculators we will expose in our API.
 	</method>
 </class>
 ```
-The `GetValue` method returns the current value on which the calculator operates. It has one parameter of type `uint64`, that will be returned.
+The `GetValue` method returns the current value on which the calculator operates. It has one parameter of type `uint64`, which will be returned.
 The `SetValue` method sets the value on which the calculator operates. It has one input parameter of type `uint64`.
 The method `Calculate` performs the specific calculation of this calculator.
 
@@ -190,14 +193,14 @@ The global section requires two more methods, that are used as entry points to t
 This concludes the complete specification of LibPrimes's interface.
 
 __NOTE__
-_You can download the initial IDL-file for libPrimes [here](ressources/315/libPrimes.xml)._
+_You can download the initial IDL-file for libPrimes [here](resources/315/libPrimes.xml)._
 
 ## 3.2. Automatic Source Code Generation
 With the complete interface definition in `libPrimes.xml`, we can now turn on ACT:
 ```shell
 act.exe libPrimes.xml
 ```
-This generates a folder `LibPrimes_component` with two subfolders, `Bindings` and `Implementation`.
+This generates a folder `LibPrimes_component` with three subfolders, `Bindings`, `Examples` and `Implementation`.
 
 Let's focus on `Implementation/CPP` for now, which contains a folder `Interfaces` and `Stubs`.
 
@@ -211,18 +214,17 @@ The `libprimes_interfaces.hpp`-file contains all classes from the IDL as pure ab
 the interfaces `LibPrimes::ICalculator` and `LibPrimes::IFactorizationCalculator`:
 ```cpp
 /*...*/
-class ICalculator : public virtual IBase{
+class ICalculator : public virtual IBase {
 public:
-	ICalculator::GetValue - Returns the current value of this 
 	virtual LibPrimes_uint64 GetValue() = 0;
 	virtual void SetValue(const LibPrimes_uint64 nValue) = 0;
 	virtual void Calculate() = 0;
 };
 
-class IFactorizationCalculator : public virtual IBase, public virtual ICalculator{
+class IFactorizationCalculator : public virtual IBase, public virtual ICalculator {
 public:
-	virtual void GetPrimeFactors(LibPrimes_uint64
-	 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) = 0;
+	virtual void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize,
+	LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) = 0;
 };
 /*...*/
 ```
@@ -265,7 +267,8 @@ They contain a concrete class definition derived from the corresponding interfac
 ```cpp
 class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator {
 public:
-	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize,
+		LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) override;
 };
 ```
 
@@ -273,7 +276,7 @@ The autogenerated implementation of each of a class's methods throws a `NOTIMPLE
 ```cpp
 void CFactorizationCalculator::GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer)
 {
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 ```
 
@@ -307,7 +310,7 @@ the major-, minor- and micro-version. `LIBPRIMES_VERSION_*` are defined automati
 
 In addition an ACT component CAN provide prerelease- and build-information by defining a `prereleasemethod` and `buildinfomethod`, see the [documentation](../../Documentation/IDL.md).
 
-#### CreateFunctions
+#### Create-FactorizationCalculator
 For all methods in the IDL that are used to return a new instance of a class, code similar to this needs to be implemented.
 ```cpp
 #include "libprimes_factorizationcalculator.hpp"
@@ -318,13 +321,23 @@ IFactorizationCalculator * CWrapper::CreateFactorizationCalculator()
 }
 ```
 
-#### Release Function
+#### Acquire- and Release Function
+```cpp
+void CWrapper::AcquireInstance(IBase* pInstance)
+{
+	IBase::AcquireBaseClassInterface(pInstance);
+}
+```
+
+`AcquireBaseClassInterface` increases the reference count of `pInstance`. This can be used to share ownership of `IBase*`-instances. See the [Example for shared ownership and component injection](../Injection/Readme.md)  to learn more about this.
+
 ```cpp
 void CWrapper::ReleaseInstance(IBase* pInstance)
 {
-	delete pInstance;
+	IBase::ReleaseBaseClassInterface(pInstance);
 }
 ```
+`ReleaseBaseClassInterface` decreases the reference count of `pInstance` and, if this was the last reference, `delete`s the instance.
 
 __NOTE__:
 _Obvioulsy, you can do something more clever/robust, than simply handing out "new"-ed chunks of memory at creation
@@ -386,12 +399,11 @@ and remove its implementation.
 Add an array that holds the calculated prime factors as private member in `CFactorizationCalculator`
 and a public `Calculate` method:
 ```cpp
-class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator
-{
+class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator {
 private:
 	std::vector<sPrimeFactor> primeFactors;
 public:
-	void Calculate();
+	void Calculate() override;
 /*...*/
 }
 ```
@@ -422,7 +434,7 @@ void CFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
 
-	LibPrimes_uint64 nValue = m_value;
+	LibPrimes_uint64 nValue = GetValue();
 	for (LibPrimes_uint64 i = 2; i <= nValue; i++) {
 		sPrimeFactor primeFactor;
 		primeFactor.m_Prime = i;
@@ -446,7 +458,7 @@ class CSieveCalculator : public virtual ISieveCalculator, public virtual CCalcul
 private:
 	std::vector<LibPrimes_uint64> primes;
 public:
-	void Calculate();
+	void Calculate() override;
 /*...*/
 }
 ```
@@ -575,14 +587,14 @@ LibPrimes.Version = 1.0.0
 Have a look at the implementation of the dynamic Cpp bindings in the single header file `libprimes_dynamic.hpp`,
 e.g. a C++ function call is forwarded to the thin C-interface as follows
 ```cpp
-	void CFactorizationCalculator::GetPrimeFactors(std::vector<sPrimeFactor> & PrimeFactorsBuffer)
-	{
-		LibPrimes_uint64 elementsNeededPrimeFactors = 0;
-		LibPrimes_uint64 elementsWrittenPrimeFactors = 0;
-		CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, 0, &elementsNeededPrimeFactors, nullptr));
-		PrimeFactorsBuffer.resize((size_t) elementsNeededPrimeFactors);
-		CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, elementsNeededPrimeFactors, &elementsWrittenPrimeFactors, PrimeFactorsBuffer.data()));
-	}
+void CFactorizationCalculator::GetPrimeFactors(std::vector<sPrimeFactor> & PrimeFactorsBuffer)
+{
+	LibPrimes_uint64 elementsNeededPrimeFactors = 0;
+	LibPrimes_uint64 elementsWrittenPrimeFactors = 0;
+	CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, 0, &elementsNeededPrimeFactors, nullptr));
+	PrimeFactorsBuffer.resize((size_t) elementsNeededPrimeFactors);
+	CheckError(m_pWrapper->m_WrapperTable.m_FactorizationCalculator_GetPrimeFactors(m_pHandle, elementsNeededPrimeFactors, &elementsWrittenPrimeFactors, PrimeFactorsBuffer.data()));
+}
 ```
 __Note__ _For the out-array, `m_FactorizationCalculator_GetPrimeFactors` is called twice.
 First, to obtain the size of the array, secondly to actually fill the array with content.
@@ -669,7 +681,7 @@ set LibPrimes as startup project and make sure the `Debug` configuration is acti
 Open the project's properties and select the entry Debug.
 Set the `Command` to the path to your python3 executable and the `Command Arguments`
 to the location of the `LibPrimes_Example.py`
-![VSProperties](ressources/VSProperties.png)
+![VSProperties](resources/VSProperties.png)
 
 Set a breakpoint somewhere in your C++-library code
 (e.g. in `void CFactorizationCalculator::Calculate()`) and start debugging.
@@ -766,7 +778,7 @@ requires a minor version update. Thus update the version in the IDL, too:
 ```
 
 __NOTE__
-_You can download the modified IDL-file for libPrimes [here](ressources/510/libPrimes.xml)._
+_You can download the modified IDL-file for libPrimes [here](resources/510/libPrimes.xml)._
 
 Finally, recrate interfaces, wrapper and bindings code:
 ```shell
@@ -782,7 +794,7 @@ function type and their usage is declared:
   * @param[in] fProgressPercentage - How far has the calculation progressed?
   * @param[out] pShouldAbort - Should the calculation be aborted?
   */
-  typedef void(*ProgressCallback)(LibPrimes_single, bool*);
+  typedef void(*ProgressCallback)(LibPrimes_single, bool *);
 ```
 ```cpp
 class ICalculator : public virtual IBase {
@@ -805,14 +817,14 @@ To resolve this, add a protected member to `CCalculator` and define the public
 `SetProgressCallback`-function.
 #### libprimes_calculator.hpp
 ```cpp
-class CCalculator : public virtual ICalculator {
+class CCalculator : public virtual ICalculator, public virtual CBase {
 protected:
 /*...*/
 	ProgressCallback m_Callback;
 /*...*/
 public:
 /*...*/
-	void SetProgressCallback(const ProgressCallback pProgressCallback);
+	void SetProgressCallback(const ProgressCallback pProgressCallback) override;
 /*...*/
 }
 ```
@@ -958,7 +970,7 @@ Since a new function has been added, another minor version update is required.
 ```
 
 __NOTE__
-_You can download the modified IDL-file for libPrimes [here](ressources/610/libPrimes.xml)._
+_You can download the modified IDL-file for libPrimes [here](resources/610/libPrimes.xml)._
 
 Regenerate the implementation and language bindings by running
 ```shell
@@ -1125,4 +1137,4 @@ Other important aspects of software componentization, like packaging and distrib
 source code control, stable interfaces, versioning, releases, ...
 can also be supported and simplified by ACT.
 
-Tutorials or articles about these topics will follow.
+Tutorials, articles and examples about these topics will follow.

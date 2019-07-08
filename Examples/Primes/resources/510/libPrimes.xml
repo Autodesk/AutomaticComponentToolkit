@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
 	libraryname="Prime Numbers Library" namespace="LibPrimes" copyright="PrimeDevelopers" year="2019" basename="libprimes"
-	version="1.0.0">
+	version="1.1.0">
 	<license>
 		<line value="All rights reserved." />
 	</license>
 	
 	<bindings>
+		<binding language="CDynamic" indentation="tabs" />
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Cpp" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
+		<binding language="CSharp" indentation="tabs" />
+		<binding language="Go" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
-		<implementation language="Pascal" indentation="tabs" stubidentifier="impl"/>
+		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
 	</implementations>
 	
 	<errors>
@@ -27,6 +30,7 @@
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
 		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
 		<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
+		<error name="CALCULATIONABORTED" code="10" description="a calculation has been aborted" />
 	</errors>
 	
 	<struct name="PrimeFactor">
@@ -34,7 +38,12 @@
 		<member name="Multiplicity" type="uint32" />
 	</struct>
 
-	<class name="Base">	
+	<functiontype name="ProgressCallback" description="Callback to report calculation progress and query whether it should be aborted">
+		<param name="ProgressPercentage" type="single" pass="in" description="How far has the calculation progressed?"/>
+		<param name="ShouldAbort" type="bool" pass="out" description="Should the calculation be aborted?"/>
+	</functiontype>
+
+	<class name="Base">
 	</class>
 	
 	<class name="Calculator" parent="Base">
@@ -46,8 +55,11 @@
 		</method>
 		<method name="Calculate" description="Performs the specific calculation of this Calculator">
 		</method>
+		<method name="SetProgressCallback" description="Sets the progress callback function">
+			<param name="ProgressCallback" type="functiontype" class="ProgressCallback" pass="in" description="The progress callback" />
+		</method>
 	</class>
-	
+
 	<class name="FactorizationCalculator" parent="Calculator">
 		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
 			<param name="PrimeFactors" type="structarray" class="PrimeFactor" pass="out" description="The prime factors of this number" />
@@ -60,19 +72,23 @@
 		</method>
 	</class>
 
-	<global baseclassname="Base" releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+	<global baseclassname="Base" acquiremethod="AcquireInstance"
+		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError">
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
 		<method name="GetLastError" description="Returns the last error recorded on this object">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-		<method name="ReleaseInstance" description="Releases the memory of an Instance">
+		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="GetVersion" description = "retrieves the binary version of this library.">
-			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
-			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
-			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">
 			<param name="Instance" type="class" class="FactorizationCalculator" pass="return" description="New FactorizationCalculator instance" />

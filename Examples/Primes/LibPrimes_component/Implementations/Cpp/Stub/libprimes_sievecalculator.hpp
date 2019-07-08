@@ -16,8 +16,10 @@ Abstract: This is the class declaration of CSieveCalculator
 
 // Parent classes
 #include "libprimes_calculator.hpp"
-#pragma warning( push)
-#pragma warning( disable : 4250)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4250)
+#endif
 
 // Include custom headers here.
 
@@ -36,9 +38,7 @@ private:
 	/**
 	* Put private members here.
 	*/
-
 	std::vector<LibPrimes_uint64> primes;
-
 protected:
 
 	/**
@@ -56,14 +56,15 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void Calculate() override;
-
 	void GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer) override;
 
+	void Calculate() override;
 };
 
 } // namespace Impl
 } // namespace LibPrimes
 
-#pragma warning( pop )
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #endif // __LIBPRIMES_SIEVECALCULATOR
