@@ -31,8 +31,8 @@ To allow injecting any of the imported components into the Calculation-component
 `calculationWrapper->InjectComponent("Numbers", numbersWrapper->GetSymbolLookupMethod());` (analogously in other languages).
 
 
-### How dooes reference-counting/shared ownership  work in ACT:
-1. Reference-counting for all Classes is now (v1.6.0) the default in ACT.
+### How does reference-counting/shared ownership  work in ACT:
+1. Reference-counting for all classes is now (v1.6.0) the default in ACT.
 	It is implemented in the base-class by
 	- an integer member `m_nReferenceCount` within the base-class of a component
 	and methods
