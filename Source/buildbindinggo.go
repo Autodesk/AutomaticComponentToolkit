@@ -250,6 +250,7 @@ func buildGoInterfaces(component ComponentDefinition, w LanguageWriter) {
 	w.Writeln("")
 	w.Writeln("type %sHandle interface {", component.NameSpace)
 	w.Writeln("    Close() error")
+	w.Writeln("    IsValid() bool")
 	w.Writeln("}")
 	w.Writeln("")
 }
@@ -305,6 +306,10 @@ func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWr
 	implw.Writeln("  }")
 	implw.Writeln("  ")
 	implw.Writeln("  return nil")
+	implw.Writeln("}")
+	implw.Writeln("")
+	implw.Writeln("func (handle *%sImplementationHandleStruct) IsValid() (bool) {", NameSpace)
+	implw.Writeln("  return (handle.DLLhandle != 0)")
 	implw.Writeln("}")
 	implw.Writeln("")
 	implw.Writeln("func (handle *%sImplementationHandleStruct) GetDLLInHandle() (uintptr) {", NameSpace)
@@ -853,7 +858,14 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implCasts = append(implCasts, fmt.Sprintf("}"))
 				implCasts = append(implCasts, fmt.Sprintf(""))
 
-				thisImplCallParamter = fmt.Sprintf(", implementation_%s.GetDLLInHandle()", strings.ToLower(param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("%sDLLHandle := implementation_%s.GetDLLInHandle()", param.ParamName, strings.ToLower(param.ParamName)))
+				if (param.ParamType == "class") {
+					implCasts = append(implCasts, fmt.Sprintf("if (%sDLLHandle == 0) {", param.ParamName))
+					implCasts = append(implCasts, fmt.Sprintf("  err := fmt.Errorf(\"Handle must not be 0.\")", ))
+					implCasts = append(implCasts, fmt.Sprintf("  return %s", errorReturn))
+					implCasts = append(implCasts, fmt.Sprintf("}"))
+				}
+				thisImplCallParamter = fmt.Sprintf(", %sDLLHandle", param.ParamName)
 				callparameters = callparameters + param.ParamName
 
 			default:
