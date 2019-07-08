@@ -258,7 +258,6 @@ public:
 		m_pWrapper = nullptr;
 	}
 
-protected:
 	/**
 	* CBase::GetHandle - Returns handle to instance.
 	*/
@@ -394,7 +393,7 @@ public:
 		CheckError(nullptr,m_WrapperTable.m_CreateFactorizationCalculator(&hInstance));
 		
 		if (!hInstance) {
-			CheckError(nullptr, LIBPRIMES_ERROR_INVALIDPARAM);
+			CheckError(nullptr,LIBPRIMES_ERROR_INVALIDPARAM);
 		}
 		return std::make_shared<CFactorizationCalculator>(this, hInstance);
 	}
@@ -409,7 +408,7 @@ public:
 		CheckError(nullptr,m_WrapperTable.m_CreateSieveCalculator(&hInstance));
 		
 		if (!hInstance) {
-			CheckError(nullptr, LIBPRIMES_ERROR_INVALIDPARAM);
+			CheckError(nullptr,LIBPRIMES_ERROR_INVALIDPARAM);
 		}
 		return std::make_shared<CSieveCalculator>(this, hInstance);
 	}
