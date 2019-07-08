@@ -27,8 +27,8 @@ int main()
 		std::cout << "Calculation.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;
 		
-		std::string libpath = "D:/PUBLIC/AutomaticComponentToolkit/Examples/Injection/Numbers_component/Implementations/Pascal/bin/x86_64-win64/Release";
-		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/projectnumbers.dll");
+		std::string libpath = "";
+		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/numbers.");
 		numbers->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "Numbers.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;

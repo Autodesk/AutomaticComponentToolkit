@@ -299,7 +299,7 @@ NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod)
 	try {
 		if (pSymbolLookupMethod == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		*pSymbolLookupMethod = &_numbers_getprocaddress_internal;
+		*pSymbolLookupMethod = (void*)&_numbers_getprocaddress_internal;
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {

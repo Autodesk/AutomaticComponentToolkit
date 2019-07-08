@@ -830,7 +830,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  throw E%sInterfaceException(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)) )
 		callCPPFunctionCode = append(callCPPFunctionCode, "")
 	} else if (isSpecialFunction == eSpecialMethodSymbolLookup) {
-		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = &_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = (void*)&_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
 	} else {
 		callCode, err := generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal)
 		if err != nil {

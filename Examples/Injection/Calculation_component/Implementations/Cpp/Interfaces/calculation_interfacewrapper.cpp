@@ -428,7 +428,7 @@ CalculationResult calculation_getsymbollookupmethod(Calculation_pvoid * pSymbolL
 	try {
 		if (pSymbolLookupMethod == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		*pSymbolLookupMethod = &_calculation_getprocaddress_internal;
+		*pSymbolLookupMethod = (void*)&_calculation_getprocaddress_internal;
 		return CALCULATION_SUCCESS;
 	}
 	catch (ECalculationInterfaceException & Exception) {
