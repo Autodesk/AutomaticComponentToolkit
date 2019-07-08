@@ -20,7 +20,7 @@ The Calculation-component provides a class `Calculator` that can sum or multiply
 	3. Pascal
 	4. Python
 
-### How do component-injection work:
+### How does component-injection work:
 1. To be injected, the Numbers-component must specify a `symbollookupmethod` in its component definition-file.
 The `symbollookupmethod` provides the addresses of all functions exported by the Numbers-component and is generated and implemented automatically by ACT.
 
