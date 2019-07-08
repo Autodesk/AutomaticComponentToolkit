@@ -668,7 +668,7 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 				}
 			}
 
-			if (param.ParamType == "class") {
+			if (param.ParamType == "class" || param.ParamType == "optionalclass" ) {
 				if (currentNameMaps.classMap[paramClassName] != true) {
 					return fmt.Errorf("parameter \"%s\" of method \"%s.%s\" is of unknown class \"%s\"", param.ParamName, className, method.MethodName, param.ParamClass)
 				}

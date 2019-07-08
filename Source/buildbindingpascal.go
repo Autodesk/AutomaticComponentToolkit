@@ -863,11 +863,18 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameters = callFunctionParameters + "A" + param.ParamName
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
-			case "class":
-				initCommands = append(initCommands, fmt.Sprintf("if not Assigned(A%s) then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
-				callFunctionParameters = callFunctionParameters + "A" + param.ParamName + ".TheHandle"
-				initCallParameters = initCallParameters + "A" + param.ParamName + ".TheHandle"
+			case "class", "optionalclass":
+				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+NameSpace+"Handle;")
+				initCommands = append(initCommands, fmt.Sprintf("if Assigned(A%s) then", param.ParamName))
+				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A" + param.ParamName + ".TheHandle")
+				initCommands = append(initCommands, fmt.Sprintf("else"))
+				if (param.ParamType == "optionalclass") {
+					initCommands = append(initCommands, "A"+param.ParamName+"Handle := nil;")
+				} else {
+					initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+				}
+				callFunctionParameters = callFunctionParameters + "A" + param.ParamName + "Handle"
+				initCallParameters = initCallParameters + "A" + param.ParamName + "Handle"
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -932,7 +939,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				doInitCall = true
 
-			case "class":
+			case "class", "optionalclass":
 				theNameSpace, theParamClass, _ := decomposeParamClassName(param.ParamClass)
 				theWrapperInstance := wrapperInstanceName
 				if len(theNameSpace) > 0 {
@@ -942,8 +949,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				}
 
 				defineCommands = append(defineCommands, "H"+param.ParamName+": "+PlainParamTypeName+";")
-				initCommands = append(initCommands, "Result := nil;")
-				initCommands = append(initCommands, "A%s := nil;", param.ParamName)
+				initCommands = append(initCommands, fmt.Sprintf("A%s := nil;", param.ParamName))
 				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				initCallParameters = initCallParameters + "nil"
@@ -1011,7 +1017,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				doInitCall = true
 
-			case "class":
+			case "class", "optionalclass":
 				theNameSpace, theParamClass, _ := decomposeParamClassName(param.ParamClass)
 				theWrapperInstance := wrapperInstanceName
 				if len(theNameSpace) > 0 {

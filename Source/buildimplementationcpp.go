@@ -1146,7 +1146,7 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 			return "e" + param.ParamName;
 		case "struct":
 			return param.ParamName;
-		case "class":
+		case "class", "optionalclass":
 			return "p" + param.ParamName;
 		case "functiontype":
 			return "p" + param.ParamName;
@@ -1211,7 +1211,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] %s - %s\n", param.ParamName, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("const %s %s", cppParamType, param.ParamName)
 
-			case "class":
+			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
 				if len(paramNameSpaceCPP) > 0 {
 					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
@@ -1291,13 +1291,13 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sBuffer - %s buffer of %s\n", param.ParamName, param.ParamClass, param.ParamDescription)
 				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
 
-			case "class":
-				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
+			case "class", "optionalclass":
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%s - %s\n",  param.ParamName, param.ParamDescription)
 				if len(paramNameSpaceCPP) > 0 {
 					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
 					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
 				} else {
-					parameters = parameters + fmt.Sprintf("I%s%s * p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+					parameters = parameters + fmt.Sprintf("I%s%s*& p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 				}
 				
 
@@ -1312,7 +1312,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 				returntype = currentReturnType
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 
-			case "class":
+			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 				if len(paramNameSpaceCPP) > 0 {
 					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
@@ -1390,7 +1390,7 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 			return fmt.Sprintf ("%s::e%s", NameSpace, param.ParamClass);
 		case "struct":
 			return fmt.Sprintf ("%s::s%s", NameSpace, param.ParamClass);
-		case "class":
+		case "class", "optionalclass":
 			if (isInput) {
 				return fmt.Sprintf ("%s%s *", cppClassPrefix, param.ParamClass);
 			}
@@ -1437,7 +1437,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
@@ -1448,11 +1448,13 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
 				}
-
-				preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
-				preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
-				preCallCode = append(preCallCode, "")
-					
+				
+				if (param.ParamType == "class") {
+					preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+					preCallCode = append(preCallCode, "")
+				}
+				
 				callParameters = callParameters + fmt.Sprintf("pI%s", param.ParamName)
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
@@ -1501,6 +1503,26 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
 				postCallCode = append(postCallCode, fmt.Sprintf("}"))
 
+			case "class", "optionalclass":
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s %s;", paramNameSpace, paramClassName, outVarName))
+					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(%s.get());", theWrapper, acqurireMethod, outVarName))
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
+					callParameters = callParameters + outVarName
+				} else {
+					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					callParameters = callParameters + "pBase" + param.ParamName
+				}
+				
+
 			default:
 				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
@@ -1538,7 +1560,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
 				postCallCode = append(postCallCode, fmt.Sprintf("}"))
 
-			case "class":
+			case "class", "optionalclass":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
@@ -1589,7 +1611,7 @@ func generateJournalFunctionCode(method ComponentDefinitionMethod, NameSpace str
 	journalSuccessFunctionCode := make([]string,0)
 	
 	
-	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("    if (m_GlobalJournal.get() != nullptr)  {"))
+	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("if (m_GlobalJournal.get() != nullptr)  {"))
 	if (isGlobal) {
 		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = m_GlobalJournal->beginStaticFunction(\"%s\");", method.MethodName))
 	} else {
@@ -1646,7 +1668,7 @@ func generateJournalFunctionCode(method ComponentDefinitionMethod, NameSpace str
 				case "enum":
 					journalCall = "addEnumParameter(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(" + variableName + "))";
 					
-				case "class":
+				case "class", "optionalclass":
 					journalCall = "addHandleParameter(\"" + param.ParamName+ "\", " + variableName + ")";
 
 				case "struct":
@@ -1716,7 +1738,7 @@ func generateJournalFunctionCode(method ComponentDefinitionMethod, NameSpace str
 				case "enum":
 					journalCall = "addEnumResult(\"" + param.ParamName+ "\", \"" + param.ParamClass + "\", (" + NameSpace + "_int32)(*p" + param.ParamName + "))";
 					
-				case "class":
+				case "class", "optionalclass":
 					journalCall = "addHandleResult(\"" + param.ParamName+ "\", *p" + param.ParamName + ")";
 				
 				case "struct":
