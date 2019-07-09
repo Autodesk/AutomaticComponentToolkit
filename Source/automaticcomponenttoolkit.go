@@ -479,7 +479,10 @@ func main() {
 
 	err = createComponent(component, outfolderBase)
 	if (err != nil) {
+		log.Println("Fatal error")
 		log.Fatal(err)
+	} else {
+		log.Println("Success")
 	}
 
 }
