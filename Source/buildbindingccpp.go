@@ -1627,12 +1627,12 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 	w.Writeln("project(%s)", projectName)
 	w.Writeln("set(CMAKE_CXX_STANDARD 11)")
 	w.Writeln("add_executable(%s \"${CMAKE_CURRENT_SOURCE_DIR}/%s_example.cpp\")", projectName, NameSpace)
-	if (ExplicitLinking) {
+	if (ExplicitLinking || (len(componentdefinition.ImportedComponentDefinitions)>0)) {
 		w.Writeln("if (UNIX)")
 		w.Writeln("  target_link_libraries(%s ${CMAKE_DL_LIBS})", projectName)
 		w.Writeln("endif (UNIX)")
 	} else {
-		linkFolder := strings.Replace(outputFolder, string(filepath.Separator), "/", -2) + "/../../Implementations/*/*/*"
+		linkFolder := "${CMAKE_CURRENT_SOURCE_DIR}/../../Implementations/*/*/*"
 		w.Writeln("find_library(%sLOCATION %s \"%s\")", strings.ToUpper(BaseName), BaseName, linkFolder)
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
