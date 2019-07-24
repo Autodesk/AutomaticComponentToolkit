@@ -959,7 +959,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					preCallLines = append(preCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')", NameSpace))
 				}
 				cArguments = cArguments + param.ParamName + "Handle"
-				cCheckArguments = cCheckArguments  + param.ParamName + param.ParamName+"Handle"
+				cCheckArguments = cCheckArguments  + param.ParamName + "Handle"
 			}
 			case "functiontype": {
 				pythonInParams = pythonInParams + param.ParamName + "Func"
