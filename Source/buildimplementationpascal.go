@@ -1322,10 +1322,11 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "dec(FReferenceCount);")
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "if (FReferenceCount = 0) then begin")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := true;")
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  self.Destroy();")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "end;")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], " result := false;")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := true;")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "end")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "else")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := false;")
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
