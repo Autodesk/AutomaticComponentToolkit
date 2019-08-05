@@ -22,6 +22,8 @@ uses
   libprimes_types,
   libprimes_exception,
   libprimes_interfaces,
+  libprimes_impl_factorizationcalculator,
+  libprimes_impl_sievecalculator,
   Classes,
   sysutils;
 
@@ -49,7 +51,7 @@ end;
 
 class function TLibPrimesWrapper.GetLastError(AInstance: TObject; out AErrorMessage: String): Boolean;
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  result := (AInstance as ILibPrimesBase).GetLastErrorMessage(AErrorMessage);
 end;
 
 class procedure TLibPrimesWrapper.AcquireInstance(AInstance: TObject);
@@ -64,12 +66,12 @@ end;
 
 class function TLibPrimesWrapper.CreateFactorizationCalculator(): TObject;
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  result := TLibPrimesFactorizationCalculator.Create();
 end;
 
 class function TLibPrimesWrapper.CreateSieveCalculator(): TObject;
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  result := TLibPrimesSieveCalculator.Create();
 end;
 
 class procedure TLibPrimesWrapper.SetJournal(const AFileName: String);
