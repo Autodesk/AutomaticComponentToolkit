@@ -198,11 +198,16 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 		}
 
-	case "class":
+	case "class", "optionalclass":
 		if isPlain {
 			CSharpParamTypeName = "IntPtr"
 		} else {
-			CSharpParamTypeName = "C" + ParamClass
+			paramNameSpace, _, _ := decomposeParamClassName(ParamClass)
+			if len(paramNameSpace) > 0 {
+				CSharpParamTypeName = "IntPtr"
+			} else {
+				CSharpParamTypeName = "C" + ParamClass
+			}
 		}
 
 	default:
@@ -305,6 +310,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 	defineCommands := make([]string, 0)
 	initCommands := make([]string, 0)
 	resultCommands := make([]string, 0)
+	returnCodeLines := []string{}
 	postInitCommands := make([]string, 0)
 
 	doInitCall := false
@@ -397,8 +403,13 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameter = "IntPtr.Zero"
 				initCallParameter = callFunctionParameter
 
-			case "class":
-				callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
+			case "class", "optionalclass":
+				if (ParamTypeName == "IntPtr") {
+					callFunctionParameter = "A" + param.ParamName
+				} else {
+					callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
+				}
+				
 				initCallParameter = callFunctionParameter
 
 			default:
@@ -434,7 +445,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s + 1;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  byte[] bytes%s = new byte[size%s];", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
@@ -506,7 +517,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				doInitCall = true
 
-			case "class":
+			case "class", "optionalclass":
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
@@ -524,7 +535,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  %s result%s = 0;", ParamTypeName, param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return result%s;", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return result%s;", param.ParamName))
 
 			case "string":
 
@@ -533,14 +544,14 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				initCallParameter = fmt.Sprintf("size%s, out needed%s, IntPtr.Zero", param.ParamName, param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s + 1;", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("  size%s = needed%s;", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  byte[] bytes%s = new byte[size%s];", param.ParamName, param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("  GCHandle data%s = GCHandle.Alloc(bytes%s, GCHandleType.Pinned);", param.ParamName, param.ParamName))
 
 				callFunctionParameter = fmt.Sprintf("size%s, out needed%s, data%s.AddrOfPinnedObject()", param.ParamName, param.ParamName, param.ParamName)
 
 				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free();", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("  return Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Encoding.UTF8.GetString(bytes%s).TrimEnd(char.MinValue);", param.ParamName))
 
 				doInitCall = true
 
@@ -548,26 +559,29 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  Int32 result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return (e%s) (result%s);", param.ParamClass, param.ParamName))
 
 			case "bool":
 				defineCommands = append(defineCommands, fmt.Sprintf("  Byte result%s = 0;", param.ParamName))
 				callFunctionParameter = "out result" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return (result%s != 0);", param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return (result%s != 0);", param.ParamName))
 
 			case "struct":
 				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.Internal%s intresult%s;", param.ParamClass, param.ParamName))
 				callFunctionParameter = "out intresult" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
-			case "class":
-
+			case "class", "optionalclass":
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  return new C%s (new%s );", param.ParamClass, param.ParamName))
+				if (ParamTypeName == "IntPtr") {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
+				} else {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new %s (new%s );", ParamTypeName, param.ParamName))
+				}
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -597,16 +611,17 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 	}
 
 	if doInitCall {
-		w.Writeln(spacing+"  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, initCallParameters)
+		w.Writeln(spacing+"  CheckError(Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, initCallParameters)
 	}
 
 	w.Writelns(spacing, postInitCommands)
 
 	w.Writeln("")
 
-	w.Writeln(spacing+"  CheckError (Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, callFunctionParameters)
+	w.Writeln(spacing+"  CheckError(Internal.%sWrapper.%s (%s));", NameSpace, callFunctionName, callFunctionParameters)
 
 	w.Writelns(spacing, resultCommands)
+	w.Writelns(spacing, returnCodeLines)
 
 	return nil
 }
@@ -689,7 +704,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				w.Writeln("    public UInt64%s %s;", arraysuffix, element.Name)
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				w.Writeln("    public e%s%s %s;", element.Class, arraysuffix, element.Name)
@@ -766,7 +781,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				fieldOffset = fieldOffset + 8*multiplier
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
@@ -928,7 +943,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("          Byte hasLastError = 0;")
 		w.Writeln("          Int32 resultCode1 = %s (Handle, sizeMessage, out neededMessage, IntPtr.Zero, out hasLastError);", component.Global.ErrorMethod)
 		w.Writeln("          if ((resultCode1 == 0) && (hasLastError != 0)) {")
-		w.Writeln("            sizeMessage = neededMessage + 1;")
+		w.Writeln("            sizeMessage = neededMessage;")
 		w.Writeln("            byte[] bytesMessage = new byte[sizeMessage];")
 		w.Writeln("")
 		w.Writeln("            GCHandle dataMessage = GCHandle.Alloc(bytesMessage, GCHandleType.Pinned);")
@@ -1048,8 +1063,16 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("    public static %s %s (%s)", returnType, method.MethodName, parameters)
 		w.Writeln("    {")
 
-		writeCSharpClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "    ")
-
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global)
+		if err != nil {
+			return err
+		}
+		if isSpecialFunction == eSpecialMethodInjection {
+			w.Writeln("    throw new Exception(\"Component injection is not supported in CSharp.\");")
+		} else {
+			writeCSharpClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "    ")
+		}
+		
 		w.Writeln("    }")
 		w.Writeln("")
 	}
@@ -1074,23 +1097,29 @@ func buildCSharpExample(componentdefinition ComponentDefinition, w LanguageWrite
 	w.Writeln("  {")
 	w.Writeln("    static void Main()")
 	w.Writeln("    {")
-	w.Writeln("      UInt32 nMajor, nMinor, nMicro;")
-	//w.Writeln("      SetDllDirectory(\"\"); // TODO add the location of the shared library binary here")
-	w.Writeln("      %s.Wrapper.%s(out nMajor, out nMinor, out nMicro);", NameSpace, componentdefinition.Global.VersionMethod)
-	//w.Writeln("      SetDllDirectory(null);")
-	w.Writeln("      string versionString = string.Format(\"%s.version = {0}.{1}.{2}\", nMajor, nMinor, nMicro);", NameSpace)
+	w.Writeln("      try")
+	w.Writeln("      {")
+	w.Writeln("        UInt32 nMajor, nMinor, nMicro;")
+	//w.Writeln("        SetDllDirectory(\"\"); // TODO add the location of the shared library binary here")
+	w.Writeln("        %s.Wrapper.%s(out nMajor, out nMinor, out nMicro);", NameSpace, componentdefinition.Global.VersionMethod)
+	//w.Writeln("        SetDllDirectory(null);")
+	w.Writeln("        string versionString = string.Format(\"%s.version = {0}.{1}.{2}\", nMajor, nMinor, nMicro);", NameSpace)
 	if len(global.PrereleaseMethod) > 0 {
-		w.Writeln("      string sPreReleaseInfo;")
-		w.Writeln("      if (%s.Wrapper.%s(out sPreReleaseInfo))", NameSpace, global.PrereleaseMethod)
-		w.Writeln("        versionString = versionString + '-' + sPreReleaseInfo;")
+		w.Writeln("        string sPreReleaseInfo;")
+		w.Writeln("        if (%s.Wrapper.%s(out sPreReleaseInfo))", NameSpace, global.PrereleaseMethod)
+		w.Writeln("          versionString = versionString + '-' + sPreReleaseInfo;")
 	}
 	if len(global.BuildinfoMethod) > 0 {
-		w.Writeln("      string sBuildInfo;")
-		w.Writeln("      if (%s.Wrapper.%s(out sBuildInfo))", NameSpace, global.BuildinfoMethod)
-		w.Writeln("        versionString = versionString + '-' + sBuildInfo;")
+		w.Writeln("        string sBuildInfo;")
+		w.Writeln("        if (%s.Wrapper.%s(out sBuildInfo))", NameSpace, global.BuildinfoMethod)
+		w.Writeln("          versionString = versionString + '-' + sBuildInfo;")
 	}
-	w.Writeln("      Console.WriteLine(versionString);")
-	w.Writeln("      ")
+	w.Writeln("        Console.WriteLine(versionString);")
+	w.Writeln("      }")
+	w.Writeln("      catch (Exception e)")
+	w.Writeln("      {")
+	w.Writeln("        Console.WriteLine(\"Exception: \\\"\" + e.Message + \"\\\"\");")
+	w.Writeln("      }")
 	w.Writeln("      Console.WriteLine(\"Press any key to exit.\");")
 	w.Writeln("      Console.ReadKey();")
 	w.Writeln("    }")

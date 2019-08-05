@@ -22,11 +22,10 @@ using namespace LibPrimes::Impl;
 
 bool CBase::GetLastErrorMessage(std::string & sErrorMessage)
 {
-	auto iIterator = m_errors.rbegin();
-	if (iIterator != m_errors.rend()) {
-		sErrorMessage = *iIterator;
+	if (m_pErrors && !m_pErrors->empty()) {
+		sErrorMessage = m_pErrors->back();
 		return true;
-	}else {
+	} else {
 		sErrorMessage = "";
 		return false;
 	}
@@ -34,11 +33,30 @@ bool CBase::GetLastErrorMessage(std::string & sErrorMessage)
 
 void CBase::ClearErrorMessages()
 {
-	m_errors.clear();
+	m_pErrors.reset();
 }
 
 void CBase::RegisterErrorMessage(const std::string & sErrorMessage)
 {
-	m_errors.push_back(sErrorMessage);
+	if (!m_pErrors) {
+		m_pErrors.reset(new std::list<std::string>());
+	}
+	m_pErrors->clear();
+	m_pErrors->push_back(sErrorMessage);
+}
+
+void CBase::IncRefCount()
+{
+	++m_nReferenceCount;
+}
+
+bool CBase::DecRefCount()
+{
+	m_nReferenceCount--;
+	if (!m_nReferenceCount) {
+		delete this;
+		return true;
+	}
+	return false;
 }
 

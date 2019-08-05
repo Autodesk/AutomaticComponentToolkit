@@ -40,23 +40,23 @@ import (
 	"log"
 )
 
-// BuildBindingC builds C-bindings of a library's API in form of automatically C functions
+// BuildBindingC builds C-bindings of a library's API in form of automatically generated C functions
 func BuildBindingC(component ComponentDefinition, outputFolderBindingC string) error {
-	CTypesHeaderName := path.Join(outputFolderBindingC, component.BaseName + "_types.h");
+	CTypesHeaderName := path.Join(outputFolderBindingC, component.BaseName + "_types.h")
 	log.Printf("Creating \"%s\"", CTypesHeaderName)
-	err := CreateCTypesHeader (component, CTypesHeaderName);
+	err := CreateCTypesHeader(component, CTypesHeaderName)
 	if (err != nil) {
 		return err;
 	}
 
-	CHeaderName := path.Join(outputFolderBindingC, component.BaseName + ".h");
+	CHeaderName := path.Join(outputFolderBindingC, component.BaseName + ".h")
 	log.Printf("Creating \"%s\"", CTypesHeaderName)
-	err = CreateCAbiHeader(component, CHeaderName);
+	err = CreateCAbiHeader(component, CHeaderName)
 	if (err != nil) {
-		return err;
+		return err
 	}
 
-	return nil;
+	return nil
 }
 
 // CreateCTypesHeader creates a C header file for the types in component's API
@@ -184,6 +184,11 @@ func buildCCPPTypesHeader(component ComponentDefinition, w LanguageWriter, NameS
 	w.Writeln("#define %s", sIncludeGuard);
 	w.Writeln("");
 
+	if (!useCPPTypes) {
+		w.Writeln("#include <stdbool.h>");
+	}
+	w.Writeln("");
+
 	err := buildSharedCCPPTypesHeader(component, w, NameSpace)
 	if (err != nil) {
 		return err
@@ -250,7 +255,7 @@ func GetCMemberDefaultValue(memberType string, memberClass string, NameSpace str
 			return "0", nil;
 		case "string":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a string value");
-		case "class":
+		case "class", "optionalclass":
 			return "", fmt.Errorf ("it is not possible for a struct to contain a handle value");
 		default:
 			return "", fmt.Errorf ("unknown member type %s", memberType);
@@ -316,6 +321,11 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 		w.Writeln("#include \"%s_types.h\"", BaseName);
 	}
 	w.Writeln("");
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
+	}
+	w.Writeln("")
+
 
 	w.Writeln("extern \"C\" {");
 
@@ -483,7 +493,7 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 		if (useCPPTypes) {
 			w.Writeln("enum class e%s : %s_int32 {", enum.Name, NameSpace);
 		} else {
-			w.Writeln("enum e%s%s {", NameSpace, enum.Name);
+			w.Writeln("typedef enum e%s%s {", NameSpace, enum.Name);
 		}
 		
 		for j := 0; j < len(enum.Options); j++ {
@@ -498,7 +508,11 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 				w.Writeln("  e%s%s = %d%s", enum.Name, option.Name, option.Value, comma);
 			}
 		}
-		w.Writeln("};");
+		if (useCPPTypes) {
+			w.Writeln("};");
+		} else {
+			w.Writeln("} e%s%s;", NameSpace, enum.Name);
+		}
 		w.Writeln("");
 	}
 	
@@ -552,24 +566,11 @@ func buildCCPPFunctionPointers(component ComponentDefinition, w LanguageWriter, 
 			}
 			for _, cParam := range cParams {
 				w.Writeln(cParam.ParamComment);
-			}
-			var cParamTypeName string
-			if (useCPPTypes) {
-				cParamTypeName, err = getCPPParameterTypeName(param.ParamType, NameSpace, param.ParamClass);
-			} else {
-				cParamTypeName, err = getCParameterTypeName(param.ParamType, NameSpace, param.ParamClass);
-			}
 
-			if (err != nil) {
-				return err;
-			}
-			if (parameters != "") {
-				parameters = parameters + ", "
-			}
-			if (param.ParamPass == "in") {
-				parameters = parameters + cParamTypeName
-			} else {
-				parameters = parameters + cParamTypeName + "*"
+				if (parameters != "") {
+					parameters = parameters + ", "
+				}
+				parameters = parameters + cParam.ParamType
 			}
 		}
 		w.Writeln("*/");
@@ -584,32 +585,41 @@ func buildCCPPFunctionPointers(component ComponentDefinition, w LanguageWriter, 
 }
 
 func getCParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string)(string, error) {
+	paramNameSpace, paramClassName, err := decomposeParamClassName(ParamClass)
+	if (err != nil) {
+		return "", err
+	}
+	if len(paramNameSpace) == 0 {
+		paramNameSpace = NameSpace
+	}
+
+
 	cParamTypeName := "";
 	switch (ParamTypeName) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
-			cParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamTypeName);
+			cParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, ParamTypeName);
 		case "bool":
 			cParamTypeName = "bool";
 		case "pointer":
-			cParamTypeName = fmt.Sprintf ("%s_pvoid", NameSpace);
+			cParamTypeName = fmt.Sprintf ("%s_pvoid", paramNameSpace);
 		case "string":
 			cParamTypeName = "char *";
 		case "enum":
-			cParamTypeName = fmt.Sprintf ("e%s%s", NameSpace, ParamClass);
+			cParamTypeName = fmt.Sprintf ("e%s%s", paramNameSpace, paramClassName);
 		case "struct":
-			cParamTypeName = fmt.Sprintf ("s%s%s *", NameSpace, ParamClass);
+			cParamTypeName = fmt.Sprintf ("s%s%s *", paramNameSpace, paramClassName);
 		case "basicarray":
-			basicTypeName, err := getCParameterTypeName(ParamClass, NameSpace, "");
+			basicTypeName, err := getCParameterTypeName(paramClassName, paramNameSpace, "");
 			if (err != nil) {
 				return "", err;
 			}
 			cParamTypeName = fmt.Sprintf ("%s *", basicTypeName);
 		case "structarray":
-			cParamTypeName = fmt.Sprintf ("s%s%s *", NameSpace, ParamClass)
-		case "class":
-			cParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamClass)
+			cParamTypeName = fmt.Sprintf ("s%s%s *", paramNameSpace, paramClassName)
+		case "class", "optionalclass":
+			cParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, paramClassName)
 		case "functiontype":
-			cParamTypeName = fmt.Sprintf ("%s%s", NameSpace, ParamClass)
+			cParamTypeName = fmt.Sprintf ("%s%s", paramNameSpace, paramClassName)
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for C-parameter", ParamTypeName);
 	}
@@ -690,7 +700,7 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -746,7 +756,7 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = cParamTypeName + " *";
 				cParams[0].ParamName = "p" + param.ParamName;
 				cParams[0].ParamComment = fmt.Sprintf("* @param[out] %s - %s", cParams[0].ParamName, param.ParamDescription);
@@ -764,15 +774,15 @@ func generateCCPPParameter(param ComponentDefinitionParam, className string, met
 
 // GenerateCParameters generates an array of cParameters for a method
 func GenerateCParameters(method ComponentDefinitionMethod, className string, NameSpace string) ([]CParameter, error) {
-	parameters := []CParameter{};
+	parameters := []CParameter{}
 	for k := 0; k < len(method.Params); k++ {
-		param := method.Params [k];
+		param := method.Params [k]
 		
 		cParam, err := generateCCPPParameter(param, className, method.MethodName, NameSpace, false);
 		if err != nil {
-			return nil, err;
+			return nil, err
 		}
-		parameters = append(parameters, cParam...);
+		parameters = append(parameters, cParam...)
 	}
 
 	return parameters, nil;

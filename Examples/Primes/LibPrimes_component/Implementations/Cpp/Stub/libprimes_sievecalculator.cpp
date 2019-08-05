@@ -20,6 +20,21 @@ using namespace LibPrimes::Impl;
  Class definition of CSieveCalculator 
 **************************************************************************************************************************/
 
+void CSieveCalculator::GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
+{
+	if (primes.size() == 0)
+		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
+	if (pPrimesNeededCount)
+		*pPrimesNeededCount = (LibPrimes_uint64)primes.size();
+	if (nPrimesBufferSize >= primes.size() && pPrimesBuffer)
+	{
+		for (int i = 0; i < primes.size(); i++)
+		{
+			pPrimesBuffer[i] = primes[i];
+		}
+	}
+}
+
 void CSieveCalculator::Calculate()
 {
 	primes.clear();
@@ -40,21 +55,6 @@ void CSieveCalculator::Calculate()
 	for (LibPrimes_uint64 i = sqrtValue; i <= m_value; i++) {
 		if (!strikenOut[i]) {
 			primes.push_back(i);
-		}
-	}
-}
-
-void CSieveCalculator::GetPrimes(LibPrimes_uint64 nPrimesBufferSize, LibPrimes_uint64* pPrimesNeededCount, LibPrimes_uint64 * pPrimesBuffer)
-{
-	if (primes.size() == 0)
-		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
-	if (pPrimesNeededCount)
-		*pPrimesNeededCount = (LibPrimes_uint64)primes.size();
-	if (nPrimesBufferSize >= primes.size() && pPrimesBuffer)
-	{
-		for (int i = 0; i < primes.size(); i++)
-		{
-			pPrimesBuffer[i] = primes[i];
 		}
 	}
 }

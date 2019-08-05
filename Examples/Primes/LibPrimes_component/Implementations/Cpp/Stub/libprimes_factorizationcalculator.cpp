@@ -20,6 +20,23 @@ using namespace LibPrimes::Impl;
  Class definition of CFactorizationCalculator 
 **************************************************************************************************************************/
 
+void CFactorizationCalculator::GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer)
+{
+	if (primeFactors.size() == 0)
+		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
+
+	if (pPrimeFactorsNeededCount)
+		*pPrimeFactorsNeededCount = (LibPrimes_uint64)primeFactors.size();
+
+	if (nPrimeFactorsBufferSize >= primeFactors.size() && pPrimeFactorsBuffer)
+	{
+		for (int i = 0; i < primeFactors.size(); i++)
+		{
+			pPrimeFactorsBuffer[i] = primeFactors[i];
+		}
+	}
+}
+
 void CFactorizationCalculator::Calculate()
 {
 	primeFactors.clear();
@@ -48,20 +65,4 @@ void CFactorizationCalculator::Calculate()
 	}
 }
 
-void CFactorizationCalculator::GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer)
-{
-	if (primeFactors.size() == 0)
-		throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NORESULTAVAILABLE);
-
-	if (pPrimeFactorsNeededCount)
-		*pPrimeFactorsNeededCount = (LibPrimes_uint64)primeFactors.size();
-
-	if (nPrimeFactorsBufferSize >= primeFactors.size() && pPrimeFactorsBuffer)
-	{
-		for (int i = 0; i < primeFactors.size(); i++)
-		{
-			pPrimeFactorsBuffer[i] = primeFactors[i];
-		}
-	}
-}
 

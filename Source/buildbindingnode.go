@@ -282,7 +282,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = fmt.Sprintf ("&s%s", param.ParamName);
 				initCallParameter = callParameter;
 
-			case "class":
+			case "class", "optionalclass":
 				inputcheckfunction = "IsObject"
 
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Object> obj%s = args[%d]->ToObject(isolate->GetCurrentContext()).ToLocalChecked ();\n", spacing, param.ParamName, k)
@@ -388,11 +388,10 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName);
 
 				functioncode = functioncode + fmt.Sprintf("%sstd::vector<char> buffer%s;\n", spacing, param.ParamName)
-				functioncode = functioncode + fmt.Sprintf("%sbuffer%s.resize(bytesNeeded%s + 2);\n", spacing, param.ParamName, param.ParamName)
+				functioncode = functioncode + fmt.Sprintf("%sbuffer%s.resize(bytesNeeded%s);\n", spacing, param.ParamName, param.ParamName)
 
 				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				returncode = returncode + fmt.Sprintf("%sbuffer%s[bytesNeeded%s + 1] = 0;\n", spacing, param.ParamName, param.ParamName);
 				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8 (isolate, &buffer%s[0]));\n", spacing, argsvalue, param.ParamName);
 			
 			case "bool":
@@ -442,7 +441,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "nullptr";
 				initCallParameter = callParameter;
 				
-			case "class":
+			case "class", "optionalclass":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s%sHandle hReturn%s = nullptr;\n", spacing, NameSpace, param.ParamName)
 				callParameter = "&hReturn" + param.ParamName
 				initCallParameter = callParameter;

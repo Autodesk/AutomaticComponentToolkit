@@ -1,0 +1,10 @@
+EXPORTS
+optclass_acquireinstance
+optclass_releaseinstance
+optclass_getversion
+optclass_getlasterror
+optclass_setjournal
+optclass_createinstancewithname
+optclass_findinstancea
+optclass_findinstanceb
+optclass_useinstancemaybe

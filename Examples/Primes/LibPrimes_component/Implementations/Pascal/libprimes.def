@@ -1,6 +1,7 @@
 EXPORTS
 libprimes_getversion
 libprimes_getlasterror
+libprimes_acquireinstance
 libprimes_releaseinstance
 libprimes_createfactorizationcalculator
 libprimes_createsievecalculator

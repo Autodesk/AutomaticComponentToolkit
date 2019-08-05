@@ -81,20 +81,28 @@ func CreateCPPAbiHeader(component ComponentDefinition, CHeaderName string) (erro
 }
 
 func getCPPParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string)(string, error) {
+	paramNameSpace, paramClassName, err := decomposeParamClassName(ParamClass)
+	if (err != nil) {
+		return "", err
+	}
+	if len(paramNameSpace) == 0 {
+		paramNameSpace = NameSpace
+	}
+
 	cppParamTypeName := "";
 	switch (ParamTypeName) {
 		case "enum":
-			cppParamTypeName = fmt.Sprintf ("%s::e%s", NameSpace, ParamClass);
+			cppParamTypeName = fmt.Sprintf ("%s::e%s", paramNameSpace, paramClassName);
 		case "struct":
-			cppParamTypeName = fmt.Sprintf ("%s::s%s *", NameSpace, ParamClass);
+			cppParamTypeName = fmt.Sprintf ("%s::s%s *", paramNameSpace, paramClassName);
 		case "structarray":
-			cppParamTypeName = fmt.Sprintf ("%s::s%s *", NameSpace, ParamClass)
-		case "class":
-			cppParamTypeName = fmt.Sprintf ("%s_%s", NameSpace, ParamClass)
+			cppParamTypeName = fmt.Sprintf ("%s::s%s *", paramNameSpace, paramClassName)
+		case "class", "optionalclass":
+			cppParamTypeName = fmt.Sprintf ("%s_%s", paramNameSpace, paramClassName)
 		case "functiontype":
-			cppParamTypeName = fmt.Sprintf ("%s::%s", NameSpace, ParamClass)
+			cppParamTypeName = fmt.Sprintf ("%s::%s", paramNameSpace, paramClassName)
 		default:
-			cParamTypeName, err := getCParameterTypeName(ParamTypeName, NameSpace, ParamClass)
+			cParamTypeName, err := getCParameterTypeName(ParamTypeName, paramNameSpace, paramClassName)
 			if (err != nil) {
 				return "", err
 			}
