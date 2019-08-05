@@ -255,6 +255,12 @@ func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, Nam
 	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
+	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode, std::string errorMessage)", NameSpace, NameSpace, NameSpace);
+	wImpl.Writeln("  : m_errorMessage(errorMessage + \" (\" + std::to_string (errorCode) + \")\")");
+	wImpl.Writeln("{");
+	wImpl.Writeln("  m_errorCode = errorCode;");
+	wImpl.Writeln("}");
+	wImpl.Writeln("");
 	wImpl.Writeln("%sResult E%sInterfaceException::getErrorCode ()", NameSpace, NameSpace);
 	wImpl.Writeln("{");
 	wImpl.Writeln("  return m_errorCode;");
@@ -996,8 +1002,9 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		
 		if (component.isBaseClass(class)) {
-			stubheaderw.Writeln("  std::unique_ptr<std::string> m_pLastError;")
-			stubheaderw.Writeln("  %s_uint32 m_nReferenceCount = 1;", NameSpace)
+==== BASE ====
+			stubheaderw.Writeln("  std::vector<std::string> m_errors;")
+==== BASE ====
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
@@ -1051,7 +1058,6 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[0] = append(implementations[0], "  sErrorMessage = \"\";")
 			implementations[0] = append(implementations[0], "  return false;")
 			implementations[0] = append(implementations[0], "}")
-
 			implementations[1] = append(implementations[1], "m_pLastError.reset();")
 
 			implementations[2] = append(implementations[2], "if (!m_pLastError) {")
@@ -1067,7 +1073,6 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[4] = append(implementations[4], "  return true;")
 			implementations[4] = append(implementations[4], "}")
 			implementations[4] = append(implementations[4], "return false;")
-
 			for i := 0; i < len(methods); i++ {
 				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 				if (err!=nil) {

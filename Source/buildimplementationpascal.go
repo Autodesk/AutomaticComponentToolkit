@@ -1078,7 +1078,6 @@ func buildLPRImplementation(component ComponentDefinition, w LanguageWriter, Nam
 
 		w.Writeln("  %s%s", GetCExportName(NameSpace, "Wrapper", method, true), commaString)
 	}
-
 	w.Writeln("")
 	w.Writeln("{$IFDEF %s_INCLUDE_RES_FILE}", strings.ToUpper(NameSpace))
 	w.Writeln("{$R *.res}")

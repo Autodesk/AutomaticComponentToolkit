@@ -40,21 +40,18 @@ class IVariable;
  Class interface for Base
 **************************************************************************************************************************/
 
-class IBase
-{
+class IBase {
 public:
 	/**
 	* IBase::~IBase - virtual destructor of IBase
 	*/
-	virtual
-	~IBase() {};
+	virtual ~IBase() {};
 
 	/**
 	* IBase::ReleaseBaseClassInterface - Releases ownership of a base class interface. Deletes the reference, if necessary.
 	* @param[in] pIBase - The base class instance to release
 	*/
-	static void
-	ReleaseBaseClassInterface(IBase* pIBase)
+	static void ReleaseBaseClassInterface(IBase* pIBase)
 	{
 		if (pIBase) {
 			pIBase->DecRefCount();
@@ -65,8 +62,7 @@ public:
 	* IBase::AcquireBaseClassInterface - Acquires shared ownership of a base class interface.
 	* @param[in] pIBase - The base class instance to acquire
 	*/
-	static void
-	AcquireBaseClassInterface(IBase* pIBase)
+	static void AcquireBaseClassInterface(IBase* pIBase)
 	{
 		if (pIBase) {
 			pIBase->IncRefCount();
@@ -112,23 +108,20 @@ template<class T>
 class IBaseSharedPtr : public std::shared_ptr<T>
 {
 public:
-	explicit
-	IBaseSharedPtr(T* t = nullptr)
+	explicit IBaseSharedPtr(T* t = nullptr)
 		: std::shared_ptr<T>(t, IBase::ReleaseBaseClassInterface)
 	{
 		t->IncRefCount();
 	}
 
 	// Reset function, as it also needs to properly set the deleter.
-	void
-	reset(T* t = nullptr)
+	void reset(T* t = nullptr)
 	{
 		std::shared_ptr<T>::reset(t, IBase::ReleaseBaseClassInterface);
 	}
 
 	// Get-function that increases the Base class's reference count
-	T*
-	getCoOwningPtr()
+	T* getCoOwningPtr()
 	{
 		T* t = this->get();
 		t->IncRefCount();
@@ -144,8 +137,7 @@ typedef IBaseSharedPtr<IBase> PIBase;
  Class interface for Variable
 **************************************************************************************************************************/
 
-class IVariable : public virtual IBase
-{
+class IVariable : public virtual IBase {
 public:
 	/**
 	* IVariable::GetValue - Returns the current value of this Variable
@@ -167,8 +159,7 @@ typedef IBaseSharedPtr<IVariable> PIVariable;
 /*************************************************************************************************************************
  Global functions declarations
 **************************************************************************************************************************/
-class CWrapper
-{
+class CWrapper {
 public:
 	/**
 	* Inumbers::CreateVariable - Creates a new Variable instance
