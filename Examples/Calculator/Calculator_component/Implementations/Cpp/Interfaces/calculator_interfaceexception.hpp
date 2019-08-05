@@ -40,21 +40,21 @@ public:
 	/**
 	* Exception Constructor.
 	*/
-	ECalculatorInterfaceException (CalculatorResult errorCode);
+	ECalculatorInterfaceException(CalculatorResult errorCode);
 
 	/**
 	* Custom Exception Constructor.
 	*/
-	ECalculatorInterfaceException (CalculatorResult errorCode, std::string errorMessage);
+	ECalculatorInterfaceException(CalculatorResult errorCode, std::string errorMessage);
 
 	/**
 	* Returns error code
 	*/
-	CalculatorResult getErrorCode ();
+	CalculatorResult getErrorCode();
 	/**
 	* Returns error message
 	*/
-	const char* what () const noexcept override;
+	const char* what() const noexcept override;
 };
 
 #endif // __CALCULATOR_INTERFACEEXCEPTION_HEADER

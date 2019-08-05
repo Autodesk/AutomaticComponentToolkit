@@ -37,6 +37,7 @@ exports
   calculator_getversion,
   calculator_getlasterror,
   calculator_releaseinstance,
+  calculator_acquireinstance,
   calculator_createvariable,
   calculator_createcalculator;
 

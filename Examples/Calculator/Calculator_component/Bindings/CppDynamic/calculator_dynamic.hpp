@@ -19,6 +19,7 @@ Interface version: 1.0.0
 #include "calculator_types.hpp"
 #include "calculator_dynamic.h"
 
+
 #ifdef _WIN32
 #include <windows.h>
 #else // _WIN32
@@ -150,6 +151,14 @@ using CCalculatorInputVector = CInputVector<T>;
 class CWrapper {
 public:
 	
+	CWrapper(void* pSymbolLookupMethod)
+	{
+		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
+		CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
+		
+		CheckError(nullptr, checkBinaryVersion());
+	}
+	
 	CWrapper(const std::string &sFileName)
 	{
 		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
@@ -163,6 +172,11 @@ public:
 		return std::make_shared<CWrapper>(sFileName);
 	}
 	
+	static PWrapper loadLibraryFromSymbolLookupMethod(void* pSymbolLookupMethod)
+	{
+		return std::make_shared<CWrapper>(pSymbolLookupMethod);
+	}
+	
 	~CWrapper()
 	{
 		releaseWrapperTable(&m_WrapperTable);
@@ -173,6 +187,7 @@ public:
 	inline void GetVersion(Calculator_uint32 & nMajor, Calculator_uint32 & nMinor, Calculator_uint32 & nMicro);
 	inline bool GetLastError(CBase * pInstance, std::string & sErrorMessage);
 	inline void ReleaseInstance(CBase * pInstance);
+	inline void AcquireInstance(CBase * pInstance);
 	inline PVariable CreateVariable(const Calculator_double dInitialValue);
 	inline PCalculator CreateCalculator();
 
@@ -191,6 +206,7 @@ private:
 	CalculatorResult initWrapperTable(sCalculatorDynamicWrapperTable * pWrapperTable);
 	CalculatorResult releaseWrapperTable(sCalculatorDynamicWrapperTable * pWrapperTable);
 	CalculatorResult loadWrapperTable(sCalculatorDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
+	CalculatorResult loadWrapperTableFromSymbolLookupMethod(sCalculatorDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);
 
 	friend class CBase;
 	friend class CVariable;
@@ -217,7 +233,7 @@ protected:
 		if (m_pWrapper != nullptr)
 			m_pWrapper->CheckError(this, nResult);
 	}
-
+public:
 	/**
 	* CBase::CBase - Constructor for Base class.
 	*/
@@ -236,7 +252,6 @@ protected:
 		m_pWrapper = nullptr;
 	}
 
-public:
 	/**
 	* CBase::GetHandle - Returns handle to instance.
 	*/
@@ -317,11 +332,12 @@ public:
 		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
 		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
+		
 		return resultHasError;
 	}
 	
 	/**
-	* CWrapper::ReleaseInstance - Releases the memory of an Instance
+	* CWrapper::ReleaseInstance - Releases shared ownership of an Instance
 	* @param[in] pInstance - Instance Handle
 	*/
 	inline void CWrapper::ReleaseInstance(CBase * pInstance)
@@ -334,6 +350,19 @@ public:
 	}
 	
 	/**
+	* CWrapper::AcquireInstance - Acquires shared ownership of an Instance
+	* @param[in] pInstance - Instance Handle
+	*/
+	inline void CWrapper::AcquireInstance(CBase * pInstance)
+	{
+		CalculatorHandle hInstance = nullptr;
+		if (pInstance != nullptr) {
+			hInstance = pInstance->GetHandle();
+		};
+		CheckError(nullptr,m_WrapperTable.m_AcquireInstance(hInstance));
+	}
+	
+	/**
 	* CWrapper::CreateVariable - Creates a new Variable instance
 	* @param[in] dInitialValue - Initial value of the new Variable
 	* @return New Variable instance
@@ -342,6 +371,10 @@ public:
 	{
 		CalculatorHandle hInstance = nullptr;
 		CheckError(nullptr,m_WrapperTable.m_CreateVariable(dInitialValue, &hInstance));
+		
+		if (!hInstance) {
+			CheckError(nullptr,CALCULATOR_ERROR_INVALIDPARAM);
+		}
 		return std::make_shared<CVariable>(this, hInstance);
 	}
 	
@@ -353,6 +386,10 @@ public:
 	{
 		CalculatorHandle hInstance = nullptr;
 		CheckError(nullptr,m_WrapperTable.m_CreateCalculator(&hInstance));
+		
+		if (!hInstance) {
+			CheckError(nullptr,CALCULATOR_ERROR_INVALIDPARAM);
+		}
 		return std::make_shared<CCalculator>(this, hInstance);
 	}
 	
@@ -384,6 +421,7 @@ public:
 		pWrapperTable->m_GetVersion = nullptr;
 		pWrapperTable->m_GetLastError = nullptr;
 		pWrapperTable->m_ReleaseInstance = nullptr;
+		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_CreateVariable = nullptr;
 		pWrapperTable->m_CreateCalculator = nullptr;
 		
@@ -525,6 +563,15 @@ public:
 			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
+		pWrapperTable->m_AcquireInstance = (PCalculatorAcquireInstancePtr) GetProcAddress(hLibrary, "calculator_acquireinstance");
+		#else // _WIN32
+		pWrapperTable->m_AcquireInstance = (PCalculatorAcquireInstancePtr) dlsym(hLibrary, "calculator_acquireinstance");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_AcquireInstance == nullptr)
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
 		pWrapperTable->m_CreateVariable = (PCalculatorCreateVariablePtr) GetProcAddress(hLibrary, "calculator_createvariable");
 		#else // _WIN32
 		pWrapperTable->m_CreateVariable = (PCalculatorCreateVariablePtr) dlsym(hLibrary, "calculator_createvariable");
@@ -545,6 +592,74 @@ public:
 		pWrapperTable->m_LibraryHandle = hLibrary;
 		return CALCULATOR_SUCCESS;
 	}
+
+	inline CalculatorResult CWrapper::loadWrapperTableFromSymbolLookupMethod(sCalculatorDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod)
+{
+		if (pWrapperTable == nullptr)
+			return CALCULATOR_ERROR_INVALIDPARAM;
+		if (pSymbolLookupMethod == nullptr)
+			return CALCULATOR_ERROR_INVALIDPARAM;
+		
+		typedef CalculatorResult(*SymbolLookupType)(const char*, void**);
+		
+		SymbolLookupType pLookup = (SymbolLookupType)pSymbolLookupMethod;
+		
+		CalculatorResult eLookupError = CALCULATOR_SUCCESS;
+		eLookupError = (*pLookup)("calculator_variable_getvalue", (void**)&(pWrapperTable->m_Variable_GetValue));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Variable_GetValue == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_variable_setvalue", (void**)&(pWrapperTable->m_Variable_SetValue));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Variable_SetValue == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_calculator_enlistvariable", (void**)&(pWrapperTable->m_Calculator_EnlistVariable));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Calculator_EnlistVariable == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_calculator_getenlistedvariable", (void**)&(pWrapperTable->m_Calculator_GetEnlistedVariable));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Calculator_GetEnlistedVariable == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_calculator_clearvariables", (void**)&(pWrapperTable->m_Calculator_ClearVariables));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Calculator_ClearVariables == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_calculator_multiply", (void**)&(pWrapperTable->m_Calculator_Multiply));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Calculator_Multiply == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_calculator_add", (void**)&(pWrapperTable->m_Calculator_Add));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Calculator_Add == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_getversion", (void**)&(pWrapperTable->m_GetVersion));
+		if ( (eLookupError != 0) || (pWrapperTable->m_GetVersion == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_getlasterror", (void**)&(pWrapperTable->m_GetLastError));
+		if ( (eLookupError != 0) || (pWrapperTable->m_GetLastError == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_releaseinstance", (void**)&(pWrapperTable->m_ReleaseInstance));
+		if ( (eLookupError != 0) || (pWrapperTable->m_ReleaseInstance == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_acquireinstance", (void**)&(pWrapperTable->m_AcquireInstance));
+		if ( (eLookupError != 0) || (pWrapperTable->m_AcquireInstance == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_createvariable", (void**)&(pWrapperTable->m_CreateVariable));
+		if ( (eLookupError != 0) || (pWrapperTable->m_CreateVariable == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("calculator_createcalculator", (void**)&(pWrapperTable->m_CreateCalculator));
+		if ( (eLookupError != 0) || (pWrapperTable->m_CreateCalculator == nullptr) )
+			return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		return CALCULATOR_SUCCESS;
+}
+
 	
 	
 	/**
@@ -563,6 +678,7 @@ public:
 	{
 		Calculator_double resultValue = 0;
 		CheckError(m_pWrapper->m_WrapperTable.m_Variable_GetValue(m_pHandle, &resultValue));
+		
 		return resultValue;
 	}
 	
@@ -601,6 +717,10 @@ public:
 	{
 		CalculatorHandle hVariable = nullptr;
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_GetEnlistedVariable(m_pHandle, nIndex, &hVariable));
+		
+		if (!hVariable) {
+			CheckError(CALCULATOR_ERROR_INVALIDPARAM);
+		}
 		return std::make_shared<CVariable>(m_pWrapper, hVariable);
 	}
 	
@@ -620,6 +740,10 @@ public:
 	{
 		CalculatorHandle hInstance = nullptr;
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_Multiply(m_pHandle, &hInstance));
+		
+		if (!hInstance) {
+			CheckError(CALCULATOR_ERROR_INVALIDPARAM);
+		}
 		return std::make_shared<CVariable>(m_pWrapper, hInstance);
 	}
 	
@@ -631,6 +755,10 @@ public:
 	{
 		CalculatorHandle hInstance = nullptr;
 		CheckError(m_pWrapper->m_WrapperTable.m_Calculator_Add(m_pHandle, &hInstance));
+		
+		if (!hInstance) {
+			CheckError(CALCULATOR_ERROR_INVALIDPARAM);
+		}
 		return std::make_shared<CVariable>(m_pWrapper, hInstance);
 	}
 

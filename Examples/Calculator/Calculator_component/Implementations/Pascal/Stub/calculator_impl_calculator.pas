@@ -66,7 +66,7 @@ end;
 function TCalculatorCalculator.GetEnlistedVariable(const AIndex: Cardinal): TObject;
 begin
   if AIndex >= FVariableList.Count then begin
-    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDPARAM);
+    raise ECalculatorException.CreateCustomMessage(CALCULATOR_ERROR_INVALIDPARAM, 'Invalid Index');
   end;
   result := FVariableList[AIndex];
   (result as TCalculatorVariable).IncRefCount();

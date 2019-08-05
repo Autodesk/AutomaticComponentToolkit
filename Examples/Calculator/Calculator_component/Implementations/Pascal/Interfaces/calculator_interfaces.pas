@@ -46,7 +46,7 @@ end;
  Interface definition for Variable
 **************************************************************************************************************************)
 
-ICalculatorVariable = interface (ICalculatorBase)
+ICalculatorVariable = interface(ICalculatorBase)
   ['{9566C74D-1003-4C4D-BBBB-0407D1E2C649}']
 
   function GetValue(): Double;
@@ -58,7 +58,7 @@ end;
  Interface definition for Calculator
 **************************************************************************************************************************)
 
-ICalculatorCalculator = interface (ICalculatorBase)
+ICalculatorCalculator = interface(ICalculatorBase)
   ['{81855AD8-681D-4D86-91E9-1E00167939CB}']
 
   procedure EnlistVariable(AVariable: TObject);

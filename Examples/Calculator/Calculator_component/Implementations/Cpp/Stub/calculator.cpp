@@ -32,12 +32,17 @@ void CWrapper::GetVersion(Calculator_uint32 & nMajor, Calculator_uint32 & nMinor
 
 bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
 {
-	throw ECalculatorInterfaceException(CALCULATOR_ERROR_NOTIMPLEMENTED);
+	return pInstance->GetLastErrorMessage(sErrorMessage);
 }
 
 void CWrapper::ReleaseInstance(IBase* pInstance)
 {
 	IBase::ReleaseBaseClassInterface(pInstance);
+}
+
+void CWrapper::AcquireInstance(IBase* pInstance)
+{
+	IBase::AcquireBaseClassInterface(pInstance);
 }
 
 IVariable * CWrapper::CreateVariable(const Calculator_double dInitialValue)

@@ -33,6 +33,7 @@ type
       class procedure GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
       class function GetLastError(AInstance: TObject; out AErrorMessage: String): Boolean;
       class procedure ReleaseInstance(AInstance: TObject);
+      class procedure AcquireInstance(AInstance: TObject);
       class function CreateVariable(const AInitialValue: Double): TObject;
       class function CreateCalculator(): TObject;
   end;
@@ -49,13 +50,17 @@ end;
 
 class function TCalculatorWrapper.GetLastError(AInstance: TObject; out AErrorMessage: String): Boolean;
 begin
-  AErrorMessage := 'Some error';
-  result := true;
+  result := (AInstance as ICalculatorBase).GetLastErrorMessage(AErrorMessage);
 end;
 
 class procedure TCalculatorWrapper.ReleaseInstance(AInstance: TObject);
 begin
-  (AInstance as ICalculatorBase).DecRefCount(); 
+  (AInstance as ICalculatorBase).DecRefCount();
+end;
+
+class procedure TCalculatorWrapper.AcquireInstance(AInstance: TObject);
+begin
+  (AInstance as ICalculatorBase).IncRefCount();
 end;
 
 class function TCalculatorWrapper.CreateVariable(const AInitialValue: Double): TObject;

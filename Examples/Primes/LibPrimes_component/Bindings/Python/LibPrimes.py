@@ -288,7 +288,7 @@ class Wrapper:
 		nErrorMessageNeededChars = ctypes.c_uint64(0)
 		pErrorMessageBuffer = ctypes.c_char_p(None)
 		pHasError = ctypes.c_bool()
-		self.checkError(None, self.lib.libprimes_getlasterror(InstanceInstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
+		self.checkError(None, self.lib.libprimes_getlasterror(InstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
 		nErrorMessageBufferSize = ctypes.c_uint64(nErrorMessageNeededChars.value)
 		pErrorMessageBuffer = (ctypes.c_char * (nErrorMessageNeededChars.value))()
 		self.checkError(None, self.lib.libprimes_getlasterror(InstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))

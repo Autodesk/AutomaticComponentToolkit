@@ -67,6 +67,7 @@ end;
 
 procedure TNumbersBase.RegisterErrorMessage(const AErrorMessage: String);
 begin
+  FMessages.Clear();
   FMessages.Add(AErrorMessage);
 end;
 

@@ -25,15 +25,15 @@ uses
   sysutils;
 
 type
-  ECalculatorException = class (Exception)
+  ECalculatorException = class(Exception)
   private
     FErrorCode: TCalculatorResult;
     FCustomMessage: String;
   public
     property ErrorCode: TCalculatorResult read FErrorCode;
     property CustomMessage: String read FCustomMessage;
-    constructor Create (AErrorCode: TCalculatorResult);
-    constructor CreateCustomMessage (AErrorCode: TCalculatorResult; AMessage: String);
+    constructor Create(AErrorCode: TCalculatorResult);
+    constructor CreateCustomMessage(AErrorCode: TCalculatorResult; AMessage: String);
   end;
 
 
@@ -48,7 +48,7 @@ function HandleUnhandledException(ACalculatorObject: TObject): TCalculatorResult
 
 implementation
 
-  constructor ECalculatorException.Create (AErrorCode: TCalculatorResult);
+  constructor ECalculatorException.Create(AErrorCode: TCalculatorResult);
   var
     ADescription: String;
   begin
@@ -66,14 +66,14 @@ implementation
         ADescription := 'unknown';
     end;
 
-    inherited Create (Format ('Calculator library Error - %s (#%d)', [ ADescription, AErrorCode ]));
+    inherited Create(Format('Calculator library Error - %s (#%d)', [ ADescription, AErrorCode ]));
   end;
 
-  constructor ECalculatorException.CreateCustomMessage (AErrorCode: TCalculatorResult; AMessage: String);
+  constructor ECalculatorException.CreateCustomMessage(AErrorCode: TCalculatorResult; AMessage: String);
   begin
     FCustomMessage := AMessage;
     FErrorCode := AErrorCode;
-    inherited Create (Format ('%s (%d)', [FCustomMessage, AErrorCode]));
+    inherited Create(Format('%s(%d)', [FCustomMessage, AErrorCode]));
   end;
 
 (*************************************************************************************************************************
@@ -83,21 +83,21 @@ implementation
 function HandleCalculatorException(ACalculatorObject: TObject; E: ECalculatorException): TCalculatorResult;
 begin
   result := E.ErrorCode;
-  if Supports (ACalculatorObject, ICalculatorBase) then begin
+  if Supports(ACalculatorObject, ICalculatorBase) then begin
     (ACalculatorObject as ICalculatorBase).RegisterErrorMessage(E.CustomMessage)
   end;
 end;
 function HandleStdException(ACalculatorObject: TObject; E: Exception): TCalculatorResult;
 begin
   Result := CALCULATOR_ERROR_GENERICEXCEPTION;
-  if Supports (ACalculatorObject, ICalculatorBase) then begin
+  if Supports(ACalculatorObject, ICalculatorBase) then begin
     (ACalculatorObject as ICalculatorBase).RegisterErrorMessage(E.Message)
   end;
 end;
 function HandleUnhandledException(ACalculatorObject: TObject): TCalculatorResult;
 begin
   Result := CALCULATOR_ERROR_GENERICEXCEPTION;
-  if Supports (ACalculatorObject, ICalculatorBase) then begin
+  if Supports(ACalculatorObject, ICalculatorBase) then begin
     (ACalculatorObject as ICalculatorBase).RegisterErrorMessage('Unhandled Exception')
   end;
 end;

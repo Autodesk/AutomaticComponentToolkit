@@ -17,6 +17,8 @@ Interface version: 1.0.0
 #include "calculator_interfaces.hpp"
 #include "calculator_interfaceexception.hpp"
 
+#include <map>
+
 using namespace Calculator::Impl;
 
 CalculatorResult handleCalculatorException(IBase * pIBaseClass, ECalculatorInterfaceException & Exception)
@@ -65,14 +67,11 @@ CalculatorResult calculator_variable_getvalue(Calculator_Variable pVariable, Cal
 	try {
 		if (pValue == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
 		IVariable* pIVariable = dynamic_cast<IVariable*>(pIBaseClass);
 		if (!pIVariable)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-
+		
 		*pValue = pIVariable->GetValue();
-
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -92,14 +91,11 @@ CalculatorResult calculator_variable_setvalue(Calculator_Variable pVariable, Cal
 	IBase* pIBaseClass = (IBase *)pVariable;
 
 	try {
-
 		IVariable* pIVariable = dynamic_cast<IVariable*>(pIBaseClass);
 		if (!pIVariable)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-
+		
 		pIVariable->SetValue(dValue);
-
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -123,19 +119,16 @@ CalculatorResult calculator_calculator_enlistvariable(Calculator_Calculator pCal
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
 	try {
-
-		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
-		if (!pICalculator)
-			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
 		IBase* pIBaseClassVariable = (IBase *)pVariable;
 		IVariable* pIVariable = dynamic_cast<IVariable*>(pIBaseClassVariable);
 		if (!pIVariable)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDCAST);
-
-
+		
+		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
+		if (!pICalculator)
+			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
+		
 		pICalculator->EnlistVariable(pIVariable);
-
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -157,17 +150,14 @@ CalculatorResult calculator_calculator_getenlistedvariable(Calculator_Calculator
 	try {
 		if (pVariable == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
+		IBase* pBaseVariable(nullptr);
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-		IBase* pBaseVariable(nullptr);
-
+		
 		pBaseVariable = pICalculator->GetEnlistedVariable(nIndex);
 
 		*pVariable = (IBase*)(pBaseVariable);
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {
@@ -186,14 +176,11 @@ CalculatorResult calculator_calculator_clearvariables(Calculator_Calculator pCal
 	IBase* pIBaseClass = (IBase *)pCalculator;
 
 	try {
-
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-
+		
 		pICalculator->ClearVariables();
-
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -215,17 +202,14 @@ CalculatorResult calculator_calculator_multiply(Calculator_Calculator pCalculato
 	try {
 		if (pInstance == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
+		IBase* pBaseInstance(nullptr);
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-		IBase* pBaseInstance(nullptr);
-
+		
 		pBaseInstance = pICalculator->Multiply();
 
 		*pInstance = (IBase*)(pBaseInstance);
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {
@@ -246,17 +230,14 @@ CalculatorResult calculator_calculator_add(Calculator_Calculator pCalculator, Ca
 	try {
 		if (pInstance == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
+		IBase* pBaseInstance(nullptr);
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDCAST);
-
-		IBase* pBaseInstance(nullptr);
-
+		
 		pBaseInstance = pICalculator->Add();
 
 		*pInstance = (IBase*)(pBaseInstance);
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {
@@ -270,6 +251,50 @@ CalculatorResult calculator_calculator_add(Calculator_Calculator pCalculator, Ca
 	}
 }
 
+
+
+/*************************************************************************************************************************
+ Function table lookup implementation
+**************************************************************************************************************************/
+
+CalculatorResult _calculator_getprocaddress_internal(const char * pProcName, void ** ppProcAddress)
+{
+	static bool sbProcAddressMapHasBeenInitialized = false;
+	static std::map<std::string, void*> sProcAddressMap;
+	if (!sbProcAddressMapHasBeenInitialized) {
+		sProcAddressMap["calculator_variable_getvalue"] = (void*)&calculator_variable_getvalue;
+		sProcAddressMap["calculator_variable_setvalue"] = (void*)&calculator_variable_setvalue;
+		sProcAddressMap["calculator_calculator_enlistvariable"] = (void*)&calculator_calculator_enlistvariable;
+		sProcAddressMap["calculator_calculator_getenlistedvariable"] = (void*)&calculator_calculator_getenlistedvariable;
+		sProcAddressMap["calculator_calculator_clearvariables"] = (void*)&calculator_calculator_clearvariables;
+		sProcAddressMap["calculator_calculator_multiply"] = (void*)&calculator_calculator_multiply;
+		sProcAddressMap["calculator_calculator_add"] = (void*)&calculator_calculator_add;
+		sProcAddressMap["calculator_getversion"] = (void*)&calculator_getversion;
+		sProcAddressMap["calculator_getlasterror"] = (void*)&calculator_getlasterror;
+		sProcAddressMap["calculator_releaseinstance"] = (void*)&calculator_releaseinstance;
+		sProcAddressMap["calculator_acquireinstance"] = (void*)&calculator_acquireinstance;
+		sProcAddressMap["calculator_createvariable"] = (void*)&calculator_createvariable;
+		sProcAddressMap["calculator_createcalculator"] = (void*)&calculator_createcalculator;
+		
+		sbProcAddressMapHasBeenInitialized = true;
+	}
+	if (pProcName == nullptr)
+		return CALCULATOR_ERROR_INVALIDPARAM;
+	if (ppProcAddress == nullptr)
+		return CALCULATOR_ERROR_INVALIDPARAM;
+	*ppProcAddress = nullptr;
+	std::string sProcName (pProcName);
+	
+	auto procPair = sProcAddressMap.find(sProcName);
+	if (procPair == sProcAddressMap.end()) {
+		return CALCULATOR_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	}
+	else {
+		*ppProcAddress = procPair->second;
+		return CALCULATOR_SUCCESS;
+	}
+	
+}
 
 /*************************************************************************************************************************
  Global functions implementation
@@ -285,10 +310,7 @@ CalculatorResult calculator_getversion(Calculator_uint32 * pMajor, Calculator_ui
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
 		if (!pMicro)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
-
 		CWrapper::GetVersion(*pMajor, *pMinor, *pMicro);
-
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -312,17 +334,15 @@ CalculatorResult calculator_getlasterror(Calculator_Base pInstance, const Calcul
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
 		if (pHasError == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
 		IBase* pIBaseClassInstance = (IBase *)pInstance;
 		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
 		if (!pIInstance)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDCAST);
-
+		
 		std::string sErrorMessage("");
-
 		*pHasError = CWrapper::GetLastError(pIInstance, sErrorMessage);
 
-		if (pErrorMessageNeededChars) 
+		if (pErrorMessageNeededChars)
 			*pErrorMessageNeededChars = (Calculator_uint32) (sErrorMessage.size()+1);
 		if (pErrorMessageBuffer) {
 			if (sErrorMessage.size() >= nErrorMessageBufferSize)
@@ -331,7 +351,6 @@ CalculatorResult calculator_getlasterror(Calculator_Base pInstance, const Calcul
 				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
 			pErrorMessageBuffer[sErrorMessage.size()] = 0;
 		}
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {
@@ -350,15 +369,37 @@ CalculatorResult calculator_releaseinstance(Calculator_Base pInstance)
 	IBase* pIBaseClass = nullptr;
 
 	try {
-
 		IBase* pIBaseClassInstance = (IBase *)pInstance;
 		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
 		if (!pIInstance)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDCAST);
-
-
+		
 		CWrapper::ReleaseInstance(pIInstance);
 
+		return CALCULATOR_SUCCESS;
+	}
+	catch (ECalculatorInterfaceException & Exception) {
+		return handleCalculatorException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+CalculatorResult calculator_acquireinstance(Calculator_Base pInstance)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		IBase* pIBaseClassInstance = (IBase *)pInstance;
+		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
+		if (!pIInstance)
+			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDCAST);
+		
+		CWrapper::AcquireInstance(pIInstance);
 
 		return CALCULATOR_SUCCESS;
 	}
@@ -380,13 +421,10 @@ CalculatorResult calculator_createvariable(Calculator_double dInitialValue, Calc
 	try {
 		if (pInstance == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
 		IBase* pBaseInstance(nullptr);
-
 		pBaseInstance = CWrapper::CreateVariable(dInitialValue);
 
 		*pInstance = (IBase*)(pBaseInstance);
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {
@@ -407,13 +445,10 @@ CalculatorResult calculator_createcalculator(Calculator_Calculator * pInstance)
 	try {
 		if (pInstance == nullptr)
 			throw ECalculatorInterfaceException (CALCULATOR_ERROR_INVALIDPARAM);
-
 		IBase* pBaseInstance(nullptr);
-
 		pBaseInstance = CWrapper::CreateCalculator();
 
 		*pInstance = (IBase*)(pBaseInstance);
-
 		return CALCULATOR_SUCCESS;
 	}
 	catch (ECalculatorInterfaceException & Exception) {

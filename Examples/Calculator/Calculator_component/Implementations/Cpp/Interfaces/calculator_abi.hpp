@@ -28,6 +28,7 @@ Interface version: 1.0.0
 
 #include "calculator_types.hpp"
 
+
 extern "C" {
 
 /*************************************************************************************************************************
@@ -132,12 +133,20 @@ CALCULATOR_DECLSPEC CalculatorResult calculator_getversion(Calculator_uint32 * p
 CALCULATOR_DECLSPEC CalculatorResult calculator_getlasterror(Calculator_Base pInstance, const Calculator_uint32 nErrorMessageBufferSize, Calculator_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
-* Releases the memory of an Instance
+* Releases shared ownership of an Instance
 *
 * @param[in] pInstance - Instance Handle
 * @return error code or 0 (success)
 */
 CALCULATOR_DECLSPEC CalculatorResult calculator_releaseinstance(Calculator_Base pInstance);
+
+/**
+* Acquires shared ownership of an Instance
+*
+* @param[in] pInstance - Instance Handle
+* @return error code or 0 (success)
+*/
+CALCULATOR_DECLSPEC CalculatorResult calculator_acquireinstance(Calculator_Base pInstance);
 
 /**
 * Creates a new Variable instance

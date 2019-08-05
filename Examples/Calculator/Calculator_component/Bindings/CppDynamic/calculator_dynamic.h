@@ -19,6 +19,7 @@ Interface version: 1.0.0
 #include "calculator_types.hpp"
 
 
+
 /*************************************************************************************************************************
  Class definition for Base
 **************************************************************************************************************************/
@@ -121,12 +122,20 @@ typedef CalculatorResult (*PCalculatorGetVersionPtr) (Calculator_uint32 * pMajor
 typedef CalculatorResult (*PCalculatorGetLastErrorPtr) (Calculator_Base pInstance, const Calculator_uint32 nErrorMessageBufferSize, Calculator_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
-* Releases the memory of an Instance
+* Releases shared ownership of an Instance
 *
 * @param[in] pInstance - Instance Handle
 * @return error code or 0 (success)
 */
 typedef CalculatorResult (*PCalculatorReleaseInstancePtr) (Calculator_Base pInstance);
+
+/**
+* Acquires shared ownership of an Instance
+*
+* @param[in] pInstance - Instance Handle
+* @return error code or 0 (success)
+*/
+typedef CalculatorResult (*PCalculatorAcquireInstancePtr) (Calculator_Base pInstance);
 
 /**
 * Creates a new Variable instance
@@ -161,6 +170,7 @@ typedef struct {
 	PCalculatorGetVersionPtr m_GetVersion;
 	PCalculatorGetLastErrorPtr m_GetLastError;
 	PCalculatorReleaseInstancePtr m_ReleaseInstance;
+	PCalculatorAcquireInstancePtr m_AcquireInstance;
 	PCalculatorCreateVariablePtr m_CreateVariable;
 	PCalculatorCreateCalculatorPtr m_CreateCalculator;
 } sCalculatorDynamicWrapperTable;
