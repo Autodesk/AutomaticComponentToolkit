@@ -1,5 +1,5 @@
 # Automatic Component Toolkit
-[![Build Status](https://travis-ci.org/Autodesk/AutomaticComponentToolkit.svg?branch=release/1.6.0)](https://travis-ci.org/Autodesk/AutomaticComponentToolkit)
+[![Build Status](https://travis-ci.org/Autodesk/AutomaticComponentToolkit.svg?branch=master)](https://travis-ci.org/Autodesk/AutomaticComponentToolkit)
 
 The Automatic Component Toolkit (ACT) is a code generator that takes an instance of an [Interface Description Language](#interface-description-language-idl) file and generates 
 a [thin C89-API](#thin-c89-api), [implementation stubs](#implementation-stubs) and [language bindings](#language-bindings) of your desired software component.

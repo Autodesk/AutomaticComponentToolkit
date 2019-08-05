@@ -4,7 +4,7 @@
 
 
 
-| **Version** | 1.6.0-RC1 |
+| **Version** | 1.6.0 |
 | --- | --- |
 
 ## Disclaimer

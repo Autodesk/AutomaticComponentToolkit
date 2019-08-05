@@ -41,9 +41,6 @@
             <Debugging>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
-            <Options>
-              <ExecutableType Value="Library"/>
-            </Options>
           </Linking>
         </CompilerOptions>
       </Item2>
