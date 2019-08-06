@@ -387,7 +387,7 @@ func createComponent(component ComponentDefinition, outfolderBase string) (error
 }
 
 func main() {
-	ACTVersion := "1.6.0-develop"
+	ACTVersion := "1.6.0"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
 		log.Fatal("Please run with the Interface Description XML as command line parameter.")
@@ -479,7 +479,10 @@ func main() {
 
 	err = createComponent(component, outfolderBase)
 	if (err != nil) {
+		log.Println("Fatal error")
 		log.Fatal(err)
+	} else {
+		log.Println("Success")
 	}
 
 }

@@ -830,7 +830,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  throw E%sInterfaceException(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)) )
 		callCPPFunctionCode = append(callCPPFunctionCode, "")
 	} else if (isSpecialFunction == eSpecialMethodSymbolLookup) {
-		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = &_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = (void*)&_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
 	} else {
 		callCode, err := generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal)
 		if err != nil {
@@ -1036,7 +1036,6 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			var implementations [5][]string
 			implementations[0] = append(implementations[0], "if (m_pErrors && !m_pErrors->empty()) {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = m_pErrors->back();")
-			implementations[0] = append(implementations[0], "  m_pErrors->pop_back();")
 			implementations[0] = append(implementations[0], "  return true;")
 			implementations[0] = append(implementations[0], "} else {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = \"\";")
@@ -1048,6 +1047,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[2] = append(implementations[2], "if (!m_pErrors) {")
 			implementations[2] = append(implementations[2], "  m_pErrors.reset(new std::list<std::string>());")
 			implementations[2] = append(implementations[2], "}")
+			implementations[2] = append(implementations[2], "m_pErrors->clear();")
 			implementations[2] = append(implementations[2], "m_pErrors->push_back(sErrorMessage);")
 
 			implementations[3] = append(implementations[3], "++m_nReferenceCount;")

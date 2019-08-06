@@ -59,7 +59,7 @@
 			<param name="ProgressCallback" type="functiontype" class="ProgressCallback" pass="in" description="The progress callback" />
 		</method>
 	</class>
-	
+
 	<class name="FactorizationCalculator" parent="Calculator">
 		<method name="GetPrimeFactors" description="Returns the prime factors of this number (without multiplicity)">
 			<param name="PrimeFactors" type="structarray" class="PrimeFactor" pass="out" description="The prime factors of this number" />
@@ -72,9 +72,8 @@
 		</method>
 	</class>
 
-	<global baseclassname="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"  versionmethod="GetVersion" errormethod="GetLastError"
-		journalmethod="SetJournal" >
-		
+	<global baseclassname="Base" acquiremethod="AcquireInstance"
+		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError" journalmethod="SetJournal">
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
@@ -85,10 +84,10 @@
 			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
 			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
 		</method>
-		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
 		<method name="CreateFactorizationCalculator" description="Creates a new FactorizationCalculator instance">

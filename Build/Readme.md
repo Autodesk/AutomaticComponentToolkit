@@ -6,7 +6,7 @@
 
 3. (optional) Pre-release RC, gather feedback + fix stuff
 
-4. Modify release branch such that all links point to master/Actual.Version.Number
+4. Modify release branch such that all links point to the master-branch/Actual.Version.Number
 
 5. build:
 

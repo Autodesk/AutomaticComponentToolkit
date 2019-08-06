@@ -20,11 +20,6 @@ using namespace LibPrimes::Impl;
  Class definition of CCalculator 
 **************************************************************************************************************************/
 
-void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
-{
-	m_Callback = pProgressCallback;
-}
-
 LibPrimes_uint64 CCalculator::GetValue()
 {
 	return m_value;
@@ -37,6 +32,10 @@ void CCalculator::SetValue(const LibPrimes_uint64 nValue)
 
 void CCalculator::Calculate()
 {
-	throw ELibPrimesInterfaceException (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+	throw ELibPrimesInterfaceException(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 }
 
+void CCalculator::SetProgressCallback(const LibPrimes::ProgressCallback pProgressCallback)
+{
+	m_Callback = pProgressCallback;
+}

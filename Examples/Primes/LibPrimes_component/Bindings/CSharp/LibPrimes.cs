@@ -47,6 +47,9 @@ namespace LibPrimes {
 			[DllImport("libprimes.dll", EntryPoint = "libprimes_getlasterror", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
 			public extern static Int32 GetLastError (IntPtr AInstance, UInt32 sizeErrorMessage, out UInt32 neededErrorMessage, IntPtr dataErrorMessage, out Byte AHasError);
 
+			[DllImport("libprimes.dll", EntryPoint = "libprimes_acquireinstance", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
+			public extern static Int32 AcquireInstance (IntPtr AInstance);
+
 			[DllImport("libprimes.dll", EntryPoint = "libprimes_releaseinstance", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
 			public extern static Int32 ReleaseInstance (IntPtr AInstance);
 
@@ -243,6 +246,12 @@ namespace LibPrimes {
 			dataErrorMessage.Free();
 			AErrorMessage = Encoding.UTF8.GetString(bytesErrorMessage).TrimEnd(char.MinValue);
 			return (resultHasError != 0);
+		}
+
+		public static void AcquireInstance (CBase AInstance)
+		{
+
+			CheckError(Internal.LibPrimesWrapper.AcquireInstance (AInstance.GetHandle()));
 		}
 
 		public static void ReleaseInstance (CBase AInstance)

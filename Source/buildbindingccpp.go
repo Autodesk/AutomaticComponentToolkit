@@ -705,7 +705,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				} else {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  CheckError(nullptr, %s_ERROR_INVALIDPARAM);", strings.ToUpper(NameSpace)))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
@@ -783,7 +783,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 				} else {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  CheckError(nullptr, %s_ERROR_INVALIDPARAM);", strings.ToUpper(NameSpace)))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
 				}
@@ -884,7 +884,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("protected:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
@@ -1628,12 +1627,12 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 	w.Writeln("project(%s)", projectName)
 	w.Writeln("set(CMAKE_CXX_STANDARD 11)")
 	w.Writeln("add_executable(%s \"${CMAKE_CURRENT_SOURCE_DIR}/%s_example.cpp\")", projectName, NameSpace)
-	if (ExplicitLinking) {
+	if (ExplicitLinking || (len(componentdefinition.ImportedComponentDefinitions)>0)) {
 		w.Writeln("if (UNIX)")
 		w.Writeln("  target_link_libraries(%s ${CMAKE_DL_LIBS})", projectName)
 		w.Writeln("endif (UNIX)")
 	} else {
-		linkFolder := strings.Replace(outputFolder, string(filepath.Separator), "/", -2) + "/../../Implementations/*/*/*"
+		linkFolder := "${CMAKE_CURRENT_SOURCE_DIR}/../../Implementations/*/*/*"
 		w.Writeln("find_library(%sLOCATION %s \"%s\")", strings.ToUpper(BaseName), BaseName, linkFolder)
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
