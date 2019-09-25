@@ -25,7 +25,8 @@ Interface version: 1.0.0
 **************************************************************************************************************************/
 
 
-class ENumbersInterfaceException : public std::exception {
+class ENumbersInterfaceException : public std::exception
+{
 protected:
 	/**
 	* Error code for the Exception.
