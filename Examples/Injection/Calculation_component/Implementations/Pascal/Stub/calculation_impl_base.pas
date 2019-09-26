@@ -68,6 +68,7 @@ end;
 
 procedure TCalculationBase.RegisterErrorMessage(const AErrorMessage: String);
 begin
+  FMessages.Clear();
   FMessages.Add(AErrorMessage);
 end;
 

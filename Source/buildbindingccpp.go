@@ -552,7 +552,7 @@ func getDynamicCPPMethodParameters(method ComponentDefinitionMethod, NameSpace s
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName)
 			case "structarray", "basicarray":
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName)
-			case "class":
+			case "class", "optionalclass":
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
 			default:
 				parameters = parameters + fmt.Sprintf("const %s %s", cppParamType, variableName)
@@ -660,7 +660,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("(%s_uint64)%s.size(), %s.data()", NameSpace, variableName, variableName)
 				initCallParameter = callParameter
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName)
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) == 0 {
 					paramNameSpace = NameSpace
@@ -703,7 +703,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("s%s = std::string(&buffer%s[0]);", param.ParamName, param.ParamName))
 
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) == 0 {
 					paramNameSpace = NameSpace
@@ -712,7 +712,20 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", paramNameSpace, param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
-				postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
+
+				if (param.ParamType == "optionalclass") {
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
+				} else {
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
+				}
 
 			case "structarray", "basicarray":
 				requiresInitCall = true
@@ -763,7 +776,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("s%s result%s;", param.ParamClass, param.ParamName))
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return result%s;", param.ParamName))
 
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				paramNameSpaceCPP, _, _ := decomposeParamClassNameCPP(param.ParamClass)
 				CPPClass := cppClassPrefix + ClassIdentifier + paramClassName
@@ -778,7 +791,18 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				
-				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+				if (param.ParamType == "optionalclass") {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
+				} else {
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+				}
 
 			case "basicarray":
 				return fmt.Errorf("can not return basicarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
@@ -857,7 +881,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    if (m_pWrapper != nullptr)")
 	w.Writeln("      m_pWrapper->CheckError(this, nResult);")
 	w.Writeln("  }")
-	w.Writeln("")
+	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - Constructor for Base class.", cppBaseClassName, cppBaseClassName)
 	w.Writeln("  */")
@@ -869,7 +893,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  /**")
 	w.Writeln("  * %s::~%s - Destructor for Base class.", cppBaseClassName, cppBaseClassName)
 	w.Writeln("  */")
-
 	w.Writeln("  virtual ~%s()", cppBaseClassName)
 	w.Writeln("  {")
 	w.Writeln("    if (m_pWrapper != nullptr)")
@@ -877,7 +900,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
@@ -1031,7 +1053,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		return fmt.Sprintf(paramNameSpace + "e"+paramClassName)
 	case "struct":
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
-	case "class":
+	case "class", "optionalclass":
 		if isInput {
 			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
@@ -1063,7 +1085,7 @@ func getBindingCppVariableName(param ComponentDefinitionParam) string {
 		return "e" + param.ParamName
 	case "struct":
 		return param.ParamName
-	case "class":
+	case "class", "optionalclass":
 		return "p" + param.ParamName
 	case "functiontype":
 		return fmt.Sprintf("p%s", param.ParamName)
@@ -1624,12 +1646,12 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 	w.Writeln("project(%s)", projectName)
 	w.Writeln("set(CMAKE_CXX_STANDARD 11)")
 	w.Writeln("add_executable(%s \"${CMAKE_CURRENT_SOURCE_DIR}/%s_example.cpp\")", projectName, NameSpace)
-	if (ExplicitLinking) {
+	if (ExplicitLinking || (len(componentdefinition.ImportedComponentDefinitions)>0)) {
 		w.Writeln("if (UNIX)")
 		w.Writeln("  target_link_libraries(%s ${CMAKE_DL_LIBS})", projectName)
 		w.Writeln("endif (UNIX)")
 	} else {
-		linkFolder := strings.Replace(outputFolder, string(filepath.Separator), "/", -2) + "/../../Implementations/*/*/*"
+		linkFolder := "${CMAKE_CURRENT_SOURCE_DIR}/../../Implementations/*/*/*"
 		w.Writeln("find_library(%sLOCATION %s \"%s\")", strings.ToUpper(BaseName), BaseName, linkFolder)
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}

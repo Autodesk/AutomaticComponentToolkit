@@ -229,7 +229,7 @@ func buildGoStructs(component ComponentDefinition, w LanguageWriter) (error) {
 				w.Writeln("    %s%s uint64;", member.Name, arraysuffix)
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				w.Writeln("    %s%s E%s%s;", member.Name, arraysuffix, NameSpace, member.Class)
@@ -250,6 +250,7 @@ func buildGoInterfaces(component ComponentDefinition, w LanguageWriter) {
 	w.Writeln("")
 	w.Writeln("type %sHandle interface {", component.NameSpace)
 	w.Writeln("    Close() error")
+	w.Writeln("    IsValid() bool")
 	w.Writeln("}")
 	w.Writeln("")
 }
@@ -305,6 +306,10 @@ func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWr
 	implw.Writeln("  }")
 	implw.Writeln("  ")
 	implw.Writeln("  return nil")
+	implw.Writeln("}")
+	implw.Writeln("")
+	implw.Writeln("func (handle *%sImplementationHandleStruct) IsValid() (bool) {", NameSpace)
+	implw.Writeln("  return (handle.DLLhandle != 0)")
 	implw.Writeln("}")
 	implw.Writeln("")
 	implw.Writeln("func (handle *%sImplementationHandleStruct) GetDLLInHandle() (uintptr) {", NameSpace)
@@ -712,7 +717,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				errorReturn = errorReturn + fmt.Sprintf("\"\", ")
 			case "struct":
 				errorReturn = errorReturn + fmt.Sprintf("s%s, ", param.ParamName)
-			case "class":
+			case "class", "optionalclass":
 				errorReturn = errorReturn + fmt.Sprintf("h%s, ", param.ParamName)
 			case "functiontype":
 				errorReturn = errorReturn + fmt.Sprintf("0, ")
@@ -843,7 +848,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				thisImplCallParamter = fmt.Sprintf(", 0")
 				callparameters = callparameters + "p" + param.ParamName
 
-			case "class":
+			case "class", "optionalclass":
 				comments = append(comments, fmt.Sprintf("* @param[in] %s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("%s %sHandle", param.ParamName, NameSpace)
 
@@ -853,7 +858,14 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implCasts = append(implCasts, fmt.Sprintf("}"))
 				implCasts = append(implCasts, fmt.Sprintf(""))
 
-				thisImplCallParamter = fmt.Sprintf(", implementation_%s.GetDLLInHandle()", strings.ToLower(param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("%sDLLHandle := implementation_%s.GetDLLInHandle()", param.ParamName, strings.ToLower(param.ParamName)))
+				if (param.ParamType == "class") {
+					implCasts = append(implCasts, fmt.Sprintf("if (%sDLLHandle == 0) {", param.ParamName))
+					implCasts = append(implCasts, fmt.Sprintf("  err := fmt.Errorf(\"Handle must not be 0.\")", ))
+					implCasts = append(implCasts, fmt.Sprintf("  return %s", errorReturn))
+					implCasts = append(implCasts, fmt.Sprintf("}"))
+				}
+				thisImplCallParamter = fmt.Sprintf(", %sDLLHandle", param.ParamName)
 				callparameters = callparameters + param.ParamName
 
 			default:
@@ -1025,7 +1037,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				classReturnString = classReturnString + "s" + param.ParamName + ", "
 				classReturnTypes = classReturnTypes + fmt.Sprintf("s%s%s, ", NameSpace, param.ParamClass)
 
-			case "class":
+			case "class", "optionalclass":
 				returnvalues = returnvalues + fmt.Sprintf("%sHandle, ", NameSpace)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("h%s := implementation.NewHandle()", param.ParamName))
 

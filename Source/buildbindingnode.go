@@ -282,7 +282,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = fmt.Sprintf ("&s%s", param.ParamName);
 				initCallParameter = callParameter;
 
-			case "class":
+			case "class", "optionalclass":
 				inputcheckfunction = "IsObject"
 
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Object> obj%s = args[%d]->ToObject(isolate->GetCurrentContext()).ToLocalChecked ();\n", spacing, param.ParamName, k)
@@ -441,7 +441,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				callParameter = "nullptr";
 				initCallParameter = callParameter;
 				
-			case "class":
+			case "class", "optionalclass":
 				returndeclaration = returndeclaration + fmt.Sprintf("%s%sHandle hReturn%s = nullptr;\n", spacing, NameSpace, param.ParamName)
 				callParameter = "&hReturn" + param.ParamName
 				initCallParameter = callParameter;

@@ -198,7 +198,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 		}
 
-	case "class":
+	case "class", "optionalclass":
 		if isPlain {
 			CSharpParamTypeName = "IntPtr"
 		} else {
@@ -403,7 +403,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameter = "IntPtr.Zero"
 				initCallParameter = callFunctionParameter
 
-			case "class":
+			case "class", "optionalclass":
 				if (ParamTypeName == "IntPtr") {
 					callFunctionParameter = "A" + param.ParamName
 				} else {
@@ -517,7 +517,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 
 				doInitCall = true
 
-			case "class":
+			case "class", "optionalclass":
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
@@ -573,7 +573,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
-			case "class":
+			case "class", "optionalclass":
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
@@ -704,7 +704,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				w.Writeln("    public UInt64%s %s;", arraysuffix, element.Name)
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				w.Writeln("    public e%s%s %s;", element.Class, arraysuffix, element.Name)
@@ -781,7 +781,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				fieldOffset = fieldOffset + 8*multiplier
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
-			case "class":
+			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
 				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))

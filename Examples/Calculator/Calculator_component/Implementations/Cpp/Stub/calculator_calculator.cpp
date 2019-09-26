@@ -31,7 +31,7 @@ IVariable * CCalculator::GetEnlistedVariable(const Calculator_uint32 nIndex)
 		return m_pVariables[nIndex].getCoOwningPtr();
 	}
 	else {
-		throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDPARAM);
+		throw ECalculatorInterfaceException(CALCULATOR_ERROR_INVALIDPARAM, "Invalid Index");
 	}
 }
 

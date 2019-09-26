@@ -532,7 +532,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 
 				callParameters = callParameters + fmt.Sprintf("%s, %s", pascalParams[0].ParamName, pascalParams[1].ParamName)
 
-			case "class":
+			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					theSubWrapper := fmt.Sprintf("T%sWrapper.%sWrapper", NameSpace, paramNameSpace)
@@ -544,8 +544,10 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", param.ParamName))
 
 					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
-					checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
-					checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+					if (param.ParamType == "class") {
+						checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
+						checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+					}
 				}
 
 				checkInputCode = append(checkInputCode, "")
@@ -624,6 +626,24 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 				postCallCode = append(postCallCode, fmt.Sprintf("  %s[Len%s] := Char(0);", pascalParams[2].ParamName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("end;"))
 
+			case "class", "optionalclass":
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(p%s) then", param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) > 0 {
+					theSubWrapper := fmt.Sprintf("T%sWrapper.%sWrapper", NameSpace, paramNameSpace)
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Out%s: T%s%s;", param.ParamName, paramNameSpace, paramClassName))
+
+					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+					postCallCode = append(postCallCode, fmt.Sprintf("%s.%s(Out%s);", theSubWrapper, acqurireMethod, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Out%s.TheHandle;", pascalParams[0].ParamName, param.ParamName))
+				} else {
+					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Out%s: TObject;", param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Out%s;", pascalParams[0].ParamName, param.ParamName))
+				}
+				callParameters = callParameters + "Out" + param.ParamName
+
 			default:
 				return make([]string, 0), make([]string, 0), make([]string, 0), make([]string, 0), "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
@@ -692,7 +712,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 				postCallCode = append(postCallCode, fmt.Sprintf("  %s[Len%s] := Char(0);", pascalParams[2].ParamName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("end;"))
 
-			case "class":
+			case "class", "optionalclass":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if not Assigned(p%s) then", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
@@ -1213,7 +1233,7 @@ func getPascalImplClassParameters(method ComponentDefinitionMethod, NameSpace st
 				}
 				parameters = parameters + "const A" + param.ParamName + "Count: QWord"
 				parameters = parameters + "; const A" + param.ParamName + ": " + ParamTypeName
-			case "class":
+			case "class", "optionalclass":
 				if parameters != "" {
 					parameters = parameters + "; "
 				}
@@ -1302,10 +1322,11 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "dec(FReferenceCount);")
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "if (FReferenceCount = 0) then begin")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := true;")
 	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  self.Destroy();")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "end;")
-	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], " result := false;")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := true;")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "end")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "else")
+	baseClassMethodImplementation[4] = append(baseClassMethodImplementation[4], "  result := false;")
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]

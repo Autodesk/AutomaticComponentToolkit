@@ -546,7 +546,7 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 			return fmt.Sprintf("%s", ParamClass), nil
 		case "functiontype":
 			return fmt.Sprintf("%s", ParamClass), nil
-		case "class":
+		case "class", "optionalclass":
 			CTypesParamTypeName = "ctypes.c_void_p";
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for Python parameter", ParamTypeName);
@@ -632,7 +632,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[1].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = cParamTypeName;
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
@@ -703,7 +703,7 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 				cParams[2].ParamName = "p" + param.ParamName + "Buffer";
 				cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", cParams[2].ParamName, param.ParamClass, param.ParamDescription);
 
-			case "class":
+			case "class", "optionalclass":
 				cParams[0].ParamType = "ctypes.POINTER("+cParamTypeName +")";
 				cParams[0].ParamCallType = cParamTypeName;
 				cParams[0].ParamName = "p" + param.ParamName;
@@ -799,7 +799,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cCheckArguments = cCheckArguments + ", "
 			}
 			switch param.ParamType {
-			case "class": {
+			case "class", "optionalclass": {
 				if (retVals != "") {
 					retVals = retVals + ", ";
 				}
@@ -814,9 +814,18 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
 					subNameSpace = subNameSpace + "."
 				}
+				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("%sObject = %s%s(%sHandle, %s)",
+					fmt.Sprintf("  %sObject = %s%s(%sHandle, %s)",
 					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
+				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
+				if (param.ParamType == "optionalclass") {
+					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))
+				} else {
+					postCallLines = append(postCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')", NameSpace))
+				}
+
+				
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
 			case "string": {
@@ -940,10 +949,17 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cArguments = cArguments + param.ParamName
 				cCheckArguments = cCheckArguments  + param.ParamName
 			}
-			case "class": {
+			case "class", "optionalclass": {
 				pythonInParams = pythonInParams + param.ParamName + "Object"
-				cArguments = cArguments + param.ParamName + "Object._handle"
-				cCheckArguments = cCheckArguments  + param.ParamName + "Object._handle"
+				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = None", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("if %sObject:", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("  %sHandle = %sObject._handle", param.ParamName, param.ParamName))
+				if (param.ParamType == "class") {
+					preCallLines = append(preCallLines, fmt.Sprintf("else:"))
+					preCallLines = append(preCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')", NameSpace))
+				}
+				cArguments = cArguments + param.ParamName + "Handle"
+				cCheckArguments = cCheckArguments  + param.ParamName + "Handle"
 			}
 			case "functiontype": {
 				pythonInParams = pythonInParams + param.ParamName + "Func"

@@ -4,7 +4,7 @@
 
 
 
-| **Version** | 1.6.0-develop |
+| **Version** | 1.6.0 |
 | --- | --- |
 
 ## Disclaimer
@@ -178,29 +178,28 @@ Element **\<global>** of type **CT\_Global**
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
 | baseclassname | **ST\_Name** | required | | Specifies the name of a class that is the base class for all classes of the generated component. |
+| acquiremethod | **ST\_Name** | required | | Specifies the name of the method used to acquire ownership of a class instance owned by the generated component. |
 | releasemethod | **ST\_Name** | required | | Specifies the name of the method used to release ownership of a class instance owned by the generated component. |
-| releasemethod | **ST\_Name** | required | | Specifies the name of the method used to acquire ownership of a class instance owned by the generated component. |
+| errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
 | versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the major, minor and micro version of the component. |
 | prereleasemethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the prerelease information of the component. |
-| buildinfomethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the build information of the component. |
-| errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
+| buildinfomethod | **ST\_Name** | optional | | Specifies the name of the method used to obtain the build information of the component. |
 | injectionmethod | **ST\_Name** | optional | | Specifies the name of the method used to inject the symbollookupmethod another ACT component into this component at runtime. |
 | symbollookupmethod | **ST\_Name** | optional | | Specifies the name of the method that returns the address of a given symbol exported by this component. |
 | journalmethod | **ST\_Name** | optional | | Specifies the name of the method used to set the journal file. If ommitted, journalling will not be built into the component. |
 
-The \<global> element contains a list of [method](#10-function-type) elements that define the exported global functions of the component.
+The \<global> element contains a list of [method](#10-function-type) elements that define the exported global functions of the component and defines special methods of the component.
 The names of the \<method> elements MUST be unique within the \<global> element.
 
 The `baseclassname`-attribute must be the name of a \<class> element within the components list of classes.
 This class will be the base class for all classes of the generated component.
 
-The `releasemethod`- and `acquiremethod`-attributes must each be the name of a \<method> within the \<global> element of a component that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
+The `acquiremethod`- and `releasemethod`-attributes must each be the name of a \<method> within the \<global> element of a component that has exactly one parameter with `type="class"`, `class="BaseClass"` and `pass="in"`.
 The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly three parameters. The three parameters MUST be of type `type="uint32"` and `pass="out"`.
 The `prereleasemethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
 The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
 The `buildinfomethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
 The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
-
 
 The `errormethod`-attribute must be the name of a \<method> within the \<global> element of a method that has exactly three parameters:
 1. `type="class"`, `class="$BASECLASSNAME"` and `pass="in"`, where `"$BASECLASSNAME"` is the value of the `baseclassname` attribute of the \<global> element.
@@ -267,10 +266,10 @@ Element **\<param>** of type **CT\_Param**
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
 | name | **ST\_Name** | required | | The name of this parameter. |
-| description | **ST\_Description** | required | | A description of this parameter. |
 | pass | **ST\_Pass** | required | | Specifies whether the parameter is passed "in", "out" or as "return"-value of the enclosing functiontype. |
 | type | **ST\_Type** | required | | The type of this parameter. |
 | class | **ST\_Name** | optional | | Required if the type is an [**ST\_ComposedType**](#173-composedtype) |
+| description | **ST\_Description** | optional | | A description of this enumerated type. |
 
 
 ## 12. Enum
@@ -281,7 +280,8 @@ Element **\<enum>** of type **CT\_Enum**
 ##### Attributes
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
-| name | **ST\_Name** | required | | The name of this Enumeration. |
+| name | **ST\_Name** | required | | The name of this enumerated type. |
+| description | **ST\_Description** | optional | | A description of this enumerated type. |
 
 The \<enum> element defines an enumerated type (see https://en.wikipedia.org/wiki/Enumerated_type), i.e. a set of named values.<br/>
 It contains a list of at least one [option](#13-option) element.
@@ -298,6 +298,7 @@ Element **\<option>** of type **CT\_Option**
 | --- | --- | --- | --- | --- |
 | name | **ST\_Name** | required | | The name of this option. |
 | value | **xs:nonNegativeInteger** | required | | The numerical value of this option. |
+| description | **ST\_Description** | optional | | A description of this option. |
 
 
 ## 14. Struct
@@ -309,6 +310,7 @@ Element **\<struct>** of type **CT\_Struct**
 | Name | Type | Use | Default | Annotation |
 | --- | --- | --- | --- | --- |
 | name | **ST\_Name** | required | | The name of this struct. |
+| description | **ST\_Description** | optional | | A description of this struct. |
 
 The \<struct> element defines a composite data type (see https://en.wikipedia.org/wiki/Composite_data_type). <br/>
 It contains a list of at least one [member](#15-member) element.
@@ -327,6 +329,7 @@ Element **\<member>** of type **CT\_Member**
 | type | **ST\_ScalarType** | required | | The scalar type of this member. |
 | rows | **xs:positiveInteger** | optional | 1 | The number of rows of this member. |
 | columns | **xs:positiveInteger** | optional | 1 | The number of columns of this member. |
+| description | **ST\_Description** | optional | | A description of this member. |
 
 The \<member> element defines a member (or "field") within a struct. Only [**ST\_ScalarType**](#172-scalartype) is allowed within structs.
 By default, the member defines a single value of its type within the enclusing struct. One- or two-dimensional arrays of fixed size can be
@@ -388,6 +391,7 @@ A _signed_ integer vaules ranging from -2<sup>7</sup> - 2<sup>7</sup>-1, -2<sup>
 - `structarray`: an array of [structs](#14-struct)
 - `functiontype`: see [9. Function Type](#10-function-type)
 - `class`: the identifier (address, unique identifier, hash, ...) of a class instance [class instance](#9-class)
+- `optionalclass`: behaves just like `class`, however, this instance may be empty, or null. A use case for `optionalclass` is e.g. a `findElementByName`-method of a list, which might or might not return a class instance.
 
 **Note**
  `type="handle"` is equivalent to `type="class"` for backwards compatibility. It will be removed in a future version.

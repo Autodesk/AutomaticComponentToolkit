@@ -26,11 +26,12 @@ type
     private
 
     protected
-
+      FValue : QWord;
+      FProgressCallback: PLibPrimes_ProgressCallback;
     public
       function GetValue(): QWord;
       procedure SetValue(const AValue: QWord);
-      procedure Calculate();
+      procedure Calculate(); virtual;
       procedure SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
   end;
 
@@ -38,22 +39,22 @@ implementation
 
 function TLibPrimesCalculator.GetValue(): QWord;
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  result := FValue;
 end;
 
 procedure TLibPrimesCalculator.SetValue(const AValue: QWord);
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  FValue := AValue;
 end;
 
 procedure TLibPrimesCalculator.Calculate();
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  raise ELibPrimesException.Create(LIBPRIMES_ERROR_NOTIMPLEMENTED);
 end;
 
 procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 begin
-  raise ELibPrimesException.Create (LIBPRIMES_ERROR_NOTIMPLEMENTED);
+  FProgressCallback:=AProgressCallback
 end;
 
 end.

@@ -16,8 +16,10 @@ Abstract: This is the class declaration of CFactorizationCalculator
 
 // Parent classes
 #include "libprimes_calculator.hpp"
-#pragma warning( push)
-#pragma warning( disable : 4250)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4250)
+#endif
 
 // Include custom headers here.
 
@@ -33,6 +35,9 @@ namespace Impl {
 class CFactorizationCalculator : public virtual IFactorizationCalculator, public virtual CCalculator {
 private:
 
+	/**
+	* Put private members here.
+	*/
 	std::vector<sPrimeFactor> primeFactors;
 
 protected:
@@ -47,18 +52,20 @@ public:
 	* Put additional public members here. They will not be visible in the external API.
 	*/
 
-	void Calculate();
 
 	/**
 	* Public member functions to implement.
 	*/
 
-	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer);
+	void GetPrimeFactors(LibPrimes_uint64 nPrimeFactorsBufferSize, LibPrimes_uint64* pPrimeFactorsNeededCount, LibPrimes::sPrimeFactor * pPrimeFactorsBuffer) override;
 
+	void Calculate() override;
 };
 
 } // namespace Impl
 } // namespace LibPrimes
 
-#pragma warning( pop )
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #endif // __LIBPRIMES_FACTORIZATIONCALCULATOR
