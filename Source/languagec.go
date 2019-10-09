@@ -120,6 +120,8 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	w.Writeln("typedef void * %sHandle;", NameSpace);
 	w.Writeln("typedef void * %s_pvoid;", NameSpace);
 	
+
+
 	w.Writeln("");
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" Version for %s", NameSpace);
@@ -148,14 +150,48 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" Declaration of handle classes ");
 	w.Writeln("**************************************************************************************************************************/");
+
 	w.Writeln("");
-	
+	w.Writeln("typedef struct {");
+	w.Writeln("  void* m_pfnReleaseOwnership;");
+	w.Writeln("  void* m_pfnAcquireOwnership;");
+	w.Writeln("  void* m_pfnGetLastError;");
+	w.Writeln("  ");
+	baseClasse := component.baseClass()
+	for i := 0; i < len(baseClasse.Methods); i++ {
+		method := baseClasse.Methods[i]
+		w.Writeln("  void* m_pfn%s;", method.MethodName);
+	}
+	w.Writeln("} %s_FunctionTableBase;", NameSpace);
+	w.Writeln("");
+
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i];
-		w.Writeln("typedef %sHandle %s_%s;", NameSpace, NameSpace, class.ClassName);
+		if (!component.isBaseClass(class)) {
+			w.Writeln("");
+			w.Writeln("typedef struct : public %s_FunctionTableBase {", NameSpace);
+			for i := 0; i < len(class.Methods); i++ {
+				method := class.Methods[i]
+				w.Writeln("  void* m_pfn%s;", method.MethodName);
+			}
+			w.Writeln("} %s_FunctionTable%s;", NameSpace, class.ClassName);
+			w.Writeln("");
+		}
 	}
 	w.Writeln("");
-	
+
+	w.Writeln("");
+	w.Writeln("typedef struct {");
+	w.Writeln("  %sHandle m_hHandle;", NameSpace);
+	w.Writeln("  %s_FunctionTableBase* m_pFunctionTable;", NameSpace);
+	w.Writeln("} %s;", component.getExtendedHandleName())
+	w.Writeln("");
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i];
+		w.Writeln("typedef %s %s_%s;", component.getExtendedHandleName(), NameSpace, class.ClassName);
+	}
+	w.Writeln("");
+	w.Writeln("");
 	return nil
 }
 
@@ -285,7 +321,7 @@ func writeClassMethodsIntoCCPPHeader(component ComponentDefinition, class Compon
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j];
-		err := WriteCCPPAbiMethod (method, w, NameSpace, class.ClassName, false, false, useCPPTypes);
+		err := WriteCCPPAbiMethod (method, w, NameSpace, class.ClassName, false, false, useCPPTypes, true);
 		if (err != nil) {
 			return err;
 		}
@@ -345,7 +381,7 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j];
-		err := WriteCCPPAbiMethod(method, w, NameSpace, "Wrapper", true, false, useCPPTypes);
+		err := WriteCCPPAbiMethod(method, w, NameSpace, "Wrapper", true, false, useCPPTypes, true);
 		if (err != nil) {
 			return err;
 		}
@@ -375,7 +411,7 @@ func GetCExportName (NameSpace string, ClassName string, method ComponentDefinit
 
 
 // WriteCCPPAbiMethod writes an ABI method as a C-function
-func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, writeCallbacks bool, useCPPTypes bool) (error) {
+func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, writeCallbacks bool, useCPPTypes bool, writeComments bool) (error) {
 	CMethodName := "";
 	CCallbackName := "";
 	parameters := "";
@@ -388,15 +424,15 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 		parameters = fmt.Sprintf ("%s_%s p%s", NameSpace, ClassName, ClassName);
 	}
 
-	w.Writeln("");
-	w.Writeln("/**");
-	w.Writeln("* %s", method.MethodDescription);
-	w.Writeln("*");
-	if (!isGlobal) {
-		w.Writeln("* @param[in] p%s - %s instance.", ClassName, ClassName);
+	if (writeComments) {
+		w.Writeln("");
+		w.Writeln("/**");
+		w.Writeln("* %s", method.MethodDescription);
+		w.Writeln("*");
+		if (!isGlobal) {
+			w.Writeln("* @param[in] p%s - %s instance.", ClassName, ClassName);
+		}
 	}
-	
-
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
 		cParams, err := generateCCPPParameter(param, ClassName, method.MethodName, NameSpace, useCPPTypes);
@@ -404,16 +440,21 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 			return err;
 		}
 		for _, cParam := range cParams {
-			w.Writeln(cParam.ParamComment);
+			if (writeComments) {
+				w.Writeln(cParam.ParamComment);
+			}
 			if (parameters != "") {
 				parameters = parameters + ", ";
 			}
 			parameters = parameters + cParam.ParamType + " " + cParam.ParamName;
 		}
 	}
+
+	if (writeComments) {
+		w.Writeln("* @return error code or 0 (success)");
+		w.Writeln("*/");
+	}
 	
-	w.Writeln("* @return error code or 0 (success)");
-	w.Writeln("*/");
 	
 	if (writeCallbacks) {
 		w.Writeln("typedef %sResult (*%s) (%s);", NameSpace, CCallbackName, parameters);

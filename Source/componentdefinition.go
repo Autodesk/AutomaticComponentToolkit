@@ -534,14 +534,30 @@ func (component *ComponentDefinition) checkClasses() (error) {
 			parentClass = baseClassName
 		}
 		if (len(parentClass) > 0) {
-			if !nameIsValidIdentifier(parentClass) {
+			currentNameMaps := component.NameMapsLookup
+
+			namespace, paramClassName, err := decomposeParamClassName(parentClass)
+			if err != nil {
+				return err
+			}
+			if len(namespace) > 0 {
+				if subComponent, ok := component.ImportedComponentDefinitions[namespace]; ok {
+					currentNameMaps = subComponent.NameMapsLookup
+				} else {
+					return fmt.Errorf("parent class \"%s\" of class \"%s\" is unknown: unknown namespace \"%s\"", parentClass, class.ClassName, namespace)
+				}
+			}
+			
+			if !nameIsValidIdentifier(paramClassName) {
 				return fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
 			}
-			if ( (*classNameList)[parentClass] == false) {
+			if ( currentNameMaps.classMap[paramClassName] == false) {
 				return fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
 			}
-			if (classNameIndex[parentClass] >= i) {
-				return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+			if len(namespace) == 0 {
+				if (classNameIndex[parentClass] >= i) {
+					return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+				}
 			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
 				return fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
@@ -1235,5 +1251,16 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	}
 	var out ComponentDefinitionClass
 	log.Fatal("No base class available")
+	return out
+}
+
+func (component *ComponentDefinition) getClassByName(className string) (ComponentDefinitionClass) {
+	for i := 0; i < len(component.Classes); i++ {
+		if (component.Classes[i].ClassName == className) {
+			return component.Classes[i]
+		}
+	}
+	var out ComponentDefinitionClass
+	log.Fatal("Class does not exist in component")
 	return out
 }

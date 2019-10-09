@@ -41,6 +41,15 @@ import (
 	"strings"
 )
 
+func (component *ComponentDefinition) getHandleName() string {
+	return component.NameSpace + "Handle"
+}
+
+func (component *ComponentDefinition) getExtendedHandleName() string {
+	return component.NameSpace + "ExtendedHandle"
+}
+
+
 // BuildImplementationCPP builds C++ interface classes, implementation stubs and wrapper code that maps to the C-header
 func BuildImplementationCPP(component ComponentDefinition, outputFolder string, stubOutputFolder string, projectOutputFolder string, implementation ComponentDefinitionImplementation) error {
 	forceRecreation := false
@@ -324,8 +333,24 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
 	w.Writeln("public:")
+	w.Writeln("  static %s_FunctionTable%s m_sFunctionTable;	// needs to be populated with flat C-ABI-functions", NameSpace, class.ClassName)
+	w.Writeln("  ")
 
 	if (component.isBaseClass(class)) {
+		w.Writeln("protected:")
+		w.Writeln("  %s m_ExtendedHandle;", component.getExtendedHandleName())
+		w.Writeln("  ")
+		w.Writeln("public:")
+		w.Writeln("  %s GetExtendedHandle() {", component.getExtendedHandleName())
+		w.Writeln("    return m_ExtendedHandle;")
+		w.Writeln("  }")
+		w.Writeln("  ")
+		w.Writeln("  %s() {", classInterfaceName)
+		w.Writeln("    m_ExtendedHandle.m_hHandle = this;")
+		w.Writeln("    m_ExtendedHandle.m_pFunctionTable = &%s::m_sFunctionTable;", classInterfaceName)
+		w.Writeln("  }")
+		w.Writeln("")
+
 		w.Writeln("  /**")
 		w.Writeln("  * %s::~%s - virtual destructor of %s", classInterfaceName, classInterfaceName, classInterfaceName)
 		w.Writeln("  */")
@@ -374,8 +399,12 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 			w.Writeln("")
 			w.Writeln("%s;", methodstring)
 		}
+	} else {
+		w.Writeln("  %s() {", classInterfaceName)
+		w.Writeln("    m_ExtendedHandle.m_pFunctionTable = &%s::m_sFunctionTable;", classInterfaceName)
+		w.Writeln("  }")
+		w.Writeln("  ")
 	}
-
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
@@ -494,6 +523,28 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	return nil
 }
 
+
+func writeClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, class ComponentDefinitionClass, sTableName string) {
+	if len(class.ParentClass) > 0 {
+		if (class.ParentClass != class.ClassName) {
+			parentClass := component.getClassByName(class.ParentClass)
+			writeClassFunctionTable(component, stubfile, NameSpace, parentClass, sTableName)
+		}
+	}
+
+	if (component.isBaseClass(class)) {
+		stubfile.Writeln("    %s.m_pfnReleaseOwnership = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ReleaseMethod)) );
+		stubfile.Writeln("    %s.m_pfnAcquireOwnership = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.AcquireMethod)) );
+		stubfile.Writeln("    %s.m_pfnGetLastError = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ErrorMethod)) );
+	}
+
+	for k := 0; k < len(class.Methods); k++ {
+		method := class.Methods[k]
+		CMethodName := strings.ToLower(fmt.Sprintf("%s_%s_%s", NameSpace, class.ClassName, method.MethodName));
+		stubfile.Writeln("    %s.m_pfn%s = &%s;", sTableName, method.MethodName, CMethodName)
+	}
+}
+
 func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) error {
 	var defaultImplementation []string
 	defaultImplementation = append(defaultImplementation, fmt.Sprintf("throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace)))
@@ -514,6 +565,32 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		}
 		stubfile.Writeln("")
 	}
+
+	stubfile.Writeln("/*************************************************************************************************************************");
+	stubfile.Writeln(" Initialize function tables ");
+	stubfile.Writeln("**************************************************************************************************************************/")
+	for j := 0; j < len(component.Classes); j++ {
+		class := component.Classes[j]
+		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
+		stubfile.Writeln("%s_FunctionTable%s %s::m_sFunctionTable;", NameSpace, class.ClassName, classInterfaceName)
+	}
+	stubfile.Writeln("")
+	stubfile.Writeln("// This should be called once before any class-instances are created")
+	stubfile.Writeln("void InitInterfaceFunctionTables() {")
+	stubfile.Writeln("	static bool bIisInititalized = false;")
+	stubfile.Writeln("  if (!bIisInititalized) {")
+	for j := 0; j < len(component.Classes); j++ {
+		class := component.Classes[j]
+		sTableName := fmt.Sprintf("I%s%s::m_sFunctionTable", ClassIdentifier, class.ClassName);
+		stubfile.Writeln("  ")
+
+		writeClassFunctionTable(component, stubfile, NameSpace, class, sTableName)
+	}
+	
+	stubfile.Writeln("    bIisInititalized = true;")
+	stubfile.Writeln("  }")
+	stubfile.Writeln("}")
+	stubfile.Writeln("")
 
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
@@ -861,7 +938,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	if !isGlobal {
-		w.Writeln ("  %s* pIBaseClass = (%s *)p%s;\n", IBaseClassName, IBaseClassName, ClassName);
+		w.Writeln ("  %s* pIBaseClass = (%s *)p%s.m_hHandle;\n", IBaseClassName, IBaseClassName, ClassName);
 	} else {
 		w.Writeln ("  %s* pIBaseClass = nullptr;\n", IBaseClassName);
 	}
@@ -1445,7 +1522,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
 				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.m_hHandle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
 				}
 				
@@ -1518,7 +1595,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					callParameters = callParameters + outVarName
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
 					callParameters = callParameters + "pBase" + param.ParamName
 				}
 				
@@ -1575,7 +1652,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
+					
 				}
 
 			default:
@@ -1854,7 +1932,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	
 	headerw.Writeln("");
 	headerw.Writeln("  public:");
-	headerw.Writeln("    C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle);", NameSpace, NameSpace, NameSpace);
+	headerw.Writeln("    C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %s pInstanceHandle);", NameSpace, NameSpace, component.getExtendedHandleName());
 	headerw.Writeln("    ~C%sInterfaceJournalEntry();", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void writeSuccess ();");
@@ -1873,7 +1951,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addDoubleParameter(const std::string & sName, const %s_double dValue);", NameSpace);
 	headerw.Writeln("    void addPointerParameter(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringParameter(const std::string & sName, const char * pValue);");
-	headerw.Writeln("    void addHandleParameter(const std::string & sName, const %sHandle pHandle);", NameSpace);
+	headerw.Writeln("    void addHandleParameter(const std::string & sName, const %s pHandle);", component.getExtendedHandleName());
 	headerw.Writeln("    void addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void addBooleanResult(const std::string & sName, const bool bValue);");
@@ -1889,7 +1967,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    void addDoubleResult(const std::string & sName, const %s_double dValue);", NameSpace);
 	headerw.Writeln("    void addPointerResult(const std::string & sName, const %s_pvoid pValue);", NameSpace);
 	headerw.Writeln("    void addStringResult(const std::string & sName, const char * pValue);");
-	headerw.Writeln("    void addHandleResult(const std::string & sName, const %sHandle pHandle);", NameSpace);
+	headerw.Writeln("    void addHandleResult(const std::string & sName, const %s pHandle);", component.getExtendedHandleName());
 	headerw.Writeln("    void addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue);", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("friend class C%sInterfaceJournal;", NameSpace);
@@ -1917,7 +1995,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("");
 	headerw.Writeln("    C%sInterfaceJournal (const std::string & sFileName);", NameSpace);
 	headerw.Writeln("    ~C%sInterfaceJournal ();", NameSpace);
-	headerw.Writeln("    P%sInterfaceJournalEntry beginClassMethod (const %sHandle pHandle, const std::string & sClassName, const std::string & sMethodName);", NameSpace, NameSpace);
+	headerw.Writeln("    P%sInterfaceJournalEntry beginClassMethod (const %s pHandle, const std::string & sClassName, const std::string & sMethodName);", NameSpace, component.getExtendedHandleName());
 	headerw.Writeln("    P%sInterfaceJournalEntry beginStaticFunction (const std::string & sMethodName);", NameSpace);
 	headerw.Writeln("    friend class C%sInterfaceJournalEntry;", NameSpace);
 	headerw.Writeln("};");
@@ -1938,7 +2016,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("");
 	implw.Writeln("");
 	
-	implw.Writeln("std::string %sHandleToHex (%sHandle pHandle)", NameSpace, NameSpace);
+	implw.Writeln("std::string %sToHex (%sHandle pHandle)", component.getExtendedHandleName(), NameSpace);
 	implw.Writeln("{");
 	implw.Writeln("  std::stringstream stream;");
 	implw.Writeln("  stream << std::setfill('0') << std::setw(sizeof(%s_uint64) * 2)", NameSpace);
@@ -1947,13 +2025,13 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("}");
 	implw.Writeln("");
 	
-	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle)", NameSpace, NameSpace, NameSpace, NameSpace);
+	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %s pInstanceHandle)", NameSpace, NameSpace, NameSpace, component.getExtendedHandleName());
 	implw.Writeln("  : m_pJournal(pJournal), m_ErrorCode(%s_SUCCESS), m_sClassName(sClassName), m_sMethodName(sMethodName), m_nInitTimeStamp(0), m_nFinishTimeStamp(0)", strings.ToUpper(NameSpace))
 	implw.Writeln("{");
 	implw.Writeln("  if (pJournal == nullptr)");
 	implw.Writeln("    throw E%sInterfaceException(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));
 	implw.Writeln("  m_nInitTimeStamp = m_pJournal->getTimeStamp ();");
-	implw.Writeln("  m_sInstanceHandle = %sHandleToHex (pInstanceHandle);", NameSpace);
+	implw.Writeln("  m_sInstanceHandle = %sToHex (pInstanceHandle);", component.getExtendedHandleName());
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("C%sInterfaceJournalEntry::~C%sInterfaceJournalEntry()", NameSpace, NameSpace);
@@ -2086,9 +2164,9 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  }");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addHandleParameter(const std::string & sName, const %sHandle pHandle)", NameSpace, NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addHandleParameter(const std::string & sName, const %s pHandle)", NameSpace, component.getExtendedHandleName());
 	implw.Writeln("{");
-	implw.Writeln("  addParameter(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
+	implw.Writeln("  addParameter(sName, \"handle\", %sToHex(pHandle));", component.getExtendedHandleName());
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("void C%sInterfaceJournalEntry::addEnumParameter(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue)", NameSpace, NameSpace);
@@ -2166,9 +2244,9 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  }");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("void C%sInterfaceJournalEntry::addHandleResult(const std::string & sName, const %sHandle pHandle)", NameSpace, NameSpace);
+	implw.Writeln("void C%sInterfaceJournalEntry::addHandleResult(const std::string & sName, const %s pHandle)", NameSpace, component.getExtendedHandleName());
 	implw.Writeln("{");
-	implw.Writeln("  addResult(sName, \"handle\", %sHandleToHex(pHandle));", NameSpace);
+	implw.Writeln("  addResult(sName, \"handle\", %sToHex(pHandle));", component.getExtendedHandleName());
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("void C%sInterfaceJournalEntry::addEnumResult(const std::string & sName, const std::string & sEnumType, const %s_int32 nValue)", NameSpace, NameSpace);
@@ -2196,7 +2274,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("  m_Stream << \"</journal>\\n\";");
 	implw.Writeln("}");
 	implw.Writeln("");
-	implw.Writeln("P%sInterfaceJournalEntry C%sInterfaceJournal::beginClassMethod(const %sHandle pHandle, const std::string & sClassName, const std::string & sMethodName)", NameSpace, NameSpace, NameSpace);
+	implw.Writeln("P%sInterfaceJournalEntry C%sInterfaceJournal::beginClassMethod(const %s pHandle, const std::string & sClassName, const std::string & sMethodName)", NameSpace, NameSpace, component.getExtendedHandleName());
 	implw.Writeln("{");
 	implw.Writeln("  return std::make_shared<C%sInterfaceJournalEntry>(this, sClassName, sMethodName, pHandle);", NameSpace);
 	implw.Writeln("}");
