@@ -19,37 +19,16 @@ Interface version: 1.0.0
 
 #include "numbers_variable.hpp"
 
-
 using namespace Numbers;
 using namespace Numbers::Impl;
 
-/*************************************************************************************************************************
- Initialize function tables 
-**************************************************************************************************************************/
-Numbers_FunctionTableBase IBase::m_sFunctionTable;
-Numbers_FunctionTableVariable IVariable::m_sFunctionTable;
-
-// This should be called once before any class-instances are created
-void InitInterfaceFunctionTables() {
-	static bool bIisInititalized = false;
-	if (!bIisInititalized) {
-	
-		IBase::m_sFunctionTable.m_pfnReleaseOwnership = &numbers_releaseinstance;
-		IBase::m_sFunctionTable.m_pfnAcquireOwnership = &numbers_acquireinstance;
-		IBase::m_sFunctionTable.m_pfnGetLastError = &numbers_getlasterror;
-	
-		IVariable::m_sFunctionTable.m_pfnReleaseOwnership = &numbers_releaseinstance;
-		IVariable::m_sFunctionTable.m_pfnAcquireOwnership = &numbers_acquireinstance;
-		IVariable::m_sFunctionTable.m_pfnGetLastError = &numbers_getlasterror;
-		IVariable::m_sFunctionTable.m_pfnGetValue = &numbers_variable_getvalue;
-		IVariable::m_sFunctionTable.m_pfnSetValue = &numbers_variable_setvalue;
-		bIisInititalized = true;
-	}
-}
+NumbersSymbolLookupType IBase::s_SymbolLookupMethodBase = nullptr;
+NumbersSymbolLookupType IVariable::s_SymbolLookupMethodVariable = nullptr;
 
 IVariable * CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
-	// InitInterfaceFunctionTables();
+	numbers_getsymbollookupmethod((void**)&(IBase::s_SymbolLookupMethodBase));
+	numbers_getsymbollookupmethod((void**)&(IVariable::s_SymbolLookupMethodVariable));
 	return new CVariable();
 }
 
@@ -74,5 +53,3 @@ void CWrapper::AcquireInstance(IBase* pInstance)
 {
 	IBase::AcquireBaseClassInterface(pInstance);
 }
-
-

@@ -42,11 +42,9 @@ class IVariable;
 
 class IBase {
 public:
-	static Numbers_FunctionTableBase m_sFunctionTable;	// needs to be populated with flat C-ABI-functions
-	
+	static NumbersSymbolLookupType s_SymbolLookupMethodBase;
 protected:
 	NumbersExtendedHandle m_ExtendedHandle;
-	
 public:
 	NumbersExtendedHandle GetExtendedHandle() {
 		return m_ExtendedHandle;
@@ -54,9 +52,8 @@ public:
 	
 	IBase() {
 		m_ExtendedHandle.m_hHandle = this;
-		m_ExtendedHandle.m_pFunctionTable = &IBase::m_sFunctionTable;
+		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodBase;
 	}
-
 	/**
 	* IBase::~IBase - virtual destructor of IBase
 	*/
@@ -154,10 +151,9 @@ typedef IBaseSharedPtr<IBase> PIBase;
 
 class IVariable : public virtual IBase {
 public:
-	static Numbers_FunctionTableVariable m_sFunctionTable;	// needs to be populated with flat C-ABI-functions
-	
+	static NumbersSymbolLookupType s_SymbolLookupMethodVariable;
 	IVariable() {
-		m_ExtendedHandle.m_pFunctionTable = &IVariable::m_sFunctionTable;
+		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodVariable;
 	}
 	
 	/**

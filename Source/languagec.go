@@ -146,44 +146,20 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	}
 
 	w.Writeln("");
-	
+	w.Writeln("/*************************************************************************************************************************");
+	w.Writeln(" Declaration of symbol lookup method type ");
+	w.Writeln("**************************************************************************************************************************/");
+	w.Writeln("");
+	w.Writeln("typedef %sResult(*%sSymbolLookupType)(const char*, void**);", NameSpace, NameSpace)
+	w.Writeln("");
+
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" Declaration of handle classes ");
 	w.Writeln("**************************************************************************************************************************/");
-
-	w.Writeln("");
-	w.Writeln("typedef struct {");
-	w.Writeln("  void* m_pfnReleaseOwnership;");
-	w.Writeln("  void* m_pfnAcquireOwnership;");
-	w.Writeln("  void* m_pfnGetLastError;");
-	w.Writeln("  ");
-	baseClasse := component.baseClass()
-	for i := 0; i < len(baseClasse.Methods); i++ {
-		method := baseClasse.Methods[i]
-		w.Writeln("  void* m_pfn%s;", method.MethodName);
-	}
-	w.Writeln("} %s_FunctionTableBase;", NameSpace);
-	w.Writeln("");
-
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i];
-		if (!component.isBaseClass(class)) {
-			w.Writeln("");
-			w.Writeln("typedef struct : public %s_FunctionTableBase {", NameSpace);
-			for i := 0; i < len(class.Methods); i++ {
-				method := class.Methods[i]
-				w.Writeln("  void* m_pfn%s;", method.MethodName);
-			}
-			w.Writeln("} %s_FunctionTable%s;", NameSpace, class.ClassName);
-			w.Writeln("");
-		}
-	}
-	w.Writeln("");
-
 	w.Writeln("");
 	w.Writeln("typedef struct {");
 	w.Writeln("  %sHandle m_hHandle;", NameSpace);
-	w.Writeln("  %s_FunctionTableBase* m_pFunctionTable;", NameSpace);
+	w.Writeln("  %sSymbolLookupType m_pfnSymbolLookupMethod;", NameSpace);
 	w.Writeln("} %s;", component.getExtendedHandleName())
 	w.Writeln("");
 	for i := 0; i < len(component.Classes); i++ {
@@ -191,7 +167,7 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 		w.Writeln("typedef %s %s_%s;", component.getExtendedHandleName(), NameSpace, class.ClassName);
 	}
 	w.Writeln("");
-	w.Writeln("");
+	
 	return nil
 }
 

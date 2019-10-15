@@ -32,6 +32,9 @@ int main()
 		pVar->SetValue(10.0);
 
 		std::cout << pVar->GetValue() << std::endl;
+
+		auto pVar2= wrapper->CreateVariable(2.0);
+		pVar2->SetValue(10.0);
 	}
 	catch (std::exception &e)
 	{

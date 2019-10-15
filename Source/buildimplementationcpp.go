@@ -333,13 +333,10 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
 	w.Writeln("public:")
-	w.Writeln("  static %s_FunctionTable%s m_sFunctionTable;	// needs to be populated with flat C-ABI-functions", NameSpace, class.ClassName)
-	w.Writeln("  ")
-
+	w.Writeln("  static %sSymbolLookupType s_SymbolLookupMethod%s;", NameSpace, class.ClassName)
 	if (component.isBaseClass(class)) {
 		w.Writeln("protected:")
 		w.Writeln("  %s m_ExtendedHandle;", component.getExtendedHandleName())
-		w.Writeln("  ")
 		w.Writeln("public:")
 		w.Writeln("  %s GetExtendedHandle() {", component.getExtendedHandleName())
 		w.Writeln("    return m_ExtendedHandle;")
@@ -347,9 +344,8 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  ")
 		w.Writeln("  %s() {", classInterfaceName)
 		w.Writeln("    m_ExtendedHandle.m_hHandle = this;")
-		w.Writeln("    m_ExtendedHandle.m_pFunctionTable = &%s::m_sFunctionTable;", classInterfaceName)
+		w.Writeln("    m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethod%s;", class.ClassName)
 		w.Writeln("  }")
-		w.Writeln("")
 
 		w.Writeln("  /**")
 		w.Writeln("  * %s::~%s - virtual destructor of %s", classInterfaceName, classInterfaceName, classInterfaceName)
@@ -401,7 +397,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		}
 	} else {
 		w.Writeln("  %s() {", classInterfaceName)
-		w.Writeln("    m_ExtendedHandle.m_pFunctionTable = &%s::m_sFunctionTable;", classInterfaceName)
+		w.Writeln("    m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethod%s;", class.ClassName)
 		w.Writeln("  }")
 		w.Writeln("  ")
 	}
@@ -523,28 +519,6 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	return nil
 }
 
-
-func writeClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, class ComponentDefinitionClass, sTableName string) {
-	if len(class.ParentClass) > 0 {
-		if (class.ParentClass != class.ClassName) {
-			parentClass := component.getClassByName(class.ParentClass)
-			writeClassFunctionTable(component, stubfile, NameSpace, parentClass, sTableName)
-		}
-	}
-
-	if (component.isBaseClass(class)) {
-		stubfile.Writeln("    %s.m_pfnReleaseOwnership = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ReleaseMethod)) );
-		stubfile.Writeln("    %s.m_pfnAcquireOwnership = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.AcquireMethod)) );
-		stubfile.Writeln("    %s.m_pfnGetLastError = &%s;", sTableName, strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ErrorMethod)) );
-	}
-
-	for k := 0; k < len(class.Methods); k++ {
-		method := class.Methods[k]
-		CMethodName := strings.ToLower(fmt.Sprintf("%s_%s_%s", NameSpace, class.ClassName, method.MethodName));
-		stubfile.Writeln("    %s.m_pfn%s = &%s;", sTableName, method.MethodName, CMethodName)
-	}
-}
-
 func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) error {
 	var defaultImplementation []string
 	defaultImplementation = append(defaultImplementation, fmt.Sprintf("throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace)))
@@ -566,30 +540,16 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		stubfile.Writeln("")
 	}
 
-	stubfile.Writeln("/*************************************************************************************************************************");
-	stubfile.Writeln(" Initialize function tables ");
-	stubfile.Writeln("**************************************************************************************************************************/")
-	for j := 0; j < len(component.Classes); j++ {
+	stubfile.Writeln("")
+
+	stubfile.Writeln("// Initialize lookup function pointers ");
+	for j := 0; j < len(component.Classes); j++ {                                               
 		class := component.Classes[j]
 		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-		stubfile.Writeln("%s_FunctionTable%s %s::m_sFunctionTable;", NameSpace, class.ClassName, classInterfaceName)
+		// stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;",
+		stubfile.Writeln("// TODO")
+		stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = nullptr;", NameSpace, classInterfaceName)
 	}
-	stubfile.Writeln("")
-	stubfile.Writeln("// This should be called once before any class-instances are created")
-	stubfile.Writeln("void InitInterfaceFunctionTables() {")
-	stubfile.Writeln("	static bool bIisInititalized = false;")
-	stubfile.Writeln("  if (!bIisInititalized) {")
-	for j := 0; j < len(component.Classes); j++ {
-		class := component.Classes[j]
-		sTableName := fmt.Sprintf("I%s%s::m_sFunctionTable", ClassIdentifier, class.ClassName);
-		stubfile.Writeln("  ")
-
-		writeClassFunctionTable(component, stubfile, NameSpace, class, sTableName)
-	}
-	
-	stubfile.Writeln("    bIisInititalized = true;")
-	stubfile.Writeln("  }")
-	stubfile.Writeln("}")
 	stubfile.Writeln("")
 
 	for j := 0; j < len(component.Global.Methods); j++ {
@@ -721,6 +681,82 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	return nil;
 }
 
+func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, sMapName string) {
+	NameSpace := component.NameSpace
+
+	if len(class.ParentClass) > 0 {
+		if (class.ParentClass != class.ClassName) {
+			parentClass := component.getClassByName(class.ParentClass)
+			writeClassMethodsIntoCPPGetSymbolAddressMethod(component, parentClass, w, sMapName)
+		}
+	}
+
+	if (component.isBaseClass(class)) {
+		procName := strings.ToLower(component.Global.ReleaseMethod)
+		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		procName = strings.ToLower(component.Global.AcquireMethod)
+		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		procName = strings.ToLower(component.Global.ErrorMethod)
+		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+	}
+
+	for j := 0; j < len(class.Methods); j++ {
+		method := class.Methods[j]
+		procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
+		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+	}
+
+}
+func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w LanguageWriter) error {
+	NameSpace := component.NameSpace
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+
+		w.Writeln("")
+		w.Writeln("/*************************************************************************************************************************")
+		w.Writeln(" Function table lookup implementation for class %s", class.ClassName)
+		w.Writeln("**************************************************************************************************************************/")
+		w.Writeln("")
+		w.Writeln("%sResult _%s_getprocaddress_%s(const char * pProcName, void ** ppProcAddress)", NameSpace, strings.ToLower(NameSpace), strings.ToLower(class.ClassName))
+		w.Writeln("{")
+
+		w.AddIndentationLevel(1)
+		w.Writeln("static bool sbProcAddressMapHasBeenInitialized = false;")
+		w.Writeln("static std::map<std::string, void*> sProcAddressMap;")
+		w.Writeln("if (!sbProcAddressMapHasBeenInitialized) {")
+
+		w.AddIndentationLevel(1)
+		writeClassMethodsIntoCPPGetSymbolAddressMethod(component, class, w, "sProcAddressMap")
+		w.AddIndentationLevel(-1)
+
+		w.Writeln("  ")
+		w.Writeln("  sbProcAddressMapHasBeenInitialized = true;")
+		w.Writeln("}")
+
+		w.Writeln("if (pProcName == nullptr)")		
+		w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
+		w.Writeln("if (ppProcAddress == nullptr)")		
+		w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
+		w.Writeln("*ppProcAddress = nullptr;")
+		w.Writeln("std::string sProcName (pProcName);")
+		w.Writeln("")
+
+		w.Writeln("auto procPair = sProcAddressMap.find(sProcName);")
+		w.Writeln("if (procPair == sProcAddressMap.end()) {")
+		w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
+		w.Writeln("}")
+		w.Writeln("else {")
+		w.Writeln("  *ppProcAddress = procPair->second;")
+		w.Writeln("  return %s_SUCCESS;", strings.ToUpper (NameSpace))
+		w.Writeln("}")
+		w.Writeln("")
+		w.AddIndentationLevel(-1)
+		w.Writeln("}")
+	}
+	w.Writeln("")
+	return nil;
+}
+
 func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, doJournal bool) error {
 	w.Writeln("#include \"%s_abi.hpp\"", strings.ToLower(BaseName))
 	w.Writeln("#include \"%s_interfaces.hpp\"", strings.ToLower(BaseName))
@@ -738,7 +774,6 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		w.Writeln("P%sInterfaceJournal m_GlobalJournal;", NameSpace)
 		w.Writeln("")
 	}
-
 	
 	journalParameter := "";
 	if (doJournal) {
@@ -758,7 +793,6 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	}
 
 	w.Writeln("  if (pIBaseClass != nullptr)")
-	
 	w.Writeln("    pIBaseClass->%s(Exception.what());", registerErrorMethod.MethodName)
 
 	w.Writeln("")
@@ -814,6 +848,11 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 
 	w.Writeln("")
 	err := buildCPPGetSymbolAddressMethod(component, w);
+	if err != nil {
+		return err
+	}
+	
+	err = buildCPPAllGetSymbolAddressMethods(component, w);
 	if err != nil {
 		return err
 	}
@@ -907,7 +946,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  throw E%sInterfaceException(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)) )
 		callCPPFunctionCode = append(callCPPFunctionCode, "")
 	} else if (isSpecialFunction == eSpecialMethodSymbolLookup) {
-		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = (void*)&_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("*p%s = &_%s_getprocaddress_internal;", method.Params[0].ParamName, strings.ToLower(NameSpace)))
 	} else {
 		callCode, err := generateCallCPPFunctionCode(method, NameSpace, ClassIdentifier, ClassName, returnVariable, callParameters, isGlobal)
 		if err != nil {

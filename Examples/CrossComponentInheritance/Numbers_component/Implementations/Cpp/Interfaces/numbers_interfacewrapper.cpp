@@ -151,6 +151,75 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 }
 
 /*************************************************************************************************************************
+ Function table lookup implementation for class Base
+**************************************************************************************************************************/
+
+NumbersResult _numbers_getprocaddress_base(const char * pProcName, void ** ppProcAddress)
+{
+	static bool sbProcAddressMapHasBeenInitialized = false;
+	static std::map<std::string, void*> sProcAddressMap;
+	if (!sbProcAddressMapHasBeenInitialized) {
+		sProcAddressMap["numbers_releaseinstance"] = (void*)&numbers_releaseinstance;
+		sProcAddressMap["numbers_acquireinstance"] = (void*)&numbers_acquireinstance;
+		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
+		
+		sbProcAddressMapHasBeenInitialized = true;
+	}
+	if (pProcName == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	if (ppProcAddress == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	*ppProcAddress = nullptr;
+	std::string sProcName (pProcName);
+	
+	auto procPair = sProcAddressMap.find(sProcName);
+	if (procPair == sProcAddressMap.end()) {
+		return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	}
+	else {
+		*ppProcAddress = procPair->second;
+		return NUMBERS_SUCCESS;
+	}
+	
+}
+
+/*************************************************************************************************************************
+ Function table lookup implementation for class Variable
+**************************************************************************************************************************/
+
+NumbersResult _numbers_getprocaddress_variable(const char * pProcName, void ** ppProcAddress)
+{
+	static bool sbProcAddressMapHasBeenInitialized = false;
+	static std::map<std::string, void*> sProcAddressMap;
+	if (!sbProcAddressMapHasBeenInitialized) {
+		sProcAddressMap["numbers_releaseinstance"] = (void*)&numbers_releaseinstance;
+		sProcAddressMap["numbers_acquireinstance"] = (void*)&numbers_acquireinstance;
+		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
+		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
+		
+		sbProcAddressMapHasBeenInitialized = true;
+	}
+	if (pProcName == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	if (ppProcAddress == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	*ppProcAddress = nullptr;
+	std::string sProcName (pProcName);
+	
+	auto procPair = sProcAddressMap.find(sProcName);
+	if (procPair == sProcAddressMap.end()) {
+		return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	}
+	else {
+		*ppProcAddress = procPair->second;
+		return NUMBERS_SUCCESS;
+	}
+	
+}
+
+
+/*************************************************************************************************************************
  Global functions implementation
 **************************************************************************************************************************/
 NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Variable * pInstance)
@@ -299,7 +368,7 @@ NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod)
 	try {
 		if (pSymbolLookupMethod == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		*pSymbolLookupMethod = (void*)&_numbers_getprocaddress_internal;
+		*pSymbolLookupMethod = &_numbers_getprocaddress_internal;
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {

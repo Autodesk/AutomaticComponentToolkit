@@ -83,32 +83,22 @@ typedef void * Numbers_pvoid;
 #define NUMBERS_ERROR_INCOMPATIBLEBINARYVERSION 8
 
 /*************************************************************************************************************************
+ Declaration of symbol lookup method type 
+**************************************************************************************************************************/
+
+typedef NumbersResult(*NumbersSymbolLookupType)(const char*, void**);
+
+/*************************************************************************************************************************
  Declaration of handle classes 
 **************************************************************************************************************************/
 
 typedef struct {
-  void* m_pfnReleaseOwnership;
-  void* m_pfnAcquireOwnership;
-  void* m_pfnGetLastError;
-  
-} Numbers_FunctionTableBase;
-
-
-typedef struct : public Numbers_FunctionTableBase {
-  void* m_pfnGetValue;
-  void* m_pfnSetValue;
-} Numbers_FunctionTableVariable;
-
-
-
-typedef struct {
   NumbersHandle m_hHandle;
-  Numbers_FunctionTableBase* m_pFunctionTable;
+  NumbersSymbolLookupType m_pfnSymbolLookupMethod;
 } NumbersExtendedHandle;
 
 typedef NumbersExtendedHandle Numbers_Base;
 typedef NumbersExtendedHandle Numbers_Variable;
-
 
 namespace Numbers {
 
