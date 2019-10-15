@@ -540,14 +540,21 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	stubfile.Writeln("")
 
 	stubfile.Writeln("// Initialize lookup function pointers ");
-	for j := 0; j < len(component.Classes); j++ {                                               
+	stubfile.Writeln("// TODO")
+	for j := 0; j < len(component.Classes); j++ {
 		class := component.Classes[j]
 		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 		// stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;",
-		stubfile.Writeln("// TODO")
-		stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = nullptr;", NameSpace, classInterfaceName)
+		stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = nullptr;", NameSpace, classInterfaceName, class.ClassName)
 	}
 	stubfile.Writeln("")
+
+	for j := 0; j < len(component.Classes); j++ {
+		class := component.Classes[j]
+		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
+		stubfile.Writeln("// %s_%s((void**)&(%s::s_SymbolLookupMethod%s));",
+			strings.ToLower(NameSpace), strings.ToLower(component.Global.SymbolLookupMethod), classInterfaceName, class.ClassName)
+	}
 
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
@@ -656,9 +663,9 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	w.Writeln("  sbProcAddressMapHasBeenInitialized = true;")
 	w.Writeln("}")
 
-	w.Writeln("if (pProcName == nullptr)")		
+	w.Writeln("if (pProcName == nullptr)")
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
-	w.Writeln("if (ppProcAddress == nullptr)")		
+	w.Writeln("if (ppProcAddress == nullptr)")
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("*ppProcAddress = nullptr;")
 	w.Writeln("std::string sProcName (pProcName);")
@@ -720,9 +727,9 @@ func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w Languag
 		w.Writeln("  sbProcAddressMapHasBeenInitialized = true;")
 		w.Writeln("}")
 
-		w.Writeln("if (pProcName == nullptr)")		
+		w.Writeln("if (pProcName == nullptr)")
 		w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
-		w.Writeln("if (ppProcAddress == nullptr)")		
+		w.Writeln("if (ppProcAddress == nullptr)")
 		w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 		w.Writeln("*ppProcAddress = nullptr;")
 		w.Writeln("std::string sProcName (pProcName);")
@@ -1644,6 +1651,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					callParameters = callParameters + outVarName
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
 					callParameters = callParameters + "pBase" + param.ParamName
 				}
@@ -1701,6 +1709,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
+					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
 					
 				}

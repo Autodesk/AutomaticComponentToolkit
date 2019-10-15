@@ -711,7 +711,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter
 
 				if (param.ParamType == "optionalclass") {
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s.m_hHandle) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
@@ -788,7 +788,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter
 				
 				if (param.ParamType == "optionalclass") {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s.m_hHandle) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(h%s);", CPPClass, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
@@ -901,10 +901,10 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    : m_pHandle(pHandle)")
 	w.Writeln("  {")
 	w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace)
-	w.Writeln("    auto table = s_sMapFunctionTable%s.find(pLookupFunction);", baseClass.ClassName)
-	w.Writeln("    if (s_sMapFunctionTable%s.end() == table) {", baseClass.ClassName)
-	w.Writeln("      s_sMapFunctionTable%s[pLookupFunction] = s%sFunctionTable%s();", baseClass.ClassName, NameSpace, baseClass.ClassName)
-	w.Writeln("      m_pFunctionTable%s = &(s_sMapFunctionTable%s[pLookupFunction]);", baseClass.ClassName, baseClass.ClassName)
+	w.Writeln("    auto table = MapFunctionTable%s().find(pLookupFunction);", baseClass.ClassName)
+	w.Writeln("    if (MapFunctionTable%s().end() == table) {", baseClass.ClassName)
+	w.Writeln("      MapFunctionTable%s()[pLookupFunction] = s%sFunctionTable%s();", baseClass.ClassName, NameSpace, baseClass.ClassName)
+	w.Writeln("      m_pFunctionTable%s = &(MapFunctionTable%s()[pLookupFunction]);", baseClass.ClassName, baseClass.ClassName)
 	writeLoadingOfClassFunctionTable(component, w, NameSpace, baseClass, fmt.Sprintf("m_pFunctionTable%s", baseClass.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
 	w.Writeln("    } else {")
 	w.Writeln("      m_pFunctionTable%s = &(table->second);", baseClass.ClassName)
@@ -1377,8 +1377,12 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("class %s %s{", cppClassName, inheritanceSpecifier)
 		w.Writeln("private:")
 		w.Writeln("  s%sFunctionTable%s* m_pFunctionTable%s;", NameSpace, class.ClassName, class.ClassName)
-		w.Writeln("  static std::map<%sSymbolLookupType, s%sFunctionTable%s> s_sMapFunctionTable%s;", NameSpace, NameSpace, class.ClassName, class.ClassName)
-		w.Writeln("  ")
+		w.Writeln("  inline static std::map<%sSymbolLookupType, s%sFunctionTable%s>& MapFunctionTable%s()", NameSpace, NameSpace, class.ClassName, class.ClassName)
+		w.Writeln("  {")
+		w.Writeln("    static std::map<%sSymbolLookupType, s%sFunctionTable%s> sMapFunctionTable%s;", NameSpace, NameSpace, class.ClassName, class.ClassName)
+		w.Writeln("    return sMapFunctionTable%s;", class.ClassName)
+		w.Writeln("  }")
+
 		if !component.isBaseClass(class) {
 			w.Writeln("public:")
 			w.Writeln("  /**")
@@ -1390,10 +1394,10 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			}
 			w.Writeln("  {")
 			w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace);
-			w.Writeln("    auto table = s_sMapFunctionTable%s.find(pLookupFunction);", class.ClassName)
-			w.Writeln("    if (s_sMapFunctionTable%s.end() == table) {", class.ClassName)
-			w.Writeln("      s_sMapFunctionTable%s[pLookupFunction] = s%sFunctionTable%s();", class.ClassName, NameSpace, class.ClassName)
-			w.Writeln("      m_pFunctionTable%s = &(s_sMapFunctionTable%s[pLookupFunction]);", class.ClassName, class.ClassName)
+			w.Writeln("    auto table = MapFunctionTable%s().find(pLookupFunction);", class.ClassName)
+			w.Writeln("    if (MapFunctionTable%s().end() == table) {", class.ClassName)
+			w.Writeln("      MapFunctionTable%s()[pLookupFunction] = s%sFunctionTable%s();", class.ClassName, NameSpace, class.ClassName)
+			w.Writeln("      m_pFunctionTable%s = &(MapFunctionTable%s()[pLookupFunction]);", class.ClassName, class.ClassName)
 			writeLoadingOfClassFunctionTable(component, w, NameSpace, class, fmt.Sprintf("m_pFunctionTable%s", class.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
 			w.Writeln("    } else {")
 			w.Writeln("      m_pFunctionTable%s = &(table->second);", class.ClassName)
@@ -1415,7 +1419,6 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			}
 		}
 		w.Writeln("};")
-		w.Writeln("std::map<%sSymbolLookupType, s%sFunctionTable%s> %s::s_sMapFunctionTable%s;", NameSpace, NameSpace, class.ClassName, cppClassName, class.ClassName)
 		w.Writeln("")
 	}
 

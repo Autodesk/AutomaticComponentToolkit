@@ -224,8 +224,11 @@ private:
 class CBase {
 private:
 	sNumbersFunctionTableBase* m_pFunctionTableBase;
-	static std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> s_sMapFunctionTableBase;
-	
+	inline static std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase>& MapFunctionTableBase()
+	{
+		static std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> sMapFunctionTableBase;
+		return sMapFunctionTableBase;
+	}
 protected:
 	/* Handle to Instance in library*/
 	NumbersExtendedHandle m_pHandle;
@@ -247,10 +250,10 @@ public:
 		: m_pHandle(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
-		auto table = s_sMapFunctionTableBase.find(pLookupFunction);
-		if (s_sMapFunctionTableBase.end() == table) {
-			s_sMapFunctionTableBase[pLookupFunction] = sNumbersFunctionTableBase();
-			m_pFunctionTableBase = &(s_sMapFunctionTableBase[pLookupFunction]);
+		auto table = MapFunctionTableBase().find(pLookupFunction);
+		if (MapFunctionTableBase().end() == table) {
+			MapFunctionTableBase()[pLookupFunction] = sNumbersFunctionTableBase();
+			m_pFunctionTableBase = &(MapFunctionTableBase()[pLookupFunction]);
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
@@ -282,7 +285,6 @@ public:
 	inline void ReleaseInstance();
 	inline void AcquireInstance();
 };
-std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> CBase::s_sMapFunctionTableBase;
 
 	
 /*************************************************************************************************************************
@@ -291,8 +293,11 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> CBase::s_sMapFuncti
 class CVariable : public CBase {
 private:
 	sNumbersFunctionTableVariable* m_pFunctionTableVariable;
-	static std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> s_sMapFunctionTableVariable;
-	
+	inline static std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable>& MapFunctionTableVariable()
+	{
+		static std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> sMapFunctionTableVariable;
+		return sMapFunctionTableVariable;
+	}
 public:
 	/**
 	* CVariable::CVariable - Constructor for Variable class.
@@ -301,10 +306,10 @@ public:
 		: CBase(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
-		auto table = s_sMapFunctionTableVariable.find(pLookupFunction);
-		if (s_sMapFunctionTableVariable.end() == table) {
-			s_sMapFunctionTableVariable[pLookupFunction] = sNumbersFunctionTableVariable();
-			m_pFunctionTableVariable = &(s_sMapFunctionTableVariable[pLookupFunction]);
+		auto table = MapFunctionTableVariable().find(pLookupFunction);
+		if (MapFunctionTableVariable().end() == table) {
+			MapFunctionTableVariable()[pLookupFunction] = sNumbersFunctionTableVariable();
+			m_pFunctionTableVariable = &(MapFunctionTableVariable()[pLookupFunction]);
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableVariable->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableVariable->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableVariable->m_Base_AcquireInstance));
@@ -318,7 +323,6 @@ public:
 	inline Numbers_double GetValue();
 	inline void SetValue(const Numbers_double dValue);
 };
-std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sMapFunctionTableVariable;
 
 	
 	/**
