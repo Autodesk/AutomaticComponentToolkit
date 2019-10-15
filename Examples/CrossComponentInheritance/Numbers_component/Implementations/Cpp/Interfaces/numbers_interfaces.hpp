@@ -66,7 +66,7 @@ public:
 	static void ReleaseBaseClassInterface(IBase* pIBase)
 	{
 		if (pIBase) {
-			pIBase->DecRefCount();
+			pIBase->ReleaseInstance();
 		}
 	};
 
@@ -77,17 +77,10 @@ public:
 	static void AcquireBaseClassInterface(IBase* pIBase)
 	{
 		if (pIBase) {
-			pIBase->IncRefCount();
+			pIBase->AcquireInstance();
 		}
 	};
 
-
-	/**
-	* IBase::GetLastErrorMessage - Returns the last error registered of this class instance
-	* @param[out] sErrorMessage - Message of the last error registered
-	* @return Has an error been registered already
-	*/
-	virtual bool GetLastErrorMessage(std::string & sErrorMessage) = 0;
 
 	/**
 	* IBase::ClearErrorMessages - Clears all registered messages of this class instance
@@ -99,17 +92,23 @@ public:
 	* @param[in] sErrorMessage - Error message to register
 	*/
 	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
+	/**
+	* IBase::GetLastError - Returns the last error recorded on this object
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	virtual bool GetLastError(std::string & sErrorMessage) = 0;
 
 	/**
-	* IBase::IncRefCount - Increases the reference count of a class instance
+	* IBase::ReleaseInstance - Releases shared ownership of an Instance
 	*/
-	virtual void IncRefCount() = 0;
+	virtual void ReleaseInstance() = 0;
 
 	/**
-	* IBase::DecRefCount - Decreases the reference count of a class instance and free releases it, if the last reference has been removed
-	* @return Has the object been released
+	* IBase::AcquireInstance - Acquires shared ownership of an Instance
 	*/
-	virtual bool DecRefCount() = 0;
+	virtual void AcquireInstance() = 0;
+
 };
 
 
@@ -123,7 +122,7 @@ public:
 	explicit IBaseSharedPtr(T* t = nullptr)
 		: std::shared_ptr<T>(t, IBase::ReleaseBaseClassInterface)
 	{
-		t->IncRefCount();
+		t->AcquireInstance();
 	}
 
 	// Reset function, as it also needs to properly set the deleter.
@@ -136,7 +135,7 @@ public:
 	T* getCoOwningPtr()
 	{
 		T* t = this->get();
-		t->IncRefCount();
+		t->AcquireInstance();
 		return t;
 	}
 };

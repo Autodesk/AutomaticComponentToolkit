@@ -24,6 +24,34 @@ Interface version: 1.0.0
  Class definition for Base
 **************************************************************************************************************************/
 
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersBase_GetLastErrorPtr) (Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+
+/**
+* Releases shared ownership of an Instance
+*
+* @param[in] pBase - Base instance.
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersBase_ReleaseInstancePtr) (Numbers_Base pBase);
+
+/**
+* Acquires shared ownership of an Instance
+*
+* @param[in] pBase - Base instance.
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersBase_AcquireInstancePtr) (Numbers_Base pBase);
+
 /*************************************************************************************************************************
  Class definition for Variable
 **************************************************************************************************************************/
@@ -111,6 +139,9 @@ typedef NumbersResult (*PNumbersGetSymbolLookupMethodPtr) (Numbers_pvoid * pSymb
 
 typedef struct {
 	void * m_LibraryHandle;
+	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
+	PNumbersBase_ReleaseInstancePtr m_Base_ReleaseInstance;
+	PNumbersBase_AcquireInstancePtr m_Base_AcquireInstance;
 	PNumbersVariable_GetValuePtr m_Variable_GetValue;
 	PNumbersVariable_SetValuePtr m_Variable_SetValue;
 	PNumbersCreateVariablePtr m_CreateVariable;
@@ -125,6 +156,9 @@ typedef struct {
 	PNumbersReleaseInstancePtr m_ReleaseInstance;
 	PNumbersAcquireInstancePtr m_AcquireInstance;
 	PNumbersGetLastErrorPtr m_GetLastError;
+	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
+	PNumbersBase_ReleaseInstancePtr m_Base_ReleaseInstance;
+	PNumbersBase_AcquireInstancePtr m_Base_AcquireInstance;
 } sNumbersFunctionTableBase;
 
 typedef struct : sNumbersFunctionTableBase {

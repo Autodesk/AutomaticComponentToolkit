@@ -35,6 +35,34 @@ extern "C" {
  Class definition for Base
 **************************************************************************************************************************/
 
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+
+/**
+* Releases shared ownership of an Instance
+*
+* @param[in] pBase - Base instance.
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_base_releaseinstance(Numbers_Base pBase);
+
+/**
+* Acquires shared ownership of an Instance
+*
+* @param[in] pBase - Base instance.
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_base_acquireinstance(Numbers_Base pBase);
+
 /*************************************************************************************************************************
  Class definition for Variable
 **************************************************************************************************************************/

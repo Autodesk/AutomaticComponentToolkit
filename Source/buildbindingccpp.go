@@ -875,16 +875,9 @@ func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile La
 		}
 	}
 
-	if (component.isBaseClass(class)) {
-		stubfile.Writeln("      m_pWrapper->readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_ReleaseInstance));", strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ReleaseMethod)), sTableName);
-		stubfile.Writeln("      m_pWrapper->readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_AcquireInstance));", strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.AcquireMethod)), sTableName);
-		stubfile.Writeln("      m_pWrapper->readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_GetLastError));", strings.ToLower(fmt.Sprintf("%s_%s", NameSpace, component.Global.ErrorMethod)), sTableName);
-	}
-
 	for k := 0; k < len(class.Methods); k++ {
 		method := class.Methods[k]
 		CMethodName := strings.ToLower(fmt.Sprintf("%s_%s_%s", NameSpace, class.ClassName, method.MethodName));
-
 		stubfile.Writeln("      m_pWrapper->readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_%s_%s));", CMethodName, sTableName, class.ClassName, method.MethodName);
 	}
 }
@@ -898,12 +891,11 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  %s m_pHandle;", component.getExtendedHandleName())
 	w.Writeln("")
 	w.Writeln("  /* Checks for an Error code and raises Exceptions */")
-	w.Writeln("  void CheckError(%sResult nResult)", NameSpace)
+	w.Writeln("  virtual void CheckError(%sResult nResult)", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      std::string sErrorMessage;")
-	w.Writeln("      // TODO: do not do this via wrapper")
-	w.Writeln("      m_pWrapper->%s(this, sErrorMessage);", component.Global.ErrorMethod)
+	w.Writeln("      %s(sErrorMessage);", baseClass.ErrorMethod)
 	w.Writeln("      throw E%sException(nResult, sErrorMessage);", NameSpace)
 	w.Writeln("    }")
 	w.Writeln("  }")
@@ -930,10 +922,10 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  */")
 	w.Writeln("  virtual ~%s()", cppBaseClassName)
 	w.Writeln("  {")
-	w.Writeln("    if (m_pWrapper != nullptr)")
-	w.Writeln("      // TODO: this should not go to the wrapper")
-	w.Writeln("      m_pWrapper->%s(this);", component.Global.ReleaseMethod)
+	w.Writeln("    %s();", baseClass.ReleaseMethod)
 	w.Writeln("    m_pWrapper = nullptr;")
+	w.Writeln("    m_pHandle.m_hHandle = nullptr;")
+	w.Writeln("    m_pHandle.m_pfnSymbolLookupMethod = nullptr;")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")

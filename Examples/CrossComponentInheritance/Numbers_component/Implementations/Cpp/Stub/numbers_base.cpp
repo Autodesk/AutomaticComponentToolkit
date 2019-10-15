@@ -20,17 +20,6 @@ using namespace Numbers::Impl;
  Class definition of CBase 
 **************************************************************************************************************************/
 
-bool CBase::GetLastErrorMessage(std::string & sErrorMessage)
-{
-	if (m_pErrors && !m_pErrors->empty()) {
-		sErrorMessage = m_pErrors->back();
-		return true;
-	} else {
-		sErrorMessage = "";
-		return false;
-	}
-}
-
 void CBase::ClearErrorMessages()
 {
 	m_pErrors.reset();
@@ -45,19 +34,28 @@ void CBase::RegisterErrorMessage(const std::string & sErrorMessage)
 	m_pErrors->push_back(sErrorMessage);
 }
 
-void CBase::IncRefCount()
+bool CBase::GetLastError(std::string & sErrorMessage)
 {
-	++m_nReferenceCount;
+	if (m_pErrors && !m_pErrors->empty()) {
+		sErrorMessage = m_pErrors->back();
+		return true;
+	}
+	else {
+		sErrorMessage = "";
+		return false;
+	}
 }
 
-bool CBase::DecRefCount()
+void CBase::ReleaseInstance()
 {
 	m_nReferenceCount--;
 	if (!m_nReferenceCount) {
 		delete this;
-		return true;
 	}
-	return false;
 }
 
+void CBase::AcquireInstance()
+{
+	++m_nReferenceCount;
+}
 

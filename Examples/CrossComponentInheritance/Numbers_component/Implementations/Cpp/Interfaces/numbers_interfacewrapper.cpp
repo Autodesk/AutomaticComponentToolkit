@@ -56,6 +56,92 @@ NumbersResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************/
+NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		if (pHasError == nullptr)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		std::string sErrorMessage("");
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
+		
+		*pHasError = pIBase->GetLastError(sErrorMessage);
+
+		if (pErrorMessageNeededChars)
+			*pErrorMessageNeededChars = (Numbers_uint32) (sErrorMessage.size()+1);
+		if (pErrorMessageBuffer) {
+			if (sErrorMessage.size() >= nErrorMessageBufferSize)
+				throw ENumbersInterfaceException (NUMBERS_ERROR_BUFFERTOOSMALL);
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
+		}
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+NumbersResult numbers_base_releaseinstance(Numbers_Base pBase)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
+		
+		pIBase->ReleaseInstance();
+
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+NumbersResult numbers_base_acquireinstance(Numbers_Base pBase)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
+		
+		pIBase->AcquireInstance();
+
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for Variable
@@ -121,6 +207,9 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
+		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
 		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
 		sProcAddressMap["numbers_createvariable"] = (void*)&numbers_createvariable;
@@ -159,9 +248,9 @@ NumbersResult _numbers_getprocaddress_base(const char * pProcName, void ** ppPro
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_releaseinstance"] = (void*)&numbers_releaseinstance;
-		sProcAddressMap["numbers_acquireinstance"] = (void*)&numbers_acquireinstance;
-		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
+		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -192,9 +281,9 @@ NumbersResult _numbers_getprocaddress_variable(const char * pProcName, void ** p
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_releaseinstance"] = (void*)&numbers_releaseinstance;
-		sProcAddressMap["numbers_acquireinstance"] = (void*)&numbers_acquireinstance;
-		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
+		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
 		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
 		

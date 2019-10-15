@@ -51,15 +51,15 @@ public:
 	* Put additional public members here. They will not be visible in the external API.
 	*/
 
-	bool GetLastErrorMessage(std::string & sErrorMessage) override;
-
 	void ClearErrorMessages() override;
 
 	void RegisterErrorMessage(const std::string & sErrorMessage) override;
 
-	void IncRefCount() override;
+	bool GetLastError(std::string & sErrorMessage) override;
 
-	bool DecRefCount() override;
+	void ReleaseInstance() override;
+
+	void AcquireInstance() override;
 
 
 	/**

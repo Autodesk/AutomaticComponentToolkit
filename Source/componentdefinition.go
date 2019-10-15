@@ -85,6 +85,9 @@ type ComponentDefinitionClass struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"class"`
 	ClassName string `xml:"name,attr"`
+	ErrorMethod string `xml:"errormethod,attr"`
+	ReleaseMethod string `xml:"releasemethod,attr"`
+	AcquireMethod string `xml:"acquiremethod,attr"`
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
@@ -502,6 +505,87 @@ func (component *ComponentDefinition) checkStructs() (error) {
 	return nil
 }
 
+// // GetSpecialMethod returns the method of a special type of a class, traversing its hierachy
+// func (class *ComponentDefinitionClass) GetSpecialMethod(component ComponentDefinition, eMethodType int) (ComponentDefinitionMethod) {
+// 	// switch (eMethodType) {
+// 	// case eSpecialMethodRelease:
+// 	// 	if component.isBaseClass(class):
+
+// 	// case eSpecialMethodAcquire:
+// 	// case eSpecialMethodError:	
+// 	// }
+// 	// TODO
+// 	return nil
+// }
+
+
+// CheckClassSpecialFunction checks whether a method is a special function of a class
+func (class* ComponentDefinitionClass) CheckClassSpecialFunction(method ComponentDefinitionMethod) (int) {
+	if (class.ReleaseMethod == method.MethodName) {
+		return eSpecialMethodRelease
+	}
+	if (class.ErrorMethod == method.MethodName) {
+		return eSpecialMethodError
+	}
+	if (class.AcquireMethod == method.MethodName) {
+		return eSpecialMethodAcquire
+	}
+	return eSpecialMethodNone
+}
+
+// CheckBaseClassSpecialFunction checks whether a base class specifies all required special methods
+func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
+	if (class.ReleaseMethod == "") {
+		return errors.New ("No release method specified")
+	}
+	if (class.AcquireMethod == "") {
+		return errors.New ("No acquire method specified")
+	}
+	if (class.ErrorMethod == "") {
+		return errors.New ("No error method specified")
+	}
+
+	bReleaseMethodFound := false
+	bAcquireMethodFound := false
+	bErrorMethodFound := false
+	for i := 0; i < len(class.Methods); i++ {
+		method := class.Methods[i]
+		if method.MethodName == class.ReleaseMethod {
+			bReleaseMethodFound = true
+			if (len (method.Params) != 0) {
+				return errors.New("Release method does not match the expected function template")
+			}
+		}
+		if method.MethodName == class.AcquireMethod {
+			bAcquireMethodFound = true
+			if (len (method.Params) != 0) {
+				return errors.New("Acquire method does not match the expected function template")
+			}
+		}
+		if method.MethodName == class.ErrorMethod {
+			bErrorMethodFound = true
+			if (len (method.Params) != 2) {
+				return errors.New("Error method does not match the expected function template");
+			}
+			if  (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "out") || 
+				(method.Params[1].ParamType != "bool") || (method.Params[1].ParamPass != "return") {
+				return errors.New("Error method does not match the expected function template")
+			}
+		}
+	}
+
+	if !bReleaseMethodFound {
+		return fmt.Errorf("baseclass does not specify a ReleaseMethod")
+	}
+	if !bAcquireMethodFound {
+		return fmt.Errorf("baseclass does not specify an AcquireMethod")
+	}
+	if !bErrorMethodFound {
+		return fmt.Errorf("baseclass does not specify an ErrorMethod")
+	}
+	return nil
+}
+
 func (component *ComponentDefinition) checkClasses() (error) {
 	classes := component.Classes
 	baseClassName := component.Global.BaseClassName
@@ -511,6 +595,14 @@ func (component *ComponentDefinition) checkClasses() (error) {
 	classNameIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
+
+		if component.isBaseClass(class) {
+			err := class.CheckBaseClassSpecialFunction()
+			if err != nil {
+				return err
+			}
+		}
+
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
@@ -1008,7 +1100,7 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 
 
 // CheckHeaderSpecialFunction checks a special function of the header against their required definitions
-func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
+func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
 
 	if (global.ReleaseMethod == "") {
 		return eSpecialMethodNone, errors.New ("No release method specified");

@@ -234,12 +234,11 @@ protected:
 	NumbersExtendedHandle m_pHandle;
 
 	/* Checks for an Error code and raises Exceptions */
-	void CheckError(NumbersResult nResult)
+	virtual void CheckError(NumbersResult nResult)
 	{
 		if (nResult != 0) {
 			std::string sErrorMessage;
-			// TODO
-			m_pWrapper->GetLastError(this, sErrorMessage);
+			GetLastError(sErrorMessage);
 			throw ENumbersException(nResult, sErrorMessage);
 		}
 	}
@@ -255,9 +254,9 @@ public:
 		if (s_sMapFunctionTableBase.end() == table) {
 			s_sMapFunctionTableBase[pLookupFunction] = sNumbersFunctionTableBase();
 			m_pFunctionTableBase = &(s_sMapFunctionTableBase[pLookupFunction]);
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_releaseinstance", (void**)&(m_pFunctionTableBase->m_ReleaseInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_acquireinstance", (void**)&(m_pFunctionTableBase->m_AcquireInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_getlasterror", (void**)&(m_pFunctionTableBase->m_GetLastError));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
 		} else {
 			m_pFunctionTableBase = &(table->second);
 		}
@@ -268,10 +267,10 @@ public:
 	*/
 	virtual ~CBase()
 	{
-		if (m_pWrapper != nullptr)
-		// TODO
-			m_pWrapper->ReleaseInstance(this);
+		ReleaseInstance();
 		m_pWrapper = nullptr;
+		m_pHandle.m_hHandle = nullptr;
+		m_pHandle.m_pfnSymbolLookupMethod = nullptr;
 	}
 
 	/**
@@ -283,6 +282,9 @@ public:
 	}
 	
 	friend class CWrapper;
+	inline bool GetLastError(std::string & sErrorMessage);
+	inline void ReleaseInstance();
+	inline void AcquireInstance();
 };
 std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> CBase::s_sMapFunctionTableBase;
 
@@ -307,9 +309,9 @@ public:
 		if (s_sMapFunctionTableVariable.end() == table) {
 			s_sMapFunctionTableVariable[pLookupFunction] = sNumbersFunctionTableVariable();
 			m_pFunctionTableVariable = &(s_sMapFunctionTableVariable[pLookupFunction]);
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_releaseinstance", (void**)&(m_pFunctionTableVariable->m_ReleaseInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_acquireinstance", (void**)&(m_pFunctionTableVariable->m_AcquireInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_getlasterror", (void**)&(m_pFunctionTableVariable->m_GetLastError));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableVariable->m_Base_GetLastError));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableVariable->m_Base_ReleaseInstance));
+			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableVariable->m_Base_AcquireInstance));
 			m_pWrapper->readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(m_pFunctionTableVariable->m_Variable_GetValue));
 			m_pWrapper->readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(m_pFunctionTableVariable->m_Variable_SetValue));
 		} else {
@@ -429,6 +431,9 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sM
 			return NUMBERS_ERROR_INVALIDPARAM;
 		
 		pWrapperTable->m_LibraryHandle = nullptr;
+		pWrapperTable->m_Base_GetLastError = nullptr;
+		pWrapperTable->m_Base_ReleaseInstance = nullptr;
+		pWrapperTable->m_Base_AcquireInstance = nullptr;
 		pWrapperTable->m_Variable_GetValue = nullptr;
 		pWrapperTable->m_Variable_SetValue = nullptr;
 		pWrapperTable->m_CreateVariable = nullptr;
@@ -484,6 +489,33 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sM
 			return NUMBERS_ERROR_COULDNOTLOADLIBRARY;
 		dlerror();
 		#endif // _WIN32
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_GetLastError = (PNumbersBase_GetLastErrorPtr) GetProcAddress(hLibrary, "numbers_base_getlasterror");
+		#else // _WIN32
+		pWrapperTable->m_Base_GetLastError = (PNumbersBase_GetLastErrorPtr) dlsym(hLibrary, "numbers_base_getlasterror");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_GetLastError == nullptr)
+			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_ReleaseInstance = (PNumbersBase_ReleaseInstancePtr) GetProcAddress(hLibrary, "numbers_base_releaseinstance");
+		#else // _WIN32
+		pWrapperTable->m_Base_ReleaseInstance = (PNumbersBase_ReleaseInstancePtr) dlsym(hLibrary, "numbers_base_releaseinstance");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_ReleaseInstance == nullptr)
+			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_AcquireInstance = (PNumbersBase_AcquireInstancePtr) GetProcAddress(hLibrary, "numbers_base_acquireinstance");
+		#else // _WIN32
+		pWrapperTable->m_Base_AcquireInstance = (PNumbersBase_AcquireInstancePtr) dlsym(hLibrary, "numbers_base_acquireinstance");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_AcquireInstance == nullptr)
+			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
 		pWrapperTable->m_Variable_GetValue = (PNumbersVariable_GetValuePtr) GetProcAddress(hLibrary, "numbers_variable_getvalue");
@@ -569,6 +601,9 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sM
 			return NUMBERS_ERROR_INVALIDPARAM;
 		
 		NumbersSymbolLookupType pLookupFunction = (NumbersSymbolLookupType)pSymbolLookupMethod;
+		readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
+		readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(pWrapperTable->m_Base_ReleaseInstance));
+		readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(pWrapperTable->m_Base_AcquireInstance));
 		readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(pWrapperTable->m_Variable_GetValue));
 		readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(pWrapperTable->m_Variable_SetValue));
 		readMethodInto(pLookupFunction, "numbers_createvariable", (void**)&(pWrapperTable->m_CreateVariable));
@@ -585,6 +620,40 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sM
 	/**
 	 * Method definitions for class CBase
 	 */
+	
+	/**
+	* CBase::GetLastError - Returns the last error recorded on this object
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	bool CBase::GetLastError(std::string & sErrorMessage)
+	{
+		Numbers_uint32 bytesNeededErrorMessage = 0;
+		Numbers_uint32 bytesWrittenErrorMessage = 0;
+		bool resultHasError = 0;
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		sErrorMessage = std::string(&bufferErrorMessage[0]);
+		
+		return resultHasError;
+	}
+	
+	/**
+	* CBase::ReleaseInstance - Releases shared ownership of an Instance
+	*/
+	void CBase::ReleaseInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance(m_pHandle));
+	}
+	
+	/**
+	* CBase::AcquireInstance - Acquires shared ownership of an Instance
+	*/
+	void CBase::AcquireInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance(m_pHandle));
+	}
 	
 	/**
 	 * Method definitions for class CVariable

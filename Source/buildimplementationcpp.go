@@ -294,7 +294,7 @@ func writeSharedPtrTemplate(component ComponentDefinition, w LanguageWriter, Cla
 	w.Writeln("  explicit %s(T* t = nullptr)", IBaseSharedPtrName)
 	w.Writeln("    : std::shared_ptr<T>(t, %s::%s)", IBaseClassName, DeleteBaseMethodStr)
 	w.Writeln("  {")
-	w.Writeln("    t->%s();", IncRefCountMethod().MethodName)
+	w.Writeln("    t->%s();", component.baseClass().AcquireMethod)
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  // Reset function, as it also needs to properly set the deleter.")
@@ -307,7 +307,7 @@ func writeSharedPtrTemplate(component ComponentDefinition, w LanguageWriter, Cla
 	w.Writeln("  T* getCoOwningPtr()")
 	w.Writeln("  {")
 	w.Writeln("    T* t = this->get();")
-	w.Writeln("    t->%s();", IncRefCountMethod().MethodName)
+	w.Writeln("    t->%s();", component.baseClass().AcquireMethod)
 	w.Writeln("    return t;")
 	w.Writeln("  }")
 	w.Writeln("};")
@@ -362,7 +362,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		argument := "p"+releaseBaseClassInterfaceMethod.Params[0].ParamName
 		w.Writeln("  {")
 		w.Writeln("    if (%s) {", argument)
-		w.Writeln("      %s->%s();", argument, DecRefCountMethod().MethodName)
+		w.Writeln("      %s->%s();", argument, class.ReleaseMethod)
 		w.Writeln("    }")
 		w.Writeln("  };")
 		w.Writeln("")
@@ -376,17 +376,14 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		argument = "p"+acquireBaseClassInterfaceMethod.Params[0].ParamName
 		w.Writeln("  {")
 		w.Writeln("    if (%s) {", argument)
-		w.Writeln("      %s->%s();", argument, IncRefCountMethod().MethodName)
+		w.Writeln("      %s->%s();", argument, component.baseClass().AcquireMethod)
 		w.Writeln("    }")
 		w.Writeln("  };")
 		w.Writeln("")
 
-		var methods [5]ComponentDefinitionMethod
-		methods[0] = GetLastErrorMessageMethod()
-		methods[1] = ClearErrorMessageMethod()
-		methods[2] = RegisterErrorMessageMethod()
-		methods[3] = IncRefCountMethod()
-		methods[4] = DecRefCountMethod()
+		var methods [2]ComponentDefinitionMethod
+		methods[0] = ClearErrorMessageMethod()
+		methods[1] = RegisterErrorMessageMethod()
 		for j := 0; j < len(methods); j++ {
 			methodstring, _, err := buildCPPInterfaceMethodDeclaration(methods[j], class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 			if err != nil {
@@ -683,7 +680,6 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 
 func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, sMapName string) {
 	NameSpace := component.NameSpace
-
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
 			parentClass := component.getClassByName(class.ParentClass)
@@ -691,22 +687,13 @@ func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinitio
 		}
 	}
 
-	if (component.isBaseClass(class)) {
-		procName := strings.ToLower(component.Global.ReleaseMethod)
-		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
-		procName = strings.ToLower(component.Global.AcquireMethod)
-		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
-		procName = strings.ToLower(component.Global.ErrorMethod)
-		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
-	}
-
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 		procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
 		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
 	}
-
 }
+
 func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w LanguageWriter) error {
 	NameSpace := component.NameSpace
 	for i := 0; i < len(component.Classes); i++ {
@@ -1142,38 +1129,18 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubimplw.Writeln("")
 
 		if (component.isBaseClass(class)) {
-			var methods [5]ComponentDefinitionMethod
-			methods[0] = GetLastErrorMessageMethod()
-			methods[1] = ClearErrorMessageMethod()
-			methods[2] = RegisterErrorMessageMethod()
-			methods[3] = IncRefCountMethod()
-			methods[4] = DecRefCountMethod()
+			var methods [2]ComponentDefinitionMethod
+			methods[0] = ClearErrorMessageMethod()
+			methods[1] = RegisterErrorMessageMethod()
 
-			var implementations [5][]string
-			implementations[0] = append(implementations[0], "if (m_pErrors && !m_pErrors->empty()) {")
-			implementations[0] = append(implementations[0], "  sErrorMessage = m_pErrors->back();")
-			implementations[0] = append(implementations[0], "  return true;")
-			implementations[0] = append(implementations[0], "} else {")
-			implementations[0] = append(implementations[0], "  sErrorMessage = \"\";")
-			implementations[0] = append(implementations[0], "  return false;")
-			implementations[0] = append(implementations[0], "}")
+			var implementations [2][]string
+			implementations[0] = append(implementations[0], "m_pErrors.reset();")
 
-			implementations[1] = append(implementations[1], "m_pErrors.reset();")
-
-			implementations[2] = append(implementations[2], "if (!m_pErrors) {")
-			implementations[2] = append(implementations[2], "  m_pErrors.reset(new std::list<std::string>());")
-			implementations[2] = append(implementations[2], "}")
-			implementations[2] = append(implementations[2], "m_pErrors->clear();")
-			implementations[2] = append(implementations[2], "m_pErrors->push_back(sErrorMessage);")
-
-			implementations[3] = append(implementations[3], "++m_nReferenceCount;")
-
-			implementations[4] = append(implementations[4], "m_nReferenceCount--;")
-			implementations[4] = append(implementations[4], "if (!m_nReferenceCount) {")
-			implementations[4] = append(implementations[4], "  delete this;")
-			implementations[4] = append(implementations[4], "  return true;")
-			implementations[4] = append(implementations[4], "}")
-			implementations[4] = append(implementations[4], "return false;")
+			implementations[1] = append(implementations[1], "if (!m_pErrors) {")
+			implementations[1] = append(implementations[1], "  m_pErrors.reset(new std::list<std::string>());")
+			implementations[1] = append(implementations[1], "}")
+			implementations[1] = append(implementations[1], "m_pErrors->clear();")
+			implementations[1] = append(implementations[1], "m_pErrors->push_back(sErrorMessage);")
 
 			for i := 0; i < len(methods); i++ {
 				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
@@ -1191,6 +1158,45 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			}
 		}
 
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			isSpecialFunction := class.CheckClassSpecialFunction(method)
+			if (isSpecialFunction == eSpecialMethodNone) {
+				continue
+			}
+			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+			if err != nil {
+				return err
+			}
+			stubheaderw.Writeln("%s;", methodstring)
+			stubheaderw.Writeln("")
+
+			stubimplw.Writeln("%s", implementationdeclaration)
+			stubimplw.Writeln("{")
+			stubimplw.AddIndentationLevel(1)
+			switch (isSpecialFunction) {
+				case eSpecialMethodRelease:
+					stubimplw.Writeln("m_nReferenceCount--;")
+					stubimplw.Writeln("if (!m_nReferenceCount) {")
+					stubimplw.Writeln("  delete this;")
+					stubimplw.Writeln("}")
+				case eSpecialMethodError:
+					stubimplw.Writeln("if (m_pErrors && !m_pErrors->empty()) {")
+					stubimplw.Writeln("  sErrorMessage = m_pErrors->back();")
+					stubimplw.Writeln("  return true;")
+					stubimplw.Writeln("} else {")
+					stubimplw.Writeln("  sErrorMessage = \"\";")
+					stubimplw.Writeln("  return false;")
+					stubimplw.Writeln("}")
+				case eSpecialMethodAcquire:
+					stubimplw.Writeln("++m_nReferenceCount;")
+			}
+			stubimplw.AddIndentationLevel(-1)
+
+			stubimplw.Writeln("}")
+			stubimplw.Writeln("")
+		}
+
 		stubheaderw.Writeln("")
 		stubheaderw.Writeln("  /**")
 		stubheaderw.Writeln("  * Public member functions to implement.")
@@ -1199,6 +1205,10 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
+			isSpecialFunction := class.CheckClassSpecialFunction(method)
+			if (isSpecialFunction != eSpecialMethodNone) {
+				continue
+			}
 			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err

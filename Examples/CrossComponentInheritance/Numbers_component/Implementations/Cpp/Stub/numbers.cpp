@@ -41,7 +41,7 @@ void CWrapper::GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numb
 
 bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
 {
-	return pInstance->GetLastErrorMessage(sErrorMessage);
+	return pInstance->GetLastError(sErrorMessage);
 }
 
 void CWrapper::ReleaseInstance(IBase* pInstance)
