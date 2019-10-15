@@ -591,7 +591,6 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	callParameters := ""
 	checkErrorCodeBegin := ""
 	checkErrorCodeEnd := ")"
-	makeSharedParameter := ""
 
 	if isGlobal {
 		if ExplicitLinking {
@@ -600,7 +599,6 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 			CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		}
 		checkErrorCodeBegin = "CheckError(nullptr,"
-		makeSharedParameter = "this"
 	} else {
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_pFunctionTable%s->m_%s_%s", ClassName, ClassName, method.MethodName);
@@ -610,7 +608,6 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 		callParameters = "m_pHandle"
 		initCallParameters = "m_pHandle"
 		checkErrorCodeBegin = "CheckError("
-		makeSharedParameter = "m_pWrapper"
 	}
 	if doNotThrow {
 		checkErrorCodeBegin = ""
@@ -715,7 +712,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 				if (param.ParamType == "optionalclass") {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
@@ -723,7 +720,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s.m_hHandle) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				}
 
@@ -784,7 +781,6 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					paramNameSpace = NameSpace
 				} else {
 					CPPClass = paramNameSpaceCPP + CPPClass
-					makeSharedParameter = makeSharedParameter + "->m_p" + paramNameSpace + "Wrapper.get()"
 				}
 				// TODO: component.getExtendedHandleName()
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sExtendedHandle h%s;", NameSpace, param.ParamName))
@@ -793,7 +789,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				
 				if (param.ParamType == "optionalclass") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(h%s);", CPPClass, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
@@ -801,7 +797,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s.m_hHandle) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(h%s);", CPPClass, param.ParamName))
 				}
 
 			case "basicarray":
@@ -867,26 +863,24 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	return nil
 }
 
-func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, class ComponentDefinitionClass, sTableName string) {
+func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, class ComponentDefinitionClass, sTableName string, WrapperName string) {
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
 			parentClass := component.getClassByName(class.ParentClass)
-			writeLoadingOfClassFunctionTable(component, stubfile, NameSpace, parentClass, sTableName)
+			writeLoadingOfClassFunctionTable(component, stubfile, NameSpace, parentClass, sTableName, WrapperName)
 		}
 	}
 
 	for k := 0; k < len(class.Methods); k++ {
 		method := class.Methods[k]
 		CMethodName := strings.ToLower(fmt.Sprintf("%s_%s_%s", NameSpace, class.ClassName, method.MethodName));
-		stubfile.Writeln("      m_pWrapper->readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_%s_%s));", CMethodName, sTableName, class.ClassName, method.MethodName);
+		stubfile.Writeln("      %s::readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_%s_%s));", WrapperName, CMethodName, sTableName, class.ClassName, method.MethodName);
 	}
 }
 
 func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, BaseName string, cppClassPrefix string, ClassIdentifier string) error {
 	cppBaseClassName := cppClassPrefix + ClassIdentifier + baseClass.ClassName
 	w.Writeln("protected:")
-	w.Writeln("  /* Wrapper Object that created the class. */")
-	w.Writeln("  %s%sWrapper * m_pWrapper;", cppClassPrefix, ClassIdentifier)
 	w.Writeln("  /* Handle to Instance in library*/")
 	w.Writeln("  %s m_pHandle;", component.getExtendedHandleName())
 	w.Writeln("")
@@ -903,15 +897,15 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  /**")
 	w.Writeln("  * %s::%s - Constructor for Base class.", cppBaseClassName, cppBaseClassName)
 	w.Writeln("  */")
-	w.Writeln("  %s(%s%sWrapper * pWrapper, %s pHandle)", cppBaseClassName, cppClassPrefix, ClassIdentifier, component.getExtendedHandleName())
-	w.Writeln("    : m_pWrapper(pWrapper), m_pHandle(pHandle)")
+	w.Writeln("  %s(%s pHandle)", cppBaseClassName, component.getExtendedHandleName())
+	w.Writeln("    : m_pHandle(pHandle)")
 	w.Writeln("  {")
 	w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace)
 	w.Writeln("    auto table = s_sMapFunctionTable%s.find(pLookupFunction);", baseClass.ClassName)
 	w.Writeln("    if (s_sMapFunctionTable%s.end() == table) {", baseClass.ClassName)
 	w.Writeln("      s_sMapFunctionTable%s[pLookupFunction] = s%sFunctionTable%s();", baseClass.ClassName, NameSpace, baseClass.ClassName)
 	w.Writeln("      m_pFunctionTable%s = &(s_sMapFunctionTable%s[pLookupFunction]);", baseClass.ClassName, baseClass.ClassName)
-	writeLoadingOfClassFunctionTable(component, w, NameSpace, baseClass, fmt.Sprintf("m_pFunctionTable%s", baseClass.ClassName))
+	writeLoadingOfClassFunctionTable(component, w, NameSpace, baseClass, fmt.Sprintf("m_pFunctionTable%s", baseClass.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
 	w.Writeln("    } else {")
 	w.Writeln("      m_pFunctionTable%s = &(table->second);", baseClass.ClassName)
 	w.Writeln("    }")
@@ -923,7 +917,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  virtual ~%s()", cppBaseClassName)
 	w.Writeln("  {")
 	w.Writeln("    %s();", baseClass.ReleaseMethod)
-	w.Writeln("    m_pWrapper = nullptr;")
 	w.Writeln("    m_pHandle.m_hHandle = nullptr;")
 	w.Writeln("    m_pHandle.m_pfnSymbolLookupMethod = nullptr;")
 	w.Writeln("  }")
@@ -1340,14 +1333,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 	w.Writeln("")
 
-	w.Writeln("  void readMethodInto(%sSymbolLookupType pLookupMethod, std::string sFunctionName, void** pfnTarget) {", NameSpace )
+	w.Writeln("  static void readMethodInto(%sSymbolLookupType pLookupMethod, std::string sFunctionName, void** pfnTarget) {", NameSpace )
 	nullPtrStr := "nullptr"
 	if (false) {
 		nullPtrStr = "NULL"
 	}
 	w.Writeln("    %sResult eLookupError = (*pLookupMethod)(sFunctionName.c_str(), pfnTarget);", NameSpace);
 	w.Writeln("    if ( (eLookupError != %s_SUCCESS) || (pfnTarget == %s) )", strings.ToUpper(NameSpace), nullPtrStr)
-	w.Writeln("      CheckError(nullptr, %s_ERROR_COULDNOTFINDLIBRARYEXPORT);", strings.ToUpper(NameSpace))
+	w.Writeln("      throw E%sException(%s_ERROR_COULDNOTFINDLIBRARYEXPORT, \"\");", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln("  }")
 	w.Writeln("")
 
@@ -1386,14 +1379,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  s%sFunctionTable%s* m_pFunctionTable%s;", NameSpace, class.ClassName, class.ClassName)
 		w.Writeln("  static std::map<%sSymbolLookupType, s%sFunctionTable%s> s_sMapFunctionTable%s;", NameSpace, NameSpace, class.ClassName, class.ClassName)
 		w.Writeln("  ")
-		w.Writeln("public:")
 		if !component.isBaseClass(class) {
+			w.Writeln("public:")
 			w.Writeln("  /**")
 			w.Writeln("  * %s::%s - Constructor for %s class.", cppClassName, cppClassName, class.ClassName)
 			w.Writeln("  */")
-			w.Writeln("  %s(%s%sWrapper* pWrapper, %s pHandle)", cppClassName, cppClassPrefix, ClassIdentifier, component.getExtendedHandleName())
+			w.Writeln("  %s(%s pHandle)", cppClassName, component.getExtendedHandleName())
 			if cppParentClassName != "" {
-				w.Writeln("    : %s(pWrapper, pHandle)", cppParentClassName)
+				w.Writeln("    : %s(pHandle)", cppParentClassName)
 			}
 			w.Writeln("  {")
 			w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace);
@@ -1401,7 +1394,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			w.Writeln("    if (s_sMapFunctionTable%s.end() == table) {", class.ClassName)
 			w.Writeln("      s_sMapFunctionTable%s[pLookupFunction] = s%sFunctionTable%s();", class.ClassName, NameSpace, class.ClassName)
 			w.Writeln("      m_pFunctionTable%s = &(s_sMapFunctionTable%s[pLookupFunction]);", class.ClassName, class.ClassName)
-			writeLoadingOfClassFunctionTable(component, w, NameSpace, class, fmt.Sprintf("m_pFunctionTable%s", class.ClassName))
+			writeLoadingOfClassFunctionTable(component, w, NameSpace, class, fmt.Sprintf("m_pFunctionTable%s", class.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
 			w.Writeln("    } else {")
 			w.Writeln("      m_pFunctionTable%s = &(table->second);", class.ClassName)
 			w.Writeln("    }")

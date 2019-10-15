@@ -206,10 +206,10 @@ private:
 	NumbersResult loadWrapperTable(sNumbersDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
 	NumbersResult loadWrapperTableFromSymbolLookupMethod(sNumbersDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);
 
-	void readMethodInto(NumbersSymbolLookupType pLookupMethod, std::string sFunctionName, void** pfnTarget) {
+	static void readMethodInto(NumbersSymbolLookupType pLookupMethod, std::string sFunctionName, void** pfnTarget) {
 		NumbersResult eLookupError = (*pLookupMethod)(sFunctionName.c_str(), pfnTarget);
 		if ( (eLookupError != NUMBERS_SUCCESS) || (pfnTarget == nullptr) )
-			CheckError(nullptr, NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT);
+			throw ENumbersException(NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT, "");
 	}
 
 	friend class CBase;
@@ -226,10 +226,7 @@ private:
 	sNumbersFunctionTableBase* m_pFunctionTableBase;
 	static std::map<NumbersSymbolLookupType, sNumbersFunctionTableBase> s_sMapFunctionTableBase;
 	
-public:
 protected:
-	/* Wrapper Object that created the class. */
-	CWrapper * m_pWrapper;
 	/* Handle to Instance in library*/
 	NumbersExtendedHandle m_pHandle;
 
@@ -246,17 +243,17 @@ public:
 	/**
 	* CBase::CBase - Constructor for Base class.
 	*/
-	CBase(CWrapper * pWrapper, NumbersExtendedHandle pHandle)
-		: m_pWrapper(pWrapper), m_pHandle(pHandle)
+	CBase(NumbersExtendedHandle pHandle)
+		: m_pHandle(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
 		auto table = s_sMapFunctionTableBase.find(pLookupFunction);
 		if (s_sMapFunctionTableBase.end() == table) {
 			s_sMapFunctionTableBase[pLookupFunction] = sNumbersFunctionTableBase();
 			m_pFunctionTableBase = &(s_sMapFunctionTableBase[pLookupFunction]);
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
 		} else {
 			m_pFunctionTableBase = &(table->second);
 		}
@@ -268,7 +265,6 @@ public:
 	virtual ~CBase()
 	{
 		ReleaseInstance();
-		m_pWrapper = nullptr;
 		m_pHandle.m_hHandle = nullptr;
 		m_pHandle.m_pfnSymbolLookupMethod = nullptr;
 	}
@@ -301,19 +297,19 @@ public:
 	/**
 	* CVariable::CVariable - Constructor for Variable class.
 	*/
-	CVariable(CWrapper* pWrapper, NumbersExtendedHandle pHandle)
-		: CBase(pWrapper, pHandle)
+	CVariable(NumbersExtendedHandle pHandle)
+		: CBase(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
 		auto table = s_sMapFunctionTableVariable.find(pLookupFunction);
 		if (s_sMapFunctionTableVariable.end() == table) {
 			s_sMapFunctionTableVariable[pLookupFunction] = sNumbersFunctionTableVariable();
 			m_pFunctionTableVariable = &(s_sMapFunctionTableVariable[pLookupFunction]);
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableVariable->m_Base_GetLastError));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableVariable->m_Base_ReleaseInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableVariable->m_Base_AcquireInstance));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(m_pFunctionTableVariable->m_Variable_GetValue));
-			m_pWrapper->readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(m_pFunctionTableVariable->m_Variable_SetValue));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableVariable->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableVariable->m_Base_ReleaseInstance));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableVariable->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(m_pFunctionTableVariable->m_Variable_GetValue));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(m_pFunctionTableVariable->m_Variable_SetValue));
 		} else {
 			m_pFunctionTableVariable = &(table->second);
 		}
@@ -338,7 +334,7 @@ std::map<NumbersSymbolLookupType, sNumbersFunctionTableVariable> CVariable::s_sM
 		if (!hInstance.m_hHandle) {
 			CheckError(nullptr,NUMBERS_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<CVariable>(this, hInstance);
+		return std::make_shared<CVariable>(hInstance);
 	}
 	
 	/**
