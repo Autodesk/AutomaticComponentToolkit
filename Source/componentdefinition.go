@@ -1356,13 +1356,23 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	return out
 }
 
-func (component *ComponentDefinition) getClassByName(className string) (ComponentDefinitionClass) {
-	for i := 0; i < len(component.Classes); i++ {
-		if (component.Classes[i].ClassName == className) {
-			return component.Classes[i]
+
+func (component *ComponentDefinition) getClassByName(className string) (ComponentDefinition, ComponentDefinitionClass, error) {
+	var outClass ComponentDefinitionClass
+	var outComponent ComponentDefinition
+
+	paramNameSpace, paramClassName, _ := decomposeParamClassName(className)
+	if ( len(paramNameSpace) == 0 || paramNameSpace == component.NameSpace) {
+		for i := 0; i < len(component.Classes); i++ {
+			class := component.Classes[i]
+			if (class.ClassName == paramClassName) {
+				return *component, class, nil
+			}
 		}
+	} else {
+		comp := component.ImportedComponentDefinitions[paramNameSpace]
+		return comp.getClassByName(className)
 	}
-	var out ComponentDefinitionClass
-	log.Fatal("Class does not exist in component")
-	return out
+	return outComponent, outClass, fmt.Errorf("No base-class found for \"%s\"", className)
 }
+

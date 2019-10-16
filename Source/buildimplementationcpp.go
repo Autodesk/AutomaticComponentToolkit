@@ -326,7 +326,13 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		if (class.ParentClass == "") {
 			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
 		} else {
-			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
+			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+			if len(paramNameSpace) == 0 {
+				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
+			} else {
+				w.Writeln("// TODO: we are missing all methods of \"intermediate classes\" in the class hierarchy")
+				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+			}
 		}
 	}
 	
@@ -685,19 +691,23 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	return nil;
 }
 
-func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, sMapName string) {
+func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, InitialNameSpace string, w LanguageWriter, sMapName string) {
 	NameSpace := component.NameSpace
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
-			parentClass := component.getClassByName(class.ParentClass)
-			writeClassMethodsIntoCPPGetSymbolAddressMethod(component, parentClass, w, sMapName)
+			parentComponent, parentClass, err := component.getClassByName(class.ParentClass)
+			if (err != nil) {
+				log.Fatal(err)
+			}
+			writeClassMethodsIntoCPPGetSymbolAddressMethod(parentComponent, parentClass, InitialNameSpace, w, sMapName)
 		}
 	}
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 		procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		// TODO: the "special functions" must also (only?) appear in the list with the namespaces of the baseclass in the other ...
+		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(InitialNameSpace), procName))
 	}
 }
 
@@ -720,7 +730,7 @@ func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w Languag
 		w.Writeln("if (!sbProcAddressMapHasBeenInitialized) {")
 
 		w.AddIndentationLevel(1)
-		writeClassMethodsIntoCPPGetSymbolAddressMethod(component, class, w, "sProcAddressMap")
+		writeClassMethodsIntoCPPGetSymbolAddressMethod(component, class, component.NameSpace, w, "sProcAddressMap")
 		w.AddIndentationLevel(-1)
 
 		w.Writeln("  ")
@@ -1066,7 +1076,14 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 		if class.ParentClass != "" {
 			stubheaderw.Writeln("// Parent classes")
-			stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
+			
+			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+			if len(paramNameSpace) == 0 {
+				stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
+			} else {
+				stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(component.Global.BaseClassName))
+			}
+			
 			stubheaderw.Writeln("#ifdef _MSC_VER")
 			stubheaderw.Writeln("#pragma warning(push)")
 			stubheaderw.Writeln("#pragma warning(disable : 4250)")
@@ -1089,7 +1106,12 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		parentClassName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 		if "" != class.ParentClass {
-			parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, class.ParentClass)
+			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+			if len(paramNameSpace) == 0 {
+				parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, class.ParentClass)
+			} else {
+				parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, component.Global.BaseClassName)
+			}
 		}
 		stubheaderw.Writeln("class %s : public virtual %s {", outClassName, parentClassName)
 		stubheaderw.Writeln("private:")

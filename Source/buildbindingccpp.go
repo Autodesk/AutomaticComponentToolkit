@@ -880,8 +880,11 @@ func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile La
 	NameSpace := component.NameSpace
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
-			parentClass := component.getClassByName(class.ParentClass)
-			writeLoadingOfClassFunctionTable(component, stubfile, parentClass, sTableName, WrapperName)
+			parentComponent, parentClass, err := component.getClassByName(class.ParentClass)
+			if (err != nil) {
+				log.Fatal(err)
+			}
+			writeLoadingOfClassFunctionTable(parentComponent, stubfile, parentClass, sTableName, WrapperName)
 		}
 	}
 
