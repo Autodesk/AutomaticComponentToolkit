@@ -51,7 +51,7 @@ public:
 	/**
 	* Put additional public members here. They will not be visible in the external API.
 	*/
-
+	CVariable(Numbers_double dValue) : m_dValue(dValue) {};
 
 	/**
 	* Public member functions to implement.

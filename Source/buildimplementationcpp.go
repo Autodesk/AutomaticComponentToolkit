@@ -1573,10 +1573,13 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
-					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s pI%s = std::make_shared<%s::C%s>(%s.get(), p%s);", paramNameSpace, paramClassName, param.ParamName, paramNameSpace, paramClassName, theWrapper, param.ParamName))
-					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
-					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
+					paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s %s = std::make_shared<%s::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
+					baseClass, err := component.findBaseClass(param.ParamClass)
+					if (err != nil) {
+						return checkInputCode, preCallCode, postCallCode, "", "", err
+					}
+					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s();", paramNameSpaceVar, baseClass.AcquireMethod))
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.m_hHandle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
@@ -1644,9 +1647,13 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				if len(paramNameSpace) > 0 {
 					outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s %s;", paramNameSpace, paramClassName, outVarName))
-					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
-					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
-					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(%s.get());", theWrapper, acqurireMethod, outVarName))
+					
+					baseClass, err := component.findBaseClass(param.ParamClass)
+					if (err != nil) {
+						return checkInputCode, preCallCode, postCallCode, "", "", err
+					}
+					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s();", outVarName, baseClass.AcquireMethod))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
 					callParameters = callParameters + outVarName
 				} else {
@@ -1700,12 +1707,17 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
+					outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
-					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
-					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
+
+					baseClass, err := component.findBaseClass(param.ParamClass)
+					if (err != nil) {
+						return checkInputCode, preCallCode, postCallCode, "", "", err
+					}
 					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
-					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->GetHandle();", variableName, paramNameSpace, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s();", outVarName, baseClass.AcquireMethod))
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)

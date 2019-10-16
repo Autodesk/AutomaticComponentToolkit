@@ -29,7 +29,7 @@ IVariable * CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
 	numbers_getsymbollookupmethod((void**)&(IBase::s_SymbolLookupMethodBase));
 	numbers_getsymbollookupmethod((void**)&(IVariable::s_SymbolLookupMethodVariable));
-	return new CVariable();
+	return new CVariable(dInitialValue);
 }
 
 void CWrapper::GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro)

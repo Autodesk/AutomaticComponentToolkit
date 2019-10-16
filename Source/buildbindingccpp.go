@@ -593,8 +593,9 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 	return nil
 }
 
-func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string,
+func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, ClassIdentifier string, ClassName string,
 	implementationLines []string, isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool) error {
+	NameSpace := component.NameSpace
 
 	CMethodName := ""
 	requiresInitCall := false
@@ -670,11 +671,11 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				parameters = parameters + fmt.Sprintf("const %s & %s", cppParamType, variableName)
 			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
-				if len(paramNameSpace) == 0 {
-					paramNameSpace = NameSpace
+				paramComponent := component
+				if len(paramNameSpace) > 0 {
+					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
 				}
-				// TODO: change this to component.getExtendedHandleName()
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sExtendedHandle h%s;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle();", param.ParamName, variableName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
@@ -713,11 +714,11 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
-				if len(paramNameSpace) == 0 {
-					paramNameSpace = NameSpace
+				paramComponent := component
+				if len(paramNameSpace) > 0 {
+					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
 				}
-				// TODO: change this to component.getExtendedHandleName()
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sExtendedHandle h%s;", paramNameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 
@@ -787,14 +788,15 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				paramNameSpaceCPP, _, _ := decomposeParamClassNameCPP(param.ParamClass)
+				paramComponent := component
 				CPPClass := cppClassPrefix + ClassIdentifier + paramClassName
 				if len(paramNameSpace) == 0 {
 					paramNameSpace = NameSpace
 				} else {
 					CPPClass = paramNameSpaceCPP + CPPClass
+					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
 				}
-				// TODO: component.getExtendedHandleName()
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sExtendedHandle h%s;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				
@@ -1463,7 +1465,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
 		}
 
-		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking)
+		err = writeDynamicCPPMethod(component, method, w, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking)
 		if err != nil {
 			return err
 		}
@@ -1540,7 +1542,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking)
+			err := writeDynamicCPPMethod(component, method, w, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking)
 			if err != nil {
 				return err
 			}

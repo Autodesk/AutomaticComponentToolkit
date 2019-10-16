@@ -1,26 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
-	libraryname="Special Numbers library" namespace="Special" copyright="Special Numbers developers" year="2019" basename="special"
+	libraryname="Calculation library" namespace="Calculation" copyright="Calculation developers" year="2019" basename="calculation"
 	version="1.0.0">
-	<license>
-		<line value="All rights reserved." />
-	</license>
 	
 	<importcomponent uri="Numbers.xml" namespace="Numbers"/>
 	<!-- class="Namespace:*" becomes aware of this.-->
 	
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
 	<bindings>
 		<binding language="CppDynamic" indentation="tabs" />
-		<!--
-		<binding language="Pascal" indentation="2spaces" />
-		<binding language="Python" indentation="tabs" />
-		-->
 	</bindings>
 	<implementations>
-			<implementation language="Cpp" indentation="tabs"/>
-			<!--
-			<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
-			-->
+		<implementation language="Cpp" indentation="tabs"/>
 	</implementations>
 	
 	<errors>
@@ -45,38 +39,36 @@
 		</method>
 	</class>
 	
-	<!-- cross component inheritance is meant to be Interface-only, i.e. private inheritance in C++ terms.
-	- Implementation CAN use a "has-a" relationship to a base class instance, but does not have to.
-	- Never can a SpecialVariable access memory of a Numbers:Variable directly via member access
-	- what actually needs to be provided by any implementation of SpecialVariable is
-		- a function table that is an extension to the functiontable of Numbers:Variable
-		- that appends the "GetSpecialValue" method to that table
-	- the Release, Acquire and GetLastError-methods in the FunctionTable of an instance of SpecialVariable (even if it is downcast on client side to a Numbers:Variable)
-	  will ALWAYS point to SpecialVariable's Release and AcquireMethod
-	-->
-	
-	<class name="SpecialVariable" parent="Numbers:Variable" description="A special variable number">
-		<method name="GetSpecialValue" description="Returns the current value of this Variable as integer. i.e. it rounds">
-			<param name="Value" type="int64" pass="return" description="The current value of this Variable" />
+	<class name="Calculator" parent="Base" description="Sums up or multiplies a list of variables">
+		<method name="EnlistVariable" description="Adds a Variable to the list of Variables this calculator works on">
+			<param name="Variable" type="class" class="Numbers:Variable" pass="in" description="The new variable in this calculator" />
+		</method>
+
+		<method name="GetEnlistedVariable" description="Returns an instance of a enlisted variable">
+			<param name="Index" type="uint32" pass="in" description="The index of the variable to query" />
+			<param name="Variable" type="class" class="Numbers:Variable" pass="return" description="The Index-th variable in this calculator" />
+		</method>
+		
+		<method name="ClearVariables" description="Clears all variables in enlisted in this calculator">
+		</method>
+		
+		<method name="Multiply" description="Multiplies all enlisted variables">
+			<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the product of all enlisted Variables" />
+		</method>
+		
+		<method name="Add" description="Sums all enlisted variables">
+			<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="Variable that holds the sum of all enlisted Variables" />
 		</method>
 	</class>
-	
-	<!--
-	<class name="SpecialVariable" parent="Base" description="A special variable number">
-		<method name="GetSpecialValue" description="Returns the current value of this Variable as integer. i.e. it rounds">
-			<param name="Value" type="int64" pass="return" description="The current value of this Variable" />
-		</method>
-	</class>
-	-->
 	
 	<global baseclassname="Base"
 		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
 		versionmethod="GetVersion" errormethod="GetLastError"
-		symbollookupmethod="GetSymbolLookupMethod">
-		
-		<method name="CreateSpecialVariable" description="Creates a new Variable instance">
-			<param name="InitialValue" type="double" pass="in" description="Initial value of the new SpecialVariable" />
-			<param name="Instance" type="class" class="SpecialVariable" pass="return" description="New SpecialVariable instance" />
+		injectionmethod="InjectComponent"
+		symbollookupmethod="GetSymbolLookupMethod"
+		>
+		<method name="CreateCalculator" description="Creates a new Calculator instance">
+			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
 		</method>
 		
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
@@ -95,9 +87,13 @@
 		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
 			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
 		</method>
-		
+		<method name="InjectComponent" description="Injects an imported component for usage within this component">
+			<param name="NameSpace" type="string" pass="in" description="NameSpace of the injected component" />
+			<param name="SymbolAddressMethod" type="pointer" pass="in" description="Address of the SymbolAddressMethod of the injected component" />
+		</method>
 		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
 			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
 		</method>
 	</global>
+	
 </component>

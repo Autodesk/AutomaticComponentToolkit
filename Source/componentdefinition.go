@@ -505,20 +505,6 @@ func (component *ComponentDefinition) checkStructs() (error) {
 	return nil
 }
 
-// // GetSpecialMethod returns the method of a special type of a class, traversing its hierachy
-// func (class *ComponentDefinitionClass) GetSpecialMethod(component ComponentDefinition, eMethodType int) (ComponentDefinitionMethod) {
-// 	// switch (eMethodType) {
-// 	// case eSpecialMethodRelease:
-// 	// 	if component.isBaseClass(class):
-
-// 	// case eSpecialMethodAcquire:
-// 	// case eSpecialMethodError:	
-// 	// }
-// 	// TODO
-// 	return nil
-// }
-
-
 // CheckClassSpecialFunction checks whether a method is a special function of a class
 func (class* ComponentDefinitionClass) CheckClassSpecialFunction(method ComponentDefinitionMethod) (int) {
 	if (class.ReleaseMethod == method.MethodName) {
@@ -1334,6 +1320,30 @@ func AcquireBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionM
 func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass) (bool) {
 	return class.ClassName == component.Global.BaseClassName
 }
+
+func (component *ComponentDefinition) findBaseClass(className string) (ComponentDefinitionClass, error) {
+	var out ComponentDefinitionClass
+	paramNameSpace, paramClassName, _ := decomposeParamClassName(className)
+	if ( len(paramNameSpace) == 0 || paramNameSpace == component.NameSpace) {
+		for i := 0; i < len(component.Classes); i++ {
+			class := component.Classes[i]
+			if (class.ClassName == paramClassName) {
+				if component.isBaseClass(class) {
+					return class, nil
+				}
+				if (len(class.ParentClass) == 0) {
+					return component.baseClass(), nil
+				}
+				return component.findBaseClass(class.ParentClass)
+			}
+		}
+	} else {
+		comp := component.ImportedComponentDefinitions[paramNameSpace]
+		return comp.findBaseClass(className)
+	}
+	return out, fmt.Errorf("No base-class found for \"%s\"", className)
+}
+
 
 func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	for i := 0; i < len(component.Classes); i++ {
