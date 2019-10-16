@@ -251,9 +251,6 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 			w.Writeln("typedef struct : s%sFunctionTable%s {", NameSpace, class.ParentClass)
 		} else {
 			w.Writeln("typedef struct {")
-			w.Writeln("  P%s%sPtr m_%s;", NameSpace, component.Global.ReleaseMethod, component.Global.ReleaseMethod)
-			w.Writeln("  P%s%sPtr m_%s;", NameSpace, component.Global.AcquireMethod, component.Global.AcquireMethod)
-			w.Writeln("  P%s%sPtr m_%s;", NameSpace, component.Global.ErrorMethod, component.Global.ErrorMethod)
 		}
 
 		for j := 0; j < len(class.Methods); j++ {
@@ -863,11 +860,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	return nil
 }
 
-func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, NameSpace string, class ComponentDefinitionClass, sTableName string, WrapperName string) {
+func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile LanguageWriter, class ComponentDefinitionClass, sTableName string, WrapperName string) {
+	NameSpace := component.NameSpace
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
 			parentClass := component.getClassByName(class.ParentClass)
-			writeLoadingOfClassFunctionTable(component, stubfile, NameSpace, parentClass, sTableName, WrapperName)
+			writeLoadingOfClassFunctionTable(component, stubfile, parentClass, sTableName, WrapperName)
 		}
 	}
 
@@ -878,7 +876,40 @@ func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile La
 	}
 }
 
-func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, BaseName string, cppClassPrefix string, ClassIdentifier string) error {
+func writeDynamicCppClassConstructor(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, cppClassPrefix string, ClassIdentifier string) {
+	NameSpace := component.NameSpace
+	cppClassName := cppClassPrefix + ClassIdentifier + class.ClassName
+	w.Writeln("  /**")
+	w.Writeln("  * %s::%s - Constructor for class %s.", cppClassName, cppClassName, class.ClassName)
+	w.Writeln("  */")
+	w.Writeln("  %s(%s pHandle)", cppClassName, component.getExtendedHandleName())
+
+	if component.isBaseClass(class) {
+		w.Writeln("    : m_pHandle(pHandle)")
+	} else {
+		cppParentClassName := ""
+		if class.ParentClass == "" {
+			cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
+		} else {
+			cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+		}
+		w.Writeln("    : %s(pHandle)", cppParentClassName)
+	}
+	w.Writeln("  {")
+	w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace)
+	w.Writeln("    auto iFunctionTable = MapFunctionTable%s().find(pLookupFunction);", class.ClassName)
+	w.Writeln("    if (MapFunctionTable%s().end() == iFunctionTable) {", class.ClassName)
+	w.Writeln("      auto iNewFunctionTable = MapFunctionTable%s().insert({pLookupFunction, s%sFunctionTable%s()});", class.ClassName, NameSpace, class.ClassName)
+	w.Writeln("      m_pFunctionTable%s = &(iNewFunctionTable.first->second);", class.ClassName)
+	writeLoadingOfClassFunctionTable(component, w, class, fmt.Sprintf("m_pFunctionTable%s", class.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
+	w.Writeln("    } else {")
+	w.Writeln("      m_pFunctionTable%s = &(iFunctionTable->second);", class.ClassName)
+	w.Writeln("    }")
+	w.Writeln("  }")
+}
+
+func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass ComponentDefinitionClass, w LanguageWriter, cppClassPrefix string, ClassIdentifier string) error {
+	NameSpace := component.NameSpace
 	cppBaseClassName := cppClassPrefix + ClassIdentifier + baseClass.ClassName
 	w.Writeln("protected:")
 	w.Writeln("  /* Handle to Instance in library*/")
@@ -894,22 +925,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    }")
 	w.Writeln("  }")
 	w.Writeln("public:")
-	w.Writeln("  /**")
-	w.Writeln("  * %s::%s - Constructor for Base class.", cppBaseClassName, cppBaseClassName)
-	w.Writeln("  */")
-	w.Writeln("  %s(%s pHandle)", cppBaseClassName, component.getExtendedHandleName())
-	w.Writeln("    : m_pHandle(pHandle)")
-	w.Writeln("  {")
-	w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace)
-	w.Writeln("    auto table = MapFunctionTable%s().find(pLookupFunction);", baseClass.ClassName)
-	w.Writeln("    if (MapFunctionTable%s().end() == table) {", baseClass.ClassName)
-	w.Writeln("      MapFunctionTable%s()[pLookupFunction] = s%sFunctionTable%s();", baseClass.ClassName, NameSpace, baseClass.ClassName)
-	w.Writeln("      m_pFunctionTable%s = &(MapFunctionTable%s()[pLookupFunction]);", baseClass.ClassName, baseClass.ClassName)
-	writeLoadingOfClassFunctionTable(component, w, NameSpace, baseClass, fmt.Sprintf("m_pFunctionTable%s", baseClass.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
-	w.Writeln("    } else {")
-	w.Writeln("      m_pFunctionTable%s = &(table->second);", baseClass.ClassName)
-	w.Writeln("    }")
-	w.Writeln("  }")
+	writeDynamicCppClassConstructor(component, baseClass, w, cppClassPrefix, ClassIdentifier)
 	w.Writeln("")
 	w.Writeln("  /**")
 	w.Writeln("  * %s::~%s - Destructor for Base class.", cppBaseClassName, cppBaseClassName)
@@ -1385,27 +1401,10 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 		if !component.isBaseClass(class) {
 			w.Writeln("public:")
-			w.Writeln("  /**")
-			w.Writeln("  * %s::%s - Constructor for %s class.", cppClassName, cppClassName, class.ClassName)
-			w.Writeln("  */")
-			w.Writeln("  %s(%s pHandle)", cppClassName, component.getExtendedHandleName())
-			if cppParentClassName != "" {
-				w.Writeln("    : %s(pHandle)", cppParentClassName)
-			}
-			w.Writeln("  {")
-			w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace);
-			w.Writeln("    auto table = MapFunctionTable%s().find(pLookupFunction);", class.ClassName)
-			w.Writeln("    if (MapFunctionTable%s().end() == table) {", class.ClassName)
-			w.Writeln("      MapFunctionTable%s()[pLookupFunction] = s%sFunctionTable%s();", class.ClassName, NameSpace, class.ClassName)
-			w.Writeln("      m_pFunctionTable%s = &(MapFunctionTable%s()[pLookupFunction]);", class.ClassName, class.ClassName)
-			writeLoadingOfClassFunctionTable(component, w, NameSpace, class, fmt.Sprintf("m_pFunctionTable%s", class.ClassName), cppClassPrefix+ClassIdentifier+"Wrapper")
-			w.Writeln("    } else {")
-			w.Writeln("      m_pFunctionTable%s = &(table->second);", class.ClassName)
-			w.Writeln("    }")
-			w.Writeln("  }")
+			writeDynamicCppClassConstructor(component, class, w, cppClassPrefix, ClassIdentifier)
 			w.Writeln("  ")
 		} else {
-			err = writeDynamicCppBaseClassMethods(component, baseClass, w, NameSpace, BaseName, cppClassPrefix, ClassIdentifier)
+			err = writeDynamicCppBaseClassMethods(component, baseClass, w, cppClassPrefix, ClassIdentifier)
 			if err != nil {
 				return err
 			}

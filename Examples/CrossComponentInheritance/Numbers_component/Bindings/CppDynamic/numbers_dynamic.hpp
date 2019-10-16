@@ -244,21 +244,21 @@ protected:
 	}
 public:
 	/**
-	* CBase::CBase - Constructor for Base class.
+	* CBase::CBase - Constructor for class Base.
 	*/
 	CBase(NumbersExtendedHandle pHandle)
 		: m_pHandle(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
-		auto table = MapFunctionTableBase().find(pLookupFunction);
-		if (MapFunctionTableBase().end() == table) {
-			MapFunctionTableBase()[pLookupFunction] = sNumbersFunctionTableBase();
-			m_pFunctionTableBase = &(MapFunctionTableBase()[pLookupFunction]);
+		auto iFunctionTable = MapFunctionTableBase().find(pLookupFunction);
+		if (MapFunctionTableBase().end() == iFunctionTable) {
+			auto iNewFunctionTable = MapFunctionTableBase().insert({pLookupFunction, sNumbersFunctionTableBase()});
+			m_pFunctionTableBase = &(iNewFunctionTable.first->second);
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
 		} else {
-			m_pFunctionTableBase = &(table->second);
+			m_pFunctionTableBase = &(iFunctionTable->second);
 		}
 	}
 
@@ -300,23 +300,23 @@ private:
 	}
 public:
 	/**
-	* CVariable::CVariable - Constructor for Variable class.
+	* CVariable::CVariable - Constructor for class Variable.
 	*/
 	CVariable(NumbersExtendedHandle pHandle)
 		: CBase(pHandle)
 	{
 		NumbersSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
-		auto table = MapFunctionTableVariable().find(pLookupFunction);
-		if (MapFunctionTableVariable().end() == table) {
-			MapFunctionTableVariable()[pLookupFunction] = sNumbersFunctionTableVariable();
-			m_pFunctionTableVariable = &(MapFunctionTableVariable()[pLookupFunction]);
+		auto iFunctionTable = MapFunctionTableVariable().find(pLookupFunction);
+		if (MapFunctionTableVariable().end() == iFunctionTable) {
+			auto iNewFunctionTable = MapFunctionTableVariable().insert({pLookupFunction, sNumbersFunctionTableVariable()});
+			m_pFunctionTableVariable = &(iNewFunctionTable.first->second);
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableVariable->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableVariable->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableVariable->m_Base_AcquireInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(m_pFunctionTableVariable->m_Variable_GetValue));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(m_pFunctionTableVariable->m_Variable_SetValue));
 		} else {
-			m_pFunctionTableVariable = &(table->second);
+			m_pFunctionTableVariable = &(iFunctionTable->second);
 		}
 	}
 	

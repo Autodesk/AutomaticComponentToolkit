@@ -153,9 +153,6 @@ typedef struct {
 } sNumbersDynamicWrapperTable;
 
 typedef struct {
-	PNumbersReleaseInstancePtr m_ReleaseInstance;
-	PNumbersAcquireInstancePtr m_AcquireInstance;
-	PNumbersGetLastErrorPtr m_GetLastError;
 	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
 	PNumbersBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PNumbersBase_AcquireInstancePtr m_Base_AcquireInstance;

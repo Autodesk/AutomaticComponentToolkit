@@ -321,6 +321,7 @@ NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Varia
 		IBase* pBaseInstance(nullptr);
 		pBaseInstance = CWrapper::CreateVariable(dInitialValue);
 
+		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
 		*pInstance = pBaseInstance->GetExtendedHandle();
 		return NUMBERS_SUCCESS;
 	}
