@@ -262,7 +262,12 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		if len(class.ParentClass) > 0 {
-			w.Writeln("typedef struct : s%sFunctionTable%s {", NameSpace, class.ParentClass)
+			paramNameSpace, paramClassName, _ := decomposeParamClassName(class.ParentClass)
+			if len(paramNameSpace) == 0 {
+				w.Writeln("typedef struct : s%sFunctionTable%s {", NameSpace, class.ParentClass)
+			} else {
+				w.Writeln("typedef struct : s%sFunctionTable%s {", component.ImportedComponentDefinitions[paramNameSpace].NameSpace, paramClassName)
+			}
 		} else {
 			w.Writeln("typedef struct {")
 		}
@@ -1401,7 +1406,13 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			if class.ParentClass == "" {
 				cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
 			} else {
-				cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+				paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+				if len(paramNameSpace) == 0 {
+					cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+				} else {
+					cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
+					w.Writeln(" // TODO: this is missing all \"intermediate\" functions")
+				}
 			}
 			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
 		}

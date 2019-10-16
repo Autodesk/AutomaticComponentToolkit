@@ -198,7 +198,7 @@ SpecialResult _special_getprocaddress_internal(const char * pProcName, void ** p
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&special_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&special_base_acquireinstance;
 		sProcAddressMap["numbers_variable_getvalue"] = nullptr; // (void*)&special_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = nullptr; // (void*)&special_variable_setvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = nullptr;  // (void*)&special_variable_setvalue;
 		sProcAddressMap["special_specialvariable_getspecialvalue"] = (void*)&special_specialvariable_getspecialvalue;
 		
 		sbProcAddressMapHasBeenInitialized = true;
@@ -267,7 +267,7 @@ SpecialResult _special_getprocaddress_specialvariable(const char * pProcName, vo
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&special_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&special_base_acquireinstance;
 		sProcAddressMap["numbers_variable_getvalue"] = nullptr; // (void*)&special_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = nullptr; // (void*)&special_variable_setvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = nullptr;  // (void*)&special_variable_setvalue;
 		sProcAddressMap["special_specialvariable_getspecialvalue"] = (void*)&special_specialvariable_getspecialvalue;
 		
 		sbProcAddressMapHasBeenInitialized = true;

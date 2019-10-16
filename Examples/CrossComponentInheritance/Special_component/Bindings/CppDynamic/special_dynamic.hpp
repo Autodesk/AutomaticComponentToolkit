@@ -290,11 +290,12 @@ public:
 	inline void AcquireInstance();
 };
 
+ // TODO: this is missing all "intermediate" functions
 	
 /*************************************************************************************************************************
  Class CSpecialVariable 
 **************************************************************************************************************************/
-class CSpecialVariable : public CNumbers:Variable {
+class CSpecialVariable : public Numbers::CNumbersVariable {
 private:
 	sSpecialFunctionTableSpecialVariable* m_pFunctionTableSpecialVariable;
 	inline static std::map<SpecialSymbolLookupType, sSpecialFunctionTableSpecialVariable>& MapFunctionTableSpecialVariable()
@@ -307,7 +308,7 @@ public:
 	* CSpecialVariable::CSpecialVariable - Constructor for class SpecialVariable.
 	*/
 	CSpecialVariable(SpecialExtendedHandle pHandle)
-		: CNumbers:Variable(pHandle)
+		: Numbers::CNumbersVariable({ pHandle.m_hHandle, pHandle.m_pfnSymbolLookupMethod})
 	{
 		SpecialSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
 		auto iFunctionTable = MapFunctionTableSpecialVariable().find(pLookupFunction);
@@ -659,7 +660,11 @@ public:
 	Special_int64 CSpecialVariable::GetSpecialValue()
 	{
 		Special_int64 resultValue = 0;
-		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue(m_pHandle, &resultValue));
+		Special_SpecialVariable specialHandle;
+		specialHandle.m_hHandle = m_pHandle.m_hHandle;
+		specialHandle.m_pfnSymbolLookupMethod = m_pHandle.m_pfnSymbolLookupMethod;
+		// Numbers::CNumbersVariable()
+		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue(specialHandle, &resultValue));
 		
 		return resultValue;
 	}

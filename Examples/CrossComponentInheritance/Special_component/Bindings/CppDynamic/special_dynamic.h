@@ -18,6 +18,7 @@ Interface version: 1.0.0
 
 #include "special_types.hpp"
 
+#include "numbers_dynamic.h"
 #include "numbers_types.hpp"
 
 
@@ -149,7 +150,7 @@ typedef struct {
 	PSpecialBase_AcquireInstancePtr m_Base_AcquireInstance;
 } sSpecialFunctionTableBase;
 
-typedef struct : sSpecialFunctionTableNumbers:Variable {
+typedef struct : sNumbersFunctionTableVariable {
 	PSpecialSpecialVariable_GetSpecialValuePtr m_SpecialVariable_GetSpecialValue;
 } sSpecialFunctionTableSpecialVariable;
 

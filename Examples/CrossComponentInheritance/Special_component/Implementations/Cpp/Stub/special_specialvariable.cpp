@@ -22,6 +22,6 @@ using namespace Special::Impl;
 
 Special_int64 CSpecialVariable::GetSpecialValue()
 {
-	throw ESpecialInterfaceException(SPECIAL_ERROR_NOTIMPLEMENTED);
+	return 1;
 }
 
