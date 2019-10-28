@@ -528,6 +528,20 @@ func (class* ComponentDefinitionClass) CheckClassSpecialFunction(method Componen
 	return eSpecialMethodNone
 }
 
+// IsAbstract checks whether a class is marked as abstract
+func (class *ComponentDefinitionClass) IsAbstract() (bool) {
+	return strings.ToLower(class.Abstract) == "true"
+}
+
+// ImplementsAbstractClass checks if this class implements an AbstractClass, i.e. if one MUST NOT derive from it
+func (class *ComponentDefinitionClass) ImplementsAbstractClass(component ComponentDefinition) (bool) {
+	if (class.ParentClass == "") {
+		return false
+	}
+	_, parentClass, _ := component.getClassByName(class.ParentClass)
+	return (parentClass.IsAbstract())
+}
+
 // CheckBaseClassSpecialFunction checks whether a base class specifies all required special methods
 func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
 	if (class.ReleaseMethod == "") {

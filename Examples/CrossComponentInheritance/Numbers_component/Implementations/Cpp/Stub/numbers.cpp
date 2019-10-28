@@ -17,18 +17,18 @@ Interface version: 1.0.0
 #include "numbers_interfaces.hpp"
 #include "numbers_interfaceexception.hpp"
 
-#include "numbers_variable.hpp"
 #include "numbers_variableimpl.hpp"
 
 using namespace Numbers;
 using namespace Numbers::Impl;
 
+// TODO: self injected header
+Numbers::Binding::PWrapper CWrapper::sPNumbersWrapper;
 
-IVariable * CWrapper::CreateVariable(const Numbers_double dInitialValue)
+Numbers::Binding::PVariable CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
 	PIVariableImpl pImpl(new CVariableImpl());
-	pImpl->SetValue(dInitialValue);
-	return pImpl.getCoOwningPtr();
+	return std::make_shared<Numbers::Binding::CVariable>(pImpl->GetExtendedHandle());
 }
 
 bool CWrapper::GetLastError(std::string & sErrorMessage)

@@ -297,6 +297,9 @@ func writeClassMethodsIntoCCPPHeader(component ComponentDefinition, class Compon
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j];
+		if (class.IsAbstract()) {
+			continue
+		}
 		err := WriteCCPPAbiMethod (method, w, NameSpace, class.ClassName, false, false, useCPPTypes, true);
 		if (err != nil) {
 			return err;

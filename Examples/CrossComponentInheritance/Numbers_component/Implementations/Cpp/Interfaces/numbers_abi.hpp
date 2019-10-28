@@ -87,24 +87,6 @@ NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, con
  Class definition for Variable
 **************************************************************************************************************************/
 
-/**
-* Returns the current value of this Variable
-*
-* @param[in] pVariable - Variable instance.
-* @param[out] pValue - The current value of this Variable
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_variable_getvalue(Numbers_Variable pVariable, Numbers_double * pValue);
-
-/**
-* Set the numerical value of this Variable
-*
-* @param[in] pVariable - Variable instance.
-* @param[in] dValue - The new value of this Variable
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_variable_setvalue(Numbers_Variable pVariable, Numbers_double dValue);
-
 /*************************************************************************************************************************
  Class definition for VariableImpl
 **************************************************************************************************************************/

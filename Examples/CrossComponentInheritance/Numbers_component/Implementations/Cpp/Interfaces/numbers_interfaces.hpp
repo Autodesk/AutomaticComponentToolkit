@@ -24,6 +24,7 @@ Interface version: 1.0.0
 #include "numbers_types.hpp"
 
 
+#include "numbers_dynamic.hpp"
 
 namespace Numbers {
 namespace Impl {
@@ -32,7 +33,6 @@ namespace Impl {
  Forward declarations of class interfaces
 */
 class IBase;
-class IVariable;
 class IVariableImpl;
 
 
@@ -160,14 +160,15 @@ typedef IBaseSharedPtr<IBase> PIBase;
 
 
 /*************************************************************************************************************************
- Class interface for Variable 
+ Class interface for VariableImpl 
 **************************************************************************************************************************/
 
-class IVariable : public virtual IBase {
+// TODO: we are missing all methods of "intermediate classes" in the class hierarchy
+class IVariableImpl : public virtual IBase {
 public:
-	static NumbersSymbolLookupType s_SymbolLookupMethodVariable;
-	IVariable() {
-		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodVariable;
+	static NumbersSymbolLookupType s_SymbolLookupMethodVariableImpl;
+	IVariableImpl() {
+		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodVariableImpl;
 	}
 	
 	/**
@@ -184,22 +185,6 @@ public:
 
 };
 
-typedef IBaseSharedPtr<IVariable> PIVariable;
-
-
-/*************************************************************************************************************************
- Class interface for VariableImpl 
-**************************************************************************************************************************/
-
-class IVariableImpl : public virtual IVariable {
-public:
-	static NumbersSymbolLookupType s_SymbolLookupMethodVariableImpl;
-	IVariableImpl() {
-		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodVariableImpl;
-	}
-	
-};
-
 typedef IBaseSharedPtr<IVariableImpl> PIVariableImpl;
 
 
@@ -208,12 +193,14 @@ typedef IBaseSharedPtr<IVariableImpl> PIVariableImpl;
 **************************************************************************************************************************/
 class CWrapper {
 public:
+	// TODO: self injected header
+	static Numbers::Binding::PWrapper sPNumbersWrapper;
 	/**
 	* Inumbers::CreateVariable - Creates a new Variable instance
 	* @param[in] dInitialValue - Initial value of the new Variable
 	* @return New Variable instance
 	*/
-	static IVariable * CreateVariable(const Numbers_double dInitialValue);
+	static Numbers::Binding::PVariable CreateVariable(const Numbers_double dInitialValue);
 
 	/**
 	* Inumbers::GetLastError - Returns the last error recorded on component

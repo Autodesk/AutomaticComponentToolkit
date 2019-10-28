@@ -32,6 +32,7 @@ Interface version: 1.0.0
 #include <map>
 
 namespace Numbers {
+namespace Binding {
 
 /*************************************************************************************************************************
  Forward Declaration of all classes
@@ -238,7 +239,7 @@ protected:
 
 	/* Checks for an Error code and raises Exceptions */
 	virtual void CheckError(NumbersResult nResult)
- 	{
+	{
 		if (nResult != 0) {
 			std::string sErrorMessage;
 			GetLastError(sErrorMessage);
@@ -550,24 +551,6 @@ public:
 			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
-		pWrapperTable->m_Variable_GetValue = (PNumbersVariable_GetValuePtr) GetProcAddress(hLibrary, "numbers_variable_getvalue");
-		#else // _WIN32
-		pWrapperTable->m_Variable_GetValue = (PNumbersVariable_GetValuePtr) dlsym(hLibrary, "numbers_variable_getvalue");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Variable_GetValue == nullptr)
-			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_Variable_SetValue = (PNumbersVariable_SetValuePtr) GetProcAddress(hLibrary, "numbers_variable_setvalue");
-		#else // _WIN32
-		pWrapperTable->m_Variable_SetValue = (PNumbersVariable_SetValuePtr) dlsym(hLibrary, "numbers_variable_setvalue");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_Variable_SetValue == nullptr)
-			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
 		pWrapperTable->m_CreateVariable = (PNumbersCreateVariablePtr) GetProcAddress(hLibrary, "numbers_createvariable");
 		#else // _WIN32
 		pWrapperTable->m_CreateVariable = (PNumbersCreateVariablePtr) dlsym(hLibrary, "numbers_createvariable");
@@ -721,6 +704,7 @@ public:
 	 * Method definitions for class CVariableImpl
 	 */
 
+} // namespace Binding
 } // namespace Numbers
 
 #endif // __NUMBERS_CPPHEADER_DYNAMIC_CPP

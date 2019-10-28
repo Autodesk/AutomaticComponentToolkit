@@ -201,20 +201,24 @@ NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32
 
 
 /*************************************************************************************************************************
+ Class implementation for VariableImpl
+**************************************************************************************************************************/
+
+/*************************************************************************************************************************
  Class implementation for Variable
 **************************************************************************************************************************/
-NumbersResult numbers_variable_getvalue(Numbers_Variable pVariable, Numbers_double * pValue)
+NumbersResult numbers_variableimpl_getvalue(Numbers_VariableImpl pVariableImpl, Numbers_double * pValue)
 {
-	IBase* pIBaseClass = (IBase *)pVariable.m_hHandle;
+	IBase* pIBaseClass = (IBase *)pVariableImpl.m_hHandle;
 
 	try {
 		if (pValue == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		IVariable* pIVariable = dynamic_cast<IVariable*>(pIBaseClass);
-		if (!pIVariable)
+		IVariableImpl* pIVariableImpl = dynamic_cast<IVariableImpl*>(pIBaseClass);
+		if (!pIVariableImpl)
 			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
 		
-		*pValue = pIVariable->GetValue();
+		*pValue = pIVariableImpl->GetValue();
 
 		return NUMBERS_SUCCESS;
 	}
@@ -229,16 +233,16 @@ NumbersResult numbers_variable_getvalue(Numbers_Variable pVariable, Numbers_doub
 	}
 }
 
-NumbersResult numbers_variable_setvalue(Numbers_Variable pVariable, Numbers_double dValue)
+NumbersResult numbers_variableimpl_setvalue(Numbers_VariableImpl pVariableImpl, Numbers_double dValue)
 {
-	IBase* pIBaseClass = (IBase *)pVariable.m_hHandle;
+	IBase* pIBaseClass = (IBase *)pVariableImpl.m_hHandle;
 
 	try {
-		IVariable* pIVariable = dynamic_cast<IVariable*>(pIBaseClass);
-		if (!pIVariable)
+		IVariableImpl* pIVariableImpl = dynamic_cast<IVariableImpl*>(pIBaseClass);
+		if (!pIVariableImpl)
 			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
 		
-		pIVariable->SetValue(dValue);
+		pIVariableImpl->SetValue(dValue);
 
 		return NUMBERS_SUCCESS;
 	}
@@ -253,10 +257,6 @@ NumbersResult numbers_variable_setvalue(Numbers_Variable pVariable, Numbers_doub
 	}
 }
 
-
-/*************************************************************************************************************************
- Class implementation for VariableImpl
-**************************************************************************************************************************/
 
 
 /*************************************************************************************************************************
@@ -273,8 +273,6 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
 		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
-		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
 		sProcAddressMap["numbers_createvariable"] = (void*)&numbers_createvariable;
 		sProcAddressMap["numbers_getsymbollookupmethod"] = (void*)&numbers_getsymbollookupmethod;
 		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
@@ -336,43 +334,6 @@ NumbersResult _numbers_getprocaddress_base(const char * pProcName, void ** ppPro
 }
 
 /*************************************************************************************************************************
- Function table lookup implementation for class Variable
-**************************************************************************************************************************/
-
-NumbersResult _numbers_getprocaddress_variable(const char * pProcName, void ** ppProcAddress)
-{
-	static bool sbProcAddressMapHasBeenInitialized = false;
-	static std::map<std::string, void*> sProcAddressMap;
-	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&numbers_base_getsymbollookupmethod;
-		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
-		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
-		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
-		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
-		
-		sbProcAddressMapHasBeenInitialized = true;
-	}
-	if (pProcName == nullptr)
-		return NUMBERS_ERROR_INVALIDPARAM;
-	if (ppProcAddress == nullptr)
-		return NUMBERS_ERROR_INVALIDPARAM;
-	*ppProcAddress = nullptr;
-	std::string sProcName (pProcName);
-	
-	auto procPair = sProcAddressMap.find(sProcName);
-	if (procPair == sProcAddressMap.end()) {
-		return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
-	}
-	else {
-		*ppProcAddress = procPair->second;
-		return NUMBERS_SUCCESS;
-	}
-	
-}
-
-/*************************************************************************************************************************
  Function table lookup implementation for class VariableImpl
 **************************************************************************************************************************/
 
@@ -386,8 +347,10 @@ NumbersResult _numbers_getprocaddress_variableimpl(const char * pProcName, void 
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
 		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
-		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
+		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variableimpl_getvalue;
+		sProcAddressMap["numbers_variableimpl_getvalue"] = (void*)&numbers_variableimpl_getvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variableimpl_setvalue;
+		sProcAddressMap["numbers_variableimpl_setvalue"] = (void*)&numbers_variableimpl_setvalue;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -415,7 +378,6 @@ NumbersResult _numbers_getprocaddress_variableimpl(const char * pProcName, void 
  Initialize lookup function pointers
 **************************************************************************************************************************/
 NumbersSymbolLookupType IBase::s_SymbolLookupMethodBase = &_numbers_getprocaddress_base;
-NumbersSymbolLookupType IVariable::s_SymbolLookupMethodVariable = &_numbers_getprocaddress_variable;
 NumbersSymbolLookupType IVariableImpl::s_SymbolLookupMethodVariableImpl = &_numbers_getprocaddress_variableimpl;
 
 
@@ -430,11 +392,12 @@ NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Varia
 	try {
 		if (pInstance == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		IBase* pBaseInstance(nullptr);
-		pBaseInstance = CWrapper::CreateVariable(dInitialValue);
+		Numbers::Binding::PVariable pNumbersInstance;
+		pNumbersInstance = CWrapper::CreateVariable(dInitialValue);
 
 		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
-		*pInstance = pBaseInstance->GetExtendedHandle();
+		pNumbersInstance->AcquireInstance();
+		*pInstance = pNumbersInstance->GetHandle();
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {

@@ -477,6 +477,9 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		if (class.IsAbstract()) {
+			continue
+		}
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			WriteLoadingOfMethod(class, method, w, NameSpace, useStrictC)
@@ -1071,7 +1074,7 @@ func decomposeParamClassNameCPP(paramClassName string) (string, string, error) {
 		return "", "", err
 	}
 	if (len(paramNameSpace) >0 ) {
-		paramNameSpace = paramNameSpace + "::"
+		paramNameSpace = paramNameSpace + "::Binding::"
 	}
 	return paramNameSpace, paramClassName, err
 }
@@ -1208,6 +1211,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	w.Writeln("namespace %s {", NameSpace)
+	w.Writeln("namespace Binding {")
 	w.Writeln("")
 
 	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix, ClassIdentifier)
@@ -1562,6 +1566,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	w.Writeln("")
 
+	w.Writeln("} // namespace Binding")
 	w.Writeln("} // namespace %s", NameSpace)
 	w.Writeln("")
 

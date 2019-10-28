@@ -327,11 +327,23 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
 		} else {
 			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
-			if len(paramNameSpace) == 0 {
-				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
+			_, parentClass, _ := component.getClassByName(class.ParentClass)
+			if (parentClass.IsAbstract()) {
+				if len(paramNameSpace) == 0 {
+					// abstract and same component:
+					w.Writeln("// TODO: we are missing all methods of \"intermediate classes\" in the class hierarchy")
+					parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, parentClass.ParentClass)
+				} else {
+					// abstract and different component:
+					w.Writeln("// TODO: we are missing all methods of \"intermediate classes\" in the class hierarchy")
+					parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+				}
 			} else {
-				w.Writeln("// TODO: we are missing all methods of \"intermediate classes\" in the class hierarchy")
-				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+				// not abstract, must be same component
+				if len(paramNameSpace) != 0 {
+					return fmt.Errorf("Baseclass of %s in a different component MUST be abstract", class.ClassName)
+				}
+				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
 			}
 		}
 	}
@@ -361,7 +373,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 		// These methods are required for shared pointers
 		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName)
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(releaseBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, releaseBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -375,7 +387,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("")
 
 		acquireBaseClassInterfaceMethod := AcquireBaseClassInterfaceMethod(component.Global.BaseClassName)
-		methodstring, _, err = buildCPPInterfaceMethodDeclaration(acquireBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		methodstring, _, err = buildCPPInterfaceMethodDeclaration(component, acquireBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -392,7 +404,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		methods[0] = ClearErrorMessageMethod()
 		methods[1] = RegisterErrorMessageMethod()
 		for j := 0; j < len(methods); j++ {
-			methodstring, _, err := buildCPPInterfaceMethodDeclaration(methods[j], class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, methods[j], class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 			if err != nil {
 				return err
 			}
@@ -405,9 +417,24 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  }")
 		w.Writeln("  ")
 	}
+	
+	if (class.ImplementsAbstractClass(component)) {
+		_, parentClass, _ := component.getClassByName(class.ParentClass)
+
+		for j := 0; j < len(parentClass.Methods); j++ {
+			method := parentClass.Methods[j]
+			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, parentClass.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+			if err != nil {
+				return err
+			}
+			w.Writeln("%s;", methodstring)
+			w.Writeln("")
+		}
+	}
+	
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 		if err != nil {
 			return err
 		}
@@ -433,7 +460,9 @@ func writeClassDefinitions(component ComponentDefinition, w LanguageWriter, Name
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		writeCPPClassInterface(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName)
+		if (!class.IsAbstract()) {
+			writeCPPClassInterface(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName)
+		}
 	}
 }
 
@@ -455,6 +484,10 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
 	}
+	// if any class is abstract
+	if (true) {
+		w.Writeln("#include \"%s_dynamic.hpp\"", BaseName)
+	}
 	w.Writeln("")
 
 	w.Writeln("namespace %s {", NameSpace)
@@ -467,7 +500,9 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	w.Writeln("*/")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		w.Writeln("class I%s%s;", ClassIdentifier, class.ClassName);
+		if (!class.IsAbstract()) {
+			w.Writeln("class I%s%s;", ClassIdentifier, class.ClassName)
+		}
 	}
 	w.Writeln("")
 	w.Writeln("")
@@ -490,6 +525,8 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		}
 		w.Writeln("")
 	}
+	w.Writeln("  // TODO: self injected header")
+	w.Writeln("  static %s::Binding::PWrapper sP%sWrapper;", NameSpace, NameSpace)
 
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
@@ -505,7 +542,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 			continue
 		}
 
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -543,6 +580,8 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		}
 		stubfile.Writeln("")
 	}
+	stubfile.Writeln("// TODO: self injected header")
+	stubfile.Writeln("%s::Binding::PWrapper C%sWrapper::sP%sWrapper;", NameSpace, ClassIdentifier, NameSpace)
 
 	stubfile.Writeln("")
 
@@ -581,7 +620,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 			thisMethodDefaultImpl = acquireImplementation
 		}
 
-		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
+		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
 			return err
 		}
@@ -614,6 +653,22 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
+func buildCPPInterfaceWrapperMethodsInterfaceImpl(component ComponentDefinition, class ComponentDefinitionClass, implClass ComponentDefinitionClass, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, doJournal bool) error {
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Class implementation for %s", class.ClassName)
+	w.Writeln("**************************************************************************************************************************/")
+
+	for j := 0; j < len(class.Methods); j++ {
+		method := class.Methods[j]
+		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, implClass.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter) error {
 	NameSpace := component.NameSpace
 	w.Writeln("")
@@ -634,10 +689,12 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	global := component.Global;
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		for j := 0; j < len(class.Methods); j++ {
-			method := class.Methods[j]
-			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		if (!class.IsAbstract()) {
+			for j := 0; j < len(class.Methods); j++ {
+				method := class.Methods[j]
+				procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
+				w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+			}
 		}
 	}
 	for j := 0; j < len(global.Methods); j++ {
@@ -675,7 +732,7 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	return nil;
 }
 
-func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, InitialNameSpace string, w LanguageWriter, sMapName string) {
+func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinition, class ComponentDefinitionClass, InitialNameSpace string, ImplClassName string, w LanguageWriter, sMapName string) {
 	NameSpace := component.NameSpace
 	if len(class.ParentClass) > 0 {
 		if (class.ParentClass != class.ClassName) {
@@ -683,15 +740,26 @@ func writeClassMethodsIntoCPPGetSymbolAddressMethod(component ComponentDefinitio
 			if (err != nil) {
 				log.Fatal(err)
 			}
-			writeClassMethodsIntoCPPGetSymbolAddressMethod(parentComponent, parentClass, InitialNameSpace, w, sMapName)
+			writeClassMethodsIntoCPPGetSymbolAddressMethod(parentComponent, parentClass, InitialNameSpace, ImplClassName, w, sMapName)
 		}
 	}
 
-	for j := 0; j < len(class.Methods); j++ {
-		method := class.Methods[j]
-		procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-		// TODO: the "special functions" must also (only?) appear in the list with the namespaces of the baseclass in the other ...
-		w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(InitialNameSpace), procName))
+	if (class.IsAbstract()) {
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			procNameCPP := strings.ToLower(ImplClassName + "_" + method.MethodName)
+			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
+			// TODO: the "special functions" must also (only?) appear in the list with the namespaces of the baseclass in the other ...
+			w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(InitialNameSpace), procNameCPP))
+			w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procNameCPP, strings.ToLower(InitialNameSpace), procNameCPP))
+		}
+	} else {
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
+			// TODO: the "special functions" must also (only?) appear in the list with the namespaces of the baseclass in the other ...
+			w.Writeln(fmt.Sprintf("%s[\"%s_%s\"] = (void*)&%s_%s;", sMapName, strings.ToLower(NameSpace), procName, strings.ToLower(InitialNameSpace), procName))
+		}
 	}
 }
 
@@ -699,6 +767,9 @@ func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w Languag
 	NameSpace := component.NameSpace
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		if (class.IsAbstract()) {
+			continue
+		}
 
 		w.Writeln("")
 		w.Writeln("/*************************************************************************************************************************")
@@ -714,7 +785,7 @@ func buildCPPAllGetSymbolAddressMethods(component ComponentDefinition, w Languag
 		w.Writeln("if (!sbProcAddressMapHasBeenInitialized) {")
 
 		w.AddIndentationLevel(1)
-		writeClassMethodsIntoCPPGetSymbolAddressMethod(component, class, component.NameSpace, w, "sProcAddressMap")
+		writeClassMethodsIntoCPPGetSymbolAddressMethod(component, class, component.NameSpace, class.ClassName, w, "sProcAddressMap")
 		w.AddIndentationLevel(-1)
 
 		w.Writeln("  ")
@@ -830,9 +901,18 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	w.Writeln("")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		err := buildCPPInterfaceWrapperMethods(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, doJournal)
-		if (err != nil) {
-			return err
+		if !class.IsAbstract() {
+			err := buildCPPInterfaceWrapperMethods(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, doJournal)
+			if (err != nil) {
+				return err
+			}
+		}
+		if (class.ImplementsAbstractClass(component)) {
+			_, parentClass, _ := component.getClassByName(class.ParentClass)
+			err := buildCPPInterfaceWrapperMethodsInterfaceImpl(component, parentClass, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, doJournal)
+			if (err != nil) {
+				return err
+			}
 		}
 	}
 
@@ -854,7 +934,9 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	w.Writeln("**************************************************************************************************************************/")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		w.Writeln("%sSymbolLookupType I%s%s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;", NameSpace, ClassIdentifier, class.ClassName, class.ClassName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName))
+		if (!class.IsAbstract()) {
+			w.Writeln("%sSymbolLookupType I%s%s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;", NameSpace, ClassIdentifier, class.ClassName, class.ClassName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName))
+		}
 	}
 	w.Writeln("")
 	w.Writeln("")
@@ -1065,23 +1147,40 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			stubheaderw.Writeln("#include <memory>")
 		}
 		stubheaderw.Writeln("")
-
 		if (!component.isBaseClass(class)) {
 			if (class.ParentClass == "") {
 				class.ParentClass = component.Global.BaseClassName
 			}
 		}
 
-		if class.ParentClass != "" {
-			stubheaderw.Writeln("// Parent classes")
-			
-			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
-			if len(paramNameSpace) == 0 {
-				stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
-			} else {
-				stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(component.Global.BaseClassName))
+		parentClassName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
+
+		if (!component.isBaseClass(class)) {
+			_, parentClass, err := component.getClassByName(class.ParentClass)
+			if (err != nil) {
+				log.Fatal(err)
 			}
-			
+
+			stubheaderw.Writeln("// Parent classes")
+			if (parentClass.IsAbstract()) {
+				paramNameSpace, _, _ := decomposeParamClassName(parentClass.ParentClass)
+				if len(paramNameSpace) == 0 {
+					stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(parentClass.ParentClass))
+					parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, parentClass.ParentClass)
+				} else {
+					stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(component.Global.BaseClassName))
+					parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, component.Global.BaseClassName)
+				}
+			} else {
+				paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+				if len(paramNameSpace) == 0 {
+					stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(class.ParentClass))
+					parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, class.ParentClass)
+				} else {
+					stubheaderw.Writeln("#include \"%s%s_%s.hpp\"", BaseName, stubIdentifier, strings.ToLower(component.Global.BaseClassName))
+					parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, component.Global.BaseClassName)
+				}
+			}
 			stubheaderw.Writeln("#ifdef _MSC_VER")
 			stubheaderw.Writeln("#pragma warning(push)")
 			stubheaderw.Writeln("#pragma warning(disable : 4250)")
@@ -1102,15 +1201,6 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln(" Class declaration of %s ", outClassName)
 		stubheaderw.Writeln("**************************************************************************************************************************/")
 		stubheaderw.Writeln("")
-		parentClassName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-		if "" != class.ParentClass {
-			paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
-			if len(paramNameSpace) == 0 {
-				parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, class.ParentClass)
-			} else {
-				parentClassName = parentClassName + ", " + fmt.Sprintf("public virtual C%s%s", ClassIdentifier, component.Global.BaseClassName)
-			}
-		}
 		stubheaderw.Writeln("class %s : public virtual %s {", outClassName, parentClassName)
 		stubheaderw.Writeln("private:")
 		stubheaderw.Writeln("")
@@ -1170,7 +1260,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[1] = append(implementations[1], "m_pErrors->push_back(sErrorMessage);")
 
 			for i := 0; i < len(methods); i++ {
-				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 				if (err!=nil) {
 					return err
 				}
@@ -1191,7 +1281,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			if (isSpecialFunction == eSpecialMethodNone) {
 				continue
 			}
-			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
 			}
@@ -1230,19 +1320,46 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			stubimplw.Writeln("")
 		}
 
+
 		stubheaderw.Writeln("")
 		stubheaderw.Writeln("  /**")
 		stubheaderw.Writeln("  * Public member functions to implement.")
 		stubheaderw.Writeln("  */")
 		stubheaderw.Writeln("")
 
+
+		if (class.ImplementsAbstractClass(component)) {
+			_, parentClass, _ := component.getClassByName(class.ParentClass)
+			if (parentClass.IsAbstract()) { // must be true
+				for j := 0; j < len(parentClass.Methods); j++ {
+					method := parentClass.Methods[j]
+					isSpecialFunction := parentClass.CheckClassSpecialFunction(method)
+					if (isSpecialFunction != eSpecialMethodNone) {
+						continue
+					}
+					methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+					if err != nil {
+						return err
+					}
+					stubheaderw.Writeln("%s;", methodstring)
+					stubheaderw.Writeln("")
+		
+					stubimplw.Writeln("%s", implementationdeclaration)
+					stubimplw.Writeln("{")
+					stubimplw.Writeln("  throw E%sInterfaceException(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace))
+					stubimplw.Writeln("}")
+					stubimplw.Writeln("")
+				}
+			}
+		}
+		
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			isSpecialFunction := class.CheckClassSpecialFunction(method)
 			if (isSpecialFunction != eSpecialMethodNone) {
 				continue
 			}
-			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
 			}
@@ -1276,9 +1393,11 @@ func buildCPPStub(component ComponentDefinition, NameSpace string, NameSpaceImpl
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		err :=  buildCPPStubClass(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString, stubIdentifier, forceRecreation)
-		if err != nil {
-			return err
+		if (!class.IsAbstract()) {
+			err :=  buildCPPStubClass(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString, stubIdentifier, forceRecreation)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -1316,7 +1435,7 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 	return "";
 }
 
-func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, className string, NameSpace string, ClassIdentifier string, BaseName string, indentString string, isGlobal bool, isVirtual bool, writeComment bool) (string, string, error) {
+func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method ComponentDefinitionMethod, className string, NameSpace string, ClassIdentifier string, BaseName string, indentString string, isGlobal bool, isVirtual bool, writeComment bool) (string, string, error) {
 	parameters := ""
 	returntype := "void"
 	commentcode := ""
@@ -1477,7 +1596,12 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
 					returntype = fmt.Sprintf("%sP%s%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP)
 				} else {
-					returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
+					_, class, _ := component.getClassByName(param.ParamClass)
+					if (class.IsAbstract()) {
+						returntype = fmt.Sprintf("%s::Binding::P%s%s", NameSpace, ClassIdentifier, paramClassNameCPP)
+					} else {
+						returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
+					}
 				}
 
 			default:
@@ -1728,30 +1852,49 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				postCallCode = append(postCallCode, fmt.Sprintf("}"))
 
 			case "class", "optionalclass":
+				_, class, _ := component.getClassByName(param.ParamClass)
+
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
-				if len(paramNameSpace) > 0 {
-					outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
+				if (class.IsAbstract()) {
+					usedNameSpace := NameSpace
+					if len(paramNameSpace) > 0 {
+						usedNameSpace = paramNameSpace
+					}
+					outVarName := fmt.Sprintf("p%s%s", usedNameSpace, param.ParamName)
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s p%s%s;", usedNameSpace, paramClassName, usedNameSpace, param.ParamName))
 
 					baseClass, err := component.findBaseClass(param.ParamClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err
 					}
-					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+					returnVariable = fmt.Sprintf("p%s%s", usedNameSpace, param.ParamName)
 					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s();", outVarName, baseClass.AcquireMethod))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
-				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
-					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
-					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
 					
+				} else {
+					if len(paramNameSpace) > 0 {
+						outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+						preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
+	
+						baseClass, err := component.findBaseClass(param.ParamClass)
+						if (err != nil) {
+							return checkInputCode, preCallCode, postCallCode, "", "", err
+						}
+						returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
+						postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
+						postCallCode = append(postCallCode, fmt.Sprintf("%s->%s();", outVarName, baseClass.AcquireMethod))
+						postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
+					} else {
+						preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+						returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
+						postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
+						postCallCode = append(postCallCode, fmt.Sprintf("*%s = pBase%s->GetExtendedHandle();", variableName, param.ParamName));
+					}
 				}
-
 			default:
 				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
@@ -1982,6 +2125,9 @@ func buildCMakeForCPPImplementation(component ComponentDefinition, w LanguageWri
 	w.Writeln("target_include_directories(%s PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Stub)", targetName)
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("target_include_directories(%s PRIVATE \"${CMAKE_CURRENT_SOURCE_DIR}/../../../%s_component/Bindings/CppDynamic\")", targetName, subComponent.NameSpace)
+	}
+	if (true) { // if any class in this component is abstract
+		w.Writeln("target_include_directories(%s PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CppDynamic)", targetName)
 	}
 }
 

@@ -22,7 +22,7 @@ int main()
 	try
 	{
 		std::string libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Numbers_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Numbers-library file here.
-		auto wrapper = Numbers::CWrapper::loadLibrary(libpath + "/numbers.dll"); // TODO: add correct suffix of the library
+		auto wrapper = Numbers::Binding::CWrapper::loadLibrary(libpath + "/numbers.dll"); // TODO: add correct suffix of the library
 		Numbers_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "Numbers.Version = " << nMajor << "." << nMinor << "." << nMicro;
