@@ -193,7 +193,6 @@ typedef IBaseSharedPtr<IVariableImpl> PIVariableImpl;
 **************************************************************************************************************************/
 class CWrapper {
 public:
-	// TODO: self injected header
 	static Numbers::Binding::PWrapper sPNumbersWrapper;
 	/**
 	* Inumbers::CreateVariable - Creates a new Variable instance

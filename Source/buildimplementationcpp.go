@@ -524,8 +524,9 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		}
 		w.Writeln("")
 	}
-	w.Writeln("  // TODO: self injected header")
-	w.Writeln("  static %s::Binding::PWrapper sP%sWrapper;", NameSpace, NameSpace)
+	if (component.ContainsAnAbstractClass()) {
+		w.Writeln("  static %s::Binding::PWrapper sP%sWrapper;", NameSpace, NameSpace)
+	}
 
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
@@ -579,8 +580,9 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		}
 		stubfile.Writeln("")
 	}
-	stubfile.Writeln("// TODO: self injected header")
-	stubfile.Writeln("%s::Binding::PWrapper C%sWrapper::sP%sWrapper;", NameSpace, ClassIdentifier, NameSpace)
+	if (component.ContainsAnAbstractClass()) {
+		stubfile.Writeln("%s::Binding::PWrapper C%sWrapper::sP%sWrapper;", NameSpace, ClassIdentifier, NameSpace)
+	}
 
 	stubfile.Writeln("")
 

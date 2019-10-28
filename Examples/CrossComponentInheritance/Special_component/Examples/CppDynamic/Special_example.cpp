@@ -22,15 +22,21 @@ int main()
 	try
 	{
 		std::string libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Special_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Special-library file here.
-		auto wrapper = Special::CWrapper::loadLibrary(libpath + "/special.dll"); // TODO: add correct suffix of the library
+		auto wrapper = Special::Binding::CWrapper::loadLibrary(libpath + "/special.dll"); // TODO: add correct suffix of the library
 		Special_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "Special.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;
 
-		auto pSpecialVar = wrapper->CreateSpecialVariable(1.0);
-		Special_int64 d = pSpecialVar->GetSpecialValue();
-		std::cout << "Special Value = " << d << std::endl;
+		auto pSpecialVar = wrapper->CreateSpecialVariable(1.4);
+		Special_double value = pSpecialVar->GetValue();
+		Special_int64 specialValue = pSpecialVar->GetSpecialValue();
+		std::cout << "pSpecialVar value = " << value << std::endl;
+		std::cout << "pSpecialVar specialValue = " << specialValue << std::endl;
+
+		auto pSpecialVarAsVar = wrapper->CreateSpecialVariableAsVariable(1.4);
+		Special_double theValue = pSpecialVarAsVar->GetValue();
+		std::cout << "pSpecialVarAsVariable value = " << theValue << std::endl;
 	}
 	catch (std::exception &e)
 	{

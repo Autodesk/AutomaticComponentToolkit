@@ -193,7 +193,7 @@ public:
 private:
 	sSpecialDynamicWrapperTable m_WrapperTable;
 	// Injected Components
-	Numbers::PWrapper m_pNumbersWrapper;
+	Numbers::Binding::PWrapper m_pNumbersWrapper;
 
 	
 	SpecialResult checkBinaryVersion()
@@ -294,12 +294,11 @@ public:
 	inline bool GetLastError(std::string & sErrorMessage);
 };
 
- // TODO: this is missing all "intermediate" functions
 	
 /*************************************************************************************************************************
  Class CSpecialVariable 
 **************************************************************************************************************************/
-class CSpecialVariable : public CBase {
+class CSpecialVariable : public Numbers::Binding::CVariable {
 private:
 	sSpecialFunctionTableSpecialVariable* m_pFunctionTableSpecialVariable;
 	inline static std::map<SpecialSymbolLookupType, sSpecialFunctionTableSpecialVariable>& MapFunctionTableSpecialVariable()
@@ -312,7 +311,7 @@ public:
 	* CSpecialVariable::CSpecialVariable - Constructor for class SpecialVariable.
 	*/
 	CSpecialVariable(SpecialExtendedHandle pHandle)
-		: CNumbers:Variable(pHandle)
+		: Numbers::Binding::CVariable({pHandle.m_hHandle, pHandle.m_pfnSymbolLookupMethod})
 	{
 		SpecialSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
 		auto iFunctionTable = MapFunctionTableSpecialVariable().find(pLookupFunction);
@@ -622,7 +621,7 @@ public:
 	Special_pvoid CBase::GetSymbolLookupMethod()
 	{
 		Special_pvoid resultSymbolLookupMethod = 0;
-		CheckError(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod(m_pHandle, &resultSymbolLookupMethod));
+		CheckError(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &resultSymbolLookupMethod));
 		
 		return resultSymbolLookupMethod;
 	}
@@ -632,7 +631,7 @@ public:
 	*/
 	void CBase::ReleaseInstance()
 	{
-		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance(m_pHandle));
+		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}));
 	}
 	
 	/**
@@ -640,7 +639,7 @@ public:
 	*/
 	void CBase::AcquireInstance()
 	{
-		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance(m_pHandle));
+		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}));
 	}
 	
 	/**
@@ -651,7 +650,7 @@ public:
 	*/
 	void CBase::GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro)
 	{
-		CheckError(m_pFunctionTableBase->m_Base_GetVersion(m_pHandle, &nMajor, &nMinor, &nMicro));
+		CheckError(m_pFunctionTableBase->m_Base_GetVersion({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &nMajor, &nMinor, &nMicro));
 	}
 	
 	/**
@@ -664,9 +663,9 @@ public:
 		Special_uint32 bytesNeededErrorMessage = 0;
 		Special_uint32 bytesWrittenErrorMessage = 0;
 		bool resultHasError = 0;
-		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
 		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
-		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
 		
 		return resultHasError;
@@ -683,7 +682,7 @@ public:
 	Special_int64 CSpecialVariable::GetSpecialValue()
 	{
 		Special_int64 resultValue = 0;
-		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue(m_pHandle, &resultValue));
+		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &resultValue));
 		
 		return resultValue;
 	}

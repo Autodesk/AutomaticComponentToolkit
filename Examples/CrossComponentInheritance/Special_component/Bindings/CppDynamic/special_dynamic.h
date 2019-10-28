@@ -19,6 +19,7 @@ Interface version: 1.0.0
 #include "special_types.hpp"
 
 #include "numbers_types.hpp"
+#include "numbers_dynamic.hpp"
 
 
 /*************************************************************************************************************************

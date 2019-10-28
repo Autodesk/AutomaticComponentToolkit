@@ -22,7 +22,7 @@ using namespace Special::Impl;
 
 Special_double CSpecialVariable::GetValue()
 {
-	return m_dValue;
+	return Special_double(GetSpecialValue());
 }
 
 void CSpecialVariable::SetValue(const Special_double dValue)

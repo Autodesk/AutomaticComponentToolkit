@@ -204,6 +204,7 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("#include \"%s_types.hpp\"", subComponent.BaseName)
+		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
 	}
 	w.Writeln("")
 
@@ -625,8 +626,8 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 		} else {
 			CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		}
-		callParameters = "m_pHandle"
-		initCallParameters = "m_pHandle"
+		callParameters = "{m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}"
+		initCallParameters = callParameters
 		checkErrorCodeBegin = "CheckError("
 	}
 	if doNotThrow {
@@ -914,13 +915,19 @@ func writeDynamicCppClassConstructor(component ComponentDefinition, class Compon
 	if component.isBaseClass(class) {
 		w.Writeln("    : m_pHandle(pHandle)")
 	} else {
-		cppParentClassName := ""
-		if class.ParentClass == "" {
-			cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
+		paramNameSpace, parentClassName, _ := decomposeParamClassNameCPP(class.ParentClass)
+		if (len(paramNameSpace) == 0) {
+			cppParentClassName := ""
+			if class.ParentClass == "" {
+				cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
+			} else {
+				cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+			}
+			w.Writeln("    : %s(pHandle)", cppParentClassName)
 		} else {
-			cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+			cppParentClassName := cppClassPrefix + ClassIdentifier+ parentClassName
+			w.Writeln("    : %s%s({pHandle.m_hHandle, pHandle.m_pfnSymbolLookupMethod})", paramNameSpace, cppParentClassName)
 		}
-		w.Writeln("    : %s(pHandle)", cppParentClassName)
 	}
 	w.Writeln("  {")
 	w.Writeln("    %sSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;", NameSpace)
@@ -1352,7 +1359,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  // Injected Components")
 		for _, subComponent := range(component.ImportedComponentDefinitions) {
 			subNameSpace := subComponent.NameSpace
-			w.Writeln("  %s::PWrapper m_p%sWrapper;", subNameSpace, subNameSpace)
+			w.Writeln("  %s::Binding::PWrapper m_p%sWrapper;", subNameSpace, subNameSpace)
 		}
 		w.Writeln("")
 	}
@@ -1409,12 +1416,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			if class.ParentClass == "" {
 				cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
 			} else {
-				paramNameSpace, _, _ := decomposeParamClassName(class.ParentClass)
+				paramNameSpace, parentClassName, _ := decomposeParamClassName(class.ParentClass)
 				if len(paramNameSpace) == 0 {
 					cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
 				} else {
-					cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
-					w.Writeln(" // TODO: this is missing all \"intermediate\" functions")
+					cppParentClassName = paramNameSpace + "::Binding::" + cppClassPrefix + ClassIdentifier+ parentClassName
 				}
 			}
 			inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
