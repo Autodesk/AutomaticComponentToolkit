@@ -406,6 +406,9 @@ func buildDynamicCLoadTableFromSymbolLookupMethodCode(component ComponentDefinit
 	
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		if (class.IsAbstract()) {
+			continue
+		}
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			methodName := class.ClassName + "_" + method.MethodName

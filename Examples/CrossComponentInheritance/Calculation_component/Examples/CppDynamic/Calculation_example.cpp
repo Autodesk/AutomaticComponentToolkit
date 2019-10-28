@@ -22,7 +22,7 @@ int main()
 	try
 	{
 		std::string libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Calculation_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Calculation-library file here.
-		auto wrapper = Calculation::CWrapper::loadLibrary(libpath + "/calculation.dll"); // TODO: add correct suffix of the library
+		auto wrapper = Calculation::Binding::CWrapper::loadLibrary(libpath + "/calculation.dll"); // TODO: add correct suffix of the library
 		
 		Calculation_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
@@ -30,7 +30,7 @@ int main()
 		std::cout << std::endl;
 
 		libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Numbers_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Calculation-library file here.
-		auto numbersWrapper = Numbers::CWrapper::loadLibrary(libpath + "/numbers.dll"); // TODO: add correct suffix of the library
+		auto numbersWrapper = Numbers::Binding::CWrapper::loadLibrary(libpath + "/numbers.dll"); // TODO: add correct suffix of the library
 
 		auto pCalculator = wrapper->CreateCalculator();
 		{

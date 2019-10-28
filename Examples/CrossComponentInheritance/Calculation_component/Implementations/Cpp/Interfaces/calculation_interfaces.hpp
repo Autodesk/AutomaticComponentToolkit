@@ -94,11 +94,10 @@ public:
 	*/
 	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
 	/**
-	* IBase::GetLastError - Returns the last error recorded on this object
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
+	* IBase::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
 	*/
-	virtual bool GetLastError(std::string & sErrorMessage) = 0;
+	virtual Calculation_pvoid GetSymbolLookupMethod() = 0;
 
 	/**
 	* IBase::ReleaseInstance - Releases shared ownership of an Instance
@@ -109,6 +108,21 @@ public:
 	* IBase::AcquireInstance - Acquires shared ownership of an Instance
 	*/
 	virtual void AcquireInstance() = 0;
+
+	/**
+	* IBase::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	virtual void GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro) = 0;
+
+	/**
+	* IBase::GetLastError - Returns the last error recorded on this object
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	virtual bool GetLastError(std::string & sErrorMessage) = 0;
 
 };
 
@@ -160,14 +174,14 @@ public:
 	* ICalculator::EnlistVariable - Adds a Variable to the list of Variables this calculator works on
 	* @param[in] pVariable - The new variable in this calculator
 	*/
-	virtual void EnlistVariable(Numbers::PVariable pVariable) = 0;
+	virtual void EnlistVariable(Numbers::Binding::PVariable pVariable) = 0;
 
 	/**
 	* ICalculator::GetEnlistedVariable - Returns an instance of a enlisted variable
 	* @param[in] nIndex - The index of the variable to query
 	* @return The Index-th variable in this calculator
 	*/
-	virtual Numbers::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex) = 0;
+	virtual Numbers::Binding::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex) = 0;
 
 	/**
 	* ICalculator::ClearVariables - Clears all variables in enlisted in this calculator
@@ -178,13 +192,13 @@ public:
 	* ICalculator::Multiply - Multiplies all enlisted variables
 	* @return Variable that holds the product of all enlisted Variables
 	*/
-	virtual Numbers::PVariable Multiply() = 0;
+	virtual Numbers::Binding::PVariable Multiply() = 0;
 
 	/**
 	* ICalculator::Add - Sums all enlisted variables
 	* @return Variable that holds the sum of all enlisted Variables
 	*/
-	virtual Numbers::PVariable Add() = 0;
+	virtual Numbers::Binding::PVariable Add() = 0;
 
 };
 
@@ -197,7 +211,7 @@ typedef IBaseSharedPtr<ICalculator> PICalculator;
 class CWrapper {
 public:
 	// Injected Components
-	static Numbers::PWrapper sPNumbersWrapper;
+	static Numbers::Binding::PWrapper sPNumbersWrapper;
 
 	/**
 	* Icalculation::CreateCalculator - Creates a new Calculator instance
@@ -215,23 +229,10 @@ public:
 
 	/**
 	* Icalculation::GetLastError - Returns the last error recorded on this object
-	* @param[in] pInstance - Instance Handle
 	* @param[out] sErrorMessage - Message of the last error
 	* @return Is there a last error to query
 	*/
-	static bool GetLastError(IBase* pInstance, std::string & sErrorMessage);
-
-	/**
-	* Icalculation::ReleaseInstance - Releases shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void ReleaseInstance(IBase* pInstance);
-
-	/**
-	* Icalculation::AcquireInstance - Acquires shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void AcquireInstance(IBase* pInstance);
+	static bool GetLastError(std::string & sErrorMessage);
 
 };
 

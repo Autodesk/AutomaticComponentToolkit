@@ -19,25 +19,17 @@ Interface version: 1.0.0
 
 #include "calculation_calculator.hpp"
 
-
 using namespace Calculation;
 using namespace Calculation::Impl;
 
 // Injected Components
-Numbers::PWrapper CWrapper::sPNumbersWrapper;
+Numbers::Binding::PWrapper CWrapper::sPNumbersWrapper;
 
-
-// Initialize lookup function pointers 
-// TODO
-CalculationSymbolLookupType IBase::s_SymbolLookupMethodBase = nullptr;
-CalculationSymbolLookupType ICalculator::s_SymbolLookupMethodCalculator = nullptr;
 
 ICalculator * CWrapper::CreateCalculator()
 {
-	calculation_getsymbollookupmethod((void**)&(IBase::s_SymbolLookupMethodBase));
-	calculation_getsymbollookupmethod((void**)&(ICalculator::s_SymbolLookupMethodCalculator));
-
-	return new CCalculator();
+	PICalculator pImpl(new CCalculator());
+	return pImpl.getCoOwningPtr();
 }
 
 void CWrapper::GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro)
@@ -47,19 +39,9 @@ void CWrapper::GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMin
 	nMicro = CALCULATION_VERSION_MICRO;
 }
 
-bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
+bool CWrapper::GetLastError(std::string & sErrorMessage)
 {
-	return pInstance->GetLastError(sErrorMessage);
-}
-
-void CWrapper::ReleaseInstance(IBase* pInstance)
-{
-	IBase::ReleaseBaseClassInterface(pInstance);
-}
-
-void CWrapper::AcquireInstance(IBase* pInstance)
-{
-	IBase::AcquireBaseClassInterface(pInstance);
+	throw ECalculationInterfaceException(CALCULATION_ERROR_NOTIMPLEMENTED);
 }
 
 

@@ -35,7 +35,7 @@ namespace Impl {
 class CCalculator : public virtual ICalculator, public virtual CBase {
 private:
 
-	std::vector<Numbers::PVariable> m_pVariables;
+	std::vector<Numbers::Binding::PVariable> m_pVariables;
 	/**
 	* Put private members here.
 	*/
@@ -59,15 +59,15 @@ public:
 	* Public member functions to implement.
 	*/
 
-	void EnlistVariable(Numbers::PVariable pVariable) override;
+	void EnlistVariable(Numbers::Binding::PVariable pVariable) override;
 
-	Numbers::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex) override;
+	Numbers::Binding::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex) override;
 
 	void ClearVariables() override;
 
-	Numbers::PVariable Multiply() override;
+	Numbers::Binding::PVariable Multiply() override;
 
-	Numbers::PVariable Add() override;
+	Numbers::Binding::PVariable Add() override;
 
 };
 

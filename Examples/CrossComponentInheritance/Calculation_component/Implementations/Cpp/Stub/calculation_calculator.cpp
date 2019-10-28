@@ -20,12 +20,12 @@ using namespace Calculation::Impl;
  Class definition of CCalculator 
 **************************************************************************************************************************/
 
-void CCalculator::EnlistVariable(Numbers::PVariable pVariable)
+void CCalculator::EnlistVariable(Numbers::Binding::PVariable pVariable)
 {
 	m_pVariables.push_back(pVariable);
 }
 
-Numbers::PVariable CCalculator::GetEnlistedVariable(const Calculation_uint32 nIndex)
+Numbers::Binding::PVariable CCalculator::GetEnlistedVariable(const Calculation_uint32 nIndex)
 {
 	if (nIndex >= m_pVariables.size()) {
 		throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDPARAM);
@@ -38,7 +38,7 @@ void CCalculator::ClearVariables()
 	m_pVariables.clear();
 }
 
-Numbers::PVariable CCalculator::Multiply()
+Numbers::Binding::PVariable CCalculator::Multiply()
 {
 	auto pProd = CWrapper::sPNumbersWrapper->CreateVariable(1.0);
 	for (auto pVar : m_pVariables) {
@@ -47,7 +47,7 @@ Numbers::PVariable CCalculator::Multiply()
 	return pProd;
 }
 
-Numbers::PVariable CCalculator::Add()
+Numbers::Binding::PVariable CCalculator::Add()
 {
 	auto pProd = CWrapper::sPNumbersWrapper->CreateVariable(0.0);
 	for (auto pVar : m_pVariables) {

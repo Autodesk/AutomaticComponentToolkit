@@ -576,7 +576,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		stubfile.Writeln("// Injected Components")
 		for _, subComponent := range(component.ImportedComponentDefinitions) {
 			subNameSpace := subComponent.NameSpace
-			stubfile.Writeln("%s::PWrapper C%sWrapper::sP%sWrapper;", subNameSpace, ClassIdentifier, subNameSpace)
+			stubfile.Writeln("%s::Binding::PWrapper C%sWrapper::sP%sWrapper;", subNameSpace, ClassIdentifier, subNameSpace)
 		}
 		stubfile.Writeln("")
 	}
@@ -1022,7 +1022,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  if (%s::sP%sWrapper.get() != nullptr) {", wrapperName, theNameSpace))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("    throw E%sInterfaceException(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)) )
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  }"))
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  %s::sP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  %s::sP%sWrapper = %s::Binding::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
 		}
@@ -1725,7 +1725,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::P%s %s = std::make_shared<%s::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
 					baseClass, err := component.findBaseClass(param.ParamClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err

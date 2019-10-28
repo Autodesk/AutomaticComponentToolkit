@@ -33,6 +33,7 @@ Interface version: 1.0.0
 #include <map>
 
 namespace Calculation {
+namespace Binding {
 
 /*************************************************************************************************************************
  Forward Declaration of all classes
@@ -152,18 +153,18 @@ public:
 	
 	CWrapper(void* pSymbolLookupMethod)
 	{
-		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
-		CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
+		CheckError(initWrapperTable(&m_WrapperTable));
+		CheckError(loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
 		
-		CheckError(nullptr, checkBinaryVersion());
+		CheckError(checkBinaryVersion());
 	}
 	
 	CWrapper(const std::string &sFileName)
 	{
-		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
-		CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
+		CheckError(initWrapperTable(&m_WrapperTable));
+		CheckError(loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
 		
-		CheckError(nullptr, checkBinaryVersion());
+		CheckError(checkBinaryVersion());
 	}
 	
 	static PWrapper loadLibrary(const std::string &sFileName)
@@ -181,20 +182,18 @@ public:
 		releaseWrapperTable(&m_WrapperTable);
 	}
 	
-	inline void CheckError(CBase * pBaseClass, CalculationResult nResult);
+	inline void CheckError(CalculationResult nResult);
 
 	inline PCalculator CreateCalculator();
 	inline void GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro);
-	inline bool GetLastError(CBase * pInstance, std::string & sErrorMessage);
-	inline void ReleaseInstance(CBase * pInstance);
-	inline void AcquireInstance(CBase * pInstance);
+	inline bool GetLastError(std::string & sErrorMessage);
 	inline void InjectComponent(const std::string & sNameSpace, const Calculation_pvoid pSymbolAddressMethod);
 	inline Calculation_pvoid GetSymbolLookupMethod();
 
 private:
 	sCalculationDynamicWrapperTable m_WrapperTable;
 	// Injected Components
-	Numbers::PWrapper m_pNumbersWrapper;
+	Numbers::Binding::PWrapper m_pNumbersWrapper;
 
 	
 	CalculationResult checkBinaryVersion()
@@ -259,9 +258,11 @@ public:
 		if (MapFunctionTableBase().end() == iFunctionTable) {
 			auto iNewFunctionTable = MapFunctionTableBase().insert({pLookupFunction, sCalculationFunctionTableBase()});
 			m_pFunctionTableBase = &(iNewFunctionTable.first->second);
-			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getsymbollookupmethod", (void**)&(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getversion", (void**)&(m_pFunctionTableBase->m_Base_GetVersion));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
 		} else {
 			m_pFunctionTableBase = &(iFunctionTable->second);
 		}
@@ -286,9 +287,11 @@ public:
 	}
 	
 	friend class CWrapper;
-	inline bool GetLastError(std::string & sErrorMessage);
+	inline Calculation_pvoid GetSymbolLookupMethod();
 	inline void ReleaseInstance();
 	inline void AcquireInstance();
+	inline void GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro);
+	inline bool GetLastError(std::string & sErrorMessage);
 };
 
 	
@@ -315,9 +318,11 @@ public:
 		if (MapFunctionTableCalculator().end() == iFunctionTable) {
 			auto iNewFunctionTable = MapFunctionTableCalculator().insert({pLookupFunction, sCalculationFunctionTableCalculator()});
 			m_pFunctionTableCalculator = &(iNewFunctionTable.first->second);
-			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(m_pFunctionTableCalculator->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getsymbollookupmethod", (void**)&(m_pFunctionTableCalculator->m_Base_GetSymbolLookupMethod));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_base_releaseinstance", (void**)&(m_pFunctionTableCalculator->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_base_acquireinstance", (void**)&(m_pFunctionTableCalculator->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getversion", (void**)&(m_pFunctionTableCalculator->m_Base_GetVersion));
+			CWrapper::readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(m_pFunctionTableCalculator->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_calculator_enlistvariable", (void**)&(m_pFunctionTableCalculator->m_Calculator_EnlistVariable));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_calculator_getenlistedvariable", (void**)&(m_pFunctionTableCalculator->m_Calculator_GetEnlistedVariable));
 			CWrapper::readMethodInto(pLookupFunction, "calculation_calculator_clearvariables", (void**)&(m_pFunctionTableCalculator->m_Calculator_ClearVariables));
@@ -328,11 +333,11 @@ public:
 		}
 	}
 	
-	inline void EnlistVariable(Numbers::CVariable * pVariable);
-	inline Numbers::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex);
+	inline void EnlistVariable(Numbers::Binding::CVariable * pVariable);
+	inline Numbers::Binding::PVariable GetEnlistedVariable(const Calculation_uint32 nIndex);
 	inline void ClearVariables();
-	inline Numbers::PVariable Multiply();
-	inline Numbers::PVariable Add();
+	inline Numbers::Binding::PVariable Multiply();
+	inline Numbers::Binding::PVariable Add();
 };
 
 	
@@ -343,10 +348,10 @@ public:
 	inline PCalculator CWrapper::CreateCalculator()
 	{
 		CalculationExtendedHandle hInstance;
-		CheckError(nullptr,m_WrapperTable.m_CreateCalculator(&hInstance));
+		CheckError(m_WrapperTable.m_CreateCalculator(&hInstance));
 		
 		if (!hInstance.m_hHandle) {
-			CheckError(nullptr,CALCULATION_ERROR_INVALIDPARAM);
+			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
 		return std::make_shared<CCalculator>(hInstance);
 	}
@@ -359,56 +364,25 @@ public:
 	*/
 	inline void CWrapper::GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro)
 	{
-		CheckError(nullptr,m_WrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro));
+		CheckError(m_WrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro));
 	}
 	
 	/**
 	* CWrapper::GetLastError - Returns the last error recorded on this object
-	* @param[in] pInstance - Instance Handle
 	* @param[out] sErrorMessage - Message of the last error
 	* @return Is there a last error to query
 	*/
-	inline bool CWrapper::GetLastError(CBase * pInstance, std::string & sErrorMessage)
+	inline bool CWrapper::GetLastError(std::string & sErrorMessage)
 	{
-		CalculationExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
 		Calculation_uint32 bytesNeededErrorMessage = 0;
 		Calculation_uint32 bytesWrittenErrorMessage = 0;
 		bool resultHasError = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		CheckError(m_WrapperTable.m_GetLastError(0, &bytesNeededErrorMessage, nullptr, &resultHasError));
 		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		CheckError(m_WrapperTable.m_GetLastError(bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
 		
 		return resultHasError;
-	}
-	
-	/**
-	* CWrapper::ReleaseInstance - Releases shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	inline void CWrapper::ReleaseInstance(CBase * pInstance)
-	{
-		CalculationExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
-		CheckError(nullptr,m_WrapperTable.m_ReleaseInstance(hInstance));
-	}
-	
-	/**
-	* CWrapper::AcquireInstance - Acquires shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	inline void CWrapper::AcquireInstance(CBase * pInstance)
-	{
-		CalculationExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
-		CheckError(nullptr,m_WrapperTable.m_AcquireInstance(hInstance));
 	}
 	
 	/**
@@ -418,14 +392,14 @@ public:
 	*/
 	inline void CWrapper::InjectComponent(const std::string & sNameSpace, const Calculation_pvoid pSymbolAddressMethod)
 	{
-		CheckError(nullptr,m_WrapperTable.m_InjectComponent(sNameSpace.c_str(), pSymbolAddressMethod));
+		CheckError(m_WrapperTable.m_InjectComponent(sNameSpace.c_str(), pSymbolAddressMethod));
 		
 		bool bNameSpaceFound = false;
 		if (sNameSpace == "Numbers") {
 			if (m_pNumbersWrapper != nullptr) {
 				throw ECalculationException(CALCULATION_ERROR_COULDNOTLOADLIBRARY, "Library with namespace " + sNameSpace + " is already registered.");
 			}
-			m_pNumbersWrapper = Numbers::CWrapper::loadLibraryFromSymbolLookupMethod(pSymbolAddressMethod);
+			m_pNumbersWrapper = Numbers::Binding::CWrapper::loadLibraryFromSymbolLookupMethod(pSymbolAddressMethod);
 			bNameSpaceFound = true;
 		}
 		if (!bNameSpaceFound)
@@ -439,18 +413,16 @@ public:
 	inline Calculation_pvoid CWrapper::GetSymbolLookupMethod()
 	{
 		Calculation_pvoid resultSymbolLookupMethod = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetSymbolLookupMethod(&resultSymbolLookupMethod));
+		CheckError(m_WrapperTable.m_GetSymbolLookupMethod(&resultSymbolLookupMethod));
 		
 		return resultSymbolLookupMethod;
 	}
 	
-	inline void CWrapper::CheckError(CBase * pBaseClass, CalculationResult nResult)
+	inline void CCalculationWrapper::CheckError(CalculationResult nResult)
 	{
 		if (nResult != 0) {
 			std::string sErrorMessage;
-			if (pBaseClass != nullptr) {
-				GetLastError(pBaseClass, sErrorMessage);
-			}
+			GetLastError(sErrorMessage);
 			throw ECalculationException(nResult, sErrorMessage);
 		}
 	}
@@ -462,9 +434,11 @@ public:
 			return CALCULATION_ERROR_INVALIDPARAM;
 		
 		pWrapperTable->m_LibraryHandle = nullptr;
-		pWrapperTable->m_Base_GetLastError = nullptr;
+		pWrapperTable->m_Base_GetSymbolLookupMethod = nullptr;
 		pWrapperTable->m_Base_ReleaseInstance = nullptr;
 		pWrapperTable->m_Base_AcquireInstance = nullptr;
+		pWrapperTable->m_Base_GetVersion = nullptr;
+		pWrapperTable->m_Base_GetLastError = nullptr;
 		pWrapperTable->m_Calculator_EnlistVariable = nullptr;
 		pWrapperTable->m_Calculator_GetEnlistedVariable = nullptr;
 		pWrapperTable->m_Calculator_ClearVariables = nullptr;
@@ -473,8 +447,6 @@ public:
 		pWrapperTable->m_CreateCalculator = nullptr;
 		pWrapperTable->m_GetVersion = nullptr;
 		pWrapperTable->m_GetLastError = nullptr;
-		pWrapperTable->m_ReleaseInstance = nullptr;
-		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_InjectComponent = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
 		
@@ -526,12 +498,12 @@ public:
 		#endif // _WIN32
 		
 		#ifdef _WIN32
-		pWrapperTable->m_Base_GetLastError = (PCalculationBase_GetLastErrorPtr) GetProcAddress(hLibrary, "calculation_base_getlasterror");
+		pWrapperTable->m_Base_GetSymbolLookupMethod = (PCalculationBase_GetSymbolLookupMethodPtr) GetProcAddress(hLibrary, "calculation_base_getsymbollookupmethod");
 		#else // _WIN32
-		pWrapperTable->m_Base_GetLastError = (PCalculationBase_GetLastErrorPtr) dlsym(hLibrary, "calculation_base_getlasterror");
+		pWrapperTable->m_Base_GetSymbolLookupMethod = (PCalculationBase_GetSymbolLookupMethodPtr) dlsym(hLibrary, "calculation_base_getsymbollookupmethod");
 		dlerror();
 		#endif // _WIN32
-		if (pWrapperTable->m_Base_GetLastError == nullptr)
+		if (pWrapperTable->m_Base_GetSymbolLookupMethod == nullptr)
 			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -550,6 +522,24 @@ public:
 		dlerror();
 		#endif // _WIN32
 		if (pWrapperTable->m_Base_AcquireInstance == nullptr)
+			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_GetVersion = (PCalculationBase_GetVersionPtr) GetProcAddress(hLibrary, "calculation_base_getversion");
+		#else // _WIN32
+		pWrapperTable->m_Base_GetVersion = (PCalculationBase_GetVersionPtr) dlsym(hLibrary, "calculation_base_getversion");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_GetVersion == nullptr)
+			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_GetLastError = (PCalculationBase_GetLastErrorPtr) GetProcAddress(hLibrary, "calculation_base_getlasterror");
+		#else // _WIN32
+		pWrapperTable->m_Base_GetLastError = (PCalculationBase_GetLastErrorPtr) dlsym(hLibrary, "calculation_base_getlasterror");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_GetLastError == nullptr)
 			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -625,24 +615,6 @@ public:
 			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
-		pWrapperTable->m_ReleaseInstance = (PCalculationReleaseInstancePtr) GetProcAddress(hLibrary, "calculation_releaseinstance");
-		#else // _WIN32
-		pWrapperTable->m_ReleaseInstance = (PCalculationReleaseInstancePtr) dlsym(hLibrary, "calculation_releaseinstance");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_ReleaseInstance == nullptr)
-			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_AcquireInstance = (PCalculationAcquireInstancePtr) GetProcAddress(hLibrary, "calculation_acquireinstance");
-		#else // _WIN32
-		pWrapperTable->m_AcquireInstance = (PCalculationAcquireInstancePtr) dlsym(hLibrary, "calculation_acquireinstance");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_AcquireInstance == nullptr)
-			return CALCULATION_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
 		pWrapperTable->m_InjectComponent = (PCalculationInjectComponentPtr) GetProcAddress(hLibrary, "calculation_injectcomponent");
 		#else // _WIN32
 		pWrapperTable->m_InjectComponent = (PCalculationInjectComponentPtr) dlsym(hLibrary, "calculation_injectcomponent");
@@ -672,9 +644,11 @@ public:
 			return CALCULATION_ERROR_INVALIDPARAM;
 		
 		CalculationSymbolLookupType pLookupFunction = (CalculationSymbolLookupType)pSymbolLookupMethod;
-		readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
+		readMethodInto(pLookupFunction, "calculation_base_getsymbollookupmethod", (void**)&(pWrapperTable->m_Base_GetSymbolLookupMethod));
 		readMethodInto(pLookupFunction, "calculation_base_releaseinstance", (void**)&(pWrapperTable->m_Base_ReleaseInstance));
 		readMethodInto(pLookupFunction, "calculation_base_acquireinstance", (void**)&(pWrapperTable->m_Base_AcquireInstance));
+		readMethodInto(pLookupFunction, "calculation_base_getversion", (void**)&(pWrapperTable->m_Base_GetVersion));
+		readMethodInto(pLookupFunction, "calculation_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
 		readMethodInto(pLookupFunction, "calculation_calculator_enlistvariable", (void**)&(pWrapperTable->m_Calculator_EnlistVariable));
 		readMethodInto(pLookupFunction, "calculation_calculator_getenlistedvariable", (void**)&(pWrapperTable->m_Calculator_GetEnlistedVariable));
 		readMethodInto(pLookupFunction, "calculation_calculator_clearvariables", (void**)&(pWrapperTable->m_Calculator_ClearVariables));
@@ -683,8 +657,6 @@ public:
 		readMethodInto(pLookupFunction, "calculation_createcalculator", (void**)&(pWrapperTable->m_CreateCalculator));
 		readMethodInto(pLookupFunction, "calculation_getversion", (void**)&(pWrapperTable->m_GetVersion));
 		readMethodInto(pLookupFunction, "calculation_getlasterror", (void**)&(pWrapperTable->m_GetLastError));
-		readMethodInto(pLookupFunction, "calculation_releaseinstance", (void**)&(pWrapperTable->m_ReleaseInstance));
-		readMethodInto(pLookupFunction, "calculation_acquireinstance", (void**)&(pWrapperTable->m_AcquireInstance));
 		readMethodInto(pLookupFunction, "calculation_injectcomponent", (void**)&(pWrapperTable->m_InjectComponent));
 		readMethodInto(pLookupFunction, "calculation_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));
 		return CALCULATION_SUCCESS;
@@ -697,6 +669,45 @@ public:
 	 */
 	
 	/**
+	* CBase::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
+	*/
+	Calculation_pvoid CBase::GetSymbolLookupMethod()
+	{
+		Calculation_pvoid resultSymbolLookupMethod = 0;
+		CheckError(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &resultSymbolLookupMethod));
+		
+		return resultSymbolLookupMethod;
+	}
+	
+	/**
+	* CBase::ReleaseInstance - Releases shared ownership of an Instance
+	*/
+	void CBase::ReleaseInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}));
+	}
+	
+	/**
+	* CBase::AcquireInstance - Acquires shared ownership of an Instance
+	*/
+	void CBase::AcquireInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}));
+	}
+	
+	/**
+	* CBase::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	void CBase::GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro)
+	{
+		CheckError(m_pFunctionTableBase->m_Base_GetVersion({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &nMajor, &nMinor, &nMicro));
+	}
+	
+	/**
 	* CBase::GetLastError - Returns the last error recorded on this object
 	* @param[out] sErrorMessage - Message of the last error
 	* @return Is there a last error to query
@@ -706,28 +717,12 @@ public:
 		Calculation_uint32 bytesNeededErrorMessage = 0;
 		Calculation_uint32 bytesWrittenErrorMessage = 0;
 		bool resultHasError = 0;
-		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
 		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
-		CheckError(m_pFunctionTableBase->m_Base_GetLastError(m_pHandle, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		CheckError(m_pFunctionTableBase->m_Base_GetLastError({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
 		sErrorMessage = std::string(&bufferErrorMessage[0]);
 		
 		return resultHasError;
-	}
-	
-	/**
-	* CBase::ReleaseInstance - Releases shared ownership of an Instance
-	*/
-	void CBase::ReleaseInstance()
-	{
-		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance(m_pHandle));
-	}
-	
-	/**
-	* CBase::AcquireInstance - Acquires shared ownership of an Instance
-	*/
-	void CBase::AcquireInstance()
-	{
-		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance(m_pHandle));
 	}
 	
 	/**
@@ -738,13 +733,13 @@ public:
 	* CCalculator::EnlistVariable - Adds a Variable to the list of Variables this calculator works on
 	* @param[in] pVariable - The new variable in this calculator
 	*/
-	void CCalculator::EnlistVariable(Numbers::CVariable * pVariable)
+	void CCalculator::EnlistVariable(Numbers::Binding::CVariable * pVariable)
 	{
 		NumbersExtendedHandle hVariable;
 		if (pVariable != nullptr) {
 			hVariable = pVariable->GetHandle();
 		};
-		CheckError(m_pFunctionTableCalculator->m_Calculator_EnlistVariable(m_pHandle, hVariable));
+		CheckError(m_pFunctionTableCalculator->m_Calculator_EnlistVariable({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, hVariable));
 	}
 	
 	/**
@@ -752,15 +747,15 @@ public:
 	* @param[in] nIndex - The index of the variable to query
 	* @return The Index-th variable in this calculator
 	*/
-	Numbers::PVariable CCalculator::GetEnlistedVariable(const Calculation_uint32 nIndex)
+	Numbers::Binding::PVariable CCalculator::GetEnlistedVariable(const Calculation_uint32 nIndex)
 	{
 		NumbersExtendedHandle hVariable;
-		CheckError(m_pFunctionTableCalculator->m_Calculator_GetEnlistedVariable(m_pHandle, nIndex, &hVariable));
+		CheckError(m_pFunctionTableCalculator->m_Calculator_GetEnlistedVariable({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, nIndex, &hVariable));
 		
 		if (!hVariable.m_hHandle) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<Numbers::CVariable>(hVariable);
+		return std::make_shared<Numbers::Binding::CVariable>(hVariable);
 	}
 	
 	/**
@@ -768,39 +763,40 @@ public:
 	*/
 	void CCalculator::ClearVariables()
 	{
-		CheckError(m_pFunctionTableCalculator->m_Calculator_ClearVariables(m_pHandle));
+		CheckError(m_pFunctionTableCalculator->m_Calculator_ClearVariables({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}));
 	}
 	
 	/**
 	* CCalculator::Multiply - Multiplies all enlisted variables
 	* @return Variable that holds the product of all enlisted Variables
 	*/
-	Numbers::PVariable CCalculator::Multiply()
+	Numbers::Binding::PVariable CCalculator::Multiply()
 	{
 		NumbersExtendedHandle hInstance;
-		CheckError(m_pFunctionTableCalculator->m_Calculator_Multiply(m_pHandle, &hInstance));
+		CheckError(m_pFunctionTableCalculator->m_Calculator_Multiply({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &hInstance));
 		
 		if (!hInstance.m_hHandle) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<Numbers::CVariable>(hInstance);
+		return std::make_shared<Numbers::Binding::CVariable>(hInstance);
 	}
 	
 	/**
 	* CCalculator::Add - Sums all enlisted variables
 	* @return Variable that holds the sum of all enlisted Variables
 	*/
-	Numbers::PVariable CCalculator::Add()
+	Numbers::Binding::PVariable CCalculator::Add()
 	{
 		NumbersExtendedHandle hInstance;
-		CheckError(m_pFunctionTableCalculator->m_Calculator_Add(m_pHandle, &hInstance));
+		CheckError(m_pFunctionTableCalculator->m_Calculator_Add({m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}, &hInstance));
 		
 		if (!hInstance.m_hHandle) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<Numbers::CVariable>(hInstance);
+		return std::make_shared<Numbers::Binding::CVariable>(hInstance);
 	}
 
+} // namespace Binding
 } // namespace Calculation
 
 #endif // __CALCULATION_CPPHEADER_DYNAMIC_CPP

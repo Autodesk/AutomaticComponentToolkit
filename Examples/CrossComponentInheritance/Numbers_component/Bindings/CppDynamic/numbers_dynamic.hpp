@@ -630,8 +630,6 @@ public:
 		readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(pWrapperTable->m_Base_AcquireInstance));
 		readMethodInto(pLookupFunction, "numbers_base_getversion", (void**)&(pWrapperTable->m_Base_GetVersion));
 		readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
-		readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(pWrapperTable->m_Variable_GetValue));
-		readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(pWrapperTable->m_Variable_SetValue));
 		readMethodInto(pLookupFunction, "numbers_createvariable", (void**)&(pWrapperTable->m_CreateVariable));
 		readMethodInto(pLookupFunction, "numbers_createvariableimpl", (void**)&(pWrapperTable->m_CreateVariableImpl));
 		readMethodInto(pLookupFunction, "numbers_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));

@@ -19,6 +19,7 @@ Interface version: 1.0.0
 #include "calculation_types.hpp"
 
 #include "numbers_types.hpp"
+#include "numbers_dynamic.hpp"
 
 
 /*************************************************************************************************************************
@@ -26,16 +27,13 @@ Interface version: 1.0.0
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-typedef CalculationResult (*PCalculationBase_GetLastErrorPtr) (Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+typedef CalculationResult (*PCalculationBase_GetSymbolLookupMethodPtr) (Calculation_Base pBase, Calculation_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -52,6 +50,29 @@ typedef CalculationResult (*PCalculationBase_ReleaseInstancePtr) (Calculation_Ba
 * @return error code or 0 (success)
 */
 typedef CalculationResult (*PCalculationBase_AcquireInstancePtr) (Calculation_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+typedef CalculationResult (*PCalculationBase_GetVersionPtr) (Calculation_Base pBase, Calculation_uint32 * pMajor, Calculation_uint32 * pMinor, Calculation_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef CalculationResult (*PCalculationBase_GetLastErrorPtr) (Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for Calculator
@@ -127,30 +148,13 @@ typedef CalculationResult (*PCalculationGetVersionPtr) (Calculation_uint32 * pMa
 /**
 * Returns the last error recorded on this object
 *
-* @param[in] pInstance - Instance Handle
 * @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
 * @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
 * @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
 * @param[out] pHasError - Is there a last error to query
 * @return error code or 0 (success)
 */
-typedef CalculationResult (*PCalculationGetLastErrorPtr) (Calculation_Base pInstance, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef CalculationResult (*PCalculationReleaseInstancePtr) (Calculation_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef CalculationResult (*PCalculationAcquireInstancePtr) (Calculation_Base pInstance);
+typedef CalculationResult (*PCalculationGetLastErrorPtr) (const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
 * Injects an imported component for usage within this component
@@ -175,9 +179,11 @@ typedef CalculationResult (*PCalculationGetSymbolLookupMethodPtr) (Calculation_p
 
 typedef struct {
 	void * m_LibraryHandle;
-	PCalculationBase_GetLastErrorPtr m_Base_GetLastError;
+	PCalculationBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PCalculationBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PCalculationBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PCalculationBase_GetVersionPtr m_Base_GetVersion;
+	PCalculationBase_GetLastErrorPtr m_Base_GetLastError;
 	PCalculationCalculator_EnlistVariablePtr m_Calculator_EnlistVariable;
 	PCalculationCalculator_GetEnlistedVariablePtr m_Calculator_GetEnlistedVariable;
 	PCalculationCalculator_ClearVariablesPtr m_Calculator_ClearVariables;
@@ -186,16 +192,16 @@ typedef struct {
 	PCalculationCreateCalculatorPtr m_CreateCalculator;
 	PCalculationGetVersionPtr m_GetVersion;
 	PCalculationGetLastErrorPtr m_GetLastError;
-	PCalculationReleaseInstancePtr m_ReleaseInstance;
-	PCalculationAcquireInstancePtr m_AcquireInstance;
 	PCalculationInjectComponentPtr m_InjectComponent;
 	PCalculationGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
 } sCalculationDynamicWrapperTable;
 
 typedef struct {
-	PCalculationBase_GetLastErrorPtr m_Base_GetLastError;
+	PCalculationBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PCalculationBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PCalculationBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PCalculationBase_GetVersionPtr m_Base_GetVersion;
+	PCalculationBase_GetLastErrorPtr m_Base_GetLastError;
 } sCalculationFunctionTableBase;
 
 typedef struct : sCalculationFunctionTableBase {

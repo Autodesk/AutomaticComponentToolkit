@@ -21,6 +21,7 @@ Interface version: 1.0.0
 
 using namespace Calculation::Impl;
 
+
 CalculationResult handleCalculationException(IBase * pIBaseClass, ECalculationInterfaceException & Exception)
 {
 	CalculationResult errorCode = Exception.getErrorCode();
@@ -56,31 +57,19 @@ CalculationResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************/
-CalculationResult calculation_base_getlasterror(Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+CalculationResult calculation_base_getsymbollookupmethod(Calculation_Base pBase, Calculation_pvoid * pSymbolLookupMethod)
 {
 	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
 
 	try {
-		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+		if (pSymbolLookupMethod == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		if (pHasError == nullptr)
-			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		std::string sErrorMessage("");
 		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
 		if (!pIBase)
 			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
 		
-		*pHasError = pIBase->GetLastError(sErrorMessage);
+		*pSymbolLookupMethod = pIBase->GetSymbolLookupMethod();
 
-		if (pErrorMessageNeededChars)
-			*pErrorMessageNeededChars = (Calculation_uint32) (sErrorMessage.size()+1);
-		if (pErrorMessageBuffer) {
-			if (sErrorMessage.size() >= nErrorMessageBufferSize)
-				throw ECalculationInterfaceException (CALCULATION_ERROR_BUFFERTOOSMALL);
-			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
-				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
-			pErrorMessageBuffer[sErrorMessage.size()] = 0;
-		}
 		return CALCULATION_SUCCESS;
 	}
 	catch (ECalculationInterfaceException & Exception) {
@@ -142,6 +131,74 @@ CalculationResult calculation_base_acquireinstance(Calculation_Base pBase)
 	}
 }
 
+CalculationResult calculation_base_getversion(Calculation_Base pBase, Calculation_uint32 * pMajor, Calculation_uint32 * pMinor, Calculation_uint32 * pMicro)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if (!pMajor)
+			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
+		if (!pMinor)
+			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
+		if (!pMicro)
+			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
+		
+		pIBase->GetVersion(*pMajor, *pMinor, *pMicro);
+
+		return CALCULATION_SUCCESS;
+	}
+	catch (ECalculationInterfaceException & Exception) {
+		return handleCalculationException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+CalculationResult calculation_base_getlasterror(Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
+		if (pHasError == nullptr)
+			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
+		std::string sErrorMessage("");
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
+		
+		*pHasError = pIBase->GetLastError(sErrorMessage);
+
+		if (pErrorMessageNeededChars)
+			*pErrorMessageNeededChars = (Calculation_uint32) (sErrorMessage.size()+1);
+		if (pErrorMessageBuffer) {
+			if (sErrorMessage.size() >= nErrorMessageBufferSize)
+				throw ECalculationInterfaceException (CALCULATION_ERROR_BUFFERTOOSMALL);
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
+		}
+		return CALCULATION_SUCCESS;
+	}
+	catch (ECalculationInterfaceException & Exception) {
+		return handleCalculationException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for Calculator
@@ -151,7 +208,7 @@ CalculationResult calculation_calculator_enlistvariable(Calculation_Calculator p
 	IBase* pIBaseClass = (IBase *)pCalculator.m_hHandle;
 
 	try {
-		Numbers::PVariable pIVariable = std::make_shared<Numbers::CVariable>(pVariable);
+		Numbers::Binding::PVariable pIVariable = std::make_shared<Numbers::Binding::CVariable>(pVariable);
 		pIVariable->AcquireInstance();
 		if (!pIVariable)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDCAST);
@@ -182,7 +239,7 @@ CalculationResult calculation_calculator_getenlistedvariable(Calculation_Calcula
 	try {
 		if (pVariable == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		Numbers::PVariable pNumbersVariable;
+		Numbers::Binding::PVariable pNumbersVariable;
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
@@ -236,7 +293,7 @@ CalculationResult calculation_calculator_multiply(Calculation_Calculator pCalcul
 	try {
 		if (pInstance == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		Numbers::PVariable pNumbersInstance;
+		Numbers::Binding::PVariable pNumbersInstance;
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
@@ -266,7 +323,7 @@ CalculationResult calculation_calculator_add(Calculation_Calculator pCalculator,
 	try {
 		if (pInstance == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		Numbers::PVariable pNumbersInstance;
+		Numbers::Binding::PVariable pNumbersInstance;
 		ICalculator* pICalculator = dynamic_cast<ICalculator*>(pIBaseClass);
 		if (!pICalculator)
 			throw ECalculationInterfaceException(CALCULATION_ERROR_INVALIDCAST);
@@ -300,9 +357,11 @@ CalculationResult _calculation_getprocaddress_internal(const char * pProcName, v
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
+		sProcAddressMap["calculation_base_getsymbollookupmethod"] = (void*)&calculation_base_getsymbollookupmethod;
 		sProcAddressMap["calculation_base_releaseinstance"] = (void*)&calculation_base_releaseinstance;
 		sProcAddressMap["calculation_base_acquireinstance"] = (void*)&calculation_base_acquireinstance;
+		sProcAddressMap["calculation_base_getversion"] = (void*)&calculation_base_getversion;
+		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
 		sProcAddressMap["calculation_calculator_enlistvariable"] = (void*)&calculation_calculator_enlistvariable;
 		sProcAddressMap["calculation_calculator_getenlistedvariable"] = (void*)&calculation_calculator_getenlistedvariable;
 		sProcAddressMap["calculation_calculator_clearvariables"] = (void*)&calculation_calculator_clearvariables;
@@ -311,8 +370,6 @@ CalculationResult _calculation_getprocaddress_internal(const char * pProcName, v
 		sProcAddressMap["calculation_createcalculator"] = (void*)&calculation_createcalculator;
 		sProcAddressMap["calculation_getversion"] = (void*)&calculation_getversion;
 		sProcAddressMap["calculation_getlasterror"] = (void*)&calculation_getlasterror;
-		sProcAddressMap["calculation_releaseinstance"] = (void*)&calculation_releaseinstance;
-		sProcAddressMap["calculation_acquireinstance"] = (void*)&calculation_acquireinstance;
 		sProcAddressMap["calculation_injectcomponent"] = (void*)&calculation_injectcomponent;
 		sProcAddressMap["calculation_getsymbollookupmethod"] = (void*)&calculation_getsymbollookupmethod;
 		
@@ -345,9 +402,11 @@ CalculationResult _calculation_getprocaddress_base(const char * pProcName, void 
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
+		sProcAddressMap["calculation_base_getsymbollookupmethod"] = (void*)&calculation_base_getsymbollookupmethod;
 		sProcAddressMap["calculation_base_releaseinstance"] = (void*)&calculation_base_releaseinstance;
 		sProcAddressMap["calculation_base_acquireinstance"] = (void*)&calculation_base_acquireinstance;
+		sProcAddressMap["calculation_base_getversion"] = (void*)&calculation_base_getversion;
+		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -378,9 +437,11 @@ CalculationResult _calculation_getprocaddress_calculator(const char * pProcName,
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
+		sProcAddressMap["calculation_base_getsymbollookupmethod"] = (void*)&calculation_base_getsymbollookupmethod;
 		sProcAddressMap["calculation_base_releaseinstance"] = (void*)&calculation_base_releaseinstance;
 		sProcAddressMap["calculation_base_acquireinstance"] = (void*)&calculation_base_acquireinstance;
+		sProcAddressMap["calculation_base_getversion"] = (void*)&calculation_base_getversion;
+		sProcAddressMap["calculation_base_getlasterror"] = (void*)&calculation_base_getlasterror;
 		sProcAddressMap["calculation_calculator_enlistvariable"] = (void*)&calculation_calculator_enlistvariable;
 		sProcAddressMap["calculation_calculator_getenlistedvariable"] = (void*)&calculation_calculator_getenlistedvariable;
 		sProcAddressMap["calculation_calculator_clearvariables"] = (void*)&calculation_calculator_clearvariables;
@@ -406,6 +467,15 @@ CalculationResult _calculation_getprocaddress_calculator(const char * pProcName,
 	}
 	
 }
+
+
+
+/*************************************************************************************************************************
+ Initialize lookup function pointers
+**************************************************************************************************************************/
+CalculationSymbolLookupType IBase::s_SymbolLookupMethodBase = &_calculation_getprocaddress_base;
+CalculationSymbolLookupType ICalculator::s_SymbolLookupMethodCalculator = &_calculation_getprocaddress_calculator;
+
 
 
 /*************************************************************************************************************************
@@ -462,7 +532,7 @@ CalculationResult calculation_getversion(Calculation_uint32 * pMajor, Calculatio
 	}
 }
 
-CalculationResult calculation_getlasterror(Calculation_Base pInstance, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+CalculationResult calculation_getlasterror(const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -471,13 +541,8 @@ CalculationResult calculation_getlasterror(Calculation_Base pInstance, const Cal
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
 		if (pHasError == nullptr)
 			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDPARAM);
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDCAST);
-		
 		std::string sErrorMessage("");
-		*pHasError = CWrapper::GetLastError(pIInstance, sErrorMessage);
+		*pHasError = CWrapper::GetLastError(sErrorMessage);
 
 		if (pErrorMessageNeededChars)
 			*pErrorMessageNeededChars = (Calculation_uint32) (sErrorMessage.size()+1);
@@ -488,56 +553,6 @@ CalculationResult calculation_getlasterror(Calculation_Base pInstance, const Cal
 				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
 			pErrorMessageBuffer[sErrorMessage.size()] = 0;
 		}
-		return CALCULATION_SUCCESS;
-	}
-	catch (ECalculationInterfaceException & Exception) {
-		return handleCalculationException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-CalculationResult calculation_releaseinstance(Calculation_Base pInstance)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDCAST);
-		
-		CWrapper::ReleaseInstance(pIInstance);
-
-		return CALCULATION_SUCCESS;
-	}
-	catch (ECalculationInterfaceException & Exception) {
-		return handleCalculationException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-CalculationResult calculation_acquireinstance(Calculation_Base pInstance)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ECalculationInterfaceException (CALCULATION_ERROR_INVALIDCAST);
-		
-		CWrapper::AcquireInstance(pIInstance);
-
 		return CALCULATION_SUCCESS;
 	}
 	catch (ECalculationInterfaceException & Exception) {
@@ -566,7 +581,7 @@ CalculationResult calculation_injectcomponent(const char * pNameSpace, Calculati
 			if (CWrapper::sPNumbersWrapper.get() != nullptr) {
 				throw ECalculationInterfaceException(CALCULATION_ERROR_COULDNOTLOADLIBRARY);
 			}
-			CWrapper::sPNumbersWrapper = Numbers::CWrapper::loadLibraryFromSymbolLookupMethod(pSymbolAddressMethod);
+			CWrapper::sPNumbersWrapper = Numbers::Binding::CWrapper::loadLibraryFromSymbolLookupMethod(pSymbolAddressMethod);
 			bNameSpaceFound = true;
 		}
 		

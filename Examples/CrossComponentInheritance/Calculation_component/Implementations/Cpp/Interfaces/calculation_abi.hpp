@@ -37,16 +37,13 @@ extern "C" {
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-CALCULATION_DECLSPEC CalculationResult calculation_base_getlasterror(Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+CALCULATION_DECLSPEC CalculationResult calculation_base_getsymbollookupmethod(Calculation_Base pBase, Calculation_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -63,6 +60,29 @@ CALCULATION_DECLSPEC CalculationResult calculation_base_releaseinstance(Calculat
 * @return error code or 0 (success)
 */
 CALCULATION_DECLSPEC CalculationResult calculation_base_acquireinstance(Calculation_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+CALCULATION_DECLSPEC CalculationResult calculation_base_getversion(Calculation_Base pBase, Calculation_uint32 * pMajor, Calculation_uint32 * pMinor, Calculation_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+CALCULATION_DECLSPEC CalculationResult calculation_base_getlasterror(Calculation_Base pBase, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for Calculator
@@ -138,30 +158,13 @@ CALCULATION_DECLSPEC CalculationResult calculation_getversion(Calculation_uint32
 /**
 * Returns the last error recorded on this object
 *
-* @param[in] pInstance - Instance Handle
 * @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
 * @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
 * @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
 * @param[out] pHasError - Is there a last error to query
 * @return error code or 0 (success)
 */
-CALCULATION_DECLSPEC CalculationResult calculation_getlasterror(Calculation_Base pInstance, const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-CALCULATION_DECLSPEC CalculationResult calculation_releaseinstance(Calculation_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-CALCULATION_DECLSPEC CalculationResult calculation_acquireinstance(Calculation_Base pInstance);
+CALCULATION_DECLSPEC CalculationResult calculation_getlasterror(const Calculation_uint32 nErrorMessageBufferSize, Calculation_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
 * Injects an imported component for usage within this component

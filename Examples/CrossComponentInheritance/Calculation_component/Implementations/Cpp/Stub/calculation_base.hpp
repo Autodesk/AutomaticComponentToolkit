@@ -55,11 +55,15 @@ public:
 
 	void RegisterErrorMessage(const std::string & sErrorMessage) override;
 
-	bool GetLastError(std::string & sErrorMessage) override;
+	Calculation_pvoid GetSymbolLookupMethod() override;
 
 	void ReleaseInstance() override;
 
 	void AcquireInstance() override;
+
+	void GetVersion(Calculation_uint32 & nMajor, Calculation_uint32 & nMinor, Calculation_uint32 & nMicro) override;
+
+	bool GetLastError(std::string & sErrorMessage) override;
 
 
 	/**
