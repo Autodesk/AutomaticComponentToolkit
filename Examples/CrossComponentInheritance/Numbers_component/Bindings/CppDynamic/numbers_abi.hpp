@@ -96,6 +96,15 @@ NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, con
 **************************************************************************************************************************/
 
 /**
+* Checks whether a variable is an Instance of VariableImpl
+*
+* @param[in] pInstance - Checks 
+* @param[out] pIsImpl - Is this variable an Instance of VariableImpl?
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_investigatevariable(Numbers_Variable pInstance, bool * pIsImpl);
+
+/**
 * Creates a new Variable instance
 *
 * @param[in] dInitialValue - Initial value of the new Variable

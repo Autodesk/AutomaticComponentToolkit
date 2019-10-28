@@ -273,6 +273,7 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
 		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
 		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_investigatevariable"] = (void*)&numbers_investigatevariable;
 		sProcAddressMap["numbers_createvariable"] = (void*)&numbers_createvariable;
 		sProcAddressMap["numbers_createvariableimpl"] = (void*)&numbers_createvariableimpl;
 		sProcAddressMap["numbers_getsymbollookupmethod"] = (void*)&numbers_getsymbollookupmethod;
@@ -386,6 +387,33 @@ NumbersSymbolLookupType IVariableImpl::s_SymbolLookupMethodVariableImpl = &_numb
 /*************************************************************************************************************************
  Global functions implementation
 **************************************************************************************************************************/
+NumbersResult numbers_investigatevariable(Numbers_Variable pInstance, bool * pIsImpl)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		if (pIsImpl == nullptr)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		Numbers::Binding::PVariable pIInstance = std::make_shared<Numbers::Binding::CVariable>(pInstance);
+		pIInstance->AcquireInstance();
+		if (!pIInstance)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDCAST);
+		
+		*pIsImpl = CWrapper::InvestigateVariable(pIInstance);
+
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Variable * pInstance)
 {
 	IBase* pIBaseClass = nullptr;

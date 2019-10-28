@@ -1492,13 +1492,21 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 
 			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
-				if len(paramNameSpaceCPP) > 0 {
-					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+				_, class, _ := component.getClassByName(param.ParamClass)
+				if (class.IsAbstract()) {
+					usedNameSpace := NameSpace
+					if len(paramNameSpaceCPP) > 0 {
+						usedNameSpace = paramNameSpaceCPP
+					}
+					parameters = parameters + fmt.Sprintf("%s::Binding::P%s%s p%s", usedNameSpace, ClassIdentifier, paramClassNameCPP, param.ParamName)
 				} else {
-					parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+					if len(paramNameSpaceCPP) > 0 {
+						// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+						parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+					} else {
+						parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+					}
 				}
-
 			case "basicarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%sBuffer - %s\n", param.ParamName, param.ParamDescription)
@@ -1723,18 +1731,34 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
-				if len(paramNameSpace) > 0 {
+				_, class, _ := component.getClassByName(param.ParamClass)
+				if (class.IsAbstract()) {
+					usedNameSpace := NameSpace
+					if len(paramNameSpace) > 0 {
+						usedNameSpace = paramNameSpace
+					}
 					paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", usedNameSpace, paramClassName, paramNameSpaceVar, usedNameSpace, paramClassName, param.ParamName))
 					baseClass, err := component.findBaseClass(param.ParamClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err
 					}
 					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s();", paramNameSpaceVar, baseClass.AcquireMethod))
 				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.m_hHandle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
-					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+					if len(paramNameSpace) > 0 {
+						paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
+						preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
+						baseClass, err := component.findBaseClass(param.ParamClass)
+						if (err != nil) {
+							return checkInputCode, preCallCode, postCallCode, "", "", err
+						}
+						preCallCode = append(preCallCode, fmt.Sprintf("%s->%s();", paramNameSpaceVar, baseClass.AcquireMethod))
+					} else {
+						preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.m_hHandle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
+						preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+					}
 				}
+				
 				
 				if (param.ParamType == "class") {
 					preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))

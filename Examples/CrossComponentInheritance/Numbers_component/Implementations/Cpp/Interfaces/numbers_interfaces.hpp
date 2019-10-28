@@ -195,6 +195,13 @@ class CWrapper {
 public:
 	static Numbers::Binding::PWrapper sPNumbersWrapper;
 	/**
+	* Inumbers::InvestigateVariable - Checks whether a variable is an Instance of VariableImpl
+	* @param[in] pInstance - Checks 
+	* @return Is this variable an Instance of VariableImpl?
+	*/
+	static bool InvestigateVariable(Numbers::Binding::PVariable pInstance);
+
+	/**
 	* Inumbers::CreateVariable - Creates a new Variable instance
 	* @param[in] dInitialValue - Initial value of the new Variable
 	* @return New Variable instance

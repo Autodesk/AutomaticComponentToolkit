@@ -103,6 +103,15 @@ typedef NumbersResult (*PNumbersVariable_SetValuePtr) (Numbers_Variable pVariabl
 **************************************************************************************************************************/
 
 /**
+* Checks whether a variable is an Instance of VariableImpl
+*
+* @param[in] pInstance - Checks 
+* @param[out] pIsImpl - Is this variable an Instance of VariableImpl?
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersInvestigateVariablePtr) (Numbers_Variable pInstance, bool * pIsImpl);
+
+/**
 * Creates a new Variable instance
 *
 * @param[in] dInitialValue - Initial value of the new Variable
@@ -162,6 +171,7 @@ typedef struct {
 	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
 	PNumbersVariable_GetValuePtr m_Variable_GetValue;
 	PNumbersVariable_SetValuePtr m_Variable_SetValue;
+	PNumbersInvestigateVariablePtr m_InvestigateVariable;
 	PNumbersCreateVariablePtr m_CreateVariable;
 	PNumbersCreateVariableImplPtr m_CreateVariableImpl;
 	PNumbersGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;

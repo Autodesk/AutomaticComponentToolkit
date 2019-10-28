@@ -25,6 +25,11 @@ using namespace Numbers::Impl;
 // TODO: self injected header
 Numbers::Binding::PWrapper CWrapper::sPNumbersWrapper;
 
+bool CWrapper::InvestigateVariable(Numbers::Binding::PVariable pInstance)
+{
+	return false;
+}
+
 Numbers::Binding::PVariable CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
 	PIVariableImpl pImpl(new CVariableImpl());

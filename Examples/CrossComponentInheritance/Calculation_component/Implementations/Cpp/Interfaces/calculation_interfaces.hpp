@@ -174,7 +174,7 @@ public:
 	* ICalculator::EnlistVariable - Adds a Variable to the list of Variables this calculator works on
 	* @param[in] pVariable - The new variable in this calculator
 	*/
-	virtual void EnlistVariable(Numbers::Binding::PVariable pVariable) = 0;
+	virtual void EnlistVariable(Numbers::Binding::::Binding::PVariable pVariable) = 0;
 
 	/**
 	* ICalculator::GetEnlistedVariable - Returns an instance of a enlisted variable

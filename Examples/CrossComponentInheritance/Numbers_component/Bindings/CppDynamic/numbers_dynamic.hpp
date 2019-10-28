@@ -187,6 +187,7 @@ public:
 	
 	inline void CheckError(NumbersResult nResult);
 
+	inline bool InvestigateVariable(CVariable * pInstance);
 	inline PVariable CreateVariable(const Numbers_double dInitialValue);
 	inline PVariableImpl CreateVariableImpl(const Numbers_double dInitialValue);
 	inline Numbers_pvoid GetSymbolLookupMethod();
@@ -375,6 +376,23 @@ public:
 
 	
 	/**
+	* CWrapper::InvestigateVariable - Checks whether a variable is an Instance of VariableImpl
+	* @param[in] pInstance - Checks 
+	* @return Is this variable an Instance of VariableImpl?
+	*/
+	inline bool CWrapper::InvestigateVariable(CVariable * pInstance)
+	{
+		NumbersExtendedHandle hInstance;
+		if (pInstance != nullptr) {
+			hInstance = pInstance->GetHandle();
+		};
+		bool resultIsImpl = 0;
+		CheckError(m_WrapperTable.m_InvestigateVariable(hInstance, &resultIsImpl));
+		
+		return resultIsImpl;
+	}
+	
+	/**
 	* CWrapper::CreateVariable - Creates a new Variable instance
 	* @param[in] dInitialValue - Initial value of the new Variable
 	* @return New Variable instance
@@ -470,6 +488,7 @@ public:
 		pWrapperTable->m_Base_GetLastError = nullptr;
 		pWrapperTable->m_Variable_GetValue = nullptr;
 		pWrapperTable->m_Variable_SetValue = nullptr;
+		pWrapperTable->m_InvestigateVariable = nullptr;
 		pWrapperTable->m_CreateVariable = nullptr;
 		pWrapperTable->m_CreateVariableImpl = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
@@ -569,6 +588,15 @@ public:
 			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
+		pWrapperTable->m_InvestigateVariable = (PNumbersInvestigateVariablePtr) GetProcAddress(hLibrary, "numbers_investigatevariable");
+		#else // _WIN32
+		pWrapperTable->m_InvestigateVariable = (PNumbersInvestigateVariablePtr) dlsym(hLibrary, "numbers_investigatevariable");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_InvestigateVariable == nullptr)
+			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
 		pWrapperTable->m_CreateVariable = (PNumbersCreateVariablePtr) GetProcAddress(hLibrary, "numbers_createvariable");
 		#else // _WIN32
 		pWrapperTable->m_CreateVariable = (PNumbersCreateVariablePtr) dlsym(hLibrary, "numbers_createvariable");
@@ -630,6 +658,7 @@ public:
 		readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(pWrapperTable->m_Base_AcquireInstance));
 		readMethodInto(pLookupFunction, "numbers_base_getversion", (void**)&(pWrapperTable->m_Base_GetVersion));
 		readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
+		readMethodInto(pLookupFunction, "numbers_investigatevariable", (void**)&(pWrapperTable->m_InvestigateVariable));
 		readMethodInto(pLookupFunction, "numbers_createvariable", (void**)&(pWrapperTable->m_CreateVariable));
 		readMethodInto(pLookupFunction, "numbers_createvariableimpl", (void**)&(pWrapperTable->m_CreateVariableImpl));
 		readMethodInto(pLookupFunction, "numbers_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));
