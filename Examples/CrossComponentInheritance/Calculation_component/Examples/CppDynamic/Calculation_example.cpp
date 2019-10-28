@@ -15,6 +15,7 @@ Interface version: 1.0.0
 
 #include <iostream>
 #include "calculation_dynamic.hpp"
+#include "special_dynamic.hpp"
 
 
 int main()
@@ -31,6 +32,10 @@ int main()
 
 		libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Numbers_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Calculation-library file here.
 		auto numbersWrapper = Numbers::Binding::CWrapper::loadLibrary(libpath + "/numbers.dll"); // TODO: add correct suffix of the library
+
+
+		libpath = ("D:/PUBLIC/AutomaticComponentToolkit_work/Examples/CrossComponentInheritance/Special_component/Implementations/Cpp/build/Debug"); // TODO: put the location of the Calculation-library file here.
+		auto specialWrapper = Special::Binding::CWrapper::loadLibrary(libpath + "/special.dll"); // TODO: add correct suffix of the library
 
 		auto pCalculator = wrapper->CreateCalculator();
 		{
@@ -49,6 +54,12 @@ int main()
 				auto pVariable = pCalculator->Multiply();
 				std::cout << "Product = " << pVariable->GetValue() << std::endl;
 			}
+
+			auto pSpecialVariable = specialWrapper->CreateSpecialVariable(2.4);
+
+			pCalculator->EnlistVariable(pSpecialVariable.get());
+			auto pVariable = pCalculator->Multiply();
+			std::cout << "Product Modified = " << pVariable->GetValue() << std::endl;
 		}
 		auto pEnlistedVariable = pCalculator->GetEnlistedVariable(0);
 		pEnlistedVariable->SetValue(20);
