@@ -1324,6 +1324,17 @@ func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass
 	return class.ClassName == component.Global.BaseClassName
 }
 
+// ContainsAnAbstractClass returns, whether this component has atleast one abstract class
+func (component *ComponentDefinition) ContainsAnAbstractClass() (bool) {
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		if class.IsAbstract() {
+			return true
+		}
+	}
+	return false
+}
+
 func (component *ComponentDefinition) findBaseClass(className string) (ComponentDefinitionClass, error) {
 	var out ComponentDefinitionClass
 	paramNameSpace, paramClassName, _ := decomposeParamClassName(className)

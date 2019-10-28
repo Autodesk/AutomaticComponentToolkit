@@ -38,6 +38,7 @@ private:
 	/**
 	* Put private members here.
 	*/
+	double m_dValue;
 
 protected:
 
@@ -55,6 +56,10 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
+
+	Special_double GetValue() override;
+
+	void SetValue(const Special_double dValue) override;
 
 	Special_int64 GetSpecialValue() override;
 

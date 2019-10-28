@@ -484,8 +484,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
 	}
-	// if any class is abstract
-	if (true) {
+	if (component.ContainsAnAbstractClass()) {
 		w.Writeln("#include \"%s_dynamic.hpp\"", BaseName)
 	}
 	w.Writeln("")
@@ -521,7 +520,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 		w.Writeln("  // Injected Components")
 		for _, subComponent := range(component.ImportedComponentDefinitions) {
 			subNameSpace := subComponent.NameSpace
-			w.Writeln("  static %s::PWrapper sP%sWrapper;", subNameSpace, subNameSpace)
+			w.Writeln("  static %s::Binding::PWrapper sP%sWrapper;", subNameSpace, subNameSpace)
 		}
 		w.Writeln("")
 	}
@@ -2126,7 +2125,7 @@ func buildCMakeForCPPImplementation(component ComponentDefinition, w LanguageWri
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("target_include_directories(%s PRIVATE \"${CMAKE_CURRENT_SOURCE_DIR}/../../../%s_component/Bindings/CppDynamic\")", targetName, subComponent.NameSpace)
 	}
-	if (true) { // if any class in this component is abstract
+	if (component.ContainsAnAbstractClass()) {
 		w.Writeln("target_include_directories(%s PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CppDynamic)", targetName)
 	}
 }

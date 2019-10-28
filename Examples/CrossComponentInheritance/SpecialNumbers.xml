@@ -71,6 +71,10 @@
 	</class>
 		
 	<global baseclassname="Base" errormethod="GetLastError" versionmethod="GetVersion" symbollookupmethod="GetSymbolLookupMethod">
+		<method name="CreateSpecialVariableAsVariable" description="Creates a new SpecialVariable instance">
+			<param name="InitialValue" type="double" pass="in" description="Initial value of the new SpecialVariable" />
+			<param name="Instance" type="class" class="Numbers:Variable" pass="return" description="New SpecialVariable instance" />
+		</method>
 		<method name="CreateSpecialVariable" description="Creates a new SpecialVariable instance">
 			<param name="InitialValue" type="double" pass="in" description="Initial value of the new SpecialVariable" />
 			<param name="Instance" type="class" class="SpecialVariable" pass="return" description="New SpecialVariable instance" />

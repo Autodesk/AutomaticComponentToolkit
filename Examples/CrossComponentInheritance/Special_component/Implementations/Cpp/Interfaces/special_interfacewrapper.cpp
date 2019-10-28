@@ -21,6 +21,7 @@ Interface version: 1.0.0
 
 using namespace Special::Impl;
 
+
 SpecialResult handleSpecialException(IBase * pIBaseClass, ESpecialInterfaceException & Exception)
 {
 	SpecialResult errorCode = Exception.getErrorCode();
@@ -56,31 +57,19 @@ SpecialResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************/
-SpecialResult special_base_getlasterror(Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+SpecialResult special_base_getsymbollookupmethod(Special_Base pBase, Special_pvoid * pSymbolLookupMethod)
 {
 	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
 
 	try {
-		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+		if (pSymbolLookupMethod == nullptr)
 			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
-		if (pHasError == nullptr)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
-		std::string sErrorMessage("");
 		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
 		if (!pIBase)
 			throw ESpecialInterfaceException(SPECIAL_ERROR_INVALIDCAST);
 		
-		*pHasError = pIBase->GetLastError(sErrorMessage);
+		*pSymbolLookupMethod = pIBase->GetSymbolLookupMethod();
 
-		if (pErrorMessageNeededChars)
-			*pErrorMessageNeededChars = (Special_uint32) (sErrorMessage.size()+1);
-		if (pErrorMessageBuffer) {
-			if (sErrorMessage.size() >= nErrorMessageBufferSize)
-				throw ESpecialInterfaceException (SPECIAL_ERROR_BUFFERTOOSMALL);
-			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
-				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
-			pErrorMessageBuffer[sErrorMessage.size()] = 0;
-		}
 		return SPECIAL_SUCCESS;
 	}
 	catch (ESpecialInterfaceException & Exception) {
@@ -142,6 +131,74 @@ SpecialResult special_base_acquireinstance(Special_Base pBase)
 	}
 }
 
+SpecialResult special_base_getversion(Special_Base pBase, Special_uint32 * pMajor, Special_uint32 * pMinor, Special_uint32 * pMicro)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if (!pMajor)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		if (!pMinor)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		if (!pMicro)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ESpecialInterfaceException(SPECIAL_ERROR_INVALIDCAST);
+		
+		pIBase->GetVersion(*pMajor, *pMinor, *pMicro);
+
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+SpecialResult special_base_getlasterror(Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		if (pHasError == nullptr)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		std::string sErrorMessage("");
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ESpecialInterfaceException(SPECIAL_ERROR_INVALIDCAST);
+		
+		*pHasError = pIBase->GetLastError(sErrorMessage);
+
+		if (pErrorMessageNeededChars)
+			*pErrorMessageNeededChars = (Special_uint32) (sErrorMessage.size()+1);
+		if (pErrorMessageBuffer) {
+			if (sErrorMessage.size() >= nErrorMessageBufferSize)
+				throw ESpecialInterfaceException (SPECIAL_ERROR_BUFFERTOOSMALL);
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
+		}
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for SpecialVariable
@@ -173,6 +230,60 @@ SpecialResult special_specialvariable_getspecialvalue(Special_SpecialVariable pS
 }
 
 
+/*************************************************************************************************************************
+ Class implementation for Variable
+**************************************************************************************************************************/
+SpecialResult special_specialvariable_getvalue(Special_SpecialVariable pSpecialVariable, Special_double * pValue)
+{
+	IBase* pIBaseClass = (IBase *)pSpecialVariable.m_hHandle;
+
+	try {
+		if (pValue == nullptr)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		ISpecialVariable* pISpecialVariable = dynamic_cast<ISpecialVariable*>(pIBaseClass);
+		if (!pISpecialVariable)
+			throw ESpecialInterfaceException(SPECIAL_ERROR_INVALIDCAST);
+		
+		*pValue = pISpecialVariable->GetValue();
+
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+SpecialResult special_specialvariable_setvalue(Special_SpecialVariable pSpecialVariable, Special_double dValue)
+{
+	IBase* pIBaseClass = (IBase *)pSpecialVariable.m_hHandle;
+
+	try {
+		ISpecialVariable* pISpecialVariable = dynamic_cast<ISpecialVariable*>(pIBaseClass);
+		if (!pISpecialVariable)
+			throw ESpecialInterfaceException(SPECIAL_ERROR_INVALIDCAST);
+		
+		pISpecialVariable->SetValue(dValue);
+
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+
 
 /*************************************************************************************************************************
  Function table lookup implementation
@@ -183,23 +294,17 @@ SpecialResult _special_getprocaddress_internal(const char * pProcName, void ** p
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["special_base_getlasterror"] = (void*)&special_base_getlasterror;
+		sProcAddressMap["special_base_getsymbollookupmethod"] = (void*)&special_base_getsymbollookupmethod;
 		sProcAddressMap["special_base_releaseinstance"] = (void*)&special_base_releaseinstance;
 		sProcAddressMap["special_base_acquireinstance"] = (void*)&special_base_acquireinstance;
+		sProcAddressMap["special_base_getversion"] = (void*)&special_base_getversion;
+		sProcAddressMap["special_base_getlasterror"] = (void*)&special_base_getlasterror;
 		sProcAddressMap["special_specialvariable_getspecialvalue"] = (void*)&special_specialvariable_getspecialvalue;
+		sProcAddressMap["special_createspecialvariableasvariable"] = (void*)&special_createspecialvariableasvariable;
 		sProcAddressMap["special_createspecialvariable"] = (void*)&special_createspecialvariable;
-		sProcAddressMap["special_getversion"] = (void*)&special_getversion;
-		sProcAddressMap["special_getlasterror"] = (void*)&special_getlasterror;
-		sProcAddressMap["special_releaseinstance"] = (void*)&special_releaseinstance;
-		sProcAddressMap["special_acquireinstance"] = (void*)&special_acquireinstance;
 		sProcAddressMap["special_getsymbollookupmethod"] = (void*)&special_getsymbollookupmethod;
-
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&special_base_getlasterror;
-		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&special_base_releaseinstance;
-		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&special_base_acquireinstance;
-		sProcAddressMap["numbers_variable_getvalue"] = nullptr; // (void*)&special_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = nullptr;  // (void*)&special_variable_setvalue;
-		sProcAddressMap["special_specialvariable_getspecialvalue"] = (void*)&special_specialvariable_getspecialvalue;
+		sProcAddressMap["special_getlasterror"] = (void*)&special_getlasterror;
+		sProcAddressMap["special_getversion"] = (void*)&special_getversion;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -230,9 +335,11 @@ SpecialResult _special_getprocaddress_base(const char * pProcName, void ** ppPro
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["special_base_getlasterror"] = (void*)&special_base_getlasterror;
+		sProcAddressMap["special_base_getsymbollookupmethod"] = (void*)&special_base_getsymbollookupmethod;
 		sProcAddressMap["special_base_releaseinstance"] = (void*)&special_base_releaseinstance;
 		sProcAddressMap["special_base_acquireinstance"] = (void*)&special_base_acquireinstance;
+		sProcAddressMap["special_base_getversion"] = (void*)&special_base_getversion;
+		sProcAddressMap["special_base_getlasterror"] = (void*)&special_base_getlasterror;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -263,11 +370,15 @@ SpecialResult _special_getprocaddress_specialvariable(const char * pProcName, vo
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&special_base_getlasterror;
+		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&special_base_getsymbollookupmethod;
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&special_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&special_base_acquireinstance;
-		sProcAddressMap["numbers_variable_getvalue"] = nullptr; // (void*)&special_variable_getvalue;
-		sProcAddressMap["numbers_variable_setvalue"] = nullptr;  // (void*)&special_variable_setvalue;
+		sProcAddressMap["numbers_base_getversion"] = (void*)&special_base_getversion;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&special_base_getlasterror;
+		sProcAddressMap["numbers_variable_getvalue"] = (void*)&special_specialvariable_getvalue;
+		sProcAddressMap["numbers_specialvariable_getvalue"] = (void*)&special_specialvariable_getvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = (void*)&special_specialvariable_setvalue;
+		sProcAddressMap["numbers_specialvariable_setvalue"] = (void*)&special_specialvariable_setvalue;
 		sProcAddressMap["special_specialvariable_getspecialvalue"] = (void*)&special_specialvariable_getspecialvalue;
 		
 		sbProcAddressMapHasBeenInitialized = true;
@@ -291,9 +402,44 @@ SpecialResult _special_getprocaddress_specialvariable(const char * pProcName, vo
 }
 
 
+
+/*************************************************************************************************************************
+ Initialize lookup function pointers
+**************************************************************************************************************************/
+SpecialSymbolLookupType IBase::s_SymbolLookupMethodBase = &_special_getprocaddress_base;
+SpecialSymbolLookupType ISpecialVariable::s_SymbolLookupMethodSpecialVariable = &_special_getprocaddress_specialvariable;
+
+
+
 /*************************************************************************************************************************
  Global functions implementation
 **************************************************************************************************************************/
+SpecialResult special_createspecialvariableasvariable(Special_double dInitialValue, Numbers_Variable * pInstance)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		if (pInstance == nullptr)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		Numbers::Binding::PVariable pNumbersInstance;
+		pNumbersInstance = CWrapper::CreateSpecialVariableAsVariable(dInitialValue);
+
+		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
+		pNumbersInstance->AcquireInstance();
+		*pInstance = pNumbersInstance->GetHandle();
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 SpecialResult special_createspecialvariable(Special_double dInitialValue, Special_SpecialVariable * pInstance)
 {
 	IBase* pIBaseClass = nullptr;
@@ -306,6 +452,61 @@ SpecialResult special_createspecialvariable(Special_double dInitialValue, Specia
 
 		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
 		*pInstance = pBaseInstance->GetExtendedHandle();
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+SpecialResult special_getsymbollookupmethod(Special_pvoid * pSymbolLookupMethod)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		if (pSymbolLookupMethod == nullptr)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		*pSymbolLookupMethod = &_special_getprocaddress_internal;
+		return SPECIAL_SUCCESS;
+	}
+	catch (ESpecialInterfaceException & Exception) {
+		return handleSpecialException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+SpecialResult special_getlasterror(const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		if (pHasError == nullptr)
+			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
+		std::string sErrorMessage("");
+		*pHasError = CWrapper::GetLastError(sErrorMessage);
+
+		if (pErrorMessageNeededChars)
+			*pErrorMessageNeededChars = (Special_uint32) (sErrorMessage.size()+1);
+		if (pErrorMessageBuffer) {
+			if (sErrorMessage.size() >= nErrorMessageBufferSize)
+				throw ESpecialInterfaceException (SPECIAL_ERROR_BUFFERTOOSMALL);
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
+		}
 		return SPECIAL_SUCCESS;
 	}
 	catch (ESpecialInterfaceException & Exception) {
@@ -332,116 +533,6 @@ SpecialResult special_getversion(Special_uint32 * pMajor, Special_uint32 * pMino
 			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
 		CWrapper::GetVersion(*pMajor, *pMinor, *pMicro);
 
-		return SPECIAL_SUCCESS;
-	}
-	catch (ESpecialInterfaceException & Exception) {
-		return handleSpecialException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-SpecialResult special_getlasterror(Special_Base pInstance, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
-		if (pHasError == nullptr)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDCAST);
-		
-		std::string sErrorMessage("");
-		*pHasError = CWrapper::GetLastError(pIInstance, sErrorMessage);
-
-		if (pErrorMessageNeededChars)
-			*pErrorMessageNeededChars = (Special_uint32) (sErrorMessage.size()+1);
-		if (pErrorMessageBuffer) {
-			if (sErrorMessage.size() >= nErrorMessageBufferSize)
-				throw ESpecialInterfaceException (SPECIAL_ERROR_BUFFERTOOSMALL);
-			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
-				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
-			pErrorMessageBuffer[sErrorMessage.size()] = 0;
-		}
-		return SPECIAL_SUCCESS;
-	}
-	catch (ESpecialInterfaceException & Exception) {
-		return handleSpecialException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-SpecialResult special_releaseinstance(Special_Base pInstance)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDCAST);
-		
-		CWrapper::ReleaseInstance(pIInstance);
-
-		return SPECIAL_SUCCESS;
-	}
-	catch (ESpecialInterfaceException & Exception) {
-		return handleSpecialException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-SpecialResult special_acquireinstance(Special_Base pInstance)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDCAST);
-		
-		CWrapper::AcquireInstance(pIInstance);
-
-		return SPECIAL_SUCCESS;
-	}
-	catch (ESpecialInterfaceException & Exception) {
-		return handleSpecialException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-SpecialResult special_getsymbollookupmethod(Special_pvoid * pSymbolLookupMethod)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		if (pSymbolLookupMethod == nullptr)
-			throw ESpecialInterfaceException (SPECIAL_ERROR_INVALIDPARAM);
-		*pSymbolLookupMethod = &_special_getprocaddress_internal;
 		return SPECIAL_SUCCESS;
 	}
 	catch (ESpecialInterfaceException & Exception) {

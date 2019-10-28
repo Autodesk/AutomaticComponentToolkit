@@ -17,27 +17,34 @@ Interface version: 1.0.0
 #include "special_interfaces.hpp"
 #include "special_interfaceexception.hpp"
 
+#include "special_specialvariable.hpp"
+
 using namespace Special;
 using namespace Special::Impl;
 
-#include "special_specialvariable.hpp"
-
-
 // Injected Components
-Numbers::PWrapper CWrapper::sPNumbersWrapper;
+Numbers::Binding::PWrapper CWrapper::sPNumbersWrapper;
 
-
-// Initialize lookup function pointers 
-// TODO
-SpecialSymbolLookupType IBase::s_SymbolLookupMethodBase = nullptr;
-SpecialSymbolLookupType ISpecialVariable::s_SymbolLookupMethodSpecialVariable = nullptr;
+Numbers::Binding::PVariable CWrapper::CreateSpecialVariableAsVariable(const Special_double dInitialValue)
+{
+	PISpecialVariable pImpl(new CSpecialVariable());
+	pImpl->SetValue(dInitialValue);
+	NumbersExtendedHandle h;
+	h.m_hHandle = pImpl->GetExtendedHandle().m_hHandle;
+	h.m_pfnSymbolLookupMethod = pImpl->GetExtendedHandle().m_pfnSymbolLookupMethod;
+	return std::make_shared<Numbers::Binding::CVariable>(h);
+}
 
 ISpecialVariable * CWrapper::CreateSpecialVariable(const Special_double dInitialValue)
 {
-	special_getsymbollookupmethod((void**)&(IBase::s_SymbolLookupMethodBase));
-	special_getsymbollookupmethod((void**)&(ISpecialVariable::s_SymbolLookupMethodSpecialVariable));
+	PISpecialVariable pImpl(new CSpecialVariable());
+	pImpl->SetValue(dInitialValue);
+	return pImpl.getCoOwningPtr();
+}
 
-	return new CSpecialVariable();
+bool CWrapper::GetLastError(std::string & sErrorMessage)
+{
+	throw ESpecialInterfaceException(SPECIAL_ERROR_NOTIMPLEMENTED);
 }
 
 void CWrapper::GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro)
@@ -45,21 +52,6 @@ void CWrapper::GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Spec
 	nMajor = SPECIAL_VERSION_MAJOR;
 	nMinor = SPECIAL_VERSION_MINOR;
 	nMicro = SPECIAL_VERSION_MICRO;
-}
-
-bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
-{
-	return pInstance->GetLastError(sErrorMessage);
-}
-
-void CWrapper::ReleaseInstance(IBase* pInstance)
-{
-	IBase::ReleaseBaseClassInterface(pInstance);
-}
-
-void CWrapper::AcquireInstance(IBase* pInstance)
-{
-	IBase::AcquireBaseClassInterface(pInstance);
 }
 
 

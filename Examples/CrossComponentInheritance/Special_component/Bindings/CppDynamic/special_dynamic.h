@@ -18,7 +18,6 @@ Interface version: 1.0.0
 
 #include "special_types.hpp"
 
-#include "numbers_dynamic.h"
 #include "numbers_types.hpp"
 
 
@@ -27,16 +26,13 @@ Interface version: 1.0.0
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-typedef SpecialResult (*PSpecialBase_GetLastErrorPtr) (Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+typedef SpecialResult (*PSpecialBase_GetSymbolLookupMethodPtr) (Special_Base pBase, Special_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -53,6 +49,29 @@ typedef SpecialResult (*PSpecialBase_ReleaseInstancePtr) (Special_Base pBase);
 * @return error code or 0 (success)
 */
 typedef SpecialResult (*PSpecialBase_AcquireInstancePtr) (Special_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+typedef SpecialResult (*PSpecialBase_GetVersionPtr) (Special_Base pBase, Special_uint32 * pMajor, Special_uint32 * pMinor, Special_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef SpecialResult (*PSpecialBase_GetLastErrorPtr) (Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for SpecialVariable
@@ -72,13 +91,41 @@ typedef SpecialResult (*PSpecialSpecialVariable_GetSpecialValuePtr) (Special_Spe
 **************************************************************************************************************************/
 
 /**
-* Creates a new Variable instance
+* Creates a new SpecialVariable instance
+*
+* @param[in] dInitialValue - Initial value of the new SpecialVariable
+* @param[out] pInstance - New SpecialVariable instance
+* @return error code or 0 (success)
+*/
+typedef SpecialResult (*PSpecialCreateSpecialVariableAsVariablePtr) (Special_double dInitialValue, Numbers_Variable * pInstance);
+
+/**
+* Creates a new SpecialVariable instance
 *
 * @param[in] dInitialValue - Initial value of the new SpecialVariable
 * @param[out] pInstance - New SpecialVariable instance
 * @return error code or 0 (success)
 */
 typedef SpecialResult (*PSpecialCreateSpecialVariablePtr) (Special_double dInitialValue, Special_SpecialVariable * pInstance);
+
+/**
+* Returns the address of the SymbolLookupMethod
+*
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
+* @return error code or 0 (success)
+*/
+typedef SpecialResult (*PSpecialGetSymbolLookupMethodPtr) (Special_pvoid * pSymbolLookupMethod);
+
+/**
+* Returns the last error recorded on component
+*
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef SpecialResult (*PSpecialGetLastErrorPtr) (const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
 * retrieves the binary version of this library.
@@ -90,64 +137,31 @@ typedef SpecialResult (*PSpecialCreateSpecialVariablePtr) (Special_double dIniti
 */
 typedef SpecialResult (*PSpecialGetVersionPtr) (Special_uint32 * pMajor, Special_uint32 * pMinor, Special_uint32 * pMicro);
 
-/**
-* Returns the last error recorded on this object
-*
-* @param[in] pInstance - Instance Handle
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
-* @return error code or 0 (success)
-*/
-typedef SpecialResult (*PSpecialGetLastErrorPtr) (Special_Base pInstance, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef SpecialResult (*PSpecialReleaseInstancePtr) (Special_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef SpecialResult (*PSpecialAcquireInstancePtr) (Special_Base pInstance);
-
-/**
-* Returns the address of the SymbolLookupMethod
-*
-* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
-* @return error code or 0 (success)
-*/
-typedef SpecialResult (*PSpecialGetSymbolLookupMethodPtr) (Special_pvoid * pSymbolLookupMethod);
-
 /*************************************************************************************************************************
  Function Table Structure
 **************************************************************************************************************************/
 
 typedef struct {
 	void * m_LibraryHandle;
-	PSpecialBase_GetLastErrorPtr m_Base_GetLastError;
+	PSpecialBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PSpecialBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PSpecialBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PSpecialBase_GetVersionPtr m_Base_GetVersion;
+	PSpecialBase_GetLastErrorPtr m_Base_GetLastError;
 	PSpecialSpecialVariable_GetSpecialValuePtr m_SpecialVariable_GetSpecialValue;
+	PSpecialCreateSpecialVariableAsVariablePtr m_CreateSpecialVariableAsVariable;
 	PSpecialCreateSpecialVariablePtr m_CreateSpecialVariable;
-	PSpecialGetVersionPtr m_GetVersion;
-	PSpecialGetLastErrorPtr m_GetLastError;
-	PSpecialReleaseInstancePtr m_ReleaseInstance;
-	PSpecialAcquireInstancePtr m_AcquireInstance;
 	PSpecialGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
+	PSpecialGetLastErrorPtr m_GetLastError;
+	PSpecialGetVersionPtr m_GetVersion;
 } sSpecialDynamicWrapperTable;
 
 typedef struct {
-	PSpecialBase_GetLastErrorPtr m_Base_GetLastError;
+	PSpecialBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PSpecialBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PSpecialBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PSpecialBase_GetVersionPtr m_Base_GetVersion;
+	PSpecialBase_GetLastErrorPtr m_Base_GetLastError;
 } sSpecialFunctionTableBase;
 
 typedef struct : sNumbersFunctionTableVariable {

@@ -94,11 +94,10 @@ public:
 	*/
 	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
 	/**
-	* IBase::GetLastError - Returns the last error recorded on this object
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
+	* IBase::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
 	*/
-	virtual bool GetLastError(std::string & sErrorMessage) = 0;
+	virtual Special_pvoid GetSymbolLookupMethod() = 0;
 
 	/**
 	* IBase::ReleaseInstance - Releases shared ownership of an Instance
@@ -109,6 +108,21 @@ public:
 	* IBase::AcquireInstance - Acquires shared ownership of an Instance
 	*/
 	virtual void AcquireInstance() = 0;
+
+	/**
+	* IBase::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	virtual void GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro) = 0;
+
+	/**
+	* IBase::GetLastError - Returns the last error recorded on this object
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	virtual bool GetLastError(std::string & sErrorMessage) = 0;
 
 };
 
@@ -158,6 +172,18 @@ public:
 	}
 	
 	/**
+	* IVariable::GetValue - Returns the current value of this Variable
+	* @return The current value of this Variable
+	*/
+	virtual Special_double GetValue() = 0;
+
+	/**
+	* IVariable::SetValue - Set the numerical value of this Variable
+	* @param[in] dValue - The new value of this Variable
+	*/
+	virtual void SetValue(const Special_double dValue) = 0;
+
+	/**
 	* ISpecialVariable::GetSpecialValue - Returns the current value of this Variable as integer. i.e. it rounds
 	* @return The current value of this Variable
 	*/
@@ -174,14 +200,28 @@ typedef IBaseSharedPtr<ISpecialVariable> PISpecialVariable;
 class CWrapper {
 public:
 	// Injected Components
-	static Numbers::PWrapper sPNumbersWrapper;
+	static Numbers::Binding::PWrapper sPNumbersWrapper;
 
 	/**
-	* Ispecial::CreateSpecialVariable - Creates a new Variable instance
+	* Ispecial::CreateSpecialVariableAsVariable - Creates a new SpecialVariable instance
+	* @param[in] dInitialValue - Initial value of the new SpecialVariable
+	* @return New SpecialVariable instance
+	*/
+	static Numbers::Binding::PVariable CreateSpecialVariableAsVariable(const Special_double dInitialValue);
+
+	/**
+	* Ispecial::CreateSpecialVariable - Creates a new SpecialVariable instance
 	* @param[in] dInitialValue - Initial value of the new SpecialVariable
 	* @return New SpecialVariable instance
 	*/
 	static ISpecialVariable * CreateSpecialVariable(const Special_double dInitialValue);
+
+	/**
+	* Ispecial::GetLastError - Returns the last error recorded on component
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	static bool GetLastError(std::string & sErrorMessage);
 
 	/**
 	* Ispecial::GetVersion - retrieves the binary version of this library.
@@ -190,26 +230,6 @@ public:
 	* @param[out] nMicro - returns the micro version of this library
 	*/
 	static void GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro);
-
-	/**
-	* Ispecial::GetLastError - Returns the last error recorded on this object
-	* @param[in] pInstance - Instance Handle
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
-	*/
-	static bool GetLastError(IBase* pInstance, std::string & sErrorMessage);
-
-	/**
-	* Ispecial::ReleaseInstance - Releases shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void ReleaseInstance(IBase* pInstance);
-
-	/**
-	* Ispecial::AcquireInstance - Acquires shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void AcquireInstance(IBase* pInstance);
 
 };
 

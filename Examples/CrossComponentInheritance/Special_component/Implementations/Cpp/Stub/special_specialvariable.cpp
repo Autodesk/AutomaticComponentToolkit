@@ -20,8 +20,18 @@ using namespace Special::Impl;
  Class definition of CSpecialVariable 
 **************************************************************************************************************************/
 
+Special_double CSpecialVariable::GetValue()
+{
+	return m_dValue;
+}
+
+void CSpecialVariable::SetValue(const Special_double dValue)
+{
+	m_dValue = dValue;
+}
+
 Special_int64 CSpecialVariable::GetSpecialValue()
 {
-	return 1;
+	return Special_int64(m_dValue);
 }
 

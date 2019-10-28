@@ -33,6 +33,7 @@ Interface version: 1.0.0
 #include <map>
 
 namespace Special {
+namespace Binding {
 
 /*************************************************************************************************************************
  Forward Declaration of all classes
@@ -152,18 +153,18 @@ public:
 	
 	CWrapper(void* pSymbolLookupMethod)
 	{
-		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
-		CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
+		CheckError(initWrapperTable(&m_WrapperTable));
+		CheckError(loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
 		
-		CheckError(nullptr, checkBinaryVersion());
+		CheckError(checkBinaryVersion());
 	}
 	
 	CWrapper(const std::string &sFileName)
 	{
-		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
-		CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
+		CheckError(initWrapperTable(&m_WrapperTable));
+		CheckError(loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
 		
-		CheckError(nullptr, checkBinaryVersion());
+		CheckError(checkBinaryVersion());
 	}
 	
 	static PWrapper loadLibrary(const std::string &sFileName)
@@ -181,14 +182,13 @@ public:
 		releaseWrapperTable(&m_WrapperTable);
 	}
 	
-	inline void CheckError(CBase * pBaseClass, SpecialResult nResult);
+	inline void CheckError(SpecialResult nResult);
 
+	inline Numbers::Binding::PVariable CreateSpecialVariableAsVariable(const Special_double dInitialValue);
 	inline PSpecialVariable CreateSpecialVariable(const Special_double dInitialValue);
-	inline void GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro);
-	inline bool GetLastError(CBase * pInstance, std::string & sErrorMessage);
-	inline void ReleaseInstance(CBase * pInstance);
-	inline void AcquireInstance(CBase * pInstance);
 	inline Special_pvoid GetSymbolLookupMethod();
+	inline bool GetLastError(std::string & sErrorMessage);
+	inline void GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro);
 
 private:
 	sSpecialDynamicWrapperTable m_WrapperTable;
@@ -258,9 +258,11 @@ public:
 		if (MapFunctionTableBase().end() == iFunctionTable) {
 			auto iNewFunctionTable = MapFunctionTableBase().insert({pLookupFunction, sSpecialFunctionTableBase()});
 			m_pFunctionTableBase = &(iNewFunctionTable.first->second);
-			CWrapper::readMethodInto(pLookupFunction, "special_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "special_base_getsymbollookupmethod", (void**)&(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod));
 			CWrapper::readMethodInto(pLookupFunction, "special_base_releaseinstance", (void**)&(m_pFunctionTableBase->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "special_base_acquireinstance", (void**)&(m_pFunctionTableBase->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "special_base_getversion", (void**)&(m_pFunctionTableBase->m_Base_GetVersion));
+			CWrapper::readMethodInto(pLookupFunction, "special_base_getlasterror", (void**)&(m_pFunctionTableBase->m_Base_GetLastError));
 		} else {
 			m_pFunctionTableBase = &(iFunctionTable->second);
 		}
@@ -285,9 +287,11 @@ public:
 	}
 	
 	friend class CWrapper;
-	inline bool GetLastError(std::string & sErrorMessage);
+	inline Special_pvoid GetSymbolLookupMethod();
 	inline void ReleaseInstance();
 	inline void AcquireInstance();
+	inline void GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro);
+	inline bool GetLastError(std::string & sErrorMessage);
 };
 
  // TODO: this is missing all "intermediate" functions
@@ -295,7 +299,7 @@ public:
 /*************************************************************************************************************************
  Class CSpecialVariable 
 **************************************************************************************************************************/
-class CSpecialVariable : public Numbers::CNumbersVariable {
+class CSpecialVariable : public CBase {
 private:
 	sSpecialFunctionTableSpecialVariable* m_pFunctionTableSpecialVariable;
 	inline static std::map<SpecialSymbolLookupType, sSpecialFunctionTableSpecialVariable>& MapFunctionTableSpecialVariable()
@@ -308,16 +312,18 @@ public:
 	* CSpecialVariable::CSpecialVariable - Constructor for class SpecialVariable.
 	*/
 	CSpecialVariable(SpecialExtendedHandle pHandle)
-		: Numbers::CNumbersVariable({ pHandle.m_hHandle, pHandle.m_pfnSymbolLookupMethod})
+		: CNumbers:Variable(pHandle)
 	{
 		SpecialSymbolLookupType pLookupFunction = m_pHandle.m_pfnSymbolLookupMethod;
 		auto iFunctionTable = MapFunctionTableSpecialVariable().find(pLookupFunction);
 		if (MapFunctionTableSpecialVariable().end() == iFunctionTable) {
 			auto iNewFunctionTable = MapFunctionTableSpecialVariable().insert({pLookupFunction, sSpecialFunctionTableSpecialVariable()});
 			m_pFunctionTableSpecialVariable = &(iNewFunctionTable.first->second);
-			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableSpecialVariable->m_Base_GetLastError));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getsymbollookupmethod", (void**)&(m_pFunctionTableSpecialVariable->m_Base_GetSymbolLookupMethod));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_releaseinstance", (void**)&(m_pFunctionTableSpecialVariable->m_Base_ReleaseInstance));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_base_acquireinstance", (void**)&(m_pFunctionTableSpecialVariable->m_Base_AcquireInstance));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getversion", (void**)&(m_pFunctionTableSpecialVariable->m_Base_GetVersion));
+			CWrapper::readMethodInto(pLookupFunction, "numbers_base_getlasterror", (void**)&(m_pFunctionTableSpecialVariable->m_Base_GetLastError));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(m_pFunctionTableSpecialVariable->m_Variable_GetValue));
 			CWrapper::readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(m_pFunctionTableSpecialVariable->m_Variable_SetValue));
 			CWrapper::readMethodInto(pLookupFunction, "special_specialvariable_getspecialvalue", (void**)&(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue));
@@ -331,19 +337,65 @@ public:
 
 	
 	/**
-	* CWrapper::CreateSpecialVariable - Creates a new Variable instance
+	* CWrapper::CreateSpecialVariableAsVariable - Creates a new SpecialVariable instance
+	* @param[in] dInitialValue - Initial value of the new SpecialVariable
+	* @return New SpecialVariable instance
+	*/
+	inline Numbers::Binding::PVariable CWrapper::CreateSpecialVariableAsVariable(const Special_double dInitialValue)
+	{
+		NumbersExtendedHandle hInstance;
+		CheckError(m_WrapperTable.m_CreateSpecialVariableAsVariable(dInitialValue, &hInstance));
+		
+		if (!hInstance.m_hHandle) {
+			CheckError(SPECIAL_ERROR_INVALIDPARAM);
+		}
+		return std::make_shared<Numbers::Binding::CVariable>(hInstance);
+	}
+	
+	/**
+	* CWrapper::CreateSpecialVariable - Creates a new SpecialVariable instance
 	* @param[in] dInitialValue - Initial value of the new SpecialVariable
 	* @return New SpecialVariable instance
 	*/
 	inline PSpecialVariable CWrapper::CreateSpecialVariable(const Special_double dInitialValue)
 	{
 		SpecialExtendedHandle hInstance;
-		CheckError(nullptr,m_WrapperTable.m_CreateSpecialVariable(dInitialValue, &hInstance));
+		CheckError(m_WrapperTable.m_CreateSpecialVariable(dInitialValue, &hInstance));
 		
 		if (!hInstance.m_hHandle) {
-			CheckError(nullptr,SPECIAL_ERROR_INVALIDPARAM);
+			CheckError(SPECIAL_ERROR_INVALIDPARAM);
 		}
 		return std::make_shared<CSpecialVariable>(hInstance);
+	}
+	
+	/**
+	* CWrapper::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
+	*/
+	inline Special_pvoid CWrapper::GetSymbolLookupMethod()
+	{
+		Special_pvoid resultSymbolLookupMethod = 0;
+		CheckError(m_WrapperTable.m_GetSymbolLookupMethod(&resultSymbolLookupMethod));
+		
+		return resultSymbolLookupMethod;
+	}
+	
+	/**
+	* CWrapper::GetLastError - Returns the last error recorded on component
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	inline bool CWrapper::GetLastError(std::string & sErrorMessage)
+	{
+		Special_uint32 bytesNeededErrorMessage = 0;
+		Special_uint32 bytesWrittenErrorMessage = 0;
+		bool resultHasError = 0;
+		CheckError(m_WrapperTable.m_GetLastError(0, &bytesNeededErrorMessage, nullptr, &resultHasError));
+		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
+		CheckError(m_WrapperTable.m_GetLastError(bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
+		sErrorMessage = std::string(&bufferErrorMessage[0]);
+		
+		return resultHasError;
 	}
 	
 	/**
@@ -354,77 +406,14 @@ public:
 	*/
 	inline void CWrapper::GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro)
 	{
-		CheckError(nullptr,m_WrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro));
+		CheckError(m_WrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro));
 	}
 	
-	/**
-	* CWrapper::GetLastError - Returns the last error recorded on this object
-	* @param[in] pInstance - Instance Handle
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
-	*/
-	inline bool CWrapper::GetLastError(CBase * pInstance, std::string & sErrorMessage)
-	{
-		SpecialExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
-		Special_uint32 bytesNeededErrorMessage = 0;
-		Special_uint32 bytesWrittenErrorMessage = 0;
-		bool resultHasError = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, 0, &bytesNeededErrorMessage, nullptr, &resultHasError));
-		std::vector<char> bufferErrorMessage(bytesNeededErrorMessage);
-		CheckError(nullptr,m_WrapperTable.m_GetLastError(hInstance, bytesNeededErrorMessage, &bytesWrittenErrorMessage, &bufferErrorMessage[0], &resultHasError));
-		sErrorMessage = std::string(&bufferErrorMessage[0]);
-		
-		return resultHasError;
-	}
-	
-	/**
-	* CWrapper::ReleaseInstance - Releases shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	inline void CWrapper::ReleaseInstance(CBase * pInstance)
-	{
-		SpecialExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
-		CheckError(nullptr,m_WrapperTable.m_ReleaseInstance(hInstance));
-	}
-	
-	/**
-	* CWrapper::AcquireInstance - Acquires shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	inline void CWrapper::AcquireInstance(CBase * pInstance)
-	{
-		SpecialExtendedHandle hInstance;
-		if (pInstance != nullptr) {
-			hInstance = pInstance->GetHandle();
-		};
-		CheckError(nullptr,m_WrapperTable.m_AcquireInstance(hInstance));
-	}
-	
-	/**
-	* CWrapper::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
-	* @return Address of the SymbolAddressMethod
-	*/
-	inline Special_pvoid CWrapper::GetSymbolLookupMethod()
-	{
-		Special_pvoid resultSymbolLookupMethod = 0;
-		CheckError(nullptr,m_WrapperTable.m_GetSymbolLookupMethod(&resultSymbolLookupMethod));
-		
-		return resultSymbolLookupMethod;
-	}
-	
-	inline void CWrapper::CheckError(CBase * pBaseClass, SpecialResult nResult)
+	inline void CSpecialWrapper::CheckError(SpecialResult nResult)
 	{
 		if (nResult != 0) {
 			std::string sErrorMessage;
-			if (pBaseClass != nullptr) {
-				GetLastError(pBaseClass, sErrorMessage);
-			}
+			GetLastError(sErrorMessage);
 			throw ESpecialException(nResult, sErrorMessage);
 		}
 	}
@@ -436,16 +425,17 @@ public:
 			return SPECIAL_ERROR_INVALIDPARAM;
 		
 		pWrapperTable->m_LibraryHandle = nullptr;
-		pWrapperTable->m_Base_GetLastError = nullptr;
+		pWrapperTable->m_Base_GetSymbolLookupMethod = nullptr;
 		pWrapperTable->m_Base_ReleaseInstance = nullptr;
 		pWrapperTable->m_Base_AcquireInstance = nullptr;
+		pWrapperTable->m_Base_GetVersion = nullptr;
+		pWrapperTable->m_Base_GetLastError = nullptr;
 		pWrapperTable->m_SpecialVariable_GetSpecialValue = nullptr;
+		pWrapperTable->m_CreateSpecialVariableAsVariable = nullptr;
 		pWrapperTable->m_CreateSpecialVariable = nullptr;
-		pWrapperTable->m_GetVersion = nullptr;
-		pWrapperTable->m_GetLastError = nullptr;
-		pWrapperTable->m_ReleaseInstance = nullptr;
-		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
+		pWrapperTable->m_GetLastError = nullptr;
+		pWrapperTable->m_GetVersion = nullptr;
 		
 		return SPECIAL_SUCCESS;
 	}
@@ -495,12 +485,12 @@ public:
 		#endif // _WIN32
 		
 		#ifdef _WIN32
-		pWrapperTable->m_Base_GetLastError = (PSpecialBase_GetLastErrorPtr) GetProcAddress(hLibrary, "special_base_getlasterror");
+		pWrapperTable->m_Base_GetSymbolLookupMethod = (PSpecialBase_GetSymbolLookupMethodPtr) GetProcAddress(hLibrary, "special_base_getsymbollookupmethod");
 		#else // _WIN32
-		pWrapperTable->m_Base_GetLastError = (PSpecialBase_GetLastErrorPtr) dlsym(hLibrary, "special_base_getlasterror");
+		pWrapperTable->m_Base_GetSymbolLookupMethod = (PSpecialBase_GetSymbolLookupMethodPtr) dlsym(hLibrary, "special_base_getsymbollookupmethod");
 		dlerror();
 		#endif // _WIN32
-		if (pWrapperTable->m_Base_GetLastError == nullptr)
+		if (pWrapperTable->m_Base_GetSymbolLookupMethod == nullptr)
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -522,12 +512,39 @@ public:
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
+		pWrapperTable->m_Base_GetVersion = (PSpecialBase_GetVersionPtr) GetProcAddress(hLibrary, "special_base_getversion");
+		#else // _WIN32
+		pWrapperTable->m_Base_GetVersion = (PSpecialBase_GetVersionPtr) dlsym(hLibrary, "special_base_getversion");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_GetVersion == nullptr)
+			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_GetLastError = (PSpecialBase_GetLastErrorPtr) GetProcAddress(hLibrary, "special_base_getlasterror");
+		#else // _WIN32
+		pWrapperTable->m_Base_GetLastError = (PSpecialBase_GetLastErrorPtr) dlsym(hLibrary, "special_base_getlasterror");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_GetLastError == nullptr)
+			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
 		pWrapperTable->m_SpecialVariable_GetSpecialValue = (PSpecialSpecialVariable_GetSpecialValuePtr) GetProcAddress(hLibrary, "special_specialvariable_getspecialvalue");
 		#else // _WIN32
 		pWrapperTable->m_SpecialVariable_GetSpecialValue = (PSpecialSpecialVariable_GetSpecialValuePtr) dlsym(hLibrary, "special_specialvariable_getspecialvalue");
 		dlerror();
 		#endif // _WIN32
 		if (pWrapperTable->m_SpecialVariable_GetSpecialValue == nullptr)
+			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_CreateSpecialVariableAsVariable = (PSpecialCreateSpecialVariableAsVariablePtr) GetProcAddress(hLibrary, "special_createspecialvariableasvariable");
+		#else // _WIN32
+		pWrapperTable->m_CreateSpecialVariableAsVariable = (PSpecialCreateSpecialVariableAsVariablePtr) dlsym(hLibrary, "special_createspecialvariableasvariable");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_CreateSpecialVariableAsVariable == nullptr)
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -540,12 +557,12 @@ public:
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
-		pWrapperTable->m_GetVersion = (PSpecialGetVersionPtr) GetProcAddress(hLibrary, "special_getversion");
+		pWrapperTable->m_GetSymbolLookupMethod = (PSpecialGetSymbolLookupMethodPtr) GetProcAddress(hLibrary, "special_getsymbollookupmethod");
 		#else // _WIN32
-		pWrapperTable->m_GetVersion = (PSpecialGetVersionPtr) dlsym(hLibrary, "special_getversion");
+		pWrapperTable->m_GetSymbolLookupMethod = (PSpecialGetSymbolLookupMethodPtr) dlsym(hLibrary, "special_getsymbollookupmethod");
 		dlerror();
 		#endif // _WIN32
-		if (pWrapperTable->m_GetVersion == nullptr)
+		if (pWrapperTable->m_GetSymbolLookupMethod == nullptr)
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -558,30 +575,12 @@ public:
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
-		pWrapperTable->m_ReleaseInstance = (PSpecialReleaseInstancePtr) GetProcAddress(hLibrary, "special_releaseinstance");
+		pWrapperTable->m_GetVersion = (PSpecialGetVersionPtr) GetProcAddress(hLibrary, "special_getversion");
 		#else // _WIN32
-		pWrapperTable->m_ReleaseInstance = (PSpecialReleaseInstancePtr) dlsym(hLibrary, "special_releaseinstance");
+		pWrapperTable->m_GetVersion = (PSpecialGetVersionPtr) dlsym(hLibrary, "special_getversion");
 		dlerror();
 		#endif // _WIN32
-		if (pWrapperTable->m_ReleaseInstance == nullptr)
-			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_AcquireInstance = (PSpecialAcquireInstancePtr) GetProcAddress(hLibrary, "special_acquireinstance");
-		#else // _WIN32
-		pWrapperTable->m_AcquireInstance = (PSpecialAcquireInstancePtr) dlsym(hLibrary, "special_acquireinstance");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_AcquireInstance == nullptr)
-			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
-		pWrapperTable->m_GetSymbolLookupMethod = (PSpecialGetSymbolLookupMethodPtr) GetProcAddress(hLibrary, "special_getsymbollookupmethod");
-		#else // _WIN32
-		pWrapperTable->m_GetSymbolLookupMethod = (PSpecialGetSymbolLookupMethodPtr) dlsym(hLibrary, "special_getsymbollookupmethod");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_GetSymbolLookupMethod == nullptr)
+		if (pWrapperTable->m_GetVersion == nullptr)
 			return SPECIAL_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		pWrapperTable->m_LibraryHandle = hLibrary;
@@ -596,16 +595,17 @@ public:
 			return SPECIAL_ERROR_INVALIDPARAM;
 		
 		SpecialSymbolLookupType pLookupFunction = (SpecialSymbolLookupType)pSymbolLookupMethod;
-		readMethodInto(pLookupFunction, "special_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
+		readMethodInto(pLookupFunction, "special_base_getsymbollookupmethod", (void**)&(pWrapperTable->m_Base_GetSymbolLookupMethod));
 		readMethodInto(pLookupFunction, "special_base_releaseinstance", (void**)&(pWrapperTable->m_Base_ReleaseInstance));
 		readMethodInto(pLookupFunction, "special_base_acquireinstance", (void**)&(pWrapperTable->m_Base_AcquireInstance));
+		readMethodInto(pLookupFunction, "special_base_getversion", (void**)&(pWrapperTable->m_Base_GetVersion));
+		readMethodInto(pLookupFunction, "special_base_getlasterror", (void**)&(pWrapperTable->m_Base_GetLastError));
 		readMethodInto(pLookupFunction, "special_specialvariable_getspecialvalue", (void**)&(pWrapperTable->m_SpecialVariable_GetSpecialValue));
+		readMethodInto(pLookupFunction, "special_createspecialvariableasvariable", (void**)&(pWrapperTable->m_CreateSpecialVariableAsVariable));
 		readMethodInto(pLookupFunction, "special_createspecialvariable", (void**)&(pWrapperTable->m_CreateSpecialVariable));
-		readMethodInto(pLookupFunction, "special_getversion", (void**)&(pWrapperTable->m_GetVersion));
-		readMethodInto(pLookupFunction, "special_getlasterror", (void**)&(pWrapperTable->m_GetLastError));
-		readMethodInto(pLookupFunction, "special_releaseinstance", (void**)&(pWrapperTable->m_ReleaseInstance));
-		readMethodInto(pLookupFunction, "special_acquireinstance", (void**)&(pWrapperTable->m_AcquireInstance));
 		readMethodInto(pLookupFunction, "special_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));
+		readMethodInto(pLookupFunction, "special_getlasterror", (void**)&(pWrapperTable->m_GetLastError));
+		readMethodInto(pLookupFunction, "special_getversion", (void**)&(pWrapperTable->m_GetVersion));
 		return SPECIAL_SUCCESS;
 }
 
@@ -614,6 +614,45 @@ public:
 	/**
 	 * Method definitions for class CBase
 	 */
+	
+	/**
+	* CBase::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
+	*/
+	Special_pvoid CBase::GetSymbolLookupMethod()
+	{
+		Special_pvoid resultSymbolLookupMethod = 0;
+		CheckError(m_pFunctionTableBase->m_Base_GetSymbolLookupMethod(m_pHandle, &resultSymbolLookupMethod));
+		
+		return resultSymbolLookupMethod;
+	}
+	
+	/**
+	* CBase::ReleaseInstance - Releases shared ownership of an Instance
+	*/
+	void CBase::ReleaseInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance(m_pHandle));
+	}
+	
+	/**
+	* CBase::AcquireInstance - Acquires shared ownership of an Instance
+	*/
+	void CBase::AcquireInstance()
+	{
+		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance(m_pHandle));
+	}
+	
+	/**
+	* CBase::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	void CBase::GetVersion(Special_uint32 & nMajor, Special_uint32 & nMinor, Special_uint32 & nMicro)
+	{
+		CheckError(m_pFunctionTableBase->m_Base_GetVersion(m_pHandle, &nMajor, &nMinor, &nMicro));
+	}
 	
 	/**
 	* CBase::GetLastError - Returns the last error recorded on this object
@@ -634,22 +673,6 @@ public:
 	}
 	
 	/**
-	* CBase::ReleaseInstance - Releases shared ownership of an Instance
-	*/
-	void CBase::ReleaseInstance()
-	{
-		CheckError(m_pFunctionTableBase->m_Base_ReleaseInstance(m_pHandle));
-	}
-	
-	/**
-	* CBase::AcquireInstance - Acquires shared ownership of an Instance
-	*/
-	void CBase::AcquireInstance()
-	{
-		CheckError(m_pFunctionTableBase->m_Base_AcquireInstance(m_pHandle));
-	}
-	
-	/**
 	 * Method definitions for class CSpecialVariable
 	 */
 	
@@ -660,15 +683,12 @@ public:
 	Special_int64 CSpecialVariable::GetSpecialValue()
 	{
 		Special_int64 resultValue = 0;
-		Special_SpecialVariable specialHandle;
-		specialHandle.m_hHandle = m_pHandle.m_hHandle;
-		specialHandle.m_pfnSymbolLookupMethod = m_pHandle.m_pfnSymbolLookupMethod;
-		// Numbers::CNumbersVariable()
-		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue(specialHandle, &resultValue));
+		CheckError(m_pFunctionTableSpecialVariable->m_SpecialVariable_GetSpecialValue(m_pHandle, &resultValue));
 		
 		return resultValue;
 	}
 
+} // namespace Binding
 } // namespace Special
 
 #endif // __SPECIAL_CPPHEADER_DYNAMIC_CPP

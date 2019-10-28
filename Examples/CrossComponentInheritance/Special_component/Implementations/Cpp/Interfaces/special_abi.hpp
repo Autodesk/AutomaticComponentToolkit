@@ -37,16 +37,13 @@ extern "C" {
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-SPECIAL_DECLSPEC SpecialResult special_base_getlasterror(Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+SPECIAL_DECLSPEC SpecialResult special_base_getsymbollookupmethod(Special_Base pBase, Special_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -63,6 +60,29 @@ SPECIAL_DECLSPEC SpecialResult special_base_releaseinstance(Special_Base pBase);
 * @return error code or 0 (success)
 */
 SPECIAL_DECLSPEC SpecialResult special_base_acquireinstance(Special_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+SPECIAL_DECLSPEC SpecialResult special_base_getversion(Special_Base pBase, Special_uint32 * pMajor, Special_uint32 * pMinor, Special_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+SPECIAL_DECLSPEC SpecialResult special_base_getlasterror(Special_Base pBase, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for SpecialVariable
@@ -82,13 +102,41 @@ SPECIAL_DECLSPEC SpecialResult special_specialvariable_getspecialvalue(Special_S
 **************************************************************************************************************************/
 
 /**
-* Creates a new Variable instance
+* Creates a new SpecialVariable instance
+*
+* @param[in] dInitialValue - Initial value of the new SpecialVariable
+* @param[out] pInstance - New SpecialVariable instance
+* @return error code or 0 (success)
+*/
+SPECIAL_DECLSPEC SpecialResult special_createspecialvariableasvariable(Special_double dInitialValue, Numbers_Variable * pInstance);
+
+/**
+* Creates a new SpecialVariable instance
 *
 * @param[in] dInitialValue - Initial value of the new SpecialVariable
 * @param[out] pInstance - New SpecialVariable instance
 * @return error code or 0 (success)
 */
 SPECIAL_DECLSPEC SpecialResult special_createspecialvariable(Special_double dInitialValue, Special_SpecialVariable * pInstance);
+
+/**
+* Returns the address of the SymbolLookupMethod
+*
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
+* @return error code or 0 (success)
+*/
+SPECIAL_DECLSPEC SpecialResult special_getsymbollookupmethod(Special_pvoid * pSymbolLookupMethod);
+
+/**
+* Returns the last error recorded on component
+*
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+SPECIAL_DECLSPEC SpecialResult special_getlasterror(const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
 * retrieves the binary version of this library.
@@ -99,42 +147,6 @@ SPECIAL_DECLSPEC SpecialResult special_createspecialvariable(Special_double dIni
 * @return error code or 0 (success)
 */
 SPECIAL_DECLSPEC SpecialResult special_getversion(Special_uint32 * pMajor, Special_uint32 * pMinor, Special_uint32 * pMicro);
-
-/**
-* Returns the last error recorded on this object
-*
-* @param[in] pInstance - Instance Handle
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
-* @return error code or 0 (success)
-*/
-SPECIAL_DECLSPEC SpecialResult special_getlasterror(Special_Base pInstance, const Special_uint32 nErrorMessageBufferSize, Special_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-SPECIAL_DECLSPEC SpecialResult special_releaseinstance(Special_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-SPECIAL_DECLSPEC SpecialResult special_acquireinstance(Special_Base pInstance);
-
-/**
-* Returns the address of the SymbolLookupMethod
-*
-* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
-* @return error code or 0 (success)
-*/
-SPECIAL_DECLSPEC SpecialResult special_getsymbollookupmethod(Special_pvoid * pSymbolLookupMethod);
 
 }
 
