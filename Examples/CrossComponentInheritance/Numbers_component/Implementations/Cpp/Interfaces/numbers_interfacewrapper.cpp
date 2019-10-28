@@ -21,6 +21,7 @@ Interface version: 1.0.0
 
 using namespace Numbers::Impl;
 
+
 NumbersResult handleNumbersException(IBase * pIBaseClass, ENumbersInterfaceException & Exception)
 {
 	NumbersResult errorCode = Exception.getErrorCode();
@@ -56,31 +57,19 @@ NumbersResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************/
-NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+NumbersResult numbers_base_getsymbollookupmethod(Numbers_Base pBase, Numbers_pvoid * pSymbolLookupMethod)
 {
 	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
 
 	try {
-		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+		if (pSymbolLookupMethod == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		if (pHasError == nullptr)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		std::string sErrorMessage("");
 		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
 		if (!pIBase)
 			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
 		
-		*pHasError = pIBase->GetLastError(sErrorMessage);
+		*pSymbolLookupMethod = pIBase->GetSymbolLookupMethod();
 
-		if (pErrorMessageNeededChars)
-			*pErrorMessageNeededChars = (Numbers_uint32) (sErrorMessage.size()+1);
-		if (pErrorMessageBuffer) {
-			if (sErrorMessage.size() >= nErrorMessageBufferSize)
-				throw ENumbersInterfaceException (NUMBERS_ERROR_BUFFERTOOSMALL);
-			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
-				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
-			pErrorMessageBuffer[sErrorMessage.size()] = 0;
-		}
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {
@@ -129,6 +118,74 @@ NumbersResult numbers_base_acquireinstance(Numbers_Base pBase)
 		
 		pIBase->AcquireInstance();
 
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+NumbersResult numbers_base_getversion(Numbers_Base pBase, Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if (!pMajor)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		if (!pMinor)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		if (!pMicro)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
+		
+		pIBase->GetVersion(*pMajor, *pMinor, *pMicro);
+
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	IBase* pIBaseClass = (IBase *)pBase.m_hHandle;
+
+	try {
+		if ( (!pErrorMessageBuffer) && !(pErrorMessageNeededChars) )
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		if (pHasError == nullptr)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		std::string sErrorMessage("");
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ENumbersInterfaceException(NUMBERS_ERROR_INVALIDCAST);
+		
+		*pHasError = pIBase->GetLastError(sErrorMessage);
+
+		if (pErrorMessageNeededChars)
+			*pErrorMessageNeededChars = (Numbers_uint32) (sErrorMessage.size()+1);
+		if (pErrorMessageBuffer) {
+			if (sErrorMessage.size() >= nErrorMessageBufferSize)
+				throw ENumbersInterfaceException (NUMBERS_ERROR_BUFFERTOOSMALL);
+			for (size_t iErrorMessage = 0; iErrorMessage < sErrorMessage.size(); iErrorMessage++)
+				pErrorMessageBuffer[iErrorMessage] = sErrorMessage[iErrorMessage];
+			pErrorMessageBuffer[sErrorMessage.size()] = 0;
+		}
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {
@@ -197,6 +254,10 @@ NumbersResult numbers_variable_setvalue(Numbers_Variable pVariable, Numbers_doub
 }
 
 
+/*************************************************************************************************************************
+ Class implementation for VariableImpl
+**************************************************************************************************************************/
+
 
 /*************************************************************************************************************************
  Function table lookup implementation
@@ -207,17 +268,17 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&numbers_base_getsymbollookupmethod;
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
+		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
 		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
 		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
 		sProcAddressMap["numbers_createvariable"] = (void*)&numbers_createvariable;
-		sProcAddressMap["numbers_getversion"] = (void*)&numbers_getversion;
-		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
-		sProcAddressMap["numbers_releaseinstance"] = (void*)&numbers_releaseinstance;
-		sProcAddressMap["numbers_acquireinstance"] = (void*)&numbers_acquireinstance;
 		sProcAddressMap["numbers_getsymbollookupmethod"] = (void*)&numbers_getsymbollookupmethod;
+		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
+		sProcAddressMap["numbers_getversion"] = (void*)&numbers_getversion;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -248,9 +309,11 @@ NumbersResult _numbers_getprocaddress_base(const char * pProcName, void ** ppPro
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&numbers_base_getsymbollookupmethod;
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
+		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
 		
 		sbProcAddressMapHasBeenInitialized = true;
 	}
@@ -281,9 +344,11 @@ NumbersResult _numbers_getprocaddress_variable(const char * pProcName, void ** p
 	static bool sbProcAddressMapHasBeenInitialized = false;
 	static std::map<std::string, void*> sProcAddressMap;
 	if (!sbProcAddressMapHasBeenInitialized) {
-		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&numbers_base_getsymbollookupmethod;
 		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
 		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
+		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
 		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
 		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
 		
@@ -306,6 +371,53 @@ NumbersResult _numbers_getprocaddress_variable(const char * pProcName, void ** p
 	}
 	
 }
+
+/*************************************************************************************************************************
+ Function table lookup implementation for class VariableImpl
+**************************************************************************************************************************/
+
+NumbersResult _numbers_getprocaddress_variableimpl(const char * pProcName, void ** ppProcAddress)
+{
+	static bool sbProcAddressMapHasBeenInitialized = false;
+	static std::map<std::string, void*> sProcAddressMap;
+	if (!sbProcAddressMapHasBeenInitialized) {
+		sProcAddressMap["numbers_base_getsymbollookupmethod"] = (void*)&numbers_base_getsymbollookupmethod;
+		sProcAddressMap["numbers_base_releaseinstance"] = (void*)&numbers_base_releaseinstance;
+		sProcAddressMap["numbers_base_acquireinstance"] = (void*)&numbers_base_acquireinstance;
+		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
+		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
+		sProcAddressMap["numbers_variable_getvalue"] = (void*)&numbers_variable_getvalue;
+		sProcAddressMap["numbers_variable_setvalue"] = (void*)&numbers_variable_setvalue;
+		
+		sbProcAddressMapHasBeenInitialized = true;
+	}
+	if (pProcName == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	if (ppProcAddress == nullptr)
+		return NUMBERS_ERROR_INVALIDPARAM;
+	*ppProcAddress = nullptr;
+	std::string sProcName (pProcName);
+	
+	auto procPair = sProcAddressMap.find(sProcName);
+	if (procPair == sProcAddressMap.end()) {
+		return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	}
+	else {
+		*ppProcAddress = procPair->second;
+		return NUMBERS_SUCCESS;
+	}
+	
+}
+
+
+
+/*************************************************************************************************************************
+ Initialize lookup function pointers
+**************************************************************************************************************************/
+NumbersSymbolLookupType IBase::s_SymbolLookupMethodBase = &_numbers_getprocaddress_base;
+NumbersSymbolLookupType IVariable::s_SymbolLookupMethodVariable = &_numbers_getprocaddress_variable;
+NumbersSymbolLookupType IVariableImpl::s_SymbolLookupMethodVariableImpl = &_numbers_getprocaddress_variableimpl;
+
 
 
 /*************************************************************************************************************************
@@ -336,19 +448,14 @@ NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Varia
 	}
 }
 
-NumbersResult numbers_getversion(Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro)
+NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod)
 {
 	IBase* pIBaseClass = nullptr;
 
 	try {
-		if (!pMajor)
+		if (pSymbolLookupMethod == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		if (!pMinor)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		if (!pMicro)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		CWrapper::GetVersion(*pMajor, *pMinor, *pMicro);
-
+		*pSymbolLookupMethod = &_numbers_getprocaddress_internal;
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {
@@ -362,7 +469,7 @@ NumbersResult numbers_getversion(Numbers_uint32 * pMajor, Numbers_uint32 * pMino
 	}
 }
 
-NumbersResult numbers_getlasterror(Numbers_Base pInstance, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+NumbersResult numbers_getlasterror(const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
 {
 	IBase* pIBaseClass = nullptr;
 
@@ -371,13 +478,8 @@ NumbersResult numbers_getlasterror(Numbers_Base pInstance, const Numbers_uint32 
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
 		if (pHasError == nullptr)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDCAST);
-		
 		std::string sErrorMessage("");
-		*pHasError = CWrapper::GetLastError(pIInstance, sErrorMessage);
+		*pHasError = CWrapper::GetLastError(sErrorMessage);
 
 		if (pErrorMessageNeededChars)
 			*pErrorMessageNeededChars = (Numbers_uint32) (sErrorMessage.size()+1);
@@ -401,64 +503,19 @@ NumbersResult numbers_getlasterror(Numbers_Base pInstance, const Numbers_uint32 
 	}
 }
 
-NumbersResult numbers_releaseinstance(Numbers_Base pInstance)
+NumbersResult numbers_getversion(Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro)
 {
 	IBase* pIBaseClass = nullptr;
 
 	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDCAST);
-		
-		CWrapper::ReleaseInstance(pIInstance);
-
-		return NUMBERS_SUCCESS;
-	}
-	catch (ENumbersInterfaceException & Exception) {
-		return handleNumbersException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-NumbersResult numbers_acquireinstance(Numbers_Base pInstance)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance.m_hHandle;
-		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
-		if (!pIInstance)
-			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDCAST);
-		
-		CWrapper::AcquireInstance(pIInstance);
-
-		return NUMBERS_SUCCESS;
-	}
-	catch (ENumbersInterfaceException & Exception) {
-		return handleNumbersException(pIBaseClass, Exception);
-	}
-	catch (std::exception & StdException) {
-		return handleStdException(pIBaseClass, StdException);
-	}
-	catch (...) {
-		return handleUnhandledException(pIBaseClass);
-	}
-}
-
-NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod)
-{
-	IBase* pIBaseClass = nullptr;
-
-	try {
-		if (pSymbolLookupMethod == nullptr)
+		if (!pMajor)
 			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
-		*pSymbolLookupMethod = &_numbers_getprocaddress_internal;
+		if (!pMinor)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		if (!pMicro)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		CWrapper::GetVersion(*pMajor, *pMinor, *pMicro);
+
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {

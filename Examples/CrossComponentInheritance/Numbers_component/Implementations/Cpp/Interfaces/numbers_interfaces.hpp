@@ -33,6 +33,7 @@ namespace Impl {
 */
 class IBase;
 class IVariable;
+class IVariableImpl;
 
 
 
@@ -93,11 +94,10 @@ public:
 	*/
 	virtual void RegisterErrorMessage(const std::string & sErrorMessage) = 0;
 	/**
-	* IBase::GetLastError - Returns the last error recorded on this object
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
+	* IBase::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
+	* @return Address of the SymbolAddressMethod
 	*/
-	virtual bool GetLastError(std::string & sErrorMessage) = 0;
+	virtual Numbers_pvoid GetSymbolLookupMethod() = 0;
 
 	/**
 	* IBase::ReleaseInstance - Releases shared ownership of an Instance
@@ -108,6 +108,21 @@ public:
 	* IBase::AcquireInstance - Acquires shared ownership of an Instance
 	*/
 	virtual void AcquireInstance() = 0;
+
+	/**
+	* IBase::GetVersion - retrieves the binary version of this library.
+	* @param[out] nMajor - returns the major version of this library
+	* @param[out] nMinor - returns the minor version of this library
+	* @param[out] nMicro - returns the micro version of this library
+	*/
+	virtual void GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro) = 0;
+
+	/**
+	* IBase::GetLastError - Returns the last error recorded on this object
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	virtual bool GetLastError(std::string & sErrorMessage) = 0;
 
 };
 
@@ -173,6 +188,22 @@ typedef IBaseSharedPtr<IVariable> PIVariable;
 
 
 /*************************************************************************************************************************
+ Class interface for VariableImpl 
+**************************************************************************************************************************/
+
+class IVariableImpl : public virtual IVariable {
+public:
+	static NumbersSymbolLookupType s_SymbolLookupMethodVariableImpl;
+	IVariableImpl() {
+		m_ExtendedHandle.m_pfnSymbolLookupMethod = s_SymbolLookupMethodVariableImpl;
+	}
+	
+};
+
+typedef IBaseSharedPtr<IVariableImpl> PIVariableImpl;
+
+
+/*************************************************************************************************************************
  Global functions declarations
 **************************************************************************************************************************/
 class CWrapper {
@@ -185,32 +216,19 @@ public:
 	static IVariable * CreateVariable(const Numbers_double dInitialValue);
 
 	/**
+	* Inumbers::GetLastError - Returns the last error recorded on component
+	* @param[out] sErrorMessage - Message of the last error
+	* @return Is there a last error to query
+	*/
+	static bool GetLastError(std::string & sErrorMessage);
+
+	/**
 	* Inumbers::GetVersion - retrieves the binary version of this library.
 	* @param[out] nMajor - returns the major version of this library
 	* @param[out] nMinor - returns the minor version of this library
 	* @param[out] nMicro - returns the micro version of this library
 	*/
 	static void GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro);
-
-	/**
-	* Inumbers::GetLastError - Returns the last error recorded on this object
-	* @param[in] pInstance - Instance Handle
-	* @param[out] sErrorMessage - Message of the last error
-	* @return Is there a last error to query
-	*/
-	static bool GetLastError(IBase* pInstance, std::string & sErrorMessage);
-
-	/**
-	* Inumbers::ReleaseInstance - Releases shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void ReleaseInstance(IBase* pInstance);
-
-	/**
-	* Inumbers::AcquireInstance - Acquires shared ownership of an Instance
-	* @param[in] pInstance - Instance Handle
-	*/
-	static void AcquireInstance(IBase* pInstance);
 
 };
 

@@ -18,18 +18,22 @@ Interface version: 1.0.0
 #include "numbers_interfaceexception.hpp"
 
 #include "numbers_variable.hpp"
+#include "numbers_variableimpl.hpp"
 
 using namespace Numbers;
 using namespace Numbers::Impl;
 
-NumbersSymbolLookupType IBase::s_SymbolLookupMethodBase = nullptr;
-NumbersSymbolLookupType IVariable::s_SymbolLookupMethodVariable = nullptr;
 
 IVariable * CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
-	numbers_getsymbollookupmethod((void**)&(IBase::s_SymbolLookupMethodBase));
-	numbers_getsymbollookupmethod((void**)&(IVariable::s_SymbolLookupMethodVariable));
-	return new CVariable(dInitialValue);
+	PIVariableImpl pImpl(new CVariableImpl());
+	pImpl->SetValue(dInitialValue);
+	return pImpl.getCoOwningPtr();
+}
+
+bool CWrapper::GetLastError(std::string & sErrorMessage)
+{
+	throw ENumbersInterfaceException(NUMBERS_ERROR_NOTIMPLEMENTED);
 }
 
 void CWrapper::GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro)
@@ -39,17 +43,4 @@ void CWrapper::GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numb
 	nMicro = NUMBERS_VERSION_MICRO;
 }
 
-bool CWrapper::GetLastError(IBase* pInstance, std::string & sErrorMessage)
-{
-	return pInstance->GetLastError(sErrorMessage);
-}
 
-void CWrapper::ReleaseInstance(IBase* pInstance)
-{
-	IBase::ReleaseBaseClassInterface(pInstance);
-}
-
-void CWrapper::AcquireInstance(IBase* pInstance)
-{
-	IBase::AcquireBaseClassInterface(pInstance);
-}

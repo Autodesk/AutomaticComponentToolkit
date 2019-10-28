@@ -35,10 +35,10 @@ namespace Impl {
 class CVariable : public virtual IVariable, public virtual CBase {
 private:
 
-	Numbers_double m_dValue = 0.0;
 	/**
 	* Put private members here.
 	*/
+	double m_value;
 
 protected:
 
@@ -51,7 +51,7 @@ public:
 	/**
 	* Put additional public members here. They will not be visible in the external API.
 	*/
-	CVariable(Numbers_double dValue) : m_dValue(dValue) {};
+
 
 	/**
 	* Public member functions to implement.

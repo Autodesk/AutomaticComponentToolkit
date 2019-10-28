@@ -359,6 +359,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  virtual ~%s() {};", classInterfaceName)
 		w.Writeln("")
 
+		// These methods are required for shared pointers
 		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName)
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(releaseBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
@@ -544,23 +545,6 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 	}
 
 	stubfile.Writeln("")
-
-	stubfile.Writeln("// Initialize lookup function pointers ");
-	stubfile.Writeln("// TODO")
-	for j := 0; j < len(component.Classes); j++ {
-		class := component.Classes[j]
-		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-		// stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;",
-		stubfile.Writeln("%sSymbolLookupType %s::s_SymbolLookupMethod%s = nullptr;", NameSpace, classInterfaceName, class.ClassName)
-	}
-	stubfile.Writeln("")
-
-	for j := 0; j < len(component.Classes); j++ {
-		class := component.Classes[j]
-		classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
-		stubfile.Writeln("// %s_%s((void**)&(%s::s_SymbolLookupMethod%s));",
-			strings.ToLower(NameSpace), strings.ToLower(component.Global.SymbolLookupMethod), classInterfaceName, class.ClassName)
-	}
 
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
@@ -784,6 +768,8 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		journalParameter = fmt.Sprintf (", C%sInterfaceJournalEntry * pJournalEntry = nullptr", NameSpace);
 	}
 
+	w.Writeln("")
+
 	IBaseClassName := "I" + ClassIdentifier + component.Global.BaseClassName
 	registerErrorMethod := RegisterErrorMessageMethod()
 	w.Writeln("%sResult handle%sException(%s * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, IBaseClassName, NameSpace, journalParameter)
@@ -855,11 +841,23 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	if err != nil {
 		return err
 	}
-	
+
 	err = buildCPPAllGetSymbolAddressMethods(component, w);
 	if err != nil {
 		return err
 	}
+
+	w.Writeln("")
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Initialize lookup function pointers")
+	w.Writeln("**************************************************************************************************************************/")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("%sSymbolLookupType I%s%s::s_SymbolLookupMethod%s = &_%s_getprocaddress_%s;", NameSpace, ClassIdentifier, class.ClassName, class.ClassName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName))
+	}
+	w.Writeln("")
+	w.Writeln("")
 
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
@@ -1219,6 +1217,12 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 					stubimplw.Writeln("}")
 				case eSpecialMethodAcquire:
 					stubimplw.Writeln("++m_nReferenceCount;")
+				case eSpecialMethodVersion:
+					stubimplw.Writeln("n%s = %s_VERSION_MAJOR;", method.Params[0].ParamName, strings.ToUpper(NameSpace))
+					stubimplw.Writeln("n%s = %s_VERSION_MINOR;", method.Params[1].ParamName, strings.ToUpper(NameSpace))
+					stubimplw.Writeln("n%s = %s_VERSION_MICRO;", method.Params[2].ParamName, strings.ToUpper(NameSpace))
+				case eSpecialMethodSymbolLookup:
+					stubimplw.Writeln("return m_ExtendedHandle.m_pfnSymbolLookupMethod;")
 			}
 			stubimplw.AddIndentationLevel(-1)
 

@@ -31,18 +31,27 @@
 		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
 	</errors>
 	
-	<class name="Base" errormethod="GetLastError" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance">
-		<method name="GetLastError" description="Returns the last error recorded on this object">
-			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
-			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+	<class name="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance" errormethod="GetLastError"
+		versionmethod="GetVersion" symbollookupmethod="GetSymbolLookupMethod">
+		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
+			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
 		</method>
 		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
 		</method>
 		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
 		</method>
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+		</method>
 	</class>
 	
-	<class name="Variable" parent="Base" description="A variable number">
+	<class name="Variable" parent="Base" abstract="true" description="A variable number" >
 		<method name="GetValue" description="Returns the current value of this Variable">
 			<param name="Value" type="double" pass="return" description="The current value of this Variable" />
 		</method>
@@ -50,35 +59,26 @@
 			<param name="Value" type="double" pass="in" description="The new value of this Variable" />
 		</method>
 	</class>
+
+	<class name="VariableImpl" parent="Variable" description="Implementation of a variable number">
+	</class>
 	
-	<global baseclassname="Base"
-		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
-		versionmethod="GetVersion" errormethod="GetLastError"
-		symbollookupmethod="GetSymbolLookupMethod">
-		
+	<global baseclassname="Base" symbollookupmethod="GetSymbolLookupMethod" errormethod="GetLastError" versionmethod="GetVersion">
 		<method name="CreateVariable" description="Creates a new Variable instance">
 			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
 			<param name="Instance" type="class" class="Variable" pass="return" description="New Variable instance" />
 		</method>
-		
+		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
+			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
+		</method>
+		<method name="GetLastError" versionmethod="GetVersion" description="Returns the last error recorded on component">
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+		</method>
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
 			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
-		</method>
-		<method name="GetLastError" description="Returns the last error recorded on this object">
-			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
-			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
-			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
-		</method>
-		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
-			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
-		</method>
-		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
-			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
-		</method>
-		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
-			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
 		</method>
 	</global>
 </component>

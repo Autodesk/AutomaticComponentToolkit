@@ -99,6 +99,7 @@ typedef struct {
 
 typedef NumbersExtendedHandle Numbers_Base;
 typedef NumbersExtendedHandle Numbers_Variable;
+typedef NumbersExtendedHandle Numbers_VariableImpl;
 
 namespace Numbers {
 

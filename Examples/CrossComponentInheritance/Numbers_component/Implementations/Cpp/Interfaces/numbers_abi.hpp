@@ -36,16 +36,13 @@ extern "C" {
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+NUMBERS_DECLSPEC NumbersResult numbers_base_getsymbollookupmethod(Numbers_Base pBase, Numbers_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -62,6 +59,29 @@ NUMBERS_DECLSPEC NumbersResult numbers_base_releaseinstance(Numbers_Base pBase);
 * @return error code or 0 (success)
 */
 NUMBERS_DECLSPEC NumbersResult numbers_base_acquireinstance(Numbers_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_base_getversion(Numbers_Base pBase, Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for Variable
@@ -86,6 +106,10 @@ NUMBERS_DECLSPEC NumbersResult numbers_variable_getvalue(Numbers_Variable pVaria
 NUMBERS_DECLSPEC NumbersResult numbers_variable_setvalue(Numbers_Variable pVariable, Numbers_double dValue);
 
 /*************************************************************************************************************************
+ Class definition for VariableImpl
+**************************************************************************************************************************/
+
+/*************************************************************************************************************************
  Global functions
 **************************************************************************************************************************/
 
@@ -99,6 +123,25 @@ NUMBERS_DECLSPEC NumbersResult numbers_variable_setvalue(Numbers_Variable pVaria
 NUMBERS_DECLSPEC NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Variable * pInstance);
 
 /**
+* Returns the address of the SymbolLookupMethod
+*
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod);
+
+/**
+* Returns the last error recorded on component
+*
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_getlasterror(const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+
+/**
 * retrieves the binary version of this library.
 *
 * @param[out] pMajor - returns the major version of this library
@@ -107,42 +150,6 @@ NUMBERS_DECLSPEC NumbersResult numbers_createvariable(Numbers_double dInitialVal
 * @return error code or 0 (success)
 */
 NUMBERS_DECLSPEC NumbersResult numbers_getversion(Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro);
-
-/**
-* Returns the last error recorded on this object
-*
-* @param[in] pInstance - Instance Handle
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_getlasterror(Numbers_Base pInstance, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_releaseinstance(Numbers_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_acquireinstance(Numbers_Base pInstance);
-
-/**
-* Returns the address of the SymbolLookupMethod
-*
-* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
-* @return error code or 0 (success)
-*/
-NUMBERS_DECLSPEC NumbersResult numbers_getsymbollookupmethod(Numbers_pvoid * pSymbolLookupMethod);
 
 }
 

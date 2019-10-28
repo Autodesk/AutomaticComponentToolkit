@@ -22,11 +22,11 @@ using namespace Numbers::Impl;
 
 Numbers_double CVariable::GetValue()
 {
-	return m_dValue;
+	return m_value;;
 }
 
 void CVariable::SetValue(const Numbers_double dValue)
 {
-	m_dValue = dValue;
+	m_value = dValue;
 }
 

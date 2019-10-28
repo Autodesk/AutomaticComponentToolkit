@@ -480,13 +480,6 @@ func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB Componen
 		change.NewValue = globalB.JournalMethod
 		changes = append(changes, change)
 	}
-	if (globalA.ReleaseMethod != globalB.ReleaseMethod) {
-		var change ComponentDiffAttributeChange
-		change.Path = pathA + "/releasemethod"
-		change.OldValue = globalA.ReleaseMethod
-		change.NewValue = globalB.ReleaseMethod
-		changes = append(changes, change)
-	}
 	if (globalA.VersionMethod != globalB.VersionMethod) {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/versionmethod"

@@ -34,16 +34,9 @@ void CBase::RegisterErrorMessage(const std::string & sErrorMessage)
 	m_pErrors->push_back(sErrorMessage);
 }
 
-bool CBase::GetLastError(std::string & sErrorMessage)
+Numbers_pvoid CBase::GetSymbolLookupMethod()
 {
-	if (m_pErrors && !m_pErrors->empty()) {
-		sErrorMessage = m_pErrors->back();
-		return true;
-	}
-	else {
-		sErrorMessage = "";
-		return false;
-	}
+	return m_ExtendedHandle.m_pfnSymbolLookupMethod;
 }
 
 void CBase::ReleaseInstance()
@@ -57,5 +50,23 @@ void CBase::ReleaseInstance()
 void CBase::AcquireInstance()
 {
 	++m_nReferenceCount;
+}
+
+void CBase::GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro)
+{
+	nMajor = NUMBERS_VERSION_MAJOR;
+	nMinor = NUMBERS_VERSION_MINOR;
+	nMicro = NUMBERS_VERSION_MICRO;
+}
+
+bool CBase::GetLastError(std::string & sErrorMessage)
+{
+	if (m_pErrors && !m_pErrors->empty()) {
+		sErrorMessage = m_pErrors->back();
+		return true;
+	} else {
+		sErrorMessage = "";
+		return false;
+	}
 }
 

@@ -615,7 +615,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 		} else {
 			CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		}
-		checkErrorCodeBegin = "CheckError(nullptr,"
+		checkErrorCodeBegin = "CheckError("
 	} else {
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_pFunctionTable%s->m_%s_%s", ClassName, ClassName, method.MethodName);
@@ -1164,7 +1164,6 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	cppClassPrefix := "C"
 	baseClass := component.baseClass()
-	cppBaseClassName := cppClassPrefix + ClassIdentifier + baseClass.ClassName
 
 	sIncludeGuard := "";
 	
@@ -1278,19 +1277,19 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	if ExplicitLinking {
 		w.Writeln("  %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
-		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
-		w.Writeln("    CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
+		w.Writeln("    CheckError(initWrapperTable(&m_WrapperTable));")
+		w.Writeln("    CheckError(loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
 		w.Writeln("    ")
-		w.Writeln("    CheckError(nullptr, checkBinaryVersion());")
+		w.Writeln("    CheckError(checkBinaryVersion());")
 		w.Writeln("  }")
 		w.Writeln("  ")
 
 		w.Writeln("  %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
-		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
-		w.Writeln("    CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
+		w.Writeln("    CheckError(initWrapperTable(&m_WrapperTable));")
+		w.Writeln("    CheckError(loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
 		w.Writeln("    ")
-		w.Writeln("    CheckError(nullptr, checkBinaryVersion());")
+		w.Writeln("    CheckError(checkBinaryVersion());")
 		w.Writeln("  }")
 		w.Writeln("  ")
 
@@ -1327,7 +1326,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 	
 	w.Writeln("  ")
-	w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
+	w.Writeln("  inline void CheckError(%sResult nResult);", NameSpace)
 	w.Writeln("")
 
 	for j := 0; j < len(global.Methods); j++ {
@@ -1487,13 +1486,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 
 	w.Writeln("  ")
-	w.Writeln("  inline void C%sWrapper::CheckError(%s * pBaseClass, %sResult nResult)", ClassIdentifier, cppBaseClassName, NameSpace)
+	w.Writeln("  inline void C%sWrapper::CheckError(%sResult nResult)", NameSpace, NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      std::string sErrorMessage;")
-	w.Writeln("      if (pBaseClass != nullptr) {")
-	w.Writeln("        %s(pBaseClass, sErrorMessage);", component.Global.ErrorMethod)
-	w.Writeln("      }")
+	w.Writeln("      %s(sErrorMessage);", component.Global.ErrorMethod)
 	w.Writeln("      throw E%sException(nResult, sErrorMessage);", NameSpace)
 	w.Writeln("    }")
 	w.Writeln("  }")

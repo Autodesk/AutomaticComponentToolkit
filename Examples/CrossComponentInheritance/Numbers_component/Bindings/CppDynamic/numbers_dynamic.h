@@ -25,16 +25,13 @@ Interface version: 1.0.0
 **************************************************************************************************************************/
 
 /**
-* Returns the last error recorded on this object
+* Returns the address of the SymbolLookupMethod
 *
 * @param[in] pBase - Base instance.
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
 * @return error code or 0 (success)
 */
-typedef NumbersResult (*PNumbersBase_GetLastErrorPtr) (Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+typedef NumbersResult (*PNumbersBase_GetSymbolLookupMethodPtr) (Numbers_Base pBase, Numbers_pvoid * pSymbolLookupMethod);
 
 /**
 * Releases shared ownership of an Instance
@@ -51,6 +48,29 @@ typedef NumbersResult (*PNumbersBase_ReleaseInstancePtr) (Numbers_Base pBase);
 * @return error code or 0 (success)
 */
 typedef NumbersResult (*PNumbersBase_AcquireInstancePtr) (Numbers_Base pBase);
+
+/**
+* retrieves the binary version of this library.
+*
+* @param[in] pBase - Base instance.
+* @param[out] pMajor - returns the major version of this library
+* @param[out] pMinor - returns the minor version of this library
+* @param[out] pMicro - returns the micro version of this library
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersBase_GetVersionPtr) (Numbers_Base pBase, Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro);
+
+/**
+* Returns the last error recorded on this object
+*
+* @param[in] pBase - Base instance.
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersBase_GetLastErrorPtr) (Numbers_Base pBase, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /*************************************************************************************************************************
  Class definition for Variable
@@ -75,6 +95,10 @@ typedef NumbersResult (*PNumbersVariable_GetValuePtr) (Numbers_Variable pVariabl
 typedef NumbersResult (*PNumbersVariable_SetValuePtr) (Numbers_Variable pVariable, Numbers_double dValue);
 
 /*************************************************************************************************************************
+ Class definition for VariableImpl
+**************************************************************************************************************************/
+
+/*************************************************************************************************************************
  Global functions
 **************************************************************************************************************************/
 
@@ -88,6 +112,25 @@ typedef NumbersResult (*PNumbersVariable_SetValuePtr) (Numbers_Variable pVariabl
 typedef NumbersResult (*PNumbersCreateVariablePtr) (Numbers_double dInitialValue, Numbers_Variable * pInstance);
 
 /**
+* Returns the address of the SymbolLookupMethod
+*
+* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersGetSymbolLookupMethodPtr) (Numbers_pvoid * pSymbolLookupMethod);
+
+/**
+* Returns the last error recorded on component
+*
+* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+* @param[out] pHasError - Is there a last error to query
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersGetLastErrorPtr) (const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
+
+/**
 * retrieves the binary version of this library.
 *
 * @param[out] pMajor - returns the major version of this library
@@ -97,71 +140,40 @@ typedef NumbersResult (*PNumbersCreateVariablePtr) (Numbers_double dInitialValue
 */
 typedef NumbersResult (*PNumbersGetVersionPtr) (Numbers_uint32 * pMajor, Numbers_uint32 * pMinor, Numbers_uint32 * pMicro);
 
-/**
-* Returns the last error recorded on this object
-*
-* @param[in] pInstance - Instance Handle
-* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-* @param[out] pHasError - Is there a last error to query
-* @return error code or 0 (success)
-*/
-typedef NumbersResult (*PNumbersGetLastErrorPtr) (Numbers_Base pInstance, const Numbers_uint32 nErrorMessageBufferSize, Numbers_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
-
-/**
-* Releases shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef NumbersResult (*PNumbersReleaseInstancePtr) (Numbers_Base pInstance);
-
-/**
-* Acquires shared ownership of an Instance
-*
-* @param[in] pInstance - Instance Handle
-* @return error code or 0 (success)
-*/
-typedef NumbersResult (*PNumbersAcquireInstancePtr) (Numbers_Base pInstance);
-
-/**
-* Returns the address of the SymbolLookupMethod
-*
-* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
-* @return error code or 0 (success)
-*/
-typedef NumbersResult (*PNumbersGetSymbolLookupMethodPtr) (Numbers_pvoid * pSymbolLookupMethod);
-
 /*************************************************************************************************************************
  Function Table Structure
 **************************************************************************************************************************/
 
 typedef struct {
 	void * m_LibraryHandle;
-	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
+	PNumbersBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PNumbersBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PNumbersBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PNumbersBase_GetVersionPtr m_Base_GetVersion;
+	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
 	PNumbersVariable_GetValuePtr m_Variable_GetValue;
 	PNumbersVariable_SetValuePtr m_Variable_SetValue;
 	PNumbersCreateVariablePtr m_CreateVariable;
-	PNumbersGetVersionPtr m_GetVersion;
-	PNumbersGetLastErrorPtr m_GetLastError;
-	PNumbersReleaseInstancePtr m_ReleaseInstance;
-	PNumbersAcquireInstancePtr m_AcquireInstance;
 	PNumbersGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
+	PNumbersGetLastErrorPtr m_GetLastError;
+	PNumbersGetVersionPtr m_GetVersion;
 } sNumbersDynamicWrapperTable;
 
 typedef struct {
-	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
+	PNumbersBase_GetSymbolLookupMethodPtr m_Base_GetSymbolLookupMethod;
 	PNumbersBase_ReleaseInstancePtr m_Base_ReleaseInstance;
 	PNumbersBase_AcquireInstancePtr m_Base_AcquireInstance;
+	PNumbersBase_GetVersionPtr m_Base_GetVersion;
+	PNumbersBase_GetLastErrorPtr m_Base_GetLastError;
 } sNumbersFunctionTableBase;
 
 typedef struct : sNumbersFunctionTableBase {
 	PNumbersVariable_GetValuePtr m_Variable_GetValue;
 	PNumbersVariable_SetValuePtr m_Variable_SetValue;
 } sNumbersFunctionTableVariable;
+
+typedef struct : sNumbersFunctionTableVariable {
+} sNumbersFunctionTableVariableImpl;
 
 #endif // __NUMBERS_DYNAMICHEADER_CPPTYPES
 

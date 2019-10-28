@@ -85,9 +85,12 @@ type ComponentDefinitionClass struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"class"`
 	ClassName string `xml:"name,attr"`
+	Abstract string `xml:"abstract,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
+	VersionMethod string `xml:"versionmethod,attr"`
+	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
@@ -120,14 +123,14 @@ type ComponentDefinitionGlobal struct {
 	XMLName xml.Name `xml:"global"`
 	BaseClassName string `xml:"baseclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
-	ReleaseMethod string `xml:"releasemethod,attr"`
-	AcquireMethod string `xml:"acquiremethod,attr"`
 	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
 	InjectionMethod string `xml:"injectionmethod,attr"`
 	JournalMethod string `xml:"journalmethod,attr"`
 	VersionMethod string `xml:"versionmethod,attr"`
 	PrereleaseMethod string `xml:"prereleasemethod,attr"`
 	BuildinfoMethod string `xml:"buildinfomethod,attr"`
+	ReleaseMethod string `xml:"releasemethod,attr"`
+	AcquireMethod string `xml:"acquiremethod,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -516,6 +519,12 @@ func (class* ComponentDefinitionClass) CheckClassSpecialFunction(method Componen
 	if (class.AcquireMethod == method.MethodName) {
 		return eSpecialMethodAcquire
 	}
+	if (class.VersionMethod == method.MethodName) {
+		return eSpecialMethodVersion
+	}
+	if (class.SymbolLookupMethod == method.MethodName) {
+		return eSpecialMethodSymbolLookup
+	}
 	return eSpecialMethodNone
 }
 
@@ -530,10 +539,18 @@ func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
 	if (class.ErrorMethod == "") {
 		return errors.New ("No error method specified")
 	}
+	if (class.VersionMethod == "") {
+		return errors.New ("No version method specified")
+	}
+	if (class.SymbolLookupMethod == "") {
+		return errors.New ("No symbollookupmethod method specified")
+	}
 
 	bReleaseMethodFound := false
 	bAcquireMethodFound := false
 	bErrorMethodFound := false
+	bVersionMethodFound := false
+	bSymbollookupMethodFound := false
 	for i := 0; i < len(class.Methods); i++ {
 		method := class.Methods[i]
 		if method.MethodName == class.ReleaseMethod {
@@ -548,6 +565,17 @@ func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
 				return errors.New("Acquire method does not match the expected function template")
 			}
 		}
+		if method.MethodName == class.VersionMethod {
+			bVersionMethodFound = true
+			if (len (method.Params) != 3) {
+				return errors.New("Version method does not match the expected function template")
+			}
+			if  (method.Params[0].ParamType != "uint32") || (method.Params[0].ParamPass != "out") || 
+				(method.Params[1].ParamType != "uint32") || (method.Params[1].ParamPass != "out") || 
+				(method.Params[2].ParamType != "uint32") || (method.Params[2].ParamPass != "out") {
+				return errors.New("Version method does not match the expected function template")
+			}
+		}
 		if method.MethodName == class.ErrorMethod {
 			bErrorMethodFound = true
 			if (len (method.Params) != 2) {
@@ -556,6 +584,12 @@ func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
 			if  (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "out") || 
 				(method.Params[1].ParamType != "bool") || (method.Params[1].ParamPass != "return") {
 				return errors.New("Error method does not match the expected function template")
+			}
+		}
+		if method.MethodName == class.SymbolLookupMethod {
+			bSymbollookupMethodFound = true
+			if (len (method.Params) != 1) {
+				return errors.New("Symbollookupmethod does not match the expected function template");
 			}
 		}
 	}
@@ -568,6 +602,12 @@ func (class *ComponentDefinitionClass) CheckBaseClassSpecialFunction() (error) {
 	}
 	if !bErrorMethodFound {
 		return fmt.Errorf("baseclass does not specify an ErrorMethod")
+	}
+	if !bVersionMethodFound {
+		return fmt.Errorf("baseclass does not specify a VersionMethod")
+	}
+	if !bSymbollookupMethodFound {
+		return fmt.Errorf("baseclass does not specify a SymbolLookupMethod")
 	}
 	return nil
 }
@@ -1088,14 +1128,6 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 // CheckHeaderSpecialFunction checks a special function of the header against their required definitions
 func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
 
-	if (global.ReleaseMethod == "") {
-		return eSpecialMethodNone, errors.New ("No release method specified");
-	}
-
-	if (global.AcquireMethod == "") {
-		return eSpecialMethodNone, errors.New ("No acquire method specified");
-	}
-
 	if (global.VersionMethod == "") {
 		return eSpecialMethodNone, errors.New ("No version method specified");
 	}
@@ -1104,48 +1136,8 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 		return eSpecialMethodNone, errors.New ("No error method specified");
 	}
 
-	if (global.ReleaseMethod == global.JournalMethod) {
-		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Journal method");
-	}
-
-	if (global.ReleaseMethod == global.VersionMethod) {
-		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Version method");
-	}
-
-	if (global.ReleaseMethod == global.AcquireMethod) {
-		return eSpecialMethodNone, errors.New ("Release method can not be the same as the Acquire method");
-	}
-
 	if (global.JournalMethod == global.VersionMethod) {
 		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Version method");
-	}
-
-	if (global.JournalMethod == global.AcquireMethod) {
-		return eSpecialMethodNone, errors.New ("Journal method can not be the same as the Acquire method");
-	}
-
-	if (method.MethodName == global.ReleaseMethod) {
-		if (len (method.Params) != 1) {
-			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
-		}
-		
-		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
-			return eSpecialMethodNone, errors.New ("Release method does not match the expected function template");
-		}
-
-		return eSpecialMethodRelease, nil;
-	}
-
-	if (method.MethodName == global.AcquireMethod) {
-		if (len (method.Params) != 1) {
-			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
-		}
-		
-		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamClass != global.BaseClassName) || (method.Params[0].ParamPass != "in") {
-			return eSpecialMethodNone, errors.New ("Acquire method does not match the expected function template");
-		}
-
-		return eSpecialMethodAcquire, nil;
 	}
 
 	if (method.MethodName == global.SymbolLookupMethod) {
@@ -1198,14 +1190,11 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 	}
 	
 	if (method.MethodName == global.ErrorMethod) {
-		if (len (method.Params) != 3) {
+		if (len (method.Params) != 2) {
 			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
 		}
-		
-		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamPass != "in") || 
-			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") || 
-			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
-			(method.Params[0].ParamClass != global.BaseClassName) {
+		if ( (method.Params[0].ParamType != "string") || (method.Params[0].ParamPass != "out") || 
+			(method.Params[1].ParamType != "bool") || (method.Params[1].ParamPass != "return") ) {
 			return eSpecialMethodNone, errors.New ("Error method does not match the expected function template");
 		}
 		
