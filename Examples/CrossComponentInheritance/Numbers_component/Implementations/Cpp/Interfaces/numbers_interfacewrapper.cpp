@@ -274,6 +274,7 @@ NumbersResult _numbers_getprocaddress_internal(const char * pProcName, void ** p
 		sProcAddressMap["numbers_base_getversion"] = (void*)&numbers_base_getversion;
 		sProcAddressMap["numbers_base_getlasterror"] = (void*)&numbers_base_getlasterror;
 		sProcAddressMap["numbers_createvariable"] = (void*)&numbers_createvariable;
+		sProcAddressMap["numbers_createvariableimpl"] = (void*)&numbers_createvariableimpl;
 		sProcAddressMap["numbers_getsymbollookupmethod"] = (void*)&numbers_getsymbollookupmethod;
 		sProcAddressMap["numbers_getlasterror"] = (void*)&numbers_getlasterror;
 		sProcAddressMap["numbers_getversion"] = (void*)&numbers_getversion;
@@ -398,6 +399,31 @@ NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Varia
 		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
 		pNumbersInstance->AcquireInstance();
 		*pInstance = pNumbersInstance->GetHandle();
+		return NUMBERS_SUCCESS;
+	}
+	catch (ENumbersInterfaceException & Exception) {
+		return handleNumbersException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+NumbersResult numbers_createvariableimpl(Numbers_double dInitialValue, Numbers_VariableImpl * pInstance)
+{
+	IBase* pIBaseClass = nullptr;
+
+	try {
+		if (pInstance == nullptr)
+			throw ENumbersInterfaceException (NUMBERS_ERROR_INVALIDPARAM);
+		IBase* pBaseInstance(nullptr);
+		pBaseInstance = CWrapper::CreateVariableImpl(dInitialValue);
+
+		// TODO: this does not work necessarily@ pBaseInstance might be nullptr
+		*pInstance = pBaseInstance->GetExtendedHandle();
 		return NUMBERS_SUCCESS;
 	}
 	catch (ENumbersInterfaceException & Exception) {

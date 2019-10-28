@@ -28,7 +28,15 @@ Numbers::Binding::PWrapper CWrapper::sPNumbersWrapper;
 Numbers::Binding::PVariable CWrapper::CreateVariable(const Numbers_double dInitialValue)
 {
 	PIVariableImpl pImpl(new CVariableImpl());
+	pImpl->SetValue(dInitialValue);
 	return std::make_shared<Numbers::Binding::CVariable>(pImpl->GetExtendedHandle());
+}
+
+IVariableImpl * CWrapper::CreateVariableImpl(const Numbers_double dInitialValue)
+{
+	PIVariableImpl pImpl(new CVariableImpl());
+	pImpl->SetValue(dInitialValue);
+	return pImpl.getCoOwningPtr();
 }
 
 bool CWrapper::GetLastError(std::string & sErrorMessage)

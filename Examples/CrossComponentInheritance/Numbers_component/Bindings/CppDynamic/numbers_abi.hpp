@@ -105,6 +105,15 @@ NUMBERS_DECLSPEC NumbersResult numbers_base_getlasterror(Numbers_Base pBase, con
 NUMBERS_DECLSPEC NumbersResult numbers_createvariable(Numbers_double dInitialValue, Numbers_Variable * pInstance);
 
 /**
+* Creates a new Variable instance
+*
+* @param[in] dInitialValue - Initial value of the new Variable
+* @param[out] pInstance - New Variable instance
+* @return error code or 0 (success)
+*/
+NUMBERS_DECLSPEC NumbersResult numbers_createvariableimpl(Numbers_double dInitialValue, Numbers_VariableImpl * pInstance);
+
+/**
 * Returns the address of the SymbolLookupMethod
 *
 * @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod

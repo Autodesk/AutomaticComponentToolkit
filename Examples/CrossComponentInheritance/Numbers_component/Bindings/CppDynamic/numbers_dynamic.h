@@ -112,6 +112,15 @@ typedef NumbersResult (*PNumbersVariable_SetValuePtr) (Numbers_Variable pVariabl
 typedef NumbersResult (*PNumbersCreateVariablePtr) (Numbers_double dInitialValue, Numbers_Variable * pInstance);
 
 /**
+* Creates a new Variable instance
+*
+* @param[in] dInitialValue - Initial value of the new Variable
+* @param[out] pInstance - New Variable instance
+* @return error code or 0 (success)
+*/
+typedef NumbersResult (*PNumbersCreateVariableImplPtr) (Numbers_double dInitialValue, Numbers_VariableImpl * pInstance);
+
+/**
 * Returns the address of the SymbolLookupMethod
 *
 * @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
@@ -154,6 +163,7 @@ typedef struct {
 	PNumbersVariable_GetValuePtr m_Variable_GetValue;
 	PNumbersVariable_SetValuePtr m_Variable_SetValue;
 	PNumbersCreateVariablePtr m_CreateVariable;
+	PNumbersCreateVariableImplPtr m_CreateVariableImpl;
 	PNumbersGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
 	PNumbersGetLastErrorPtr m_GetLastError;
 	PNumbersGetVersionPtr m_GetVersion;

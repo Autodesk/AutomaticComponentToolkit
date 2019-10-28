@@ -203,6 +203,13 @@ public:
 	static Numbers::Binding::PVariable CreateVariable(const Numbers_double dInitialValue);
 
 	/**
+	* Inumbers::CreateVariableImpl - Creates a new Variable instance
+	* @param[in] dInitialValue - Initial value of the new Variable
+	* @return New Variable instance
+	*/
+	static IVariableImpl * CreateVariableImpl(const Numbers_double dInitialValue);
+
+	/**
 	* Inumbers::GetLastError - Returns the last error recorded on component
 	* @param[out] sErrorMessage - Message of the last error
 	* @return Is there a last error to query

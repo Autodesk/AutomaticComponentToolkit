@@ -29,12 +29,14 @@ int main()
 		std::cout << std::endl;
 
 		auto pVar = wrapper->CreateVariable(1.0);
+		std::cout << pVar->GetValue() << std::endl;
 		pVar->SetValue(10.0);
-
 		std::cout << pVar->GetValue() << std::endl;
 
-		auto pVar2= wrapper->CreateVariable(2.0);
-		pVar2->SetValue(10.0);
+		auto pVarImpl= wrapper->CreateVariableImpl(2.0);
+		std::cout << pVarImpl->GetValue() << std::endl;
+		pVarImpl->SetValue(20.0);
+		std::cout << pVarImpl->GetValue() << std::endl;
 	}
 	catch (std::exception &e)
 	{

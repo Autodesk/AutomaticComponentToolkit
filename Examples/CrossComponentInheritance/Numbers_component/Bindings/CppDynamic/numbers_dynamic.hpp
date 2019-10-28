@@ -188,6 +188,7 @@ public:
 	inline void CheckError(NumbersResult nResult);
 
 	inline PVariable CreateVariable(const Numbers_double dInitialValue);
+	inline PVariableImpl CreateVariableImpl(const Numbers_double dInitialValue);
 	inline Numbers_pvoid GetSymbolLookupMethod();
 	inline bool GetLastError(std::string & sErrorMessage);
 	inline void GetVersion(Numbers_uint32 & nMajor, Numbers_uint32 & nMinor, Numbers_uint32 & nMicro);
@@ -390,6 +391,22 @@ public:
 	}
 	
 	/**
+	* CWrapper::CreateVariableImpl - Creates a new Variable instance
+	* @param[in] dInitialValue - Initial value of the new Variable
+	* @return New Variable instance
+	*/
+	inline PVariableImpl CWrapper::CreateVariableImpl(const Numbers_double dInitialValue)
+	{
+		NumbersExtendedHandle hInstance;
+		CheckError(m_WrapperTable.m_CreateVariableImpl(dInitialValue, &hInstance));
+		
+		if (!hInstance.m_hHandle) {
+			CheckError(NUMBERS_ERROR_INVALIDPARAM);
+		}
+		return std::make_shared<CVariableImpl>(hInstance);
+	}
+	
+	/**
 	* CWrapper::GetSymbolLookupMethod - Returns the address of the SymbolLookupMethod
 	* @return Address of the SymbolAddressMethod
 	*/
@@ -454,6 +471,7 @@ public:
 		pWrapperTable->m_Variable_GetValue = nullptr;
 		pWrapperTable->m_Variable_SetValue = nullptr;
 		pWrapperTable->m_CreateVariable = nullptr;
+		pWrapperTable->m_CreateVariableImpl = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
 		pWrapperTable->m_GetLastError = nullptr;
 		pWrapperTable->m_GetVersion = nullptr;
@@ -560,6 +578,15 @@ public:
 			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
+		pWrapperTable->m_CreateVariableImpl = (PNumbersCreateVariableImplPtr) GetProcAddress(hLibrary, "numbers_createvariableimpl");
+		#else // _WIN32
+		pWrapperTable->m_CreateVariableImpl = (PNumbersCreateVariableImplPtr) dlsym(hLibrary, "numbers_createvariableimpl");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_CreateVariableImpl == nullptr)
+			return NUMBERS_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
 		pWrapperTable->m_GetSymbolLookupMethod = (PNumbersGetSymbolLookupMethodPtr) GetProcAddress(hLibrary, "numbers_getsymbollookupmethod");
 		#else // _WIN32
 		pWrapperTable->m_GetSymbolLookupMethod = (PNumbersGetSymbolLookupMethodPtr) dlsym(hLibrary, "numbers_getsymbollookupmethod");
@@ -606,6 +633,7 @@ public:
 		readMethodInto(pLookupFunction, "numbers_variable_getvalue", (void**)&(pWrapperTable->m_Variable_GetValue));
 		readMethodInto(pLookupFunction, "numbers_variable_setvalue", (void**)&(pWrapperTable->m_Variable_SetValue));
 		readMethodInto(pLookupFunction, "numbers_createvariable", (void**)&(pWrapperTable->m_CreateVariable));
+		readMethodInto(pLookupFunction, "numbers_createvariableimpl", (void**)&(pWrapperTable->m_CreateVariableImpl));
 		readMethodInto(pLookupFunction, "numbers_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));
 		readMethodInto(pLookupFunction, "numbers_getlasterror", (void**)&(pWrapperTable->m_GetLastError));
 		readMethodInto(pLookupFunction, "numbers_getversion", (void**)&(pWrapperTable->m_GetVersion));

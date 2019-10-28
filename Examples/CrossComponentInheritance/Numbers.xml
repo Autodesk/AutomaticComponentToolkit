@@ -68,6 +68,10 @@
 			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
 			<param name="Instance" type="class" class="Variable" pass="return" description="New Variable instance" />
 		</method>
+		<method name="CreateVariableImpl" description="Creates a new Variable instance">
+			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
+			<param name="Instance" type="class" class="VariableImpl" pass="return" description="New Variable instance" />
+		</method>
 		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
 			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
 		</method>
