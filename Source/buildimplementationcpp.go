@@ -373,7 +373,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 		// These methods are required for shared pointers
 		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName)
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, releaseBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, releaseBaseClassInterfaceMethod, class.ClassName, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -387,7 +387,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("")
 
 		acquireBaseClassInterfaceMethod := AcquireBaseClassInterfaceMethod(component.Global.BaseClassName)
-		methodstring, _, err = buildCPPInterfaceMethodDeclaration(component, acquireBaseClassInterfaceMethod, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, true, false, true)
+		methodstring, _, err = buildCPPInterfaceMethodDeclaration(component, acquireBaseClassInterfaceMethod, class.ClassName, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -404,7 +404,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		methods[0] = ClearErrorMessageMethod()
 		methods[1] = RegisterErrorMessageMethod()
 		for j := 0; j < len(methods); j++ {
-			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, methods[j], class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, methods[j], class.ClassName, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 			if err != nil {
 				return err
 			}
@@ -423,7 +423,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 		for j := 0; j < len(parentClass.Methods); j++ {
 			method := parentClass.Methods[j]
-			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, parentClass.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+			methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, parentClass.ClassName, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 			if err != nil {
 				return err
 			}
@@ -434,7 +434,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 		if err != nil {
 			return err
 		}
@@ -542,7 +542,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 			continue
 		}
 
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, method, BaseName, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
 		if err != nil {
 			return err
 		}
@@ -621,7 +621,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 			thisMethodDefaultImpl = acquireImplementation
 		}
 
-		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, "Wrapper", NameSpace, ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
+		_, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, "Wrapper", ClassIdentifier, BaseName, stubfile.IndentString, true, false, false)
 		if err != nil {
 			return err
 		}
@@ -1261,7 +1261,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[1] = append(implementations[1], "m_pErrors->push_back(sErrorMessage);")
 
 			for i := 0; i < len(methods); i++ {
-				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, methods[i], class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+				methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, methods[i], class.ClassName, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 				if (err!=nil) {
 					return err
 				}
@@ -1282,7 +1282,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			if (isSpecialFunction == eSpecialMethodNone) {
 				continue
 			}
-			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
 			}
@@ -1338,7 +1338,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 					if (isSpecialFunction != eSpecialMethodNone) {
 						continue
 					}
-					methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+					methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 					if err != nil {
 						return err
 					}
@@ -1360,7 +1360,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			if (isSpecialFunction != eSpecialMethodNone) {
 				continue
 			}
-			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
+			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(component, method, class.ClassName, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
 			}
@@ -1436,7 +1436,8 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 	return "";
 }
 
-func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method ComponentDefinitionMethod, className string, NameSpace string, ClassIdentifier string, BaseName string, indentString string, isGlobal bool, isVirtual bool, writeComment bool) (string, string, error) {
+func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method ComponentDefinitionMethod, className string, ClassIdentifier string, BaseName string, indentString string, isGlobal bool, isVirtual bool, writeComment bool) (string, string, error) {
+	NameSpace := component.NameSpace
 	parameters := ""
 	returntype := "void"
 	commentcode := ""
@@ -1492,7 +1493,14 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 
 			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] p%s - %s\n", param.ParamName, param.ParamDescription)
-				_, class, _ := component.getClassByName(param.ParamClass)
+				paramClass := param.ParamClass
+				if ((method.Component != nil) && (method.Component.NameSpace != component.NameSpace)) {
+					if (!nameIsFullyQualified(paramClass)) {
+						paramClass = method.Component.NameSpace + ":" + paramClass
+					}
+				}
+				// paramNameSpace, paramClassName, _ := decomposeParamClassName(paramClass)
+				_, class, _ := component.getClassByName(paramClass)
 				if (class.IsAbstract()) {
 					usedNameSpace := NameSpace
 					if len(paramNameSpaceCPP) > 0 {
@@ -1695,7 +1703,8 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 	return "";
 }
 
-func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, QualifyingNameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+	NameSpace := component.NameSpace
 	preCallCode := make([]string, 0)
 	postCallCode := make([]string, 0)
 	callParameters := ""
@@ -1730,8 +1739,14 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 
 			case "class", "optionalclass":
-				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
-				_, class, _ := component.getClassByName(param.ParamClass)
+				paramClass := param.ParamClass
+				if ((method.Component != nil) && (method.Component.NameSpace != component.NameSpace)) {
+					if (!nameIsFullyQualified(paramClass)) {
+						paramClass = method.Component.NameSpace + ":" + paramClass
+					}
+				}
+				paramNameSpace, paramClassName, _ := decomposeParamClassName(paramClass)
+				_, class, _ := component.getClassByName(paramClass)
 				if (class.IsAbstract()) {
 					usedNameSpace := NameSpace
 					if len(paramNameSpace) > 0 {
@@ -1739,7 +1754,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					}
 					paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
 					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", usedNameSpace, paramClassName, paramNameSpaceVar, usedNameSpace, paramClassName, param.ParamName))
-					baseClass, err := component.findBaseClass(param.ParamClass)
+					baseClass, err := component.findBaseClass(paramClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err
 					}

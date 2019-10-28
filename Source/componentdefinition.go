@@ -78,6 +78,7 @@ type ComponentDefinitionMethod struct {
 	MethodName string `xml:"name,attr"`
 	MethodDescription string `xml:"description,attr"`
 	Params   []ComponentDefinitionParam `xml:"param"`
+	Component *ComponentDefinition
 }
 
 // ComponentDefinitionClass definition of a class provided by the component's API
@@ -94,6 +95,7 @@ type ComponentDefinitionClass struct {
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
+	Component *ComponentDefinition
 }
 
 // ComponentDefinitionFunctionType definition of a function interface provided by the component's API
@@ -255,6 +257,7 @@ type ComponentDefinition struct {
 func (component *ComponentDefinition) Normalize() {
 	for i := 0; i < len(component.Classes); i++ {
 		component.Classes[i].Normalize()
+		component.Classes[i].Component = component
 	}
 	component.Global.Normalize()
 	
@@ -274,6 +277,7 @@ func (global *ComponentDefinitionGlobal) Normalize() {
 func (class *ComponentDefinitionClass) Normalize() {
 	for i := 0; i < len(class.Methods); i++ {
 		class.Methods[i].Normalize()
+		class.Methods[i].Component = class.Component
 	}
 }
 
@@ -867,6 +871,13 @@ func (component *ComponentDefinition) checkClassMethods() (error) {
 	}
 	return nil
 }
+
+// decomposeParamClassName decomposes a classname into a namespace and the actual classname within this namespace
+func nameIsFullyQualified(paramClassName string) (bool) {
+	namespace, _, _ := decomposeParamClassName(paramClassName)
+	return len(namespace) > 0
+}
+
 
 // decomposeParamClassName decomposes a classname into a namespace and the actual classname within this namespace
 func decomposeParamClassName(paramClassName string) (string, string, error) {
