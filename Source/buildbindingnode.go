@@ -109,7 +109,7 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w io.Writer, Na
 	fmt.Fprintf(w, "    args.GetReturnValue().Set (C%sWrapper::NewInstance());\n", NameSpace)
 	fmt.Fprintf(w, "}\n")
 	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "void InitAll(Handle<Object> exports, Handle<Object> module)\n")
+	fmt.Fprintf(w, "void InitAll(v8::Local<Object> exports, v8::Local<Object> module)\n")
 	fmt.Fprintf(w, "{\n")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -169,26 +169,26 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			switch param.ParamType {
 			case "uint8":
 				inputcheckfunction = "IsUint32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned char n%s = (unsigned char) args[%d]->Uint32Value ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned char n%s = (unsigned char) args[%d]->Uint32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName;
 				initCallParameter = callParameter;
 
 			case "uint16":
 				inputcheckfunction = "IsUint32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned short n%s = (unsigned short) args[%d]->Uint32Value ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned short n%s = (unsigned short) args[%d]->Uint32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "uint32":
 				inputcheckfunction = "IsUint32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned int n%s = (unsigned int) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned int n%s = (unsigned int) args[%d]->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "uint64":
 				inputcheckfunction = "IsString"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s(isolate, args[%d]);\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = stoull (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "n" + param.ParamName
@@ -197,7 +197,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			case "pointer":
 				inputcheckfunction = "IsString"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s(isolate, args[%d]);\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = stoull (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "(void*) n" + param.ParamName
@@ -205,26 +205,26 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 
 			case "int8":
 				inputcheckfunction = "IsInt32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s char n%s = (char) args[%d]->Int32Value ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s char n%s = (char) args[%d]->Int32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName;
 				initCallParameter = callParameter;
 
 			case "int16":
 				inputcheckfunction = "IsInt32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s short n%s = (short) args[%d]->Int32Value ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s short n%s = (short) args[%d]->Int32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "int32":
 				inputcheckfunction = "IsInt32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s int n%s = (int) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s int n%s = (int) args[%d]->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "n" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "int64":
 				inputcheckfunction = "IsString"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s(isolate, args[%d]);\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sint64_t n%s = stoll (s%s);\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "n" + param.ParamName
@@ -233,7 +233,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 			case "string":
 				inputcheckfunction = "IsString"
 
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s (args[%d]->ToString());\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s(isolate, args[%d]);\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				callParameter = "s" + param.ParamName + ".c_str()"
 				initCallParameter = callParameter;
@@ -252,25 +252,25 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 				
 			case "bool":
 				inputcheckfunction = "IsBoolean"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sbool b%s = args[%d]->BooleanValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sbool b%s = args[%d]->BooleanValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "b" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "single":
 				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfloat f%s = (float) args[%d]->NumberValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfloat f%s = (float) args[%d]->NumberValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "f" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "double":
 				inputcheckfunction = "IsNumber"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sdouble d%s = (double) args[%d]->NumberValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sdouble d%s = (double) args[%d]->NumberValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = "d" + param.ParamName
 				initCallParameter = callParameter;
 
 			case "enum":
 				inputcheckfunction = "IsUint32"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned int e%s = (unsigned int) args[%d]->IntegerValue ();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sunsigned int e%s = (unsigned int) args[%d]->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
 				callParameter = fmt.Sprintf("(e%s%s) e%s", NameSpace, param.ParamClass, param.ParamName)
 				initCallParameter = callParameter;
 
@@ -301,7 +301,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 
 			if inputcheckfunction != "" {
 				inputcheck = inputcheck + fmt.Sprintf("%sif (!args[%d]->%s()) {\n", spacing, k, inputcheckfunction)
-				inputcheck = inputcheck + fmt.Sprintf("%s    throw std::runtime_error (\"Expected %s parameter %d (%s)\");\n", spacing, param.ParamType, k, param.ParamName)
+				inputcheck = inputcheck + fmt.Sprintf("%s    throw std::runtime_error(\"Expected %s parameter %d (%s)\");\n", spacing, param.ParamType, k, param.ParamName)
 				inputcheck = inputcheck + fmt.Sprintf("%s}\n", spacing)
 			}
 
@@ -309,10 +309,10 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 		
 			var argsvalue string;
 			if (returnParamCount > 1) {				
-				argsvalue = fmt.Sprintf ("outObject->Set (String::NewFromUtf8 (isolate, \"%s\"), ", param.ParamName);
+				argsvalue = fmt.Sprintf ("outObject->Set(isolate->GetCurrentContext(), String::NewFromUtf8 (isolate, \"%s\"), ", param.ParamName);
 				
 			} else {
-				argsvalue = "args.GetReturnValue().Set (";
+				argsvalue = "args.GetReturnValue().Set(";
 			}
 				
 
@@ -489,14 +489,14 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw io.Wr
 
 	fmt.Fprintf(implw, "%ss%sDynamicWrapperTable * wrapperTable = C%sBaseClass::getDynamicWrapperTable (args.Holder());\n", spacing, NameSpace, NameSpace)
 	fmt.Fprintf(implw, "%sif (wrapperTable == nullptr)\n", spacing)
-	fmt.Fprintf(implw, "%s    throw std::runtime_error (\"Could not get wrapper table for %s method %s.\");\n", spacing, NameSpace, method.MethodName)
+	fmt.Fprintf(implw, "%s    throw std::runtime_error(\"Could not get wrapper table for %s method %s.\");\n", spacing, NameSpace, method.MethodName)
 
 	if isGlobal {
 		fmt.Fprintf(implw, "%sif (wrapperTable->m_%s == nullptr)\n", spacing, method.MethodName)
-		fmt.Fprintf(implw, "%s    throw std::runtime_error (\"Could not call %s method %s.\");\n", spacing, NameSpace, method.MethodName)
+		fmt.Fprintf(implw, "%s    throw std::runtime_error(\"Could not call %s method %s.\");\n", spacing, NameSpace, method.MethodName)
 	} else {
 		fmt.Fprintf(implw, "%sif (wrapperTable->m_%s_%s == nullptr)\n", spacing, ClassName, method.MethodName)
-		fmt.Fprintf(implw, "%s    throw std::runtime_error (\"Could not call %s method %s::%s.\");\n", spacing, NameSpace, ClassName, method.MethodName)
+		fmt.Fprintf(implw, "%s    throw std::runtime_error(\"Could not call %s method %s::%s.\");\n", spacing, NameSpace, ClassName, method.MethodName)
 	}
 	
 		
@@ -685,7 +685,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
   				fmt.Fprintf(implw, "                  if (mlocalValue.ToLocal (&localValue)) {\n");
 				fmt.Fprintf(implw, "                    if (localValue->IsNumber ()) {\n");
 				fmt.Fprintf(implw, "                      MaybeLocal<Number> localNumber = localValue->ToNumber(context);\n");
-				fmt.Fprintf(implw, "                      s%s.m_%s[colIndex][rowIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
+				fmt.Fprintf(implw, "                      s%s.m_%s[colIndex][rowIndex]%slocalNumber.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
 				fmt.Fprintf(implw, "                    } else {\n");
 				fmt.Fprintf(implw, "                      isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));\n", member.Name);
 				fmt.Fprintf(implw, "                    }\n");
@@ -711,7 +711,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
   				fmt.Fprintf(implw, "            if (mlocalValue.ToLocal (&localValue)) {\n");
 				fmt.Fprintf(implw, "              if (localValue->IsNumber ()) {\n");
 				fmt.Fprintf(implw, "                MaybeLocal<Number> localNumber = localValue->ToNumber(context);\n");
-				fmt.Fprintf(implw, "                s%s.m_%s[rowIndex]%slocalNumber.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
+				fmt.Fprintf(implw, "                s%s.m_%s[rowIndex]%slocalNumber.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();\n", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall);
 				fmt.Fprintf(implw, "              } else {\n");
 				fmt.Fprintf(implw, "                isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));\n", member.Name);
 				fmt.Fprintf(implw, "              }\n");					
@@ -730,7 +730,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 		} else {
 			fmt.Fprintf(implw, "        if (val%s->IsNumber ()) {\n", member.Name);
 			fmt.Fprintf(implw, "          MaybeLocal<Number> localVal%s = val%s->ToNumber(context);\n", member.Name, member.Name);
-			fmt.Fprintf(implw, "          s%s.m_%s%slocalVal%s.ToLocalChecked()->%s ();\n", structdefinition.Name, member.Name, assignmentOperator, member.Name, valueTypeCall);
+			fmt.Fprintf(implw, "          s%s.m_%s%slocalVal%s.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();\n", structdefinition.Name, member.Name, assignmentOperator, member.Name, valueTypeCall);
 			fmt.Fprintf(implw, "        } else {\n");	
 			fmt.Fprintf(implw, "          isolate->ThrowException(Exception::TypeError (String::NewFromUtf8(isolate, \"%s member is not a number\" )));\n", member.Name);
 			fmt.Fprintf(implw, "        }\n");			
@@ -852,6 +852,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(w, "#include <node.h>\n")
 	fmt.Fprintf(w, "#include <node_object_wrap.h>\n")
 	fmt.Fprintf(w, "#include <string>\n")
+	fmt.Fprintf(w, "#include <stdexcept>\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "#define NODEWRAPPER_FIELDCOUNT 4\n")
@@ -879,8 +880,8 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(w, "    static void RaiseError (v8::Isolate * isolate, std::string Message);\n")
 	fmt.Fprintf(w, "    static void CheckError (v8::Isolate * isolate, s%sDynamicWrapperTable * sWrapperTable, %sHandle pInstance, %sResult errorCode);\n", NameSpace, NameSpace, NameSpace)
 	fmt.Fprintf(w, "    static void setHandle (%sHandle pHandle);\n", NameSpace)
-	fmt.Fprintf(w, "    static %sHandle getHandle (v8::Handle<v8::Object> objecthandle);\n", NameSpace)
-	fmt.Fprintf(w, "    static s%sDynamicWrapperTable * getDynamicWrapperTable (v8::Handle<v8::Object> objecthandle);\n", NameSpace)
+	fmt.Fprintf(w, "    static %sHandle getHandle (v8::Local<v8::Object> objecthandle);\n", NameSpace)
+	fmt.Fprintf(w, "    static s%sDynamicWrapperTable * getDynamicWrapperTable (v8::Local<v8::Object> objecthandle);\n", NameSpace)
 	fmt.Fprintf(w, "};\n")
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "\n")
@@ -1010,7 +1011,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "      }\n")
 		
 	}
-	fmt.Fprintf(implw, "      throw std::runtime_error (\"%s Error\" + sMessage + \" (\" + std::to_string (errorCode) + \")\");\n", NameSpace)
+	fmt.Fprintf(implw, "      throw std::runtime_error(\"%s Error\" + sMessage + \" (\" + std::to_string (errorCode) + \")\");\n", NameSpace)
 	fmt.Fprintf(implw, "    }\n")
 	fmt.Fprintf(implw, "}\n")
 
@@ -1020,14 +1021,14 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "    \n")
 	fmt.Fprintf(implw, "}\n")
 	fmt.Fprintf(implw, "\n")
-	fmt.Fprintf(implw, "%sHandle C%sBaseClass::getHandle (v8::Handle<v8::Object> objecthandle)\n", NameSpace, NameSpace)
+	fmt.Fprintf(implw, "%sHandle C%sBaseClass::getHandle (v8::Local<v8::Object> objecthandle)\n", NameSpace, NameSpace)
 	fmt.Fprintf(implw, "{\n")
 	fmt.Fprintf(implw, "    auto Field = objecthandle->GetInternalField (NODEWRAPPER_HANDLEINDEX);\n")
 	fmt.Fprintf(implw, "    v8::Local<v8::External> externalField = Field.As<v8::External> ();\n")
 	fmt.Fprintf(implw, "    return (%sHandle *) externalField->Value();\n", NameSpace)
 	fmt.Fprintf(implw, "}\n")
 	fmt.Fprintf(implw, "\n")
-	fmt.Fprintf(implw, "s%sDynamicWrapperTable * C%sBaseClass::getDynamicWrapperTable (v8::Handle<v8::Object> objecthandle)\n", NameSpace, NameSpace)
+	fmt.Fprintf(implw, "s%sDynamicWrapperTable * C%sBaseClass::getDynamicWrapperTable (v8::Local<v8::Object> objecthandle)\n", NameSpace, NameSpace)
 	fmt.Fprintf(implw, "{\n")
 	fmt.Fprintf(implw, "    auto Field = objecthandle->GetInternalField (NODEWRAPPER_TABLEINDEX);\n")
 	fmt.Fprintf(implw, "    v8::Local<v8::External> externalField = Field.As<v8::External> ();\n")
@@ -1070,7 +1071,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 			fmt.Fprintf(implw, "    NODE_SET_PROTOTYPE_METHOD(tpl, \"%s\", %s);\n", method.MethodName, method.MethodName)
 		}
 
-		fmt.Fprintf(implw, "    constructor.Reset(isolate, tpl->GetFunction());\n")
+		fmt.Fprintf(implw, "    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());\n")
 		fmt.Fprintf(implw, "\n")
 		fmt.Fprintf(implw, "}\n")
 		fmt.Fprintf(implw, "\n")
@@ -1149,7 +1150,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		fmt.Fprintf(implw, "    NODE_SET_PROTOTYPE_METHOD(tpl, \"%s\", %s);\n", method.MethodName, method.MethodName)
 	}
 
-	fmt.Fprintf(implw, "    constructor.Reset(isolate, tpl->GetFunction());\n")
+	fmt.Fprintf(implw, "    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());\n")
 	fmt.Fprintf(implw, "}\n")
 	fmt.Fprintf(implw, "\n")
 	fmt.Fprintf(implw, "void C%sWrapper::New(const FunctionCallbackInfo<Value>& args)\n", NameSpace)
@@ -1163,7 +1164,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "            // Get Library Name as Argument\n")
 	fmt.Fprintf(implw, "            std::string sLibraryName = \"%s.dll\";\n", BaseName)
 	fmt.Fprintf(implw, "            if (args[0]->IsString()) {\n")
-	fmt.Fprintf(implw, "                v8::String::Utf8Value stringParam (args[0]->ToString());\n")
+	fmt.Fprintf(implw, "                v8::String::Utf8Value stringParam(isolate, args[0]);\n")
 	fmt.Fprintf(implw, "                sLibraryName = *stringParam;\n")
 	fmt.Fprintf(implw, "            }\n")
 
@@ -1180,7 +1181,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 		enum := component.Enums[i];		
 		for j := 0; j < len(enum.Options); j++ {							
 			option := enum.Options[j];
-			fmt.Fprintf (implw, "            newObject->Set (String::NewFromUtf8(isolate, \"e%s_%s\"), Integer::New(isolate, %d));\n", enum.Name, option.Name, option.Value);
+			fmt.Fprintf (implw, "            newObject->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, \"e%s_%s\"), Integer::New(isolate, %d));\n", enum.Name, option.Name, option.Value);
 		}		
 	}
 

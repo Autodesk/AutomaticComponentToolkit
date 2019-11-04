@@ -421,7 +421,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 		w.Writeln("")
 		w.Writeln("HMODULE hLibrary = LoadLibraryW(wsLibraryFileName.data());")
 	} else {
-		w.Writeln("wchar_t* wsLibraryFileName = malloc(nBufferSize*sizeof(wchar_t));")
+		w.Writeln("wchar_t* wsLibraryFileName = (wchar_t*)malloc(nBufferSize*sizeof(wchar_t));")
 		w.Writeln("memset(wsLibraryFileName, 0, nBufferSize*sizeof(wchar_t));")
 		w.Writeln("int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, wsLibraryFileName, nBufferSize);")
 		w.Writeln("if (nResult == 0) {")
