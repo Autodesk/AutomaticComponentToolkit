@@ -1162,7 +1162,13 @@ func buildNodeWrapperClass(component ComponentDefinition, w io.Writer, implw io.
 	fmt.Fprintf(implw, "        if (args.IsConstructCall()) {\n")
 
 	fmt.Fprintf(implw, "            // Get Library Name as Argument\n")
+	fmt.Fprintf(implw, "            #ifdef _WIN32\n")
 	fmt.Fprintf(implw, "            std::string sLibraryName = \"%s.dll\";\n", BaseName)
+	fmt.Fprintf(implw, "            #elif __APPLE__\n")
+	fmt.Fprintf(implw, "            std::string sLibraryName = \"%s.dylib\";\n", BaseName)
+	fmt.Fprintf(implw, "            #elif __linux__\n")
+	fmt.Fprintf(implw, "            std::string sLibraryName = \"%s.so\";\n", BaseName)
+	fmt.Fprintf(implw, "            #endif\n")
 	fmt.Fprintf(implw, "            if (args[0]->IsString()) {\n")
 	fmt.Fprintf(implw, "                v8::String::Utf8Value stringParam(isolate, args[0]);\n")
 	fmt.Fprintf(implw, "                sLibraryName = *stringParam;\n")
