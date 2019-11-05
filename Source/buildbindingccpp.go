@@ -684,7 +684,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				paramComponent := component
-				if len(paramNameSpace) > 0 {
+				if len(paramNameSpace) > 0 && paramNameSpace != NameSpace {
 					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
 				}
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
@@ -727,7 +727,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			case "class", "optionalclass":
 				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				paramComponent := component
-				if len(paramNameSpace) > 0 {
+				if len(paramNameSpace) > 0 && paramNameSpace != NameSpace {
 					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
 				}
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
@@ -799,14 +799,14 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 
 			case "class", "optionalclass":
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
-				paramNameSpaceCPP, _, _ := decomposeParamClassNameCPP(param.ParamClass)
+				paramNameSpaceCPP, _, _ := decomposeParamClassNameCPP(param.ParamClass, NameSpace)
 				paramComponent := component
 				CPPClass := cppClassPrefix + ClassIdentifier + paramClassName
-				if len(paramNameSpace) == 0 {
-					paramNameSpace = NameSpace
-				} else {
+				if len(paramNameSpace) > 0 && paramNameSpace != NameSpace {
 					CPPClass = paramNameSpaceCPP + CPPClass
 					paramComponent = component.ImportedComponentDefinitions[paramNameSpace]
+				} else {
+					paramNameSpace = NameSpace
 				}
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s h%s;", paramComponent.getExtendedHandleName(), param.ParamName))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
@@ -918,7 +918,7 @@ func writeDynamicCppClassConstructor(component ComponentDefinition, class Compon
 	if component.isBaseClass(class) {
 		w.Writeln("    : m_pHandle(pHandle)")
 	} else {
-		paramNameSpace, parentClassName, _ := decomposeParamClassNameCPP(class.ParentClass)
+		paramNameSpace, parentClassName, _ := decomposeParamClassNameCPP(class.ParentClass, NameSpace)
 		if (len(paramNameSpace) == 0) {
 			cppParentClassName := ""
 			if class.ParentClass == "" {
@@ -1078,20 +1078,24 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string, ClassIdentifier str
 	return nil
 }
 
-func decomposeParamClassNameCPP(paramClassName string) (string, string, error) {
+func decomposeParamClassNameCPP(paramClassName string, NameSpace string) (string, string, error) {
 	paramNameSpace, paramClassName, err := decomposeParamClassName(paramClassName)
 	if (err != nil) {
 		return "", "", err
 	}
-	if (len(paramNameSpace) >0 ) {
-		paramNameSpace = paramNameSpace + "::Binding::"
+	if (len(paramNameSpace) > 0 ) {
+		if (paramNameSpace == NameSpace) {
+			paramNameSpace = ""
+		} else {
+			paramNameSpace = paramNameSpace + "::Binding::"
+		}
 	}
 	return paramNameSpace, paramClassName, err
 }
 
 func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool) string {
 
-	paramNameSpace, paramClassName, _ := decomposeParamClassNameCPP(paramClass)
+	paramNameSpace, paramClassName, _ := decomposeParamClassNameCPP(paramClass, NameSpace)
 
 	cppClassPrefix := "C"
 	switch paramType {

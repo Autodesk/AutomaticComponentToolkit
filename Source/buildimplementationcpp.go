@@ -286,7 +286,7 @@ func writeSharedPtrTemplate(component ComponentDefinition, w LanguageWriter, Cla
 	w.Writeln(" Definition of a shared pointer class for %s", IBaseClassName)
 	w.Writeln("*/")
 	IBaseSharedPtrName := "I" + component.Global.BaseClassName + "SharedPtr"
-	DeleteBaseMethodStr := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName
+	DeleteBaseMethodStr := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName, component.NameSpace).MethodName
 	w.Writeln("template<class T>")
 	w.Writeln("class %s : public std::shared_ptr<T>", IBaseSharedPtrName)
 	w.Writeln("{")
@@ -372,7 +372,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("")
 
 		// These methods are required for shared pointers
-		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName)
+		releaseBaseClassInterfaceMethod := ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName, component.NameSpace)
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component, releaseBaseClassInterfaceMethod, class.ClassName, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
@@ -386,7 +386,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  };")
 		w.Writeln("")
 
-		acquireBaseClassInterfaceMethod := AcquireBaseClassInterfaceMethod(component.Global.BaseClassName)
+		acquireBaseClassInterfaceMethod := AcquireBaseClassInterfaceMethod(component.Global.BaseClassName, component.NameSpace)
 		methodstring, _, err = buildCPPInterfaceMethodDeclaration(component, acquireBaseClassInterfaceMethod, class.ClassName, ClassIdentifier, BaseName, w.IndentString, true, false, true)
 		if err != nil {
 			return err
@@ -611,13 +611,13 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 		if (isSpecialFunction == eSpecialMethodRelease) {
 			var releaseImplementation []string
 			releaseImplementation = append(releaseImplementation,
-				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
+				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, ReleaseBaseClassInterfaceMethod(component.Global.BaseClassName, component.NameSpace).MethodName, method.Params[0].ParamName))
 			thisMethodDefaultImpl = releaseImplementation
 		}
 		if (isSpecialFunction == eSpecialMethodAcquire) {
 			var acquireImplementation []string
 			acquireImplementation = append(acquireImplementation,
-				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, AcquireBaseClassInterfaceMethod(component.Global.BaseClassName).MethodName, method.Params[0].ParamName))
+				fmt.Sprintf("I%s%s::%s(p%s);", ClassIdentifier, component.Global.BaseClassName, AcquireBaseClassInterfaceMethod(component.Global.BaseClassName, component.NameSpace).MethodName, method.Params[0].ParamName))
 			thisMethodDefaultImpl = acquireImplementation
 		}
 
@@ -1436,6 +1436,23 @@ func getCppVariableName (param ComponentDefinitionParam) (string) {
 	return "";
 }
 
+func decomposeParamClassNameCPPImpl(paramClassName string, NameSpace string) (string, string, string, error) {
+	paramNameSpace, paramClassName, err := decomposeParamClassName(paramClassName)
+	paramNameSpaceCPP := paramNameSpace
+	if (err != nil) {
+		return "", "", "", err
+	}
+	if (len(paramNameSpaceCPP) > 0 ) {
+		if (paramNameSpaceCPP == NameSpace) {
+			paramNameSpaceCPP = ""
+		} else {
+			paramNameSpaceCPP = paramNameSpace + "::Binding::"
+		}
+	}
+	return paramNameSpace, paramNameSpaceCPP, paramClassName, err
+}
+
+
 func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method ComponentDefinitionMethod, className string, ClassIdentifier string, BaseName string, indentString string, isGlobal bool, isVirtual bool, writeComment bool) (string, string, error) {
 	NameSpace := component.NameSpace
 	parameters := ""
@@ -1447,7 +1464,7 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 	for k := 0; k < len(method.Params); k++ {
 
 		param := method.Params[k]
-		paramNameSpaceCPP, paramClassNameCPP, _ := decomposeParamClassNameCPP(param.ParamClass)
+		paramNameSpace, paramNameSpaceCPP, paramClassNameCPP, _ := decomposeParamClassNameCPPImpl(param.ParamClass, NameSpace)
 
 		switch param.ParamPass {
 		case "in":
@@ -1502,18 +1519,28 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 				// paramNameSpace, paramClassName, _ := decomposeParamClassName(paramClass)
 				_, class, _ := component.getClassByName(paramClass)
 				if (class.IsAbstract()) {
-					usedNameSpace := NameSpace
+					usedNameSpace := NameSpace + "::"
 					if len(paramNameSpaceCPP) > 0 {
 						usedNameSpace = paramNameSpaceCPP
 					}
-					parameters = parameters + fmt.Sprintf("%s::Binding::P%s%s p%s", usedNameSpace, ClassIdentifier, paramClassNameCPP, param.ParamName)
+					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", usedNameSpace, ClassIdentifier, paramClassNameCPP, param.ParamName)
 				} else {
-					if len(paramNameSpaceCPP) > 0 {
-						// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-						parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+					if (paramNameSpace == NameSpace) {
+						if len(paramNameSpaceCPP) > 0 {
+							// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+						} else {
+							parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, class.ClassName, param.ParamName)
+						}
 					} else {
-						parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+						if len(paramNameSpaceCPP) > 0 {
+							// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
+							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+						} else {
+							parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
+						}
 					}
+					
 				}
 			case "basicarray":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
@@ -1617,7 +1644,7 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 					if (class.IsAbstract()) {
 						returntype = fmt.Sprintf("%s::Binding::P%s%s", NameSpace, ClassIdentifier, paramClassNameCPP)
 					} else {
-						returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
+						returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, paramClassNameCPP)
 					}
 				}
 
@@ -1748,19 +1775,19 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(paramClass)
 				_, class, _ := component.getClassByName(paramClass)
 				if (class.IsAbstract()) {
-					usedNameSpace := NameSpace
+					usedNameSpace := NameSpace + "::Binding::"
 					if len(paramNameSpace) > 0 {
-						usedNameSpace = paramNameSpace
+						usedNameSpace = paramNameSpace + "::Binding::"
 					}
 					paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", usedNameSpace, paramClassName, paramNameSpaceVar, usedNameSpace, paramClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%sP%s %s = std::make_shared<%sC%s>(p%s);", usedNameSpace, paramClassName, paramNameSpaceVar, usedNameSpace, paramClassName, param.ParamName))
 					baseClass, err := component.findBaseClass(paramClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err
 					}
 					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s();", paramNameSpaceVar, baseClass.AcquireMethod))
 				} else {
-					if len(paramNameSpace) > 0 {
+					if (len(paramNameSpace) > 0 && paramNameSpace != NameSpace) {
 						paramNameSpaceVar := fmt.Sprintf("pI%s", param.ParamName)
 						preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s %s = std::make_shared<%s::Binding::C%s>(p%s);", paramNameSpace, paramClassName, paramNameSpaceVar, paramNameSpace, paramClassName, param.ParamName))
 						baseClass, err := component.findBaseClass(param.ParamClass)
@@ -1770,7 +1797,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 						preCallCode = append(preCallCode, fmt.Sprintf("%s->%s();", paramNameSpaceVar, baseClass.AcquireMethod))
 					} else {
 						preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.m_hHandle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
-						preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
+						preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, paramClassName, param.ParamName, ClassIdentifier, paramClassName, param.ParamName))
 					}
 				}
 				
@@ -1904,19 +1931,19 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 						usedNameSpace = paramNameSpace
 					}
 					outVarName := fmt.Sprintf("p%s%s", usedNameSpace, param.ParamName)
-					preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s p%s%s;", usedNameSpace, paramClassName, usedNameSpace, param.ParamName))
+					usedNameSpace = usedNameSpace + "::Binding::"
+					preCallCode = append(preCallCode, fmt.Sprintf("%sP%s %s;", usedNameSpace, paramClassName, outVarName))
 
 					baseClass, err := component.findBaseClass(param.ParamClass)
 					if (err != nil) {
 						return checkInputCode, preCallCode, postCallCode, "", "", err
 					}
-					returnVariable = fmt.Sprintf("p%s%s", usedNameSpace, param.ParamName)
+					returnVariable = outVarName
 					postCallCode = append(postCallCode, fmt.Sprintf("// TODO: this does not work necessarily@ pBase%s might be nullptr", param.ParamName));
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s();", outVarName, baseClass.AcquireMethod))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
-					
 				} else {
-					if len(paramNameSpace) > 0 {
+					if (len(paramNameSpace) > 0 && paramNameSpace != NameSpace) {
 						outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
 						preCallCode = append(preCallCode, fmt.Sprintf("%s::Binding::P%s p%s%s;", paramNameSpace, paramClassName, paramNameSpace, param.ParamName))
 	

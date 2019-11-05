@@ -134,6 +134,7 @@ type ComponentDefinitionGlobal struct {
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
+	Component *ComponentDefinition
 }
 
 // ComponentDefinitionBinding definition of a specific languages for which bindings to the component's API will be generated
@@ -256,12 +257,13 @@ type ComponentDefinition struct {
 // Normalize adds default values, changes deprecated constants to their later versions
 func (component *ComponentDefinition) Normalize() {
 	for i := 0; i < len(component.Classes); i++ {
-		component.Classes[i].Normalize()
 		component.Classes[i].Component = component
+		component.Classes[i].Normalize()
 	}
+	component.Global.Component = component
 	component.Global.Normalize()
 	
-	for _, importedComponent := range component.ImportedComponentDefinitions { 
+	for _, importedComponent := range component.ImportedComponentDefinitions {
 		importedComponent.Normalize()
 	}
 }
@@ -269,6 +271,7 @@ func (component *ComponentDefinition) Normalize() {
 // Normalize adds default values, changes deprecated constants to their later versions
 func (global *ComponentDefinitionGlobal) Normalize() {
 	for i := 0; i < len(global.Methods); i++ {
+		global.Methods[i].Component = global.Component
 		global.Methods[i].Normalize()
 	}
 }
@@ -276,8 +279,8 @@ func (global *ComponentDefinitionGlobal) Normalize() {
 // Normalize adds default values, changes deprecated constants to their later versions
 func (class *ComponentDefinitionClass) Normalize() {
 	for i := 0; i < len(class.Methods); i++ {
-		class.Methods[i].Normalize()
 		class.Methods[i].Component = class.Component
+		class.Methods[i].Normalize()
 	}
 }
 
@@ -285,6 +288,12 @@ func (class *ComponentDefinitionClass) Normalize() {
 func (method *ComponentDefinitionMethod) Normalize() {
 	for i := 0; i < len(method.Params); i++ {
 		method.Params[i].Normalize()
+		if (method.Params[i].ParamType == "class") {
+			namespace, _, _ := decomposeParamClassName(method.Params[i].ParamClass)
+			if len(namespace) == 0 {
+				method.Params[i].ParamClass = method.Component.NameSpace + ":" + method.Params[i].ParamClass
+			}
+		}
 	}
 }
 
@@ -812,7 +821,7 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 			if err != nil {
 				return err
 			}
-			if len(namespace)>0 {
+			if len(namespace)>0 && namespace != component.NameSpace {
 				if subComponent, ok := component.ImportedComponentDefinitions[namespace]; ok {
 					currentNameMaps = subComponent.NameMapsLookup
 				} else {
@@ -1312,20 +1321,20 @@ func DecRefCountMethod() (ComponentDefinitionMethod) {
 }
 
 // ReleaseBaseClassInterfaceMethod returns the xml definition of a method that should decrease the reference count of a BaseClass interface.
-func ReleaseBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionMethod) {
+func ReleaseBaseClassInterfaceMethod(baseClassName string, NameSpace string) (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `<method name="ReleaseBaseClassInterface" description = "Releases ownership of a base class interface. Deletes the reference, if necessary.">
-		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to release" />
+		<param name="IBase" type="class" class="` + NameSpace + `:` + baseClassName + `" pass="in" description="The base class instance to release" />
 	</method>`
 	xml.Unmarshal([]byte(source), &method)
 	return method
 }
 
 // AcquireBaseClassInterfaceMethod returns the xml definition of a method that should increase the reference count of a BaseClass interface.
-func AcquireBaseClassInterfaceMethod(baseClassName string) (ComponentDefinitionMethod) {
+func AcquireBaseClassInterfaceMethod(baseClassName string, NameSpace string) (ComponentDefinitionMethod) {
 	var method ComponentDefinitionMethod
 	source := `<method name="AcquireBaseClassInterface" description = "Acquires shared ownership of a base class interface.">
-		<param name="IBase" type="class" class="` + baseClassName + `" pass="in" description="The base class instance to acquire" />
+		<param name="IBase" type="class" class="` + NameSpace + `:` +  baseClassName + `" pass="in" description="The base class instance to acquire" />
 	</method>`
 	xml.Unmarshal([]byte(source), &method)
 	return method
