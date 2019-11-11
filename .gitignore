@@ -5,6 +5,7 @@
 *.linux
 *.darwin
 *.exe
+*.arm
 *.c
 *.go
 *.orig

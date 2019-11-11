@@ -21,4 +21,10 @@ set GOOS=darwin
 echo "Build act.darwin"
 go build -o ..\act.darwin %Sources%
 
+set GOOS=linux
+set GOARCH=arm
+set GOARM=5
+echo "Build act.arm"
+go build -o ..\act.arm %Sources%
+
 cd %startingDir%
