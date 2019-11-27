@@ -606,7 +606,7 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 }
 
 func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, ClassIdentifier string, ClassName string,
-	implementationLines []string, isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool) error {
+	implementationLines []string, isGlobal bool, includeComments bool, checkErrorSafely bool, useCPPTypes bool, ExplicitLinking bool) error {
 	NameSpace := component.NameSpace
 
 	CMethodName := ""
@@ -622,7 +622,6 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 		} else {
 			CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		}
-		checkErrorCodeBegin = "CheckError("
 	} else {
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_pFunctionTable%s->m_%s_%s", ClassName, ClassName, method.MethodName);
@@ -631,11 +630,10 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 		}
 		callParameters = "{m_pHandle.m_hHandle, m_pHandle.m_pfnSymbolLookupMethod}"
 		initCallParameters = callParameters
-		checkErrorCodeBegin = "CheckError("
 	}
-	if doNotThrow {
-		checkErrorCodeBegin = ""
-		checkErrorCodeEnd = ""
+	checkErrorCodeBegin = "CheckError("
+	if checkErrorSafely {
+		checkErrorCodeBegin = "CheckErrorSafely("
 	}
 
 	parameters := ""
@@ -952,7 +950,15 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  /* Handle to Instance in library*/")
 	w.Writeln("  %s m_pHandle;", component.getExtendedHandleName())
 	w.Writeln("")
-	w.Writeln("  /* Checks for an Error code and raises Exceptions */")
+	w.Writeln("  /* Checks for an Error code and raises an Exception */")
+	w.Writeln("  virtual void CheckErrorSafely(%sResult nResult)", NameSpace)
+	w.Writeln("  {")
+	w.Writeln("    if (nResult != 0) {")
+	w.Writeln("      throw E%sException(nResult, \"\");", NameSpace)
+	w.Writeln("    }")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  /* Checks for an Error code and error-message and raises an Exception */")
 	w.Writeln("  virtual void CheckError(%sResult nResult)", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
@@ -1295,19 +1301,19 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	if ExplicitLinking {
 		w.Writeln("  %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
-		w.Writeln("    CheckError(initWrapperTable(&m_WrapperTable));")
-		w.Writeln("    CheckError(loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
+		w.Writeln("    CheckErrorSafely(initWrapperTable(&m_WrapperTable));")
+		w.Writeln("    CheckErrorSafely(loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
 		w.Writeln("    ")
-		w.Writeln("    CheckError(checkBinaryVersion());")
+		w.Writeln("    CheckErrorSafely(checkBinaryVersion());")
 		w.Writeln("  }")
 		w.Writeln("  ")
 
 		w.Writeln("  %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
-		w.Writeln("    CheckError(initWrapperTable(&m_WrapperTable));")
-		w.Writeln("    CheckError(loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
+		w.Writeln("    CheckErrorSafely(initWrapperTable(&m_WrapperTable));")
+		w.Writeln("    CheckErrorSafely(loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
 		w.Writeln("    ")
-		w.Writeln("    CheckError(checkBinaryVersion());")
+		w.Writeln("    CheckErrorSafely(checkBinaryVersion());")
 		w.Writeln("  }")
 		w.Writeln("  ")
 
@@ -1344,6 +1350,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 	
 	w.Writeln("  ")
+	w.Writeln("  inline void CheckErrorSafely(%sResult nResult);", NameSpace)
 	w.Writeln("  inline void CheckError(%sResult nResult);", NameSpace)
 	w.Writeln("")
 
@@ -1477,6 +1484,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		}
 		
 		implementationLines := make([]string, 0)
+		checkErrorSafely := false
 		if (isSpecialFunction == eSpecialMethodInjection) {
 			implementationLines = append(implementationLines, "bool bNameSpaceFound = false;")
 			sParamName := "s" + method.Params[0].ParamName
@@ -1493,15 +1501,24 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			}
 			implementationLines = append(implementationLines, "if (!bNameSpaceFound)")
 			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
+		} else if ( (isSpecialFunction == eSpecialMethodError) || (isSpecialFunction == eSpecialMethodVersion) || (isSpecialFunction == eSpecialMethodSymbolLookup) ) {
+			checkErrorSafely = true
 		}
 
-		err = writeDynamicCPPMethod(component, method, w, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking)
+		err = writeDynamicCPPMethod(component, method, w, ClassIdentifier, "Wrapper", implementationLines, true, true, checkErrorSafely, useCPPTypes, ExplicitLinking)
 		if err != nil {
 			return err
 		}
 
 	}
 
+	w.Writeln("  ")
+	w.Writeln("  inline void C%sWrapper::CheckErrorSafely(%sResult nResult)", NameSpace, NameSpace)
+	w.Writeln("  {")
+	w.Writeln("    if (nResult != 0) {")
+	w.Writeln("      throw E%sException(nResult, \"\");", NameSpace)
+	w.Writeln("    }")
+	w.Writeln("  }")
 	w.Writeln("  ")
 	w.Writeln("  inline void C%sWrapper::CheckError(%sResult nResult)", NameSpace, NameSpace)
 	w.Writeln("  {")
@@ -1570,7 +1587,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(component, method, w, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking)
+
+			checkErrorSafely := false
+			isSpecialFunction := class.CheckClassSpecialFunction(method)
+			if ( (isSpecialFunction == eSpecialMethodError) || (isSpecialFunction == eSpecialMethodVersion) || (isSpecialFunction == eSpecialMethodSymbolLookup) ) {
+				checkErrorSafely = true
+			}
+
+			err := writeDynamicCPPMethod(component, method, w, ClassIdentifier, class.ClassName, make([]string,0), false, true, checkErrorSafely, useCPPTypes, ExplicitLinking)
 			if err != nil {
 				return err
 			}
