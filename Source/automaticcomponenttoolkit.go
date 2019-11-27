@@ -403,7 +403,7 @@ func printUsageInfo() {
 }
 
 func main() {
-	ACTVersion := "1.7.0-develop"
+	ACTVersion := "2.0.0-develop"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
 		printUsageInfo()
