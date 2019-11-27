@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"strings"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -386,16 +387,34 @@ func createComponent(component ComponentDefinition, outfolderBase string) (error
 	return nil
 }
 
+
+func printUsageInfo() {
+	fmt.Fprintln(os.Stdout, "Run ACT with the Interface Description XML as command line parameter:")
+	fmt.Fprintln(os.Stdout, "  $>act INTERFACEDESCRIPTION.xml [FLAG]")
+	fmt.Fprintln(os.Stdout, "  ")
+	fmt.Fprintln(os.Stdout, "  run  act -h  to print this message.")
+	fmt.Fprintln(os.Stdout, "  ")
+	fmt.Fprintln(os.Stdout, "ACT has the following optional and mutually exlcusive flags:")
+	fmt.Fprintln(os.Stdout, "  -o: specify a path for the generated source code: \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"")
+	fmt.Fprintln(os.Stdout, "  -d: create a diff between two versions of an Interface Description XML: \"-d OTHER_IDL_FILE\"")
+	fmt.Fprintln(os.Stdout, "  ")
+	fmt.Fprintln(os.Stdout, "Tutorials, info and source-code on: https://github.com/Autodesk/AutomaticComponentToolkit/ .")
+	fmt.Fprintln(os.Stdout, "ACT stops now.")
+}
+
 func main() {
 	ACTVersion := "1.7.0-develop"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
-		log.Fatal("Please run with the Interface Description XML as command line parameter.")
-		log.Fatal("To specify a path for the generated source code use the optional flag \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"")
-		log.Fatal("To create a diff between two versions of an Interface Description XML use the optional flag \"-d OTHER_IDL_FILE\"")
+		printUsageInfo()
+		return
 	}
-	if os.Args[1] == "-v" {
+	if (strings.ToLower(os.Args[1]) == "-v") || (strings.ToLower(os.Args[1]) == "--version") {
 		fmt.Fprintln(os.Stdout, "Version: "+ACTVersion)
+		return
+	}
+	if (strings.ToLower(os.Args[1]) == "-h") || (strings.ToLower(os.Args[1]) == "--help") || (strings.ToLower(os.Args[1]) == "--usage") || (strings.ToLower(os.Args[1]) == "/h") {
+		printUsageInfo()
 		return
 	}
 	log.Printf("---------------------------------------\n")

@@ -19,4 +19,10 @@ echo "Build act.darwin"
 GOOS="darwin"
 go build -o ../act.darwin $Sources
 
+echo "Build act.arm"
+GOOS="linux"
+GOARCH="arm"
+GOARM="5"
+go build -o ../act.arm $Sources
+
 cd "$startingpath"
