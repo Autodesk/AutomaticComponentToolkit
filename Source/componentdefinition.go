@@ -251,6 +251,7 @@ type ComponentDefinition struct {
 	ImportComponents []ComponentDefinitionImportComponent `xml:"importcomponent"`
 
 	ImportedComponentDefinitions map[string]ComponentDefinition
+	BindingDefinitions map[string]ComponentDefinitionBinding
 	NameMapsLookup NameMaps
 }
 
@@ -308,6 +309,7 @@ func (param *ComponentDefinitionParam) Normalize() {
 func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefinition, error) {
 	var component ComponentDefinition
 	component.ImportedComponentDefinitions = make(map[string]ComponentDefinition, 0)
+	component.BindingDefinitions = make(map[string]ComponentDefinitionBinding, 0)
 	component.NameMapsLookup = NameMaps{
 		enumMap : make(map[string]bool, 0),
 		structMap : make(map[string]bool, 0),
@@ -335,6 +337,11 @@ func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 	err = xml.Unmarshal(bytes, &component)
 	if err != nil {
 		return component, err
+	}
+
+	for i := 0; i < len(component.BindingList.Bindings); i++ {
+		binding := component.BindingList.Bindings[i]
+		component.BindingDefinitions[binding.Language] = binding
 	}
 
 	for i := 0; i < len(component.ImportComponents); i++ {
@@ -391,6 +398,12 @@ func (component *ComponentDefinition) checkImplementations() error {
 		if len(implementation.StubIdentifier) > 0 {
 			if !stubIdentifierIsValid(implementation.StubIdentifier) {
 				return fmt.Errorf ("Invalid StubIdentifier in implementation \"%s\"", implementation.Language);
+			}
+		}
+
+		if (component.ContainsAnAbstractClass() && implementation.Language == "Cpp") {
+			if _, ok:= component.BindingDefinitions["CppDynamic"]; !ok {
+				return fmt.Errorf ("A %s-Implementation of a component with an abstract class requires the CppDynamic-bindings of the same component to be generated", implementation.Language);
 			}
 		}
 	}
@@ -1085,6 +1098,7 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 	if err != nil {
 		return err
 	}
+
 
 	err = component.checkImplementations()
 	if err != nil {

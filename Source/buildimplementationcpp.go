@@ -1527,15 +1527,15 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 				} else {
 					if (paramNameSpace == NameSpace) {
 						if len(paramNameSpaceCPP) > 0 {
-							// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+							thisClassIdentifier := component.BindingDefinitions["CppDynamic"].ClassIdentifier
+							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, thisClassIdentifier, paramClassNameCPP, param.ParamName)
 						} else {
 							parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, class.ClassName, param.ParamName)
 						}
 					} else {
 						if len(paramNameSpaceCPP) > 0 {
-							// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+							thisClassIdentifier := component.ImportedComponentDefinitions[paramNameSpace].BindingDefinitions["CppDynamic"].ClassIdentifier
+							parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, thisClassIdentifier, paramClassNameCPP, param.ParamName)
 						} else {
 							parameters = parameters + fmt.Sprintf("I%s%s* p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 						}
@@ -1616,8 +1616,13 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%s - %s\n",  param.ParamName, param.ParamDescription)
 				if len(paramNameSpaceCPP) > 0 {
-					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP, param.ParamName)
+					thisClassIdentifier := ClassIdentifier
+					if (paramNameSpace == NameSpace) {
+						thisClassIdentifier = component.BindingDefinitions["CppDynamic"].ClassIdentifier
+					} else {
+						thisClassIdentifier = component.ImportedComponentDefinitions[paramNameSpace].BindingDefinitions["CppDynamic"].ClassIdentifier
+					}
+					parameters = parameters + fmt.Sprintf("%sP%s%s p%s", paramNameSpaceCPP, thisClassIdentifier, paramClassNameCPP, param.ParamName)
 				} else {
 					parameters = parameters + fmt.Sprintf("I%s%s*& p%s", ClassIdentifier, param.ParamClass, param.ParamName)
 				}
@@ -1637,8 +1642,13 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 			case "class", "optionalclass":
 				commentcode = commentcode + fmt.Sprintf(indentString + "* @return %s\n", param.ParamDescription)
 				if len(paramNameSpaceCPP) > 0 {
-					// TODO: ClassIdentifier is incorrect! get via // component.ImportedComponentDefinitions[paramNameSpace].Bindings
-					returntype = fmt.Sprintf("%sP%s%s", paramNameSpaceCPP, ClassIdentifier, paramClassNameCPP)
+					thisClassIdentifier := ClassIdentifier
+					if (paramNameSpace == NameSpace) {
+						thisClassIdentifier = component.BindingDefinitions["CppDynamic"].ClassIdentifier
+					} else {
+						thisClassIdentifier = component.ImportedComponentDefinitions[paramNameSpace].BindingDefinitions["CppDynamic"].ClassIdentifier
+					}
+					returntype = fmt.Sprintf("%sP%s%s", paramNameSpaceCPP, thisClassIdentifier, paramClassNameCPP)
 				} else {
 					_, class, _ := component.getClassByName(param.ParamClass)
 					if (class.IsAbstract()) {

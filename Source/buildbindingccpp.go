@@ -1513,14 +1513,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 
 	w.Writeln("  ")
-	w.Writeln("  inline void C%sWrapper::CheckErrorSafely(%sResult nResult)", NameSpace, NameSpace)
+	w.Writeln("  inline void %s%sWrapper::CheckErrorSafely(%sResult nResult)", cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      throw E%sException(nResult, \"\");", NameSpace)
 	w.Writeln("    }")
 	w.Writeln("  }")
 	w.Writeln("  ")
-	w.Writeln("  inline void C%sWrapper::CheckError(%sResult nResult)", NameSpace, NameSpace)
+	w.Writeln("  inline void %s%sWrapper::CheckError(%sResult nResult)", cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      std::string sErrorMessage;")
@@ -1687,6 +1687,7 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 
 
 func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, ClassIdentifier string, ExplicitLinking bool) error {
+	cppClassPrefix := "C"
 	NameSpace := componentdefinition.NameSpace
 	BaseName := componentdefinition.BaseName
 
@@ -1706,9 +1707,9 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 	w.Writeln("  {")
 	if (ExplicitLinking) {
 		w.Writeln("    std::string libpath = (\"\"); // TODO: put the location of the %s-library file here.", NameSpace)
-		w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, ClassIdentifier, BaseName,)
+		w.Writeln("    auto wrapper = %s::%s%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, cppClassPrefix, ClassIdentifier, BaseName,)
 	} else {
-		w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary();", NameSpace, ClassIdentifier)
+		w.Writeln("    auto wrapper = %s::%s%sWrapper::loadLibrary();", NameSpace, cppClassPrefix, ClassIdentifier)
 	}
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
 	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro);", componentdefinition.Global.VersionMethod)
