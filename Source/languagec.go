@@ -300,10 +300,12 @@ func writeClassMethodsIntoCCPPHeader(component ComponentDefinition, class Compon
 		if (class.IsAbstract()) {
 			continue
 		}
-		err := WriteCCPPAbiMethod (method, w, NameSpace, class.ClassName, false, false, useCPPTypes, true);
+		sComments, sFullLine, _, err := WriteCCPPAbiMethod(method, NameSpace, class.ClassName, false, false, useCPPTypes)
 		if (err != nil) {
-			return err;
+			return err
 		}
+		w.Writelns("", sComments)
+		w.Writeln(sFullLine)
 	}
 	return nil
 }
@@ -360,10 +362,12 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	global := component.Global;
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j];
-		err := WriteCCPPAbiMethod(method, w, NameSpace, "Wrapper", true, false, useCPPTypes, true);
+		sComments, sFullLine, _, err := WriteCCPPAbiMethod(method, NameSpace, "Wrapper", true, false, useCPPTypes)
 		if (err != nil) {
-			return err;
+			return err
 		}
+		w.Writelns("", sComments)
+		w.Writeln(sFullLine)
 	}
 	
 	w.Writeln("");
@@ -388,9 +392,11 @@ func GetCExportName (NameSpace string, ClassName string, method ComponentDefinit
 	return CMethodName;
 }
 
-
 // WriteCCPPAbiMethod writes an ABI method as a C-function
-func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, writeCallbacks bool, useCPPTypes bool, writeComments bool) (error) {
+func WriteCCPPAbiMethod(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool, writeCallbacks bool, useCPPTypes bool,) ([]string, string, string, error) {
+	// sComments, FullLine, parameters
+	sComments := make([]string, 0)
+
 	CMethodName := "";
 	CCallbackName := "";
 	parameters := "";
@@ -403,25 +409,21 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 		parameters = fmt.Sprintf ("%s_%s p%s", NameSpace, ClassName, ClassName);
 	}
 
-	if (writeComments) {
-		w.Writeln("");
-		w.Writeln("/**");
-		w.Writeln("* %s", method.MethodDescription);
-		w.Writeln("*");
-		if (!isGlobal) {
-			w.Writeln("* @param[in] p%s - %s instance.", ClassName, ClassName);
-		}
+	sComments = append(sComments, "/**")
+	sComments = append(sComments, fmt.Sprintf("* %s", method.MethodDescription))
+	sComments = append(sComments, "*")
+	if (!isGlobal) {
+		sComments = append(sComments, fmt.Sprintf("* @param[in] p%s - %s instance.", ClassName, ClassName))
 	}
+
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
 		cParams, err := generateCCPPParameter(param, ClassName, method.MethodName, NameSpace, useCPPTypes);
 		if (err != nil) {
-			return err;
+			return sComments, "", "", err
 		}
 		for _, cParam := range cParams {
-			if (writeComments) {
-				w.Writeln(cParam.ParamComment);
-			}
+			sComments = append(sComments, cParam.ParamComment)
 			if (parameters != "") {
 				parameters = parameters + ", ";
 			}
@@ -429,19 +431,17 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 		}
 	}
 
-	if (writeComments) {
-		w.Writeln("* @return error code or 0 (success)");
-		w.Writeln("*/");
-	}
+	sComments = append(sComments, "* @return error code or 0 (success)")
+	sComments = append(sComments, "*/")
 	
-	
+	sFullLine := ""
 	if (writeCallbacks) {
-		w.Writeln("typedef %sResult (*%s) (%s);", NameSpace, CCallbackName, parameters);
+		sFullLine = fmt.Sprintf("typedef %sResult (*%s) (%s);", NameSpace, CCallbackName, parameters)
 	} else {
-		w.Writeln("%s_DECLSPEC %sResult %s(%s);", strings.ToUpper(NameSpace), NameSpace, CMethodName, parameters);
+		sFullLine = fmt.Sprintf("%s_DECLSPEC %sResult %s(%s);", strings.ToUpper(NameSpace), NameSpace, CMethodName, parameters)
 	}
 	
-	return nil;
+	return sComments, sFullLine, parameters, nil
 }
 
 func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace string, useCPPTypes bool) (error) {

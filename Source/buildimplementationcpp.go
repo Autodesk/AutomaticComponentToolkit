@@ -1696,7 +1696,7 @@ func buildCPPInterfaceMethodDeclaration(component ComponentDefinition, method Co
 	return outstring, templateimplementation, nil
 }
 
-func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput bool) (string) {
+func getCppParamType(param ComponentDefinitionParam, NameSpace string, isInput bool) (string) {
 	cppClassPrefix := "C" + NameSpace;
 	switch (param.ParamType) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":

@@ -707,21 +707,30 @@ func (component *ComponentDefinition) checkClasses() (error) {
 			}
 			
 			if !nameIsValidIdentifier(paramClassName) {
-				return fmt.Errorf ("invalid parent class name \"%s\"", parentClass);
+				return fmt.Errorf ("invalid parent class name \"%s\"", parentClass)
 			}
 			if ( currentNameMaps.classMap[paramClassName] == false) {
-				return fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName);
+				return fmt.Errorf ("unknown parent class \"%s\" for class \"%s\"", parentClass, class.ClassName)
 			}
 			if len(namespace) == 0 {
 				if (classNameIndex[parentClass] >= i) {
-					return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName);
+					return fmt.Errorf ("parent class \"%s\" for class \"%s\" is defined after its child class", parentClass, class.ClassName)
 				}
 			}
 			if (strings.ToLower(class.ClassName) == strings.ToLower(parentClass)) {
-				return fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass);
+				return fmt.Errorf ("class \"%s\" cannot be its own parent class \"%s\"", class.ClassName, parentClass)
+			}
+		}
+		// Check that abstract class is direct child of base-class
+		if (class.IsAbstract()) {
+			if (parentClass != component.Global.BaseClassName) {
+				return fmt.Errorf ("abstract class \"%s\" must derive directly from component-base-class \"%s\"", class.ClassName, component.Global.BaseClassName)
 			}
 		}
 	}
+
+	
+
 
 	return nil
 }
