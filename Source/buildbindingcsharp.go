@@ -124,7 +124,7 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 		CSharpParamTypeName = "UInt64"
 
 	case "int8":
-		CSharpParamTypeName = "Int8"
+		CSharpParamTypeName = "sbyte"
 
 	case "int16":
 		CSharpParamTypeName = "Int16"
@@ -687,7 +687,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			case "uint64":
 				w.Writeln("    public UInt64%s %s;", arraysuffix, element.Name)
 			case "int8":
-				w.Writeln("    public Int8%s %s;", arraysuffix, element.Name)
+				w.Writeln("    public sbyte%s %s;", arraysuffix, element.Name)
 			case "int16":
 				w.Writeln("    public Int16%s %s;", arraysuffix, element.Name)
 			case "int32":
@@ -756,7 +756,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "int8":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt8 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %ssbyte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "int16":
 				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
@@ -777,7 +777,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sDouble %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "pointer":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUint64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
