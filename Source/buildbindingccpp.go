@@ -2130,11 +2130,14 @@ func buildCppClientImplementationClass(component ComponentDefinition, class Comp
 	w.Writeln("namespace %s {", NameSpace)
 	w.Writeln("namespace ClientImpl {")
 	w.Writeln("")
-	clientImplClassName := "ClientImpl" + theClassName
+	
+	ClientImplClassPrefix := "C"
+
+	clientImplClassName := ClientImplClassPrefix + theClassName
 	if (bIsBaseClass) {
 		w.Writeln("class %s {", clientImplClassName)
 	} else {
-		w.Writeln("class %s : public %s {", clientImplClassName, "ClientImpl" +  component.baseClass().ClassName)
+		w.Writeln("class %s : public %s {", clientImplClassName, ClientImplClassPrefix +  component.baseClass().ClassName)
 		w.Writeln("")
 		w.Writeln("  %s_IMPL_DECLARE(%s, %s)", NameSpaceUpper, clientImplClassName, theClassName)
 		w.Writeln("")
@@ -2160,7 +2163,7 @@ func buildCppClientImplementationClass(component ComponentDefinition, class Comp
 		wImpl.Writeln("")
 
 		wImpl.Writeln("%s_IMPL_IMPLEMENT(%s)", NameSpaceUpper, clientImplClassName)
-		wImpl.Writeln("%s_IMPL_LOOKUP_IMPLEMENT_BEGIN(%s, %s, %s)", NameSpaceUpper, clientImplClassName, "ClientImpl" +  component.baseClass().ClassName, theClassName)
+		wImpl.Writeln("%s_IMPL_LOOKUP_IMPLEMENT_BEGIN(%s, %s, %s)", NameSpaceUpper, clientImplClassName, ClientImplClassPrefix +  component.baseClass().ClassName, theClassName)
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			wImpl.Writeln("%s_IMPL_LOOKUP_ADD(%s)", NameSpaceUpper, method.MethodName)
