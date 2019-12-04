@@ -1080,6 +1080,10 @@ func buildLPRImplementation(component ComponentDefinition, w LanguageWriter, Nam
 	}
 
 	w.Writeln("")
+	w.Writeln("{$IFDEF %s_INCLUDE_RES_FILE}", strings.ToUpper(NameSpace))
+	w.Writeln("{$R *.res}")
+	w.Writeln("{$ENDIF %s_INCLUDE_RES_FILE}", strings.ToUpper(NameSpace))
+	w.Writeln("")
 	w.Writeln("begin")
 	w.Writeln("")
 	w.Writeln("end.")
