@@ -132,6 +132,11 @@ func (writer *LanguageWriter) WritePythonLicenseHeader (component ComponentDefin
 	writeLicenseHeaderEx (writer.Writer, component, abstract, includeVersion, "'''", "'''");
 }
 
+// WriteJavaLicenseHeader writes a license header into a writer Java-style comments
+func (writer *LanguageWriter) WriteJavaLicenseHeader (component ComponentDefinition, abstract string, includeVersion bool) {
+	writeLicenseHeaderEx (writer.Writer, component, abstract, includeVersion, "/*", "*/");
+}
+
 // WritePlainLicenseHeader writes a license header into a writer without comments
 func (writer *LanguageWriter) WritePlainLicenseHeader (component ComponentDefinition, abstract string, includeVersion bool) {
 	writeLicenseHeaderEx (writer.Writer, component, abstract, includeVersion, "", "");

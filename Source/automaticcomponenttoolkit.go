@@ -295,6 +295,25 @@ func createComponent(component ComponentDefinition, outfolderBase string) (error
 					return err
 				}
 			}
+		case "Java":
+			{
+				outputFolderBindingJava := outputFolderBindings + "/Java"
+				err = os.MkdirAll(outputFolderBindingJava, os.ModePerm)
+				if err != nil {
+					return err
+				}
+
+				outputFolderExampleJava := outputFolderExamples + "/Java"
+				err = os.MkdirAll(outputFolderExampleJava, os.ModePerm)
+				if err != nil {
+					return err
+				}
+
+				err = BuildBindingJavaDynamic(component, outputFolderBindingJava, outputFolderExampleJava, indentString)
+				if err != nil {
+					return err
+				}
+			}
 
 		case "Fortran":
 			{
