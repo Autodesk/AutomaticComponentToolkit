@@ -130,10 +130,6 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	if component.isBaseClass(class) {
 		w.Writeln("public class %s {", class.ClassName)
 		w.Writeln("")
-		w.Writeln(indent + "protected Pointer mHandle;");
-		w.Writeln("")
-		w.Writeln(indent + "protected %sWrapper mWrapper;", component.NameSpace);
-		w.Writeln("")
 	} else {
 		ParentClass := class.ParentClass
 		if ParentClass == "" {
@@ -141,6 +137,14 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 		}
 		w.Writeln("public class %s extends %s {", class.ClassName, ParentClass)
 		w.Writeln("")		
+	}
+	w.Writeln(indent + "public static class Out { public %s value; }", class.ClassName)
+	w.Writeln("")
+	if component.isBaseClass(class) {
+		w.Writeln(indent + "protected Pointer mHandle;");
+		w.Writeln("")
+		w.Writeln(indent + "protected %sWrapper mWrapper;", component.NameSpace);
+		w.Writeln("")
 	}
 
 	w.Writeln(indent + "protected %s(%sWrapper wrapper, Pointer handle) {", class.ClassName, component.NameSpace);
@@ -184,7 +188,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
-		ParamTypeName, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, param.ParamPass, false)
+		ParamTypeName, _, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, param.ParamPass, false)
 		if err != nil {
 			return err
 		}
@@ -241,7 +245,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
-		PlainParamTypeName, err := getPascalParameterType(param.ParamType, NameSpace, param.ParamClass, true, false)
+		PlainParamTypeName, bytes, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, "in", false)
 		if err != nil {
 			return err
 		}
@@ -271,8 +275,9 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
 
 			case "enum":
-				callFunctionParameters = callFunctionParameters + "convert" + param.ParamClass + "ToConst(A" + param.ParamName + ")"
-				initCallParameters = initCallParameters + "convert" + param.ParamClass + "ToConst(A" + param.ParamName + ")"
+				addParam := fmt.Sprintf("%sWrapper.EnumConversion.convert%sToConst(%s)", NameSpace, param.ParamClass, MakeFirstLowerCase(param.ParamName))
+				callFunctionParameters = callFunctionParameters + addParam
+				initCallParameters = initCallParameters + addParam
 
 			case "basicarray":
 				basicPlainTypeName, err := getPascalParameterType(param.ParamClass, NameSpace, "", true, false)
@@ -318,7 +323,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
 			case "class", "optionalclass":
-				defineCommands = append(defineCommands, "Pointer " + MakeFirstLowerCase(param.ParamName) + "Handle = null;")
+				initCommands = append(initCommands, "Pointer " + MakeFirstLowerCase(param.ParamName) + "Handle = null;")
 				initCommands = append(initCommands, fmt.Sprintf("if (%s != null) {", MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, indent + MakeFirstLowerCase(param.ParamName) + "Handle = " + MakeFirstLowerCase(param.ParamName) + ".mHandle;")
 				if (param.ParamType == "optionalclass") {
@@ -339,34 +344,10 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
-				if (param.ParamType == "uint8" || param.ParamType == "int8") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(1);")
-				} else if (param.ParamType == "uint16" || param.ParamType == "int16") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(2);")
-				} else if (param.ParamType == "uint32" || param.ParamType == "int32" || param.ParamType == "single") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(4);")
-				} else if (param.ParamType == "uint64" || param.ParamType == "int64" || param.ParamType == "double" || param.ParamType == "pointer") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(8);")
-				}
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d);", param.ParamName, bytes))
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				if (param.ParamType == "uint8") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getChar(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "int8") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getByte(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "uint16" || param.ParamType == "int16") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getShort(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "uint32" || param.ParamType == "int32") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getInt(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "uint64" || param.ParamType == "int64") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getLong(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "single") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getFloat(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "double") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getDouble(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				} else if (param.ParamType == "pointer") {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getPointer(0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				}
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.get%s(0);", MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(PlainParamTypeName)))
 
 			case "string":
 				initCommands = append(initCommands, "Pointer bytesNeeded"+param.ParamName+" = new Memory(4);")
@@ -384,24 +365,23 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, "Result"+param.ParamName+": Integer;")
-				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
+				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(4);")
 
-				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
-				initCallParameters = initCallParameters + "Result" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("A%s := convertConstTo%s(Result%s);", param.ParamName, param.ParamClass, param.ParamName))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = %sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", 
+					MakeFirstLowerCase(param.ParamName), NameSpace, param.ParamClass, param.ParamName))
 
 			case "bool":
-				defineCommands = append(defineCommands, "Result"+param.ParamName+": Byte;")
-				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
+				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(1);")				
 
-				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
-				initCallParameters = initCallParameters + "Result" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("A%s := Result%s != 0;", param.ParamName, param.ParamName))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getByte(0) != 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
 
 			case "struct":
-				callFunctionParameters = callFunctionParameters + "@A" + param.ParamName
-				initCallParameters = initCallParameters + "@A" + param.ParamName
+				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
+				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
 
 			case "basicarray", "structarray":
 
@@ -453,35 +433,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
-				if (param.ParamType == "uint8" || param.ParamType == "int8") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(1);")
-				} else if (param.ParamType == "uint16" || param.ParamType == "int16") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(2);")
-				} else if (param.ParamType == "uint32" || param.ParamType == "int32" || param.ParamType == "single") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(4);")
-				} else if (param.ParamType == "uint64" || param.ParamType == "int64" || param.ParamType == "double" || param.ParamType == "pointer") {
-					initCommands = append(initCommands, "Pointer buffer"+param.ParamName+" = new Memory(8);")
-				}
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d);", param.ParamName, bytes))
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				if (param.ParamType == "uint8") {
-					returnStmt = fmt.Sprintf("buffer%s.getChar(0);", param.ParamName)
-				} else if (param.ParamType == "int8") {
-					returnStmt = fmt.Sprintf("buffer%s.getByte(0);", param.ParamName)
-				} else if (param.ParamType == "uint16" || param.ParamType == "int16") {
-					returnStmt = fmt.Sprintf("buffer%s.getShort(0);", param.ParamName)
-				} else if (param.ParamType == "uint32" || param.ParamType == "int32") {
-					returnStmt = fmt.Sprintf("buffer%s.getInt(0);", param.ParamName)
-				} else if (param.ParamType == "uint64" || param.ParamType == "int64") {
-					returnStmt = fmt.Sprintf("buffer%s.getLong(0);", param.ParamName)
-				} else if (param.ParamType == "single") {
-					returnStmt = fmt.Sprintf("buffer%s.getFloat(0);", param.ParamName)
-				} else if (param.ParamType == "double") {
-					returnStmt = fmt.Sprintf("buffer%s.getDouble(0);", param.ParamName)
-				} else if (param.ParamType == "pointer") {
-					returnStmt = fmt.Sprintf("buffer%s.getPointer(0);", param.ParamName)
-				}
-
+				returnStmt = fmt.Sprintf("buffer%s.get%s(0);", param.ParamName, MakeFirstUpperCase(PlainParamTypeName))
+				
 			case "string":
 				initCommands = append(initCommands, "Pointer bytesNeeded"+param.ParamName+" = new Memory(4);")
 
@@ -494,22 +450,22 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				resultCommands = append(resultCommands, fmt.Sprintf("String %s = new String(buffer%s.getByteArray(0, size%s - 1), StandardCharsets.UTF_8);", 
 					MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("return %s;", MakeFirstLowerCase(param.ParamName)))
+				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
 				doInitCall = true
 
 			case "enum":
-				defineCommands = append(defineCommands, "Result"+param.ParamName+": Integer;")
-				initCommands = append(initCommands, "Result"+param.ParamName+" := 0;")
+				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(4);")
 
-				callFunctionParameters = callFunctionParameters + "Result" + param.ParamName
-				initCallParameters = initCallParameters + "Result" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("  Result := convertConstTo%s(Result%s);", param.ParamClass, param.ParamName))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
+				returnStmt = fmt.Sprintf("%sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", NameSpace, param.ParamClass, param.ParamName)
 
 			case "struct":
 				initCommands = append(initCommands, param.ParamClass + " " + MakeFirstLowerCase(param.ParamName) + " = new " + param.ParamClass + "();")
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
-				resultCommands = append(resultCommands, fmt.Sprintf("return %s;", MakeFirstLowerCase(param.ParamName)))
+				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
+				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
 			case "basicarray", "structarray":
 				defineCommands = append(defineCommands, "countNeeded"+param.ParamName+": QWord;")
@@ -697,10 +653,58 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln(indent + "}")
 	w.Writeln("")
 
+	for i := 0; i < len(component.Enums); i++ {
+		enum := component.Enums[i]
+		for j := 0; j < len(enum.Options); j++ {
+				w.Writeln(indent + "public static final int %s_%s = %d;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Options[j].Value)
+		}
+		w.Writeln("")
+		w.Writeln(indent + "enum %s {", enum.Name)
+		for j := 0; j < len(enum.Options); j++ {
+			if j < len(enum.Options) - 1 {
+				w.Writeln(indent + indent + "e" + enum.Options[j].Name + ",")
+			} else {
+				w.Writeln(indent + indent + "e" + enum.Options[j].Name)
+			}
+		}
+		w.Writeln(indent + "}")
+		w.Writeln("")
+	}
+	if (len(component.Errors.Errors) > 0) {
+		w.Writeln(indent + "public static class EnumConversion {")
+		for i := 0; i < len(component.Enums); i++ {
+			enum := component.Enums[i]
+			w.Writeln(indent + indent + "public static int convert%sToConst (%s value) throws %sException {", enum.Name, enum.Name, NameSpace)
+			w.Writeln(indent + indent + indent + "switch (value) {")
+			for j := 0; j < len(enum.Options); j++ {
+				w.Writeln(indent + indent + indent + indent + "case e%s: return %s_%s;", enum.Options[j].Name, strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name))
+			}
+				w.Writeln(indent + indent + indent + indent + "default: throw new %sException(%s_ERROR_INVALIDPARAM, \"Unknown enum value : \" + value);", NameSpace, strings.ToUpper(NameSpace))
+			w.Writeln(indent + indent + indent + "}")
+			w.Writeln(indent + indent + "}")
+			w.Writeln("")
+			w.Writeln(indent + indent + "public static %s convertConstTo%s (int value) throws %sException {", enum.Name, enum.Name, NameSpace)
+			w.Writeln(indent + indent + indent + "switch (value) {")
+			for j := 0; j < len(enum.Options); j++ {
+				w.Writeln(indent + indent + indent + indent + "case %s_%s: return %s.e%s;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Name, enum.Options[j].Name)
+			}
+				w.Writeln(indent + indent + indent + indent + "default: throw new %sException(%s_ERROR_INVALIDPARAM, \"Unknown enum const : \" + value);", NameSpace, strings.ToUpper(NameSpace))
+			w.Writeln(indent + indent + indent + "}")
+			w.Writeln(indent + indent + "}")
+			w.Writeln("")
+		}
+		w.Writeln(indent + "}")
+		w.Writeln("")
+	}
 
 	primitives := []string{ "byte", "char", "short", "int", "long", "boolean", "float", "double", "String" }
 	for i := 0; i < len(primitives); i++ {
 		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(primitives[i]), primitives[i])
+		w.Writeln("")
+	}
+	for i := 0; i < len(component.Enums); i++ {
+		name := component.Enums[i].Name
+		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(name), name)
 		w.Writeln("")
 	}
 
@@ -806,7 +810,7 @@ func generateParametersForMethod(method ComponentDefinitionMethod, ClassName str
 
 func generatePlainJavaParameter(param ComponentDefinitionParam, className string, methodName string, NameSpace string) ([]javaParameter, error) {
 	cParams := make([]javaParameter, 1)
-	cParamTypeName, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, param.ParamPass, true)
+	cParamTypeName, _, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, param.ParamPass, true)
 	if err != nil {
 		return nil, err
 	}
@@ -957,85 +961,52 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 	return cParams, nil
 }
 
-func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass string, ParamPass string, isPlain bool) (string, error) {
+func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass string, ParamPass string, isPlain bool) (string, int, error) {
 	JavaParamTypeName := ""
+	Bytes := 0;
 	switch ParamTypeName {
 	case "uint8":
-		if ParamPass == "out" {
-			JavaParamTypeName = "CharOut"
-		} else {
-			JavaParamTypeName = "char"
-		}
+		JavaParamTypeName = "char"
+		Bytes = 1;
 
 	case "uint16", "int16":
-		if ParamPass == "out" {
-			JavaParamTypeName = "ShortOut"
-		} else {
-			JavaParamTypeName = "short"
-		}
+		JavaParamTypeName = "short"
+		Bytes = 2;
 
 	case "uint32", "int32":
-		if ParamPass == "out" {
-			JavaParamTypeName = "IntOut"
-		} else {
-			JavaParamTypeName = "int"
-		}
+		JavaParamTypeName = "int"
+		Bytes = 4;
 
 	case "uint64", "int64":
-		if ParamPass == "out" {
-			JavaParamTypeName = "LongOut"
-		} else {
-			JavaParamTypeName = "long"
-		}
+		JavaParamTypeName = "long"
+		Bytes = 8;
 
 	case "int8":
-		if ParamPass == "out" {
-			JavaParamTypeName = "ByteOut"
-		} else {
-			JavaParamTypeName = "byte"
-		}
+		JavaParamTypeName = "byte"
+		Bytes = 1;
 
 	case "bool":
-		if ParamPass == "out" {
-			JavaParamTypeName = "BooleanOut"
-		} else {
-			JavaParamTypeName = "boolean"
-		}
+		JavaParamTypeName = "boolean"
+		Bytes = 1;
 
 	case "single":
-		if ParamPass == "out" {
-			JavaParamTypeName = "FloatOut"
-		} else {
-			JavaParamTypeName = "float"
-		}
+		JavaParamTypeName = "float"
+		Bytes = 4;
 
 	case "double":
-		if ParamPass == "out" {
-			JavaParamTypeName = "DoubleOut"
-		} else {
-			JavaParamTypeName = "double"
-		}
+		JavaParamTypeName = "double"
+		Bytes = 8;
 
 	case "pointer":
 		JavaParamTypeName = "Pointer"
+		Bytes = 8;
 
 	case "string":
-		if isPlain {
-			JavaParamTypeName = "Pointer"
-		} else {
-			if ParamPass == "out" {
-				JavaParamTypeName = "StringOut"
-			} else {
-				JavaParamTypeName = "String"
-			}
-		}
+		JavaParamTypeName = "String"
 
 	case "enum":
-		if isPlain {
-			JavaParamTypeName = fmt.Sprintf("Pointer")
-		} else {
-			JavaParamTypeName = fmt.Sprintf("int")
-		}
+		JavaParamTypeName = NameSpace + "Wrapper." + ParamClass
+		Bytes = 4;
 
 	case "functiontype":
 		if isPlain {
@@ -1048,10 +1019,11 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		JavaParamTypeName = ParamClass
 
 	case "basicarray":
-		basicTypeName, err := getJavaParameterType(ParamClass, NameSpace, "", "in", isPlain)
+		basicTypeName, SubBytes, err := getJavaParameterType(ParamClass, NameSpace, "", "in", isPlain)
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
+		Bytes = SubBytes
 
 		if isPlain {
 			JavaParamTypeName = fmt.Sprintf("Pointer")
@@ -1079,10 +1051,28 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		}
 
 	default:
-		return "", fmt.Errorf("invalid parameter type \"%s\" for Java parameter", ParamTypeName)
+		return "", Bytes, fmt.Errorf("invalid parameter type \"%s\" for Java parameter", ParamTypeName)
 	}
 
-	return JavaParamTypeName, nil
+	if ParamPass == "out" {
+		switch ParamTypeName {
+			case "uint8", "uint16", "int16", "uint32", "int32", "uint64", "int64", "int8", "bool", "single", "double", "pointer", "string":
+					JavaParamTypeName = NameSpace + "Wrapper." + MakeFirstUpperCase(JavaParamTypeName) + "Out"
+			case "enum":
+					JavaParamTypeName = NameSpace + "Wrapper." + ParamClass + "Out"
+		}
+	}
+
+	if isPlain {
+		if ParamTypeName == "string" {
+			JavaParamTypeName = "Pointer"
+		}
+		if ParamTypeName == "enum" {
+			JavaParamTypeName = "int"
+		}
+	}
+
+	return JavaParamTypeName, Bytes, nil
 }
 
 func MakeFirstLowerCase(s string) string {
