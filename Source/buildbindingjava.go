@@ -140,6 +140,8 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	}
 	w.Writeln(indent + "public static class Out { public %s value; }", class.ClassName)
 	w.Writeln("")
+	w.Writeln(indent + "public static class ArrayOut { public %s value[]; }", class.ClassName)
+	w.Writeln("")
 	if component.isBaseClass(class) {
 		w.Writeln(indent + "protected Pointer mHandle;");
 		w.Writeln("")
@@ -199,6 +201,9 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				parameters = parameters + ", "
 			}
 			parameters = parameters + ParamTypeName + " " + MakeFirstLowerCase(param.ParamName)
+			if param.ParamType == "structarray" {
+				parameters = parameters + ", " + " int count" + param.ParamName
+			}
 
 		case "out":
 			if parameters != "" {
@@ -280,40 +285,22 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + addParam
 
 			case "basicarray":
-				basicPlainTypeName, err := getPascalParameterType(param.ParamClass, NameSpace, "", true, false)
+				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
 				if err != nil {
 					return err
 				}
 
-				defineCommands = append(defineCommands, "Ptr"+param.ParamName+": P"+basicPlainTypeName+";")
-				defineCommands = append(defineCommands, "Len"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, fmt.Sprintf("Len%s := Length(A%s);", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("if Len%s > $FFFFFFFF then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, \"array has too many entries.\");", NameSpace, strings.ToUpper(NameSpace)))
-				initCommands = append(initCommands, fmt.Sprintf("if Len%s > 0 then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("else"))
-				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := nil;", param.ParamName))
-				initCommands = append(initCommands, "")
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * %s.length);", param.ParamName, ElementBytes, MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf(indent + "buffer%s.set%s(%d * i, %s[i]);", param.ParamName, MakeFirstUpperCase(ArrayType), ElementBytes, MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, "}")
 
-				callFunctionParameters = callFunctionParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
-				initCallParameters = initCallParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
+				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 
 			case "structarray":
-
-				defineCommands = append(defineCommands, "Ptr"+param.ParamName+": P"+NameSpace+param.ParamClass+";")
-				defineCommands = append(defineCommands, "Len"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, fmt.Sprintf("Len%s := Length(A%s);", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("if Len%s > $FFFFFFFF then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, \"array has too many entries.\");", NameSpace, strings.ToUpper(NameSpace)))
-				initCommands = append(initCommands, fmt.Sprintf("if Len%s > 0 then", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := @A%s[0]", param.ParamName, param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("else"))
-				initCommands = append(initCommands, fmt.Sprintf("  Ptr%s := nil;", param.ParamName))
-				initCommands = append(initCommands, "")
-
-				callFunctionParameters = callFunctionParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
-				initCallParameters = initCallParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
+				callFunctionParameters = callFunctionParameters + "count" + param.ParamName + ", " + MakeFirstLowerCase(param.ParamName)
+				initCallParameters = initCallParameters + "count" + param.ParamName + ", " + MakeFirstLowerCase(param.ParamName)
 
 			case "functiontype":
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
@@ -327,7 +314,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				} else {
 					initCommands = append(initCommands, fmt.Sprintf("} else {"))
-					initCommands = append(initCommands, indent + fmt.Sprintf("throw new %sException(%s_ERROR_INVALIDPARAM, \"%s is a null value.\");", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+					initCommands = append(initCommands, indent + fmt.Sprintf("throw new %sWrapper.%sException(%sWrapper.%s_ERROR_INVALIDPARAM, \"%s is a null value.\");", NameSpace, NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
 				}
 				initCommands = append(initCommands, fmt.Sprintf("}"))
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + "Handle"
@@ -380,18 +367,36 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
 
-			case "basicarray", "structarray":
+			case "basicarray":
+				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
+				if err != nil {
+					return err
+				}
 
-				defineCommands = append(defineCommands, "countNeeded"+param.ParamName+": QWord;")
-				defineCommands = append(defineCommands, "countWritten"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, "countNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "countWritten"+param.ParamName+":= 0;")
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
 
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
+				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(A%s, countNeeded%s);", param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * count%s);", param.ParamName, ElementBytes, param.ParamName))
 
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @A%s[0]", param.ParamName, param.ParamName, param.ParamName)
+				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
+
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.get%sArray(0, count%s);", MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName))
+
+				doInitCall = true
+
+			case "structarray":
+
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
+
+				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
+
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("%s buffer%s = new %s();", param.ParamClass,  param.ParamName, param.ParamClass))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("%s.value = (%s[])buffer%s.toArray(count%s);", MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName, param.ParamName))
+
+				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
 				doInitCall = true
 
@@ -492,8 +497,8 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
 				resultCommands = append(resultCommands, fmt.Sprintf("if (value%s == Pointer.NULL) {", param.ParamName))
 				if param.ParamType == "class" {
-					resultCommands = append(resultCommands, fmt.Sprintf(indent + "throw new %sException(%s_ERROR_NORESULTAVAILABLE, \"%s was a null pointer\");", 
-						NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf(indent + "throw new %sWrapper.%sException(%sWrapper.%s_ERROR_NORESULTAVAILABLE, \"%s was a null pointer\");", 
+						NameSpace, NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
 				} else {
 					resultCommands = append(resultCommands, fmt.Sprintf("%s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
 				}
@@ -552,54 +557,62 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 	w.Writeln("")
 	w.Writeln("public class %s extends Structure implements Structure.ByReference {", structinfo.Name)
 	w.Writeln("")
+	w.Writeln(indent + "public static class Out { public %s value;} ", structinfo.Name)
+	w.Writeln("")
+	w.Writeln(indent + "public static class ArrayOut { public %s[] value;} ", structinfo.Name)
+	w.Writeln("")
 	fields := ""
 
 	for j := 0; j < len(structinfo.Members); j++ {
 		element := structinfo.Members[j]
 		arrayprefix := ""
+		arraysuffix := ""
 		if element.Rows > 0 {
 			if element.Columns > 0 {
-				arrayprefix = fmt.Sprintf("[%d][%d]", element.Columns-1, element.Rows-1)
+				arrayprefix = fmt.Sprintf("[][]")
+				arraysuffix = fmt.Sprintf("[%d][%d]", element.Columns-1, element.Rows-1)
 			} else {
-				arrayprefix = fmt.Sprintf("[%d]", element.Rows-1)
+				arrayprefix = fmt.Sprintf("[]")
+				arraysuffix = fmt.Sprintf("[%d]", element.Rows-1)
 			}
 		}
 		if fields != "" {
 			fields = fields + ", "
 		}
 		fields = fields + "\"" + element.Name + "\""
+		fieldType := ""
 
 		switch element.Type {
 		case "uint8":
-			w.Writeln(indent + "public byte%s %s;", arrayprefix, element.Name)
-		case "uint16":
-			w.Writeln(indent + "public short%s %s;", arrayprefix, element.Name)
-		case "uint32":
-			w.Writeln(indent + "public int%s %s;", arrayprefix, element.Name)
-		case "uint64":
-			w.Writeln(indent + "public long%s %s;", arrayprefix, element.Name)
+			fieldType = "byte"
 		case "int8":
-			w.Writeln(indent + "public char%s %s;", arrayprefix, element.Name)
-		case "int16":
-			w.Writeln(indent + "public short%s %s;", arrayprefix, element.Name)
-		case "int32":
-			w.Writeln(indent + "public int%s %s;", arrayprefix, element.Name)
-		case "int64":
-			w.Writeln(indent + "public long%s %s;", arrayprefix, element.Name)
+			fieldType = "char"
+		case "int16", "uint16":
+			fieldType = "short"
+		case "int32", "uint32":
+			fieldType = "int"
+		case "int64", "uint64":
+			fieldType = "long"
 		case "bool":
-			w.Writeln(indent + "public boolean%s %s;", arrayprefix, element.Name)
+			fieldType = "boolean"
 		case "single":
-			w.Writeln(indent + "public float%s %s;", arrayprefix, element.Name)
+			fieldType = "float"
 		case "double":
-			w.Writeln(indent + "public double%s %s;", arrayprefix, element.Name)
+			fieldType = "double"
 		case "pointer":
-			w.Writeln(indent + "public Pointer%s %s;", arrayprefix, element.Name)
+			fieldType = "Pointer"
 		case "string":
 			return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", component.NameSpace, structinfo.Name)
 		case "class", "optionalclass":
 			return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", component.NameSpace, structinfo.Name)
 		case "enum":
-			w.Writeln(indent + "int%s m%s;", arrayprefix, element.Name)
+			fieldType = "int"
+		}
+
+		if element.Rows > 0 {
+			w.Writeln(indent + "public %s%s %s = new %s%s;", fieldType, arrayprefix, element.Name, fieldType, arraysuffix)
+		} else {
+			w.Writeln(indent + "public %s %s;", fieldType, element.Name)
 		}
 	}
 	w.Writeln("")
@@ -648,7 +661,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("")
 	w.Writeln(indent + indent + "protected int mErrorCode;")
 	w.Writeln("")
-	w.Writeln(indent + indent + "public SimpleLibException(int errorCode, String message){")
+	w.Writeln(indent + indent + "public " + NameSpace + "Exception(int errorCode, String message){")
 	w.Writeln(indent + indent + indent + "super(message);")
 	w.Writeln(indent + indent + "}")
 	w.Writeln(indent + "}")
@@ -731,10 +744,13 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	for i := 0; i < len(primitives); i++ {
 		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(primitives[i]), primitives[i])
 		w.Writeln("")
+		w.Writeln(indent + "public static class %sArrayOut { public %s value[]; }", MakeFirstUpperCase(primitives[i]), primitives[i])
+		w.Writeln("")
 	}
 	for i := 0; i < len(component.Enums); i++ {
 		name := component.Enums[i].Name
 		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(name), name)
+		w.Writeln(indent + "public static class %sArrayOut { public %s value[]; }", MakeFirstUpperCase(name), name)
 		w.Writeln("")
 	}
 
@@ -950,7 +966,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[1].ParamConvention = ""
 			cParams[1].ParamTypeNoConvention = cParams[1].ParamType
 
-			cParams[2].ParamType = "Pointer"
+			cParams[2].ParamType = param.ParamClass
 			cParams[2].ParamName = MakeFirstLowerCase(param.ParamName) + "Buffer"
 			cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription)
 			cParams[2].ParamConvention = ""
@@ -1054,18 +1070,25 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 			return "", 0, err
 		}
 		Bytes = SubBytes
-
 		if isPlain {
 			JavaParamTypeName = fmt.Sprintf("Pointer")
 		} else {
-			JavaParamTypeName = fmt.Sprintf("%s[]", basicTypeName)
+			if ParamPass == "out" {
+				JavaParamTypeName = fmt.Sprintf("%sWrapper.%sArrayOut", NameSpace, MakeFirstUpperCase(basicTypeName))
+			} else {
+				JavaParamTypeName = fmt.Sprintf("%s[]", basicTypeName)
+			}
 		}
 
 	case "structarray":
 		if isPlain {
-			JavaParamTypeName = fmt.Sprintf("Pointer")
+			JavaParamTypeName = ParamClass
 		} else {
-			JavaParamTypeName = fmt.Sprintf("%s[]", ParamClass)
+			if ParamPass == "out" {
+				JavaParamTypeName = fmt.Sprintf("%s.ArrayOut", ParamClass)
+			} else {
+				JavaParamTypeName = ParamClass
+			}
 		}
 
 	case "class", "optionalclass":
