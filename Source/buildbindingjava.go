@@ -316,11 +316,8 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + "QWord(Len" + param.ParamName + "), Ptr" + param.ParamName
 
 			case "functiontype":
-				initCommands = append(initCommands, fmt.Sprintf("if (%s == null) {", param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("  throw new %sException(%s_ERROR_INVALIDPARAM, \"%s is a null value.\");", NameSpace, strings.ToUpper(NameSpace), param.ParamName))
-				initCommands = append(initCommands, fmt.Sprintf("}"))
-				callFunctionParameters = callFunctionParameters + "A" + param.ParamName
-				initCallParameters = initCallParameters + "A" + param.ParamName
+				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
+				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
 
 			case "class", "optionalclass":
 				initCommands = append(initCommands, "Pointer " + MakeFirstLowerCase(param.ParamName) + "Handle = null;")
@@ -630,9 +627,11 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("import com.sun.jna.Memory;")
 	w.Writeln("import com.sun.jna.Native;")
 	w.Writeln("import com.sun.jna.Pointer;")
+	w.Writeln("import com.sun.jna.Callback;")
 	w.Writeln("")
 	w.Writeln("import java.nio.charset.StandardCharsets;")
 
+	// Write error codes
 	w.Writeln("")
 	w.Writeln("public class " + JavaWrapperName + " {")
 	w.Writeln("")
@@ -643,6 +642,8 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		w.Writeln(indent + "public static final int %s_ERROR_%s = %d;", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code)
 	}
 	w.Writeln("")
+
+	// Write exception
 	w.Writeln(indent + "public static class %sException extends Exception {", NameSpace)
 	w.Writeln("")
 	w.Writeln(indent + indent + "protected int mErrorCode;")
@@ -653,6 +654,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln(indent + "}")
 	w.Writeln("")
 
+	// Write enums and conversion functions
 	for i := 0; i < len(component.Enums); i++ {
 		enum := component.Enums[i]
 		for j := 0; j < len(enum.Options); j++ {
@@ -697,6 +699,34 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		w.Writeln("")
 	}
 
+	// Write callback functions
+	for j:=0; j<len(component.Functions); j++ {
+		function := component.Functions[j]
+		w.Writeln(indent + "public interface %s extends Callback {", function.FunctionName)
+		w.Writeln("")
+		nativeParams := ""
+		for i := 0; i < len(function.Params); i++ {
+			param := function.Params[i]
+
+			javaParams, err := generatePlainJavaParameter(param, "", function.FunctionName, NameSpace)
+			if err != nil {
+				return err
+			}
+
+			for _, javaParam := range javaParams {
+				if nativeParams != "" {
+					nativeParams = nativeParams + ", "
+				}
+				nativeParams = nativeParams + javaParam.ParamConvention + javaParam.ParamType + " " + javaParam.ParamName
+			}
+		}
+		w.Writeln(indent + indent + "void %s (%s);", MakeFirstLowerCase(function.FunctionName), nativeParams)
+		w.Writeln("")
+		w.Writeln(indent + "}")
+		w.Writeln("")
+	}
+
+	// Write out holding classes
 	primitives := []string{ "byte", "char", "short", "int", "long", "boolean", "float", "double", "String" }
 	for i := 0; i < len(primitives); i++ {
 		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(primitives[i]), primitives[i])
@@ -708,6 +738,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		w.Writeln("")
 	}
 
+	// Write wrapper interface
 	w.Writeln(indent + "public interface I" + NameSpace + " extends Library {")
 	spacing := indent + indent
 	for j:=0; j<len(component.Global.Methods); j++ {
@@ -741,6 +772,8 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	}
 	w.Writeln(indent + "}")
 	w.Writeln("")
+
+	// Write wrapper member/constructor/checkError
 	w.Writeln(indent + "protected I" + NameSpace + " mInterface;")
 	w.Writeln("")
 	w.Writeln(indent + "public " + JavaWrapperName + "(String libraryPath) {")
@@ -765,6 +798,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln(indent + "}")
 	w.Writeln("")
 
+	// Write wrapper methods
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 
@@ -1009,11 +1043,7 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		Bytes = 4;
 
 	case "functiontype":
-		if isPlain {
-			JavaParamTypeName = fmt.Sprintf("P%s_%s", NameSpace, ParamClass)
-		} else {
-			JavaParamTypeName = fmt.Sprintf("P%s_%s", NameSpace, ParamClass)
-		}
+		JavaParamTypeName = NameSpace + "Wrapper." + ParamClass
 
 	case "struct":
 		JavaParamTypeName = ParamClass
