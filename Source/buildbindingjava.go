@@ -491,17 +491,42 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				resultCommands = append(resultCommands, fmt.Sprintf("%s.readFromPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
 				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
-			case "basicarray", "structarray":
-				defineCommands = append(defineCommands, "countNeeded"+param.ParamName+": QWord;")
-				defineCommands = append(defineCommands, "countWritten"+param.ParamName+": QWord;")
-				initCommands = append(initCommands, "countNeeded"+param.ParamName+":= 0;")
-				initCommands = append(initCommands, "countWritten"+param.ParamName+":= 0;")
+			case "basicarray":
+				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
+				if err != nil {
+					return err
+				}
 
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, nil", param.ParamName)
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("SetLength(Result, countNeeded%s);", param.ParamName))
+				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
 
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("countNeeded%s, countWritten%s, @Result[0]", param.ParamName, param.ParamName)
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * count%s);", param.ParamName, ElementBytes, param.ParamName))
+
+				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
+
+				resultCommands = append(resultCommands, fmt.Sprintf("%s[] %s = buffer%s.get%sArray(0, count%s);", ArrayType, MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName))
+				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
+
+				doInitCall = true
+
+			case "structarray":
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
+
+				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
+
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(count%s * %s.SIZE);", param.ParamName, param.ParamName, param.ParamClass))
+
+				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
+
+				resultCommands = append(resultCommands, fmt.Sprintf("%s[] %s = new %s[count%s];", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
+				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
+				resultCommands = append(resultCommands, "}")
+				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
 				doInitCall = true
 
