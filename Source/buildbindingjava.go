@@ -201,9 +201,6 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				parameters = parameters + ", "
 			}
 			parameters = parameters + ParamTypeName + " " + MakeFirstLowerCase(param.ParamName)
-			if param.ParamType == "structarray" {
-				parameters = parameters + ", " + " int count" + param.ParamName
-			}
 
 		case "out":
 			if parameters != "" {
@@ -247,6 +244,9 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	}
 
 	initCallParameters = callFunctionParameters
+	w.Writeln(indent + "/**")
+	w.Writeln(indent + " * " + method.MethodDescription)
+	w.Writeln(indent + " *")
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
@@ -262,12 +262,15 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		if initCallParameters != "" {
 			initCallParameters = initCallParameters + ", "
 		}
+		if (param.ParamPass != "return") {
+			w.Writeln(indent + " * @param %s %s", MakeFirstLowerCase(param.ParamName), param.ParamDescription)
+		}
 
 		switch param.ParamPass {
 		case "in":
 
 			switch param.ParamType {
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "bool", "double", "pointer", "struct":
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "bool", "double", "pointer":
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
 
@@ -299,8 +302,18 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 
 			case "structarray":
-				callFunctionParameters = callFunctionParameters + "count" + param.ParamName + ", " + MakeFirstLowerCase(param.ParamName)
-				initCallParameters = initCallParameters + "count" + param.ParamName + ", " + MakeFirstLowerCase(param.ParamName)
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE * %s.length);", param.ParamName, param.ParamClass, MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf(indent + "%s[i].writeToPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
+				initCommands = append(initCommands, "}")
+				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+
+			case "struct":
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
+				initCommands = append(initCommands, fmt.Sprintf("%s.writeToPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
 
 			case "functiontype":
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
@@ -364,8 +377,10 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getByte(0) != 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
 
 			case "struct":
-				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
-				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.readFromPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
 
 			case "basicarray":
 				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
@@ -393,10 +408,15 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
 
 				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("%s buffer%s = new %s();", param.ParamClass,  param.ParamName, param.ParamClass))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("%s.value = (%s[])buffer%s.toArray(count%s);", MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(count%s * %s.SIZE);", param.ParamName, param.ParamName, param.ParamClass))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
+
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = new %s[count%s];", MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s.value[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
+				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s.value[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
+				resultCommands = append(resultCommands, "}")
 
 				doInitCall = true
 
@@ -464,9 +484,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				returnStmt = fmt.Sprintf("%sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", NameSpace, param.ParamClass, param.ParamName)
 
 			case "struct":
-				initCommands = append(initCommands, param.ParamClass + " " + MakeFirstLowerCase(param.ParamName) + " = new " + param.ParamClass + "();")
-				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName)
-				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
+				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
+				initCallParameters = initCallParameters + "buffer" + param.ParamName
+				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = new %s();", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass))
+				resultCommands = append(resultCommands, fmt.Sprintf("%s.readFromPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
 				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
 
 			case "basicarray", "structarray":
@@ -514,6 +536,8 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		}
 	}
 
+	w.Writeln(indent + " * @throws %sWrapper.%sException", NameSpace, NameSpace)
+	w.Writeln(indent + " */")
 	if isGlobal {
 		w.Writeln(indent + "public %s %s(%s) throws %sException {", returnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace)
 	} else {
@@ -550,18 +574,17 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 
 	w.Writeln("package %s;", strings.ToLower(component.NameSpace))
 	w.Writeln("")
-	w.Writeln("import com.sun.jna.Structure;")
+	w.Writeln("import com.sun.jna.Memory;")
+	w.Writeln("import com.sun.jna.Pointer;")
 	w.Writeln("")
 	w.Writeln("import java.util.Arrays;")
 	w.Writeln("import java.util.List;")
 	w.Writeln("")
-	w.Writeln("public class %s extends Structure implements Structure.ByReference {", structinfo.Name)
-	w.Writeln("")
-	w.Writeln(indent + "public static class Out { public %s value;} ", structinfo.Name)
+	w.Writeln("public class %s {", structinfo.Name)
 	w.Writeln("")
 	w.Writeln(indent + "public static class ArrayOut { public %s[] value;} ", structinfo.Name)
 	w.Writeln("")
-	fields := ""
+	byteSum := 0
 
 	for j := 0; j < len(structinfo.Members); j++ {
 		element := structinfo.Members[j]
@@ -576,52 +599,101 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 				arraysuffix = fmt.Sprintf("[%d]", element.Rows-1)
 			}
 		}
-		if fields != "" {
-			fields = fields + ", "
-		}
-		fields = fields + "\"" + element.Name + "\""
-		fieldType := ""
 
-		switch element.Type {
-		case "uint8":
-			fieldType = "byte"
-		case "int8":
-			fieldType = "char"
-		case "int16", "uint16":
-			fieldType = "short"
-		case "int32", "uint32":
-			fieldType = "int"
-		case "int64", "uint64":
-			fieldType = "long"
-		case "bool":
-			fieldType = "boolean"
-		case "single":
-			fieldType = "float"
-		case "double":
-			fieldType = "double"
-		case "pointer":
-			fieldType = "Pointer"
-		case "string":
-			return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", component.NameSpace, structinfo.Name)
-		case "class", "optionalclass":
-			return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", component.NameSpace, structinfo.Name)
-		case "enum":
-			fieldType = "int"
+		fieldType, bytes, err := getJavaParameterType(element.Type, component.NameSpace, "", "in", true)
+		if err != nil {
+			return err
 		}
 
 		if element.Rows > 0 {
+			if element.Columns > 0 {
+				arrayprefix = fmt.Sprintf("[][]")
+				arraysuffix = fmt.Sprintf("[%d][%d]", element.Columns, element.Rows)
+				byteSum = byteSum + bytes * element.Columns * element.Rows;
+			} else {
+				arrayprefix = fmt.Sprintf("[]")
+				arraysuffix = fmt.Sprintf("[%d]", element.Rows)
+				byteSum = byteSum + bytes * element.Rows;
+			}
 			w.Writeln(indent + "public %s%s %s = new %s%s;", fieldType, arrayprefix, element.Name, fieldType, arraysuffix)
 		} else {
+			byteSum = byteSum + bytes;
 			w.Writeln(indent + "public %s %s;", fieldType, element.Name)
 		}
+		w.Writeln("")
 	}
+	w.Writeln(indent + "public static final int SIZE = %d;", byteSum);
 	w.Writeln("")
-	w.Writeln(indent + "public static final String[] FIELDS = new String[] { " + fields + " };")
+
+	// Write memory reader
+	byteSum = 0
+	w.Writeln(indent + "public void readFromPointer(Pointer p, long offset) {");
+	for j := 0; j < len(structinfo.Members); j++ {
+		element := structinfo.Members[j]
+		boolSuffix := ""
+
+		fieldType, bytes, err := getJavaParameterType(element.Type, component.NameSpace, "", "in", true)
+		if err != nil {
+			return err
+		}
+		if element.Type == "bool" {
+			boolSuffix = " != 0"
+			fieldType = "byte"
+		}
+
+		if element.Rows > 0 {
+			for k := 0; k < element.Rows; k++ {
+				if element.Columns > 0 {
+					for l := 0; l < element.Columns; l++ {
+						w.Writeln(indent + indent + "%s[%d][%d] = p.get%s(offset + %d)%s;", element.Name, k, l, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+						byteSum = byteSum + bytes;
+					}
+				} else {
+					w.Writeln(indent + indent + "%s[%d] = p.get%s(offset + %d)%s;", element.Name, k, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+					byteSum = byteSum + bytes;
+				}
+			}
+		} else {
+			w.Writeln(indent + indent + "%s = p.get%s(offset + %d)%s;", element.Name, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+			byteSum = byteSum + bytes;
+		}
+	}
+	w.Writeln(indent + "}");
 	w.Writeln("")
-	w.Writeln(indent + "@Override")
-	w.Writeln(indent + "protected List<String> getFieldOrder() {")
-	w.Writeln(indent + indent + "return Arrays.asList(FIELDS);")
-	w.Writeln(indent + "};")
+
+	// Write memory writer
+	byteSum = 0
+	w.Writeln(indent + "public void writeToPointer(Pointer p, long offset) {");
+	for j := 0; j < len(structinfo.Members); j++ {
+		element := structinfo.Members[j]
+		value := element.Name
+		fieldType, bytes, err := getJavaParameterType(element.Type, component.NameSpace, "", "in", true)
+		if err != nil {
+			return err
+		}
+		if element.Type == "bool" {
+			value = "(byte) (" + element.Name + " ? 1 : 0)"
+			fieldType = "byte"
+		}
+
+		if element.Rows > 0 {
+			for k := 0; k < element.Rows; k++ {
+				if element.Columns > 0 {
+					for l := 0; l < element.Columns; l++ {
+						w.Writeln(indent + indent + "p.set%s(offset + %d, %s[%d][%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, l, )
+						byteSum = byteSum + bytes;
+					}
+				} else {
+					w.Writeln(indent + indent + "p.set%s(offset + %d, %s[%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, )
+					byteSum = byteSum + bytes;
+				}
+			}
+		} else {
+			w.Writeln(indent + indent + "p.set%s(offset + %d, %s);", MakeFirstUpperCase(fieldType), byteSum, value)
+			byteSum = byteSum + bytes;
+		}
+	}
+	w.Writeln(indent + "}");
 	w.Writeln("")
 
 	w.Writeln("}")
@@ -674,7 +746,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 				w.Writeln(indent + "public static final int %s_%s = %d;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Options[j].Value)
 		}
 		w.Writeln("")
-		w.Writeln(indent + "enum %s {", enum.Name)
+		w.Writeln(indent + "public enum %s {", enum.Name)
 		for j := 0; j < len(enum.Options); j++ {
 			if j < len(enum.Options) - 1 {
 				w.Writeln(indent + indent + "e" + enum.Options[j].Name + ",")
@@ -890,7 +962,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[0].ParamConvention = ""
 			cParams[0].ParamTypeNoConvention = cParams[0].ParamType
 
-			cParams[1].ParamType = cParamTypeName
+			cParams[1].ParamType = "Pointer"
 			cParams[1].ParamName = MakeFirstLowerCase(param.ParamName) + "Buffer"
 			cParams[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s", cParams[1].ParamName, param.ParamClass, param.ParamDescription)
 			cParams[1].ParamConvention = ""
@@ -966,7 +1038,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[1].ParamConvention = ""
 			cParams[1].ParamTypeNoConvention = cParams[1].ParamType
 
-			cParams[2].ParamType = param.ParamClass
+			cParams[2].ParamType = "Pointer"
 			cParams[2].ParamName = MakeFirstLowerCase(param.ParamName) + "Buffer"
 			cParams[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s", cParams[2].ParamName, param.ParamClass, param.ParamDescription)
 			cParams[2].ParamConvention = ""
@@ -1055,14 +1127,23 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		JavaParamTypeName = "String"
 
 	case "enum":
-		JavaParamTypeName = NameSpace + "Wrapper." + ParamClass
+		if isPlain {
+			JavaParamTypeName = "int"
+		} else {
+			JavaParamTypeName = NameSpace + "Wrapper." + ParamClass
+		}
 		Bytes = 4;
 
 	case "functiontype":
 		JavaParamTypeName = NameSpace + "Wrapper." + ParamClass
 
 	case "struct":
-		JavaParamTypeName = ParamClass
+		if isPlain {
+			JavaParamTypeName = "Pointer"
+		} else {
+			JavaParamTypeName = ParamClass
+		}
+
 
 	case "basicarray":
 		basicTypeName, SubBytes, err := getJavaParameterType(ParamClass, NameSpace, "", "in", isPlain)
@@ -1071,7 +1152,7 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		}
 		Bytes = SubBytes
 		if isPlain {
-			JavaParamTypeName = fmt.Sprintf("Pointer")
+			JavaParamTypeName = "Pointer"
 		} else {
 			if ParamPass == "out" {
 				JavaParamTypeName = fmt.Sprintf("%sWrapper.%sArrayOut", NameSpace, MakeFirstUpperCase(basicTypeName))
@@ -1082,12 +1163,12 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 
 	case "structarray":
 		if isPlain {
-			JavaParamTypeName = ParamClass
+			JavaParamTypeName = "Pointer"
 		} else {
 			if ParamPass == "out" {
 				JavaParamTypeName = fmt.Sprintf("%s.ArrayOut", ParamClass)
 			} else {
-				JavaParamTypeName = ParamClass
+				JavaParamTypeName = ParamClass + "[]"
 			}
 		}
 
