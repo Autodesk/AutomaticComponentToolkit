@@ -39,6 +39,7 @@ import (
 	"path"
 	"strings"
 	"bytes"
+	"os"
 )
 
 type javaParameter struct {
@@ -53,9 +54,14 @@ type javaParameter struct {
 func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string, outputFolderExample string, indent string) error {
 	namespace := component.NameSpace
 	libraryname := component.LibraryName
+	JavaFolder := path.Join(outputFolder, strings.ToLower(namespace));
+	err := os.MkdirAll(JavaFolder, os.ModePerm)
+	if err != nil {
+		return err;
+	}
 	
 	JavaWrapperName := namespace + "Wrapper";
-	JavaWrapperPath := path.Join(outputFolder, JavaWrapperName + ".java");
+	JavaWrapperPath := path.Join(JavaFolder, JavaWrapperName + ".java");
 	log.Printf("Creating \"%s\"", JavaWrapperPath)
 	JavaWrapperFile, err := CreateLanguageFile (JavaWrapperPath, indent)
 	if err != nil {
@@ -72,7 +78,7 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 	}
 
 	JavaExceptionName := namespace + "Exception";
-	JavaExceptionPath := path.Join(outputFolder, JavaExceptionName + ".java");
+	JavaExceptionPath := path.Join(JavaFolder, JavaExceptionName + ".java");
 	log.Printf("Creating \"%s\"", JavaExceptionPath)
 	JavaExceptionFile, err1 := CreateLanguageFile (JavaExceptionPath, indent)
 	if err1 != nil {
@@ -90,7 +96,7 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i]
-		JavaStructPath := path.Join(outputFolder, structinfo.Name + ".java");
+		JavaStructPath := path.Join(JavaFolder, structinfo.Name + ".java");
 		log.Printf("Creating \"%s\"", JavaStructPath)
 
 		JavaStructFile, err := CreateLanguageFile (JavaStructPath, indent)
@@ -110,7 +116,7 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		JavaClassPath := path.Join(outputFolder, class.ClassName + ".java");
+		JavaClassPath := path.Join(JavaFolder, class.ClassName + ".java");
 		log.Printf("Creating \"%s\"", JavaClassPath)
 
 		JavaClassFile, err := CreateLanguageFile (JavaClassPath, indent)
@@ -128,6 +134,34 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 		}
 	}
 
+	JavaBuildName := "build_jar.sh";
+	JavaBuildPath := path.Join(outputFolder, JavaBuildName);
+	log.Printf("Creating \"%s\"", JavaBuildPath)
+	JavaWrapperFile, err2 := CreateLanguageFile (JavaBuildPath, indent)
+	if err2 != nil {
+		return err2;
+	}
+	err = buildJavaBuildScript(component, JavaWrapperFile)
+	if err != nil {
+		return err;
+	}
+
+	return nil;
+}
+
+func buildJavaBuildScript(component ComponentDefinition, w LanguageWriter) error {
+	sources := strings.ToLower(component.NameSpace)
+
+	w.Writeln("#!/bin/bash")
+	w.Writeln("")
+	w.Writeln("echo \"Download JNA\"")
+	w.Writeln("wget http://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
+	w.Writeln("")
+	w.Writeln("echo \"Compile Java Bindings\"")
+	w.Writeln("javac -classpath *.jar %s/*", sources)
+	w.Writeln("")
+	w.Writeln("echo \"Create JAR\"")
+	w.Writeln("jar cvf %s-%s.jar %s", sources, component.Version, sources)
 	return nil;
 }
 
