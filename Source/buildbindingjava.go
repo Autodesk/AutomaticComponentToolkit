@@ -42,12 +42,19 @@ import (
 	"os"
 )
 
-type javaParameter struct {
+type JavaParameter struct {
 	ParamType             string
 	ParamName             string
 	ParamComment          string
 	ParamConvention       string
 	ParamTypeNoConvention string
+}
+
+type JavaReturn struct {
+	ParamName             string
+	ParamType             string
+	ParamValue            string
+	ParamDescription      string
 }
 
 // BuildBindingJavaDynamic builds dynamic Java-bindings of a library's API using Java Native Access (JNA).
@@ -151,6 +158,10 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 
 func buildJavaBuildScript(component ComponentDefinition, w LanguageWriter) error {
 	sources := strings.ToLower(component.NameSpace)
+	imports := sources + "/*"
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		imports = imports + " " + strings.ToLower(subComponent.NameSpace) + "/*"
+	}
 
 	w.Writeln("#!/bin/bash")
 	w.Writeln("")
@@ -158,7 +169,7 @@ func buildJavaBuildScript(component ComponentDefinition, w LanguageWriter) error
 	w.Writeln("wget http://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
 	w.Writeln("")
 	w.Writeln("echo \"Compile Java Bindings\"")
-	w.Writeln("javac -classpath *.jar %s/*", sources)
+	w.Writeln("javac -classpath *.jar " + imports)
 	w.Writeln("")
 	w.Writeln("echo \"Create JAR\"")
 	w.Writeln("jar cvf %s-%s.jar %s", sources, component.Version, sources)
@@ -177,36 +188,36 @@ func buildJavaException(component ComponentDefinition, w LanguageWriter, indent 
 	w.Writeln("public class %sException extends Exception {", NameSpace)
 	w.Writeln("")
 	// Write error codes
-	w.Writeln(indent + "// Error Constants for %s", NameSpace)
-	w.Writeln(indent + "public static final int %s_SUCCESS = 0;", strings.ToUpper(NameSpace))
+	w.Writeln("  // Error Constants for %s", NameSpace)
+	w.Writeln("  public static final int %s_SUCCESS = 0;", strings.ToUpper(NameSpace))
 	for i := 0; i < len(component.Errors.Errors); i++ {
 		errorcode := component.Errors.Errors[i]
-		w.Writeln(indent + "public static final int %s_ERROR_%s = %d;", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code)
+		w.Writeln("  public static final int %s_ERROR_%s = %d;", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code)
 	}
 	w.Writeln("")
-	w.Writeln(indent + "public static final Map<Integer, String> ErrorCodeMap = new HashMap<Integer, String>();")
+	w.Writeln("  public static final Map<Integer, String> ErrorCodeMap = new HashMap<Integer, String>();")
 	w.Writeln("")
-	w.Writeln(indent + "static {")
+	w.Writeln("  static {")
 	for i := 0; i < len(component.Errors.Errors); i++ {
 		errorcode := component.Errors.Errors[i]
-		w.Writeln(indent + indent + "ErrorCodeMap.put(%s_ERROR_%s, \"%s_ERROR_%s\");", strings.ToUpper(NameSpace), errorcode.Name, strings.ToUpper(NameSpace), errorcode.Name)
+		w.Writeln("    ErrorCodeMap.put(%s_ERROR_%s, \"%s_ERROR_%s\");", strings.ToUpper(NameSpace), errorcode.Name, strings.ToUpper(NameSpace), errorcode.Name)
 	}
-	w.Writeln(indent + "}")
+	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln(indent + "protected int mErrorCode;")
+	w.Writeln("  protected int mErrorCode;")
 	w.Writeln("")
-	w.Writeln(indent + "protected String mErrorDescription;")
+	w.Writeln("  protected String mErrorDescription;")
 	w.Writeln("")
-	w.Writeln(indent + "public " + NameSpace + "Exception(int errorCode, String message){")
-	w.Writeln(indent + indent + "super(message);")
-	w.Writeln(indent + indent + "mErrorCode = errorCode;")
-	w.Writeln(indent + indent + "mErrorDescription = ErrorCodeMap.get(errorCode);")
-	w.Writeln(indent + "}")
+	w.Writeln("  public " + NameSpace + "Exception(int errorCode, String message){")
+	w.Writeln("    super(message);")
+	w.Writeln("    mErrorCode = errorCode;")
+	w.Writeln("    mErrorDescription = ErrorCodeMap.get(errorCode);")
+	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln(indent + "@Override")
-	w.Writeln(indent + "public String toString() {")
-	w.Writeln(indent + indent + "return getMessage() + \" (\" + mErrorCode + \" \" + mErrorDescription + \")\";")
-	w.Writeln(indent + "}")
+	w.Writeln("  @Override")
+	w.Writeln("  public String toString() {")
+	w.Writeln("    return getMessage() + \" (\" + mErrorCode + \" \" + mErrorDescription + \")\";")
+	w.Writeln("  }")
 	w.Writeln("}")
 	w.Writeln("")
 	return nil;
@@ -220,6 +231,10 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	w.Writeln("import com.sun.jna.Memory;")
 	w.Writeln("import com.sun.jna.Native;")
 	w.Writeln("import com.sun.jna.Pointer;")
+	w.Writeln("")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("import %s.*;", strings.ToLower(subComponent.NameSpace))
+	}
 	w.Writeln("")
 	w.Writeln("import java.nio.charset.StandardCharsets;");
 	w.Writeln("import java.util.Arrays;")
@@ -236,33 +251,33 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 		w.Writeln("public class %s extends %s {", class.ClassName, ParentClass)
 		w.Writeln("")		
 	}
-	w.Writeln(indent + "public static class Out { public %s value; }", class.ClassName)
-	w.Writeln("")
-	w.Writeln(indent + "public static class ArrayOut { public %s value[]; }", class.ClassName)
-	w.Writeln("")
 	if component.isBaseClass(class) {
-		w.Writeln(indent + "protected Pointer mHandle;");
+		w.Writeln("  protected Pointer mHandle;");
 		w.Writeln("")
-		w.Writeln(indent + "protected %sWrapper mWrapper;", component.NameSpace);
+		w.Writeln("  protected %sWrapper mWrapper;", component.NameSpace);
 		w.Writeln("")
 	}
 
-	w.Writeln(indent + "protected %s(%sWrapper wrapper, Pointer handle) {", class.ClassName, component.NameSpace);
+	w.Writeln("  public %s(%sWrapper wrapper, Pointer handle) {", class.ClassName, component.NameSpace);
 	if component.isBaseClass(class) {
-		w.Writeln(indent + indent + "mHandle = handle;");
-		w.Writeln(indent + indent + "mWrapper = wrapper;");
+		w.Writeln("    mHandle = handle;");
+		w.Writeln("    mWrapper = wrapper;");
 	} else {
-		w.Writeln(indent + indent + "super(wrapper, handle);");
+		w.Writeln("    super(wrapper, handle);");
 	}
-	w.Writeln(indent + "}");
+	w.Writeln("  }");
 	w.Writeln("")
 
 	if component.isBaseClass(class) {
-		w.Writeln(indent + "@Override")
-		w.Writeln(indent + "protected void finalize() throws Throwable {")
-		w.Writeln(indent + indent + "mWrapper.%s(this);", MakeFirstLowerCase(component.Global.ReleaseMethod))
-		w.Writeln(indent + indent + "super.finalize();")
-		w.Writeln(indent + "}")
+		w.Writeln("  @Override")
+		w.Writeln("  protected void finalize() throws Throwable {")
+		w.Writeln("    mWrapper.%s(this);", MakeFirstLowerCase(component.Global.ReleaseMethod))
+		w.Writeln("    super.finalize();")
+		w.Writeln("  }")
+		w.Writeln("")
+		w.Writeln("  public Pointer getHandle() {")
+		w.Writeln("    return mHandle;")
+		w.Writeln("  }")
 		w.Writeln("")
 	}
 
@@ -284,7 +299,7 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, indent string, isGlobal bool) error {
 
 	parameters := ""
-	returnType := "void"
+	ReturnType := "void"
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
@@ -299,18 +314,6 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				parameters = parameters + ", "
 			}
 			parameters = parameters + ParamTypeName + " " + MakeFirstLowerCase(param.ParamName)
-
-		case "out":
-			if parameters != "" {
-				parameters = parameters + ", "
-			}
-			parameters = parameters + ParamTypeName + " " + MakeFirstLowerCase(param.ParamName)
-
-		case "return":
-			if returnType != "void" {
-				return fmt.Errorf("duplicate return value \"%s\" for Pascal method \"%s\"", param.ParamName, method.MethodName)
-			}
-			returnType = ParamTypeName
 		}
 	}
 
@@ -327,14 +330,14 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	callFunctionParameters := ""
 	initCallParameters := ""
 	errorInstanceHandle := ""
-	returnStmt := ""
+	ReturnTuple := []JavaReturn{}
 
 	if isGlobal {
-		callFunctionName = fmt.Sprintf("mInterface.%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+		callFunctionName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 		errorInstanceHandle = "null"
 		wrapperInstanceName = "this"
 	} else {
-		callFunctionName = fmt.Sprintf("mInterface.%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
+		callFunctionName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		callFunctionParameters = "mHandle"
 		errorInstanceHandle = "this"
 		wrapperCallPrefix = "mWrapper."
@@ -342,9 +345,17 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	}
 
 	initCallParameters = callFunctionParameters
-	w.Writeln(indent + "/**")
-	w.Writeln(indent + " * " + method.MethodDescription)
-	w.Writeln(indent + " *")
+	w.Writeln("  /**")
+	w.Writeln("   * " + method.MethodDescription)
+	w.Writeln("   *")
+
+	OutFieldCount := 0
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k]
+		if (param.ParamPass == "out" || param.ParamPass == "return") {
+			OutFieldCount = OutFieldCount + 1
+		}
+	}
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
@@ -360,10 +371,12 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		if initCallParameters != "" {
 			initCallParameters = initCallParameters + ", "
 		}
-		if (param.ParamPass != "return") {
-			w.Writeln(indent + " * @param %s %s", MakeFirstLowerCase(param.ParamName), param.ParamDescription)
+		if (param.ParamPass == "out" || param.ParamPass == "return") {
+			if OutFieldCount == 1 {
+				w.Writeln("   * @return %s", param.ParamDescription)
+			}		
 		} else {
-			w.Writeln(indent + " * @return %s", param.ParamDescription)
+			w.Writeln("   * @param %s %s", MakeFirstLowerCase(param.ParamName), param.ParamDescription)
 		}
 
 		switch param.ParamPass {
@@ -400,7 +413,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * %s.length);", param.ParamName, ElementBytes, MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
-				initCommands = append(initCommands, fmt.Sprintf(indent + "buffer%s.set%s(%d * i, %s);", param.ParamName, MakeFirstUpperCase(ArrayType), ElementBytes, Value))
+				initCommands = append(initCommands, fmt.Sprintf("  buffer%s.set%s(%d * i, %s);", param.ParamName, MakeFirstUpperCase(ArrayType), ElementBytes, Value))
 				initCommands = append(initCommands, "}")
 
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
@@ -409,7 +422,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 			case "structarray":
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE * %s.length);", param.ParamName, param.ParamClass, MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
-				initCommands = append(initCommands, fmt.Sprintf(indent + "%s[i].writeToPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
+				initCommands = append(initCommands, fmt.Sprintf("  %s[i].writeToPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
 				initCommands = append(initCommands, "}")
 				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
@@ -427,7 +440,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 			case "class", "optionalclass":
 				initCommands = append(initCommands, "Pointer " + MakeFirstLowerCase(param.ParamName) + "Handle = null;")
 				initCommands = append(initCommands, fmt.Sprintf("if (%s != null) {", MakeFirstLowerCase(param.ParamName)))
-				initCommands = append(initCommands, indent + MakeFirstLowerCase(param.ParamName) + "Handle = " + MakeFirstLowerCase(param.ParamName) + ".mHandle;")
+				initCommands = append(initCommands, indent + MakeFirstLowerCase(param.ParamName) + "Handle = " + MakeFirstLowerCase(param.ParamName) + ".getHandle();")
 				if (param.ParamType == "optionalclass") {
 
 				} else {
@@ -442,14 +455,17 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
 
-		case "out":
+		case "out", "return":
+
+			ReturnItem := JavaReturn{ParamName: param.ParamName, ParamDescription: param.ParamDescription, ParamType: PlainParamTypeName}
 
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d);", param.ParamName, bytes))
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.get%s(0);", MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(PlainParamTypeName)))
+				ReturnItem.ParamValue = fmt.Sprintf("buffer%s.get%s(0);", param.ParamName, MakeFirstUpperCase(PlainParamTypeName))
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			case "string":
 				initCommands = append(initCommands, "Pointer bytesNeeded"+param.ParamName+" = new Memory(4);")
@@ -461,8 +477,8 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("size%s, bytesNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = new String(buffer%s.getByteArray(0, size%s - 1), StandardCharsets.UTF_8);", 
-					MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamName))
+				ReturnItem.ParamValue = fmt.Sprintf("new String(buffer%s.getByteArray(0, size%s - 1), StandardCharsets.UTF_8);", param.ParamName, param.ParamName)
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 				doInitCall = true
 
@@ -471,130 +487,18 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = %sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", 
-					MakeFirstLowerCase(param.ParamName), NameSpace, param.ParamClass, param.ParamName))
+
+				ReturnItem.ParamValue = fmt.Sprintf("%sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", NameSpace, param.ParamClass, param.ParamName)
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			case "bool":
 				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(1);")				
 
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.getByte(0) != 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
 
-			case "struct":
-				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
-				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
-				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.readFromPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-
-			case "basicarray":
-				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
-				if err != nil {
-					return err
-				}
-
-				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
-
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
-
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * count%s);", param.ParamName, ElementBytes, param.ParamName))
-
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
-
-				if param.ParamClass == "bool" {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = new %s[count%s];", MakeFirstLowerCase(param.ParamName), ArrayType, param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("byte[] bytes%s = buffer%s.getByteArray(0, count%s);", param.ParamName, param.ParamName, param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s.value[i] = bytes%s[i] != (byte) 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
-					resultCommands = append(resultCommands, "}")
-				} else {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s.value = buffer%s.get%sArray(0, count%s);", MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName))
-				}
-
-				doInitCall = true
-
-			case "structarray":
-
-				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
-
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
-
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(count%s * %s.SIZE);", param.ParamName, param.ParamName, param.ParamClass))
-
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
-
-				resultCommands = append(resultCommands, fmt.Sprintf("%s.value = new %s[count%s];", MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s.value[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
-				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s.value[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
-				resultCommands = append(resultCommands, "}")
-
-				doInitCall = true
-
-			case "class", "optionalclass":
-				theNameSpace, theParamClass, _ := decomposeParamClassName(param.ParamClass)
-				theWrapperInstance := wrapperInstanceName
-				if len(theNameSpace) > 0 {
-					theWrapperInstance = theWrapperInstance + "." + theNameSpace + "Wrapper"
-				} else {
-					theNameSpace = NameSpace
-				}
-
-				defineCommands = append(defineCommands, "H"+param.ParamName+": "+PlainParamTypeName+";")
-				initCommands = append(initCommands, fmt.Sprintf("A%s := nil;", param.ParamName))
-				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
-				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
-				initCallParameters = initCallParameters + "nil"
-
-				resultCommands = append(resultCommands, fmt.Sprintf("if Assigned(H%s) then", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("  A%s := T%s%s.Create(%s, H%s);", param.ParamName, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
-
-			default:
-				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
-			}
-
-		case "return":
-
-
-			switch param.ParamType {
-			case "bool":
-				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(1);")
-
-				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
-				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("boolean %s = buffer%s.getByte(0) != 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
-
-			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "pointer":
-				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d);", param.ParamName, bytes))
-				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
-				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				returnStmt = fmt.Sprintf("buffer%s.get%s(0);", param.ParamName, MakeFirstUpperCase(PlainParamTypeName))
-				
-			case "string":
-				initCommands = append(initCommands, "Pointer bytesNeeded"+param.ParamName+" = new Memory(4);")
-
-				initCallParameters = initCallParameters + fmt.Sprintf("0, bytesNeeded%s, null", param.ParamName)
-
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int size%s = bytesNeeded%s.getInt(0);", param.ParamName, param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(size%s);", param.ParamName, param.ParamName))
-
-				callFunctionParameters = callFunctionParameters + fmt.Sprintf("size%s, bytesNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
-
-				resultCommands = append(resultCommands, fmt.Sprintf("String %s = new String(buffer%s.getByteArray(0, size%s - 1), StandardCharsets.UTF_8);", 
-					MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamName))
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
-
-				doInitCall = true
-
-			case "enum":
-				initCommands = append(initCommands, "Pointer buffer" + param.ParamName + " = new Memory(4);")
-
-				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
-				initCallParameters = initCallParameters + "buffer" + param.ParamName
-				returnStmt = fmt.Sprintf("%sWrapper.EnumConversion.convertConstTo%s(buffer%s.getInt(0));", NameSpace, param.ParamClass, param.ParamName)
+				ReturnItem.ParamValue = fmt.Sprintf("buffer%s.getByte(0) != 0;", param.ParamName)
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			case "struct":
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
@@ -602,7 +506,9 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + "buffer" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = new %s();", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass))
 				resultCommands = append(resultCommands, fmt.Sprintf("%s.readFromPointer(buffer%s, 0);", MakeFirstLowerCase(param.ParamName), param.ParamName))
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
+
+				ReturnItem.ParamValue = MakeFirstLowerCase(param.ParamName) + ";"
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			case "basicarray":
 				ArrayType, ElementBytes, err := getJavaParameterType(param.ParamClass, "", "", "in", false)
@@ -620,22 +526,21 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
 				if param.ParamClass == "bool" {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s[] %s = new %s[count%s];", 
-						ArrayType, MakeFirstLowerCase(param.ParamName), ArrayType, param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[count%s];", ArrayType, MakeFirstLowerCase(param.ParamName), ArrayType, param.ParamName))
 					resultCommands = append(resultCommands, fmt.Sprintf("byte[] bytes%s = buffer%s.getByteArray(0, count%s);", param.ParamName, param.ParamName, param.ParamName))
 					resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s[i] = bytes%s[i] != (byte) 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("  %s[i] = bytes%s[i] != (byte) 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
 					resultCommands = append(resultCommands, "}")
+					ReturnItem.ParamValue = MakeFirstLowerCase(param.ParamName) + ";"
 				} else {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s[] %s = buffer%s.get%sArray(0, count%s);", 
-						ArrayType, MakeFirstLowerCase(param.ParamName), param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName))
+					ReturnItem.ParamValue = fmt.Sprintf("buffer%s.get%sArray(0, count%s);", param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName)
 				}
-
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 				doInitCall = true
 
 			case "structarray":
+
 				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
@@ -645,12 +550,14 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
-				resultCommands = append(resultCommands, fmt.Sprintf("%s[] %s = new %s[count%s];", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[count%s];", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
-				resultCommands = append(resultCommands, fmt.Sprintf(indent + "%s[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
+				resultCommands = append(resultCommands, fmt.Sprintf("  %s[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
+				resultCommands = append(resultCommands, fmt.Sprintf("  %s[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
 				resultCommands = append(resultCommands, "}")
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
+
+				ReturnItem.ParamValue = MakeFirstLowerCase(param.ParamName) + ";"
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 				doInitCall = true
 
@@ -658,7 +565,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				theNameSpace, theParamClass, _ := decomposeParamClassName(param.ParamClass)
 				theWrapperInstance := wrapperInstanceName
 				if len(theNameSpace) > 0 {
-					theWrapperInstance = theWrapperInstance + "." + theNameSpace + "Wrapper"
+					theWrapperInstance = theWrapperInstance + ".get" + theNameSpace + "Wrapper()"
 				} else {
 					theNameSpace = NameSpace
 				}
@@ -666,17 +573,14 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				callFunctionParameters = callFunctionParameters + "buffer" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("Pointer value%s = buffer%s.getPointer(0);", param.ParamName, param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
-				resultCommands = append(resultCommands, fmt.Sprintf("if (value%s == Pointer.NULL) {", param.ParamName))
 				if param.ParamType == "class" {
-					resultCommands = append(resultCommands, fmt.Sprintf(indent + "throw new %sException(%sException.%s_ERROR_NORESULTAVAILABLE, \"%s was a null pointer\");", 
+				  resultCommands = append(resultCommands, fmt.Sprintf("if (value%s == Pointer.NULL) {", param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("  throw new %sException(%sException.%s_ERROR_NORESULTAVAILABLE, \"%s was a null pointer\");", 
 						NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
-				} else {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
+  				resultCommands = append(resultCommands, "}")
 				}
-				resultCommands = append(resultCommands, fmt.Sprintf("} else {"))
-				resultCommands = append(resultCommands, indent + fmt.Sprintf("%s = new %s(%s, value%s);", MakeFirstLowerCase(param.ParamName), theParamClass, theWrapperInstance, param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("}"))
-				returnStmt = MakeFirstLowerCase(param.ParamName) + ";"
+				ReturnItem.ParamValue = fmt.Sprintf("(value%s == Pointer.NULL) ? null : new %s(%s, value%s);", param.ParamName, theParamClass, theWrapperInstance, param.ParamName)
+				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -685,9 +589,17 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		}
 	}
 
-	w.Writeln(indent + " * @throws %sException", NameSpace)
-	w.Writeln(indent + " */")
-	w.Writeln(indent + "public %s %s(%s) throws %sException {", returnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace)
+	if len(ReturnTuple) == 1 {
+		ReturnType = ReturnTuple[0].ParamType
+	}
+	if len(ReturnTuple) > 1 {
+		ReturnType = method.MethodName + "Result"
+		w.Writeln("   * @return %s Result Tuple", method.MethodName)
+	}
+
+	w.Writeln("   * @throws %sException", NameSpace)
+	w.Writeln("   */")
+	w.Writeln("  public %s %s(%s) throws %sException {", ReturnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace)
 
 	if len(defineCommands) > 0 {
 		w.Writelns(indent + indent, defineCommands)
@@ -696,21 +608,41 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	w.Writelns(indent + indent, initCommands)
 
 	if doInitCall {
-		w.Writeln("    %scheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
+		w.Writeln("    %scheckError(%s, %s%s.invokeInt(new Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
 	}
 
-	w.Writelns("    ", postInitCommands)
+	w.Writelns(indent + indent, postInitCommands)
 
-	w.Writeln("    %scheckError(%s, %s%s(%s));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
+	w.Writeln("    %scheckError(%s, %s%s.invokeInt(new Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
 
 	w.Writelns(indent + indent, resultCommands)
 
-	if len(returnStmt) > 0 {
-		w.Writeln(indent + indent + "return " + returnStmt)
+	if len(ReturnTuple) == 1 {
+		w.Writeln("    return " + ReturnTuple[0].ParamValue)
+	}
+	if len(ReturnTuple) > 1 {
+		w.Writeln("    %sResult returnTuple = new %sResult();", method.MethodName, method.MethodName)
+		for _,ReturnParam := range(ReturnTuple) {
+			w.Writeln("    returnTuple.%s = %s", ReturnParam.ParamName, ReturnParam.ParamValue)
+		}
+		w.Writeln("    return returnTuple;")
 	}
 
-	w.Writeln(indent + "}")
+	w.Writeln("  }")
 	w.Writeln("")
+
+	if len(ReturnTuple) > 1 {
+		w.Writeln("  public static class %sResult {", method.MethodName)
+		for _,ReturnParam := range(ReturnTuple) {
+			w.Writeln("    /**")
+			w.Writeln("     * " + ReturnParam.ParamDescription)
+			w.Writeln("     */")
+			w.Writeln("    public %s %s;", ReturnParam.ParamType, ReturnParam.ParamName)
+			w.Writeln("")
+		}
+		w.Writeln("  }")
+	}
+
 
 	return nil
 }
@@ -726,8 +658,6 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 	w.Writeln("import java.util.List;")
 	w.Writeln("")
 	w.Writeln("public class %s {", structinfo.Name)
-	w.Writeln("")
-	w.Writeln(indent + "public static class ArrayOut { public %s[] value;} ", structinfo.Name)
 	w.Writeln("")
 	byteSum := 0
 
@@ -760,19 +690,19 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 				arraysuffix = fmt.Sprintf("[%d]", element.Rows)
 				byteSum = byteSum + bytes * element.Rows;
 			}
-			w.Writeln(indent + "public %s%s %s = new %s%s;", fieldType, arrayprefix, element.Name, fieldType, arraysuffix)
+			w.Writeln("  public %s%s %s = new %s%s;", fieldType, arrayprefix, element.Name, fieldType, arraysuffix)
 		} else {
 			byteSum = byteSum + bytes;
-			w.Writeln(indent + "public %s %s;", fieldType, element.Name)
+			w.Writeln("  public %s %s;", fieldType, element.Name)
 		}
 		w.Writeln("")
 	}
-	w.Writeln(indent + "public static final int SIZE = %d;", byteSum);
+	w.Writeln("  public static final int SIZE = %d;", byteSum);
 	w.Writeln("")
 
 	// Write memory reader
 	byteSum = 0
-	w.Writeln(indent + "public void readFromPointer(Pointer p, long offset) {");
+	w.Writeln("  public void readFromPointer(Pointer p, long offset) {");
 	for j := 0; j < len(structinfo.Members); j++ {
 		element := structinfo.Members[j]
 		boolSuffix := ""
@@ -790,25 +720,25 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 			for k := 0; k < element.Rows; k++ {
 				if element.Columns > 0 {
 					for l := 0; l < element.Columns; l++ {
-						w.Writeln(indent + indent + "%s[%d][%d] = p.get%s(offset + %d)%s;", element.Name, k, l, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+						w.Writeln("    %s[%d][%d] = p.get%s(offset + %d)%s;", element.Name, k, l, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
 						byteSum = byteSum + bytes;
 					}
 				} else {
-					w.Writeln(indent + indent + "%s[%d] = p.get%s(offset + %d)%s;", element.Name, k, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+					w.Writeln("    %s[%d] = p.get%s(offset + %d)%s;", element.Name, k, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
 					byteSum = byteSum + bytes;
 				}
 			}
 		} else {
-			w.Writeln(indent + indent + "%s = p.get%s(offset + %d)%s;", element.Name, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
+			w.Writeln("    %s = p.get%s(offset + %d)%s;", element.Name, MakeFirstUpperCase(fieldType), byteSum, boolSuffix)
 			byteSum = byteSum + bytes;
 		}
 	}
-	w.Writeln(indent + "}");
+	w.Writeln("  }");
 	w.Writeln("")
 
 	// Write memory writer
 	byteSum = 0
-	w.Writeln(indent + "public void writeToPointer(Pointer p, long offset) {");
+	w.Writeln("  public void writeToPointer(Pointer p, long offset) {");
 	for j := 0; j < len(structinfo.Members); j++ {
 		element := structinfo.Members[j]
 		value := element.Name
@@ -825,20 +755,20 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 			for k := 0; k < element.Rows; k++ {
 				if element.Columns > 0 {
 					for l := 0; l < element.Columns; l++ {
-						w.Writeln(indent + indent + "p.set%s(offset + %d, %s[%d][%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, l, )
+						w.Writeln("    p.set%s(offset + %d, %s[%d][%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, l, )
 						byteSum = byteSum + bytes;
 					}
 				} else {
-					w.Writeln(indent + indent + "p.set%s(offset + %d, %s[%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, )
+					w.Writeln("    p.set%s(offset + %d, %s[%d]);", MakeFirstUpperCase(fieldType), byteSum, value, k, )
 					byteSum = byteSum + bytes;
 				}
 			}
 		} else {
-			w.Writeln(indent + indent + "p.set%s(offset + %d, %s);", MakeFirstUpperCase(fieldType), byteSum, value)
+			w.Writeln("    p.set%s(offset + %d, %s);", MakeFirstUpperCase(fieldType), byteSum, value)
 			byteSum = byteSum + bytes;
 		}
 	}
-	w.Writeln(indent + "}");
+	w.Writeln("  }");
 	w.Writeln("")
 
 	w.Writeln("}")
@@ -853,15 +783,16 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 
 	w.Writeln("package %s;", strings.ToLower(component.NameSpace))
 	w.Writeln("")
-	w.Writeln("import com.sun.jna.Library;")
-	w.Writeln("import com.sun.jna.Memory;")
-	w.Writeln("import com.sun.jna.Native;")
-	w.Writeln("import com.sun.jna.Pointer;")
-	w.Writeln("import com.sun.jna.Callback;")
+	w.Writeln("import com.sun.jna.*;")
 	w.Writeln("")
 	w.Writeln("import java.nio.charset.StandardCharsets;")
-
 	w.Writeln("")
+
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("import %s.*;", strings.ToLower(subComponent.NameSpace))
+	}
+	w.Writeln("")
+
 	w.Writeln("public class " + JavaWrapperName + " {")
 	w.Writeln("")
 
@@ -869,51 +800,51 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	for i := 0; i < len(component.Enums); i++ {
 		enum := component.Enums[i]
 		for j := 0; j < len(enum.Options); j++ {
-				w.Writeln(indent + "public static final int %s_%s = %d;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Options[j].Value)
+				w.Writeln("  public static final int %s_%s = %d;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Options[j].Value)
 		}
 		w.Writeln("")
-		w.Writeln(indent + "public enum %s {", enum.Name)
+		w.Writeln("  public enum %s {", enum.Name)
 		for j := 0; j < len(enum.Options); j++ {
 			if j < len(enum.Options) - 1 {
-				w.Writeln(indent + indent + "e" + enum.Options[j].Name + ",")
+				w.Writeln("    e" + enum.Options[j].Name + ",")
 			} else {
-				w.Writeln(indent + indent + "e" + enum.Options[j].Name)
+				w.Writeln("    e" + enum.Options[j].Name)
 			}
 		}
-		w.Writeln(indent + "}")
+		w.Writeln("  }")
 		w.Writeln("")
 	}
 	if (len(component.Errors.Errors) > 0) {
-		w.Writeln(indent + "public static class EnumConversion {")
+		w.Writeln("  public static class EnumConversion {")
 		for i := 0; i < len(component.Enums); i++ {
 			enum := component.Enums[i]
-			w.Writeln(indent + indent + "public static int convert%sToConst (%s value) throws %sException {", enum.Name, enum.Name, NameSpace)
-			w.Writeln(indent + indent + indent + "switch (value) {")
+			w.Writeln("    public static int convert%sToConst (%s value) throws %sException {", enum.Name, enum.Name, NameSpace)
+			w.Writeln("      switch (value) {")
 			for j := 0; j < len(enum.Options); j++ {
-				w.Writeln(indent + indent + indent + indent + "case e%s: return %s_%s;", enum.Options[j].Name, strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name))
+				w.Writeln("        case e%s: return %s_%s;", enum.Options[j].Name, strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name))
 			}
-				w.Writeln(indent + indent + indent + indent + "default: throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"Unknown enum value : \" + value);", NameSpace, NameSpace, strings.ToUpper(NameSpace))
-			w.Writeln(indent + indent + indent + "}")
-			w.Writeln(indent + indent + "}")
+				w.Writeln("        default: throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"Unknown enum value : \" + value);", NameSpace, NameSpace, strings.ToUpper(NameSpace))
+			w.Writeln("      }")
+			w.Writeln("    }")
 			w.Writeln("")
-			w.Writeln(indent + indent + "public static %s convertConstTo%s (int value) throws %sException {", enum.Name, enum.Name, NameSpace)
-			w.Writeln(indent + indent + indent + "switch (value) {")
+			w.Writeln("    public static %s convertConstTo%s (int value) throws %sException {", enum.Name, enum.Name, NameSpace)
+			w.Writeln("      switch (value) {")
 			for j := 0; j < len(enum.Options); j++ {
-				w.Writeln(indent + indent + indent + indent + "case %s_%s: return %s.e%s;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Name, enum.Options[j].Name)
+				w.Writeln("        case %s_%s: return %s.e%s;", strings.ToUpper(enum.Name), strings.ToUpper(enum.Options[j].Name), enum.Name, enum.Options[j].Name)
 			}
-				w.Writeln(indent + indent + indent + indent + "default: throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"Unknown enum const : \" + value);", NameSpace, NameSpace, strings.ToUpper(NameSpace))
-			w.Writeln(indent + indent + indent + "}")
-			w.Writeln(indent + indent + "}")
+				w.Writeln("        default: throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"Unknown enum const : \" + value);", NameSpace, NameSpace, strings.ToUpper(NameSpace))
+			w.Writeln("      }")
+			w.Writeln("    }")
 			w.Writeln("")
 		}
-		w.Writeln(indent + "}")
+		w.Writeln("  }")
 		w.Writeln("")
 	}
 
 	// Write callback functions
 	for j:=0; j<len(component.Functions); j++ {
 		function := component.Functions[j]
-		w.Writeln(indent + "public interface %s extends Callback {", function.FunctionName)
+		w.Writeln("  public interface %s extends Callback {", function.FunctionName)
 		w.Writeln("")
 		nativeParams := ""
 		for i := 0; i < len(function.Params); i++ {
@@ -931,86 +862,97 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 				nativeParams = nativeParams + javaParam.ParamConvention + javaParam.ParamType + " " + javaParam.ParamName
 			}
 		}
-		w.Writeln(indent + indent + "void %s (%s);", MakeFirstLowerCase(function.FunctionName), nativeParams)
+		w.Writeln("    void %s (%s);", MakeFirstLowerCase(function.FunctionName), nativeParams)
 		w.Writeln("")
-		w.Writeln(indent + "}")
-		w.Writeln("")
-	}
-
-	// Write out holding classes
-	primitives := []string{ "byte", "char", "short", "int", "long", "boolean", "float", "double", "String" }
-	for i := 0; i < len(primitives); i++ {
-		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(primitives[i]), primitives[i])
-		w.Writeln("")
-		w.Writeln(indent + "public static class %sArrayOut { public %s value[]; }", MakeFirstUpperCase(primitives[i]), primitives[i])
-		w.Writeln("")
-	}
-	for i := 0; i < len(component.Enums); i++ {
-		name := component.Enums[i].Name
-		w.Writeln(indent + "public static class %sOut { public %s value; }", MakeFirstUpperCase(name), name)
-		w.Writeln(indent + "public static class %sArrayOut { public %s value[]; }", MakeFirstUpperCase(name), name)
+		w.Writeln("  }")
 		w.Writeln("")
 	}
 
-	// Write wrapper interface
-	w.Writeln(indent + "public interface I" + NameSpace + " extends Library {")
-	spacing := indent + indent
+	// Write wrapper functions
 	for j:=0; j<len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
-		parameter, err := generateParametersForMethod(method, "", NameSpace, true)
-		if err != nil {
-			return err
-		}
-		w.Writeln("")
-		w.Writeln(spacing + "/**")
-		w.Writeln(spacing + "* %s", method.MethodDescription)
-		w.Writeln(spacing + "* @return error code or 0 (success)")
-		w.Writeln(spacing + "*/")
-		w.Writeln(spacing + "int %s_%s (%s);", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), parameter)
+		w.Writeln("  protected Function %s_%s;", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	}
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		for j:=0; j<len(class.Methods); j++ {
 			method := class.Methods[j]
-			parameter, err := generateParametersForMethod(method, class.ClassName, NameSpace, false)
-			if err != nil {
-				return err
-			}
-			w.Writeln("")
-			w.Writeln(spacing + "/**")
-			w.Writeln(spacing + "* %s", method.MethodDescription)
-			w.Writeln(spacing + "* @return error code or 0 (success)")
-			w.Writeln(spacing + "*/")
-			w.Writeln(spacing + "int %s_%s_%s (%s);", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName), parameter)
+			w.Writeln("  protected Function %s_%s_%s;", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 		}
 	}
-	w.Writeln(indent + "}")
 	w.Writeln("")
 
 	// Write wrapper member/constructor/checkError
-	w.Writeln(indent + "protected I" + NameSpace + " mInterface;")
+	w.Writeln("  protected NativeLibrary mLibrary;")
 	w.Writeln("")
-	w.Writeln(indent + "public " + JavaWrapperName + "(String libraryPath) {")
-	w.Writeln(indent + indent + "mInterface = Native.load(libraryPath, I" + NameSpace + ".class);")
-	w.Writeln(indent + "}")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("  protected %sWrapper m%sWrapper;", subComponent.NameSpace, subComponent.NameSpace)
+		w.Writeln("")
+	}
+	w.Writeln("  public " + JavaWrapperName + "(String libraryPath) {")
+	w.Writeln("    mLibrary = NativeLibrary.getInstance(libraryPath);")
+
+	for j:=0; j<len(component.Global.Methods); j++ {
+		method := component.Global.Methods[j]
+		w.Writeln("    %s_%s = mLibrary.getFunction(\"%s_%s\");", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+	}
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classPrefix := strings.ToLower(NameSpace) + "_" + strings.ToLower(class.ClassName)
+		for j:=0; j<len(class.Methods); j++ {
+			method := class.Methods[j]
+			w.Writeln("    %s_%s = mLibrary.getFunction(\"%s_%s\");", classPrefix, strings.ToLower(method.MethodName), classPrefix, strings.ToLower(method.MethodName))
+		}
+	}
+	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln(indent + "public I" + NameSpace + " getInterface() {")
-	w.Writeln(indent + indent + "return mInterface;")
-	w.Writeln(indent + "}")
+	w.Writeln("  public %s(Pointer lookupPointer) throws %sException {", JavaWrapperName, NameSpace)
+	w.Writeln("    Function lookupMethod = Function.getFunction(lookupPointer);")
+	for j:=0; j<len(component.Global.Methods); j++ {
+		method := component.Global.Methods[j]
+		w.Writeln("    %s_%s = loadFunctionByLookup(lookupMethod, \"%s_%s\");", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+	}
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classPrefix := strings.ToLower(NameSpace) + "_" + strings.ToLower(class.ClassName)
+		for j:=0; j<len(class.Methods); j++ {
+			method := class.Methods[j]
+			w.Writeln("    %s_%s = loadFunctionByLookup(lookupMethod, \"%s_%s\");", classPrefix, strings.ToLower(method.MethodName), classPrefix, strings.ToLower(method.MethodName))
+		}
+	}
+	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln(indent + "protected void checkError(%s instance, int errorCode) throws %sException {", component.Global.BaseClassName, NameSpace)
-	w.Writeln(indent + indent + "if (instance != null && instance.mWrapper != this) {")
-	w.Writeln(indent + indent + indent + "throw new %sException(%sException.%s_ERROR_INVALIDCAST, \"invalid wrapper call\");", NameSpace, NameSpace, strings.ToUpper(NameSpace))
-	w.Writeln(indent + indent + "}")
-	w.Writeln(indent + indent + "if (errorCode != %sException.%s_SUCCESS) {", NameSpace, strings.ToUpper(NameSpace))
-	w.Writeln(indent + indent + indent + "StringOut errorMessage = new " + NameSpace + "Wrapper.StringOut();")
-	w.Writeln(indent + indent + indent + "if (instance != null) {")
-	w.Writeln(indent + indent + indent + indent + "%s(instance, errorMessage);", MakeFirstLowerCase(component.Global.ErrorMethod))
-	w.Writeln(indent + indent + indent + "}")
-	w.Writeln(indent + indent + indent + "throw new %sException(errorCode, errorMessage.value);", NameSpace)
-	w.Writeln(indent + indent + "}")
-	w.Writeln(indent + "}")
+	w.Writeln("  protected void checkError(%s instance, int errorCode) throws %sException {", component.Global.BaseClassName, NameSpace)
+	w.Writeln("    if (instance != null && instance.mWrapper != this) {")
+	w.Writeln("      throw new %sException(%sException.%s_ERROR_INVALIDCAST, \"invalid wrapper call\");", NameSpace, NameSpace, strings.ToUpper(NameSpace))
+	w.Writeln("    }")
+	w.Writeln("    if (errorCode != %sException.%s_SUCCESS) {", NameSpace, strings.ToUpper(NameSpace))
+	w.Writeln("      if (instance != null) {")
+	w.Writeln("        %sResult result = %s(instance);", component.Global.ErrorMethod, MakeFirstLowerCase(component.Global.ErrorMethod))
+	w.Writeln("        throw new %sException(errorCode, result.ErrorMessage);", NameSpace)
+	w.Writeln("      } else {")
+	w.Writeln("        throw new %sException(errorCode, \"\");", NameSpace)
+	w.Writeln("      }")
+	w.Writeln("    }")
+	w.Writeln("  }")
 	w.Writeln("")
+	w.Writeln("  private Function loadFunctionByLookup(Function lookupMethod, String functionName) throws %sException {", NameSpace)
+	w.Writeln("    byte[] bytes = functionName.getBytes(StandardCharsets.UTF_8);")
+	w.Writeln("    Memory name = new Memory(bytes.length+1);")
+	w.Writeln("    name.write(0, bytes, 0, bytes.length);")
+	w.Writeln("    name.setByte(bytes.length, (byte)0);")
+	w.Writeln("    Pointer address = new Memory(8);")
+	w.Writeln("    Object[] addressParam = new Object[]{name, address};")
+	w.Writeln("    checkError(null, lookupMethod.invokeInt(addressParam));")
+	w.Writeln("    return Function.getFunction(address.getPointer(0));")
+	w.Writeln("  }")
+	w.Writeln("")
+	for _, subComponent := range(component.ImportedComponentDefinitions) {
+		w.Writeln("  public %sWrapper get%sWrapper() {", subComponent.NameSpace, subComponent.NameSpace)
+		w.Writeln("    return m%sWrapper;", subComponent.NameSpace)
+		w.Writeln("  }")
+		w.Writeln("")
+	}
 
 	// Write wrapper methods
 	for j := 0; j < len(component.Global.Methods); j++ {
@@ -1056,8 +998,8 @@ func generateParametersForMethod(method ComponentDefinitionMethod, ClassName str
 	return parameters, nil;
 }
 
-func generatePlainJavaParameter(param ComponentDefinitionParam, className string, methodName string, NameSpace string) ([]javaParameter, error) {
-	cParams := make([]javaParameter, 1)
+func generatePlainJavaParameter(param ComponentDefinitionParam, className string, methodName string, NameSpace string) ([]JavaParameter, error) {
+	cParams := make([]JavaParameter, 1)
 	cParamTypeName, _, err := getJavaParameterType(param.ParamType, NameSpace, param.ParamClass, param.ParamPass, true)
 	if err != nil {
 		return nil, err
@@ -1081,7 +1023,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[0].ParamTypeNoConvention = cParams[0].ParamType
 
 		case "basicarray", "structarray":
-			cParams = make([]javaParameter, 2)
+			cParams = make([]JavaParameter, 2)
 			cParams[0].ParamType = "int"
 			cParams[0].ParamName = MakeFirstLowerCase(param.ParamName) + "Size"
 			cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName)
@@ -1131,7 +1073,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[0].ParamTypeNoConvention = cParams[0].ParamType
 
 		case "basicarray":
-			cParams = make([]javaParameter, 3)
+			cParams = make([]JavaParameter, 3)
 			cParams[0].ParamType = "int"
 			cParams[0].ParamName = MakeFirstLowerCase(param.ParamName) + "Size"
 			cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName)
@@ -1151,7 +1093,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[2].ParamTypeNoConvention = cParams[2].ParamType
 
 		case "structarray":
-			cParams = make([]javaParameter, 3)
+			cParams = make([]JavaParameter, 3)
 			cParams[0].ParamType = "int"
 			cParams[0].ParamName = MakeFirstLowerCase(param.ParamName) + "Size"
 			cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - Number of elements in buffer", cParams[0].ParamName)
@@ -1171,7 +1113,7 @@ func generatePlainJavaParameter(param ComponentDefinitionParam, className string
 			cParams[2].ParamTypeNoConvention = cParams[2].ParamType
 
 		case "string":
-			cParams = make([]javaParameter, 3)
+			cParams = make([]JavaParameter, 3)
 			cParams[0].ParamType = "int"
 			cParams[0].ParamName = MakeFirstLowerCase(param.ParamName) + "BufferSize"
 			cParams[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", cParams[0].ParamName)
@@ -1291,11 +1233,7 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 		if isPlain {
 			JavaParamTypeName = "Pointer"
 		} else {
-			if ParamPass == "out" {
-				JavaParamTypeName = fmt.Sprintf("%s.ArrayOut", ParamClass)
-			} else {
-				JavaParamTypeName = ParamClass + "[]"
-			}
+			JavaParamTypeName = ParamClass + "[]"
 		}
 
 	case "class", "optionalclass":
@@ -1312,15 +1250,6 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 
 	default:
 		return "", Bytes, fmt.Errorf("invalid parameter type \"%s\" for Java parameter", ParamTypeName)
-	}
-
-	if ParamPass == "out" {
-		switch ParamTypeName {
-			case "uint8", "uint16", "int16", "uint32", "int32", "uint64", "int64", "int8", "bool", "single", "double", "pointer", "string":
-					JavaParamTypeName = NameSpace + "Wrapper." + MakeFirstUpperCase(JavaParamTypeName) + "Out"
-			case "enum":
-					JavaParamTypeName = NameSpace + "Wrapper." + ParamClass + "Out"
-		}
 	}
 
 	if isPlain {
