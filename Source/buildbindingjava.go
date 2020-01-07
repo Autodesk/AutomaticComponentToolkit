@@ -346,6 +346,7 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	w.Writeln("import com.sun.jna.Memory;")
 	w.Writeln("import com.sun.jna.Native;")
 	w.Writeln("import com.sun.jna.Pointer;")
+	w.Writeln("import java.lang.ref.Cleaner;")
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
 		w.Writeln("import %s.*;", strings.ToLower(subComponent.NameSpace))
@@ -367,33 +368,50 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 		w.Writeln("")		
 	}
 	if component.isBaseClass(class) {
-		w.Writeln("  protected Pointer mHandle;");
+		w.Writeln("  protected static final Cleaner mCleaner = Cleaner.create();")
 		w.Writeln("")
-		w.Writeln("  protected %sWrapper mWrapper;", component.NameSpace);
+		w.Writeln("  protected Pointer mHandle;")
 		w.Writeln("")
+		w.Writeln("  protected %sWrapper mWrapper;", component.NameSpace)
+		w.Writeln("")		
 	}
 
-	w.Writeln("  public %s(%sWrapper wrapper, Pointer handle) {", class.ClassName, component.NameSpace);
+	w.Writeln("  public %s(%sWrapper wrapper, Pointer handle) {", class.ClassName, component.NameSpace)
 	if component.isBaseClass(class) {
-		w.Writeln("    mHandle = handle;");
-		w.Writeln("    mWrapper = wrapper;");
+		w.Writeln("    mHandle = handle;")
+		w.Writeln("    mWrapper = wrapper;")
+		w.Writeln("    mCleaner.register(this, new InstanceReleaser(this));")
 	} else {
-		w.Writeln("    super(wrapper, handle);");
+		w.Writeln("    super(wrapper, handle);")
 	}
 	w.Writeln("  }");
 	w.Writeln("")
 
 	if component.isBaseClass(class) {
-		w.Writeln("  @Override")
-		w.Writeln("  protected void finalize() throws Throwable {")
-		w.Writeln("    mWrapper.%s(this);", MakeFirstLowerCase(component.Global.ReleaseMethod))
-		w.Writeln("    super.finalize();")
-		w.Writeln("  }")
-		w.Writeln("")
 		w.Writeln("  public Pointer getHandle() {")
 		w.Writeln("    return mHandle;")
 		w.Writeln("  }")
-		w.Writeln("")
+		w.Writeln("  ")
+		w.Writeln("  protected static class InstanceReleaser implements Runnable{")
+		w.Writeln("  ")
+		w.Writeln("    protected Pointer mHandle;")
+		w.Writeln("    ")
+		w.Writeln("    protected SupportKernelWrapper mWrapper;")
+		w.Writeln("    ")
+		w.Writeln("    protected InstanceReleaser(BaseClass instance) {")
+		w.Writeln("      mHandle = instance.mHandle;")
+		w.Writeln("      mWrapper = instance.mWrapper;")
+		w.Writeln("    }")
+		w.Writeln("    ")
+		w.Writeln("    @Override")
+		w.Writeln("    public void run() {")
+		w.Writeln("      try {")
+		w.Writeln("        mWrapper.checkError(null, mWrapper.supportkernel_releaseinstance.invokeInt(new Object[]{mHandle}));")
+		w.Writeln("      } catch (SupportKernelException e) {")
+		w.Writeln("        e.printStackTrace();")
+		w.Writeln("      }")
+		w.Writeln("    }")
+		w.Writeln("  }")
 	}
 
 	for j := 0; j < len(class.Methods); j++ {
