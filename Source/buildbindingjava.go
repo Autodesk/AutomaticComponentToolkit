@@ -196,27 +196,32 @@ func buildJavaException(component ComponentDefinition, w LanguageWriter, indent 
 	}
 	w.Writeln("")
 	w.Writeln("  public static final Map<Integer, String> ErrorCodeMap = new HashMap<Integer, String>();")
+	w.Writeln("  public static final Map<Integer, String> ErrorDescriptionMap = new HashMap<Integer, String>();")
 	w.Writeln("")
 	w.Writeln("  static {")
 	for i := 0; i < len(component.Errors.Errors); i++ {
 		errorcode := component.Errors.Errors[i]
 		w.Writeln("    ErrorCodeMap.put(%s_ERROR_%s, \"%s_ERROR_%s\");", strings.ToUpper(NameSpace), errorcode.Name, strings.ToUpper(NameSpace), errorcode.Name)
+		w.Writeln("    ErrorDescriptionMap.put(%s_ERROR_%s, \"%s\");", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Description)
 	}
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  protected int mErrorCode;")
+	w.Writeln("")
+	w.Writeln("  protected String mErrorString;")
 	w.Writeln("")
 	w.Writeln("  protected String mErrorDescription;")
 	w.Writeln("")
 	w.Writeln("  public " + NameSpace + "Exception(int errorCode, String message){")
 	w.Writeln("    super(message);")
 	w.Writeln("    mErrorCode = errorCode;")
-	w.Writeln("    mErrorDescription = ErrorCodeMap.get(errorCode);")
+	w.Writeln("    mErrorString = ErrorCodeMap.get(errorCode);")
+	w.Writeln("    mErrorDescription = ErrorDescriptionMap.get(errorCode);")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  @Override")
 	w.Writeln("  public String toString() {")
-	w.Writeln("    return getMessage() + \" (\" + mErrorCode + \" \" + mErrorDescription + \")\";")
+	w.Writeln("    return mErrorCode + \": \" + mErrorString + \" (\" + mErrorDescription + \" - \" + getMessage() + \")\";")
 	w.Writeln("  }")
 	w.Writeln("}")
 	w.Writeln("")
@@ -284,7 +289,8 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 
-		err := writeJavaClassMethodImplementation(method, w, NameSpace, class.ClassName, indent, false)
+		additionalCode := make([]string, 0)
+		err := writeJavaClassMethodImplementation(method, w, NameSpace, class.ClassName, indent, false, additionalCode, "")
 		if err != nil {
 			return err
 		}
@@ -296,7 +302,8 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 	return nil;
 }
 
-func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, indent string, isGlobal bool) error {
+func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, 
+	indent string, isGlobal bool, additionalCode []string, additionalExceptions string) error {
 
 	parameters := ""
 	ReturnType := "void"
@@ -411,7 +418,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 					Value = "(byte)(" + MakeFirstLowerCase(param.ParamName) + "[i] ? 1 : 0)"
 				}
 
-				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * %s.length);", param.ParamName, ElementBytes, MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %d * %s.length));", param.ParamName, ElementBytes, MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("  buffer%s.set%s(%d * i, %s);", param.ParamName, MakeFirstUpperCase(ArrayType), ElementBytes, Value))
 				initCommands = append(initCommands, "}")
@@ -420,7 +427,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 
 			case "structarray":
-				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE * %s.length);", param.ParamName, param.ParamClass, MakeFirstLowerCase(param.ParamName)))
+				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %s.SIZE * %s.length));", param.ParamName, param.ParamClass, MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("  %s[i].writeToPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
 				initCommands = append(initCommands, "}")
@@ -521,7 +528,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
 
 				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%d * count%s);", param.ParamName, ElementBytes, param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %d * count%s));", param.ParamName, ElementBytes, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
@@ -546,7 +553,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
 
 				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
-				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(count%s * %s.SIZE);", param.ParamName, param.ParamName, param.ParamClass))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, count%s * %s.SIZE));", param.ParamName, param.ParamName, param.ParamClass))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
@@ -599,7 +606,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 	w.Writeln("   * @throws %sException", NameSpace)
 	w.Writeln("   */")
-	w.Writeln("  public %s %s(%s) throws %sException {", ReturnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace)
+	w.Writeln("  public %s %s(%s) throws %sException%s {", ReturnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace, additionalExceptions)
 
 	if len(defineCommands) > 0 {
 		w.Writelns(indent + indent, defineCommands)
@@ -616,6 +623,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	w.Writeln("    %scheckError(%s, %s%s.invokeInt(new Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
 
 	w.Writelns(indent + indent, resultCommands)
+
+	if len(additionalCode) > 0 {
+		w.Writeln("")
+		w.Writelns("    ", additionalCode)
+	}
 
 	if len(ReturnTuple) == 1 {
 		w.Writeln("    return " + ReturnTuple[0].ParamValue)
@@ -922,6 +934,17 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	}
 	w.Writeln("  }")
 	w.Writeln("")
+	ErrorMessage := "ErrorMessage"
+	for j:=0; j<len(component.Global.Methods); j++ {
+		method := component.Global.Methods[j]
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global)
+		if err != nil {
+			return err
+		}
+		if isSpecialFunction == eSpecialMethodError {
+			ErrorMessage = method.Params[1].ParamName
+		}
+	}
 	w.Writeln("  protected void checkError(%s instance, int errorCode) throws %sException {", component.Global.BaseClassName, NameSpace)
 	w.Writeln("    if (instance != null && instance.mWrapper != this) {")
 	w.Writeln("      throw new %sException(%sException.%s_ERROR_INVALIDCAST, \"invalid wrapper call\");", NameSpace, NameSpace, strings.ToUpper(NameSpace))
@@ -929,7 +952,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("    if (errorCode != %sException.%s_SUCCESS) {", NameSpace, strings.ToUpper(NameSpace))
 	w.Writeln("      if (instance != null) {")
 	w.Writeln("        %sResult result = %s(instance);", component.Global.ErrorMethod, MakeFirstLowerCase(component.Global.ErrorMethod))
-	w.Writeln("        throw new %sException(errorCode, result.ErrorMessage);", NameSpace)
+	w.Writeln("        throw new %sException(errorCode, result.%s);", NameSpace, ErrorMessage)
 	w.Writeln("      } else {")
 	w.Writeln("        throw new %sException(errorCode, \"\");", NameSpace)
 	w.Writeln("      }")
@@ -958,7 +981,34 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 
-		err := writeJavaClassMethodImplementation(method, w, NameSpace, "", indent, true)
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global)
+		if err != nil {
+			return err
+		}
+
+		implementationLines := make([]string, 0)
+		additionalExceptions := ""
+		if isSpecialFunction == eSpecialMethodInjection {
+			implementationLines = append(implementationLines, "boolean nameSpaceFound = false;")
+			sParamName := MakeFirstLowerCase(method.Params[0].ParamName)
+			for _, subComponent := range component.ImportedComponentDefinitions {
+				theNameSpace := subComponent.NameSpace
+
+				implementationLines = append(implementationLines, fmt.Sprintf("if (\"%s\".equals(%s)) {", theNameSpace, sParamName))
+				implementationLines = append(implementationLines, fmt.Sprintf("  if (m%sWrapper != null) {", theNameSpace))
+				implementationLines = append(implementationLines, fmt.Sprintf("    throw new %sException(%sException.%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace ' + %s + ' is already registered.\");", NameSpace, NameSpace, strings.ToUpper(NameSpace), sParamName))
+				implementationLines = append(implementationLines, fmt.Sprintf("  }"))
+				implementationLines = append(implementationLines, fmt.Sprintf("  m%sWrapper = new %sWrapper(%s);", theNameSpace, theNameSpace, MakeFirstLowerCase(method.Params[1].ParamName)))
+				implementationLines = append(implementationLines, fmt.Sprintf("  nameSpaceFound = true;"))
+				implementationLines = append(implementationLines, fmt.Sprintf("}"))
+				additionalExceptions = additionalExceptions + ", " + theNameSpace + "Exception"
+			}
+			implementationLines = append(implementationLines, fmt.Sprintf("if (!nameSpaceFound) {"))
+			implementationLines = append(implementationLines, fmt.Sprintf("  throw new %sException(%sException.%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, NameSpace, strings.ToUpper(NameSpace), sParamName))
+			implementationLines = append(implementationLines, fmt.Sprintf("}"))
+		}
+
+		err = writeJavaClassMethodImplementation(method, w, NameSpace, "", indent, true, implementationLines, additionalExceptions)
 		if err != nil {
 			return err
 		}
