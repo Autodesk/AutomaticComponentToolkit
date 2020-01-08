@@ -1,7 +1,7 @@
 #!/bin/bash
 
-function failed {
-  echo "$1" 1>&2
+failed() {
+  echo "${1}" 1>&2
   exit 1;
 }
 
