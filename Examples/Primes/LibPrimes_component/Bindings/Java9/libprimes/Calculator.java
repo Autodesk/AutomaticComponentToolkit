@@ -40,7 +40,7 @@ public class Calculator extends Base {
 	 */
 	public long getValue() throws LibPrimesException {
 		Pointer bufferValue = new Memory(8);
-		mWrapper.checkError(this, mWrapper.libprimes_calculator_getvalue.invokeInt(new Object[]{mHandle, bufferValue}));
+		mWrapper.checkError(this, mWrapper.libprimes_calculator_getvalue.invokeInt(new java.lang.Object[]{mHandle, bufferValue}));
 		return bufferValue.getLong(0);
 	}
 
@@ -51,7 +51,7 @@ public class Calculator extends Base {
 	 * @throws LibPrimesException
 	 */
 	public void setValue(long value) throws LibPrimesException {
-		mWrapper.checkError(this, mWrapper.libprimes_calculator_setvalue.invokeInt(new Object[]{mHandle, value}));
+		mWrapper.checkError(this, mWrapper.libprimes_calculator_setvalue.invokeInt(new java.lang.Object[]{mHandle, value}));
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class Calculator extends Base {
 	 * @throws LibPrimesException
 	 */
 	public void calculate() throws LibPrimesException {
-		mWrapper.checkError(this, mWrapper.libprimes_calculator_calculate.invokeInt(new Object[]{mHandle}));
+		mWrapper.checkError(this, mWrapper.libprimes_calculator_calculate.invokeInt(new java.lang.Object[]{mHandle}));
 	}
 
 	/**
@@ -70,7 +70,7 @@ public class Calculator extends Base {
 	 * @throws LibPrimesException
 	 */
 	public void setProgressCallback(LibPrimesWrapper.ProgressCallback progressCallback) throws LibPrimesException {
-		mWrapper.checkError(this, mWrapper.libprimes_calculator_setprogresscallback.invokeInt(new Object[]{mHandle, progressCallback}));
+		mWrapper.checkError(this, mWrapper.libprimes_calculator_setprogresscallback.invokeInt(new java.lang.Object[]{mHandle, progressCallback}));
 	}
 
 

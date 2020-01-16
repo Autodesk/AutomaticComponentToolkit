@@ -101,7 +101,7 @@ public class LibPrimesWrapper {
 		name.write(0, bytes, 0, bytes.length);
 		name.setByte(bytes.length, (byte)0);
 		Pointer address = new Memory(8);
-		Object[] addressParam = new Object[]{name, address};
+		java.lang.Object[] addressParam = new java.lang.Object[]{name, address};
 		checkError(null, lookupMethod.invokeInt(addressParam));
 		return Function.getFunction(address.getPointer(0));
 	}
@@ -116,7 +116,7 @@ public class LibPrimesWrapper {
 		Pointer bufferMajor = new Memory(4);
 		Pointer bufferMinor = new Memory(4);
 		Pointer bufferMicro = new Memory(4);
-		checkError(null, libprimes_getversion.invokeInt(new Object[]{bufferMajor, bufferMinor, bufferMicro}));
+		checkError(null, libprimes_getversion.invokeInt(new java.lang.Object[]{bufferMajor, bufferMinor, bufferMicro}));
 		GetVersionResult returnTuple = new GetVersionResult();
 		returnTuple.Major = bufferMajor.getInt(0);
 		returnTuple.Minor = bufferMinor.getInt(0);
@@ -157,10 +157,10 @@ public class LibPrimesWrapper {
 		}
 		Pointer bytesNeededErrorMessage = new Memory(4);
 		Pointer bufferHasError = new Memory(1);
-		checkError(null, libprimes_getlasterror.invokeInt(new Object[]{instanceHandle, 0, bytesNeededErrorMessage, null, bufferHasError}));
+		checkError(null, libprimes_getlasterror.invokeInt(new java.lang.Object[]{instanceHandle, 0, bytesNeededErrorMessage, null, bufferHasError}));
 		int sizeErrorMessage = bytesNeededErrorMessage.getInt(0);
 		Pointer bufferErrorMessage = new Memory(sizeErrorMessage);
-		checkError(null, libprimes_getlasterror.invokeInt(new Object[]{instanceHandle, sizeErrorMessage, bytesNeededErrorMessage, bufferErrorMessage, bufferHasError}));
+		checkError(null, libprimes_getlasterror.invokeInt(new java.lang.Object[]{instanceHandle, sizeErrorMessage, bytesNeededErrorMessage, bufferErrorMessage, bufferHasError}));
 		GetLastErrorResult returnTuple = new GetLastErrorResult();
 		returnTuple.ErrorMessage = new String(bufferErrorMessage.getByteArray(0, sizeErrorMessage - 1), StandardCharsets.UTF_8);
 		returnTuple.HasError = bufferHasError.getByte(0) != 0;
@@ -192,7 +192,7 @@ public class LibPrimesWrapper {
 		} else {
 			throw new LibPrimesException(LibPrimesException.LIBPRIMES_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
-		checkError(null, libprimes_acquireinstance.invokeInt(new Object[]{instanceHandle}));
+		checkError(null, libprimes_acquireinstance.invokeInt(new java.lang.Object[]{instanceHandle}));
 	}
 
 	/**
@@ -208,7 +208,7 @@ public class LibPrimesWrapper {
 		} else {
 			throw new LibPrimesException(LibPrimesException.LIBPRIMES_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
-		checkError(null, libprimes_releaseinstance.invokeInt(new Object[]{instanceHandle}));
+		checkError(null, libprimes_releaseinstance.invokeInt(new java.lang.Object[]{instanceHandle}));
 	}
 
 	/**
@@ -219,7 +219,7 @@ public class LibPrimesWrapper {
 	 */
 	public FactorizationCalculator createFactorizationCalculator() throws LibPrimesException {
 		Pointer bufferInstance = new Memory(8);
-		checkError(null, libprimes_createfactorizationcalculator.invokeInt(new Object[]{bufferInstance}));
+		checkError(null, libprimes_createfactorizationcalculator.invokeInt(new java.lang.Object[]{bufferInstance}));
 		Pointer valueInstance = bufferInstance.getPointer(0);
 		FactorizationCalculator instance = null;
 		if (valueInstance == Pointer.NULL) {
@@ -236,7 +236,7 @@ public class LibPrimesWrapper {
 	 */
 	public SieveCalculator createSieveCalculator() throws LibPrimesException {
 		Pointer bufferInstance = new Memory(8);
-		checkError(null, libprimes_createsievecalculator.invokeInt(new Object[]{bufferInstance}));
+		checkError(null, libprimes_createsievecalculator.invokeInt(new java.lang.Object[]{bufferInstance}));
 		Pointer valueInstance = bufferInstance.getPointer(0);
 		SieveCalculator instance = null;
 		if (valueInstance == Pointer.NULL) {
@@ -256,7 +256,7 @@ public class LibPrimesWrapper {
 		Memory bufferFileName = new Memory(bytesFileName.length + 1);
 		bufferFileName.write(0, bytesFileName, 0, bytesFileName.length);
 		bufferFileName.setByte(bytesFileName.length, (byte)0);
-		checkError(null, libprimes_setjournal.invokeInt(new Object[]{bufferFileName}));
+		checkError(null, libprimes_setjournal.invokeInt(new java.lang.Object[]{bufferFileName}));
 	}
 
 }

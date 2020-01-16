@@ -40,10 +40,10 @@ public class SieveCalculator extends Calculator {
 	 */
 	public long[] getPrimes() throws LibPrimesException {
 		Pointer countNeededPrimes = new Memory(4);
-		mWrapper.checkError(this, mWrapper.libprimes_sievecalculator_getprimes.invokeInt(new Object[]{mHandle, 0, countNeededPrimes, Pointer.NULL}));
+		mWrapper.checkError(this, mWrapper.libprimes_sievecalculator_getprimes.invokeInt(new java.lang.Object[]{mHandle, 0, countNeededPrimes, Pointer.NULL}));
 		int countPrimes = countNeededPrimes.getInt(0);
 		Pointer bufferPrimes = new Memory(Math.max(1, 8 * countPrimes));
-		mWrapper.checkError(this, mWrapper.libprimes_sievecalculator_getprimes.invokeInt(new Object[]{mHandle, countPrimes, countNeededPrimes, bufferPrimes}));
+		mWrapper.checkError(this, mWrapper.libprimes_sievecalculator_getprimes.invokeInt(new java.lang.Object[]{mHandle, countPrimes, countNeededPrimes, bufferPrimes}));
 		return bufferPrimes.getLongArray(0, countPrimes);
 	}
 

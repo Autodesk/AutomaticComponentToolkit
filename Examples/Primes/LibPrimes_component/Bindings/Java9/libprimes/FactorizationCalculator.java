@@ -40,10 +40,10 @@ public class FactorizationCalculator extends Calculator {
 	 */
 	public PrimeFactor[] getPrimeFactors() throws LibPrimesException {
 		Pointer countNeededPrimeFactors = new Memory(4);
-		mWrapper.checkError(this, mWrapper.libprimes_factorizationcalculator_getprimefactors.invokeInt(new Object[]{mHandle, 0, countNeededPrimeFactors, null}));
+		mWrapper.checkError(this, mWrapper.libprimes_factorizationcalculator_getprimefactors.invokeInt(new java.lang.Object[]{mHandle, 0, countNeededPrimeFactors, null}));
 		int countPrimeFactors = countNeededPrimeFactors.getInt(0);
 		Pointer bufferPrimeFactors = new Memory(Math.max(1, countPrimeFactors * PrimeFactor.SIZE));
-		mWrapper.checkError(this, mWrapper.libprimes_factorizationcalculator_getprimefactors.invokeInt(new Object[]{mHandle, countPrimeFactors, countNeededPrimeFactors, bufferPrimeFactors}));
+		mWrapper.checkError(this, mWrapper.libprimes_factorizationcalculator_getprimefactors.invokeInt(new java.lang.Object[]{mHandle, countPrimeFactors, countNeededPrimeFactors, bufferPrimeFactors}));
 		PrimeFactor primeFactors[] = new PrimeFactor[countPrimeFactors];
 		for (int i = 0; i < countPrimeFactors; i++) {
 		  primeFactors[i] = new PrimeFactor();

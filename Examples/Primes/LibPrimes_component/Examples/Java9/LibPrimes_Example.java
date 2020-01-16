@@ -18,7 +18,7 @@ import libprimes.*;
 
 public class LibPrimes_Example {
 
-	public static String libpath = ""; // TODO add the location of the shared library binary here
+	public static String libpath = "/home/sebastian/bastynator/AutomaticComponentToolkit/Examples/Primes/LibPrimes_component/Implementations/Cpp/build/libprimes.so"; // TODO add the location of the shared library binary here
 
 	public static void main(String[] args) throws LibPrimesException {
 		LibPrimesWrapper wrapper = new LibPrimesWrapper(libpath);
@@ -40,7 +40,6 @@ public class LibPrimes_Example {
 			}
 				
 			System.out.print(" " + pF.Prime + "^" + pF.Multiplicity + " " + productString);
-		}		
+		}	
 	}
 }
-

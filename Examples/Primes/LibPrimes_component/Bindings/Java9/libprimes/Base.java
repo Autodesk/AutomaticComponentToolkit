@@ -58,7 +58,7 @@ public class Base {
 		@Override
 		public void run() {
 			try {
-				mWrapper.checkError(null, mWrapper.libprimes_releaseinstance.invokeInt(new Object[]{mHandle}));
+				mWrapper.checkError(null, mWrapper.libprimes_releaseinstance.invokeInt(new java.lang.Object[]{mHandle}));
 			} catch (LibPrimesException e) {
 				e.printStackTrace();
 			}
