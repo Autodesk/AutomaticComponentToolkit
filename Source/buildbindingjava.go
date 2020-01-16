@@ -422,7 +422,7 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 		w.Writeln("    @Override")
 		w.Writeln("    public void run() {")
 		w.Writeln("      try {")
-		w.Writeln("        mWrapper.checkError(null, mWrapper.%s_%s.invokeInt(new Object[]{mHandle}));", strings.ToLower(NameSpace), strings.ToLower(component.Global.ReleaseMethod))
+		w.Writeln("        mWrapper.checkError(null, mWrapper.%s_%s.invokeInt(new java.lang.Object[]{mHandle}));", strings.ToLower(NameSpace), strings.ToLower(component.Global.ReleaseMethod))
 		w.Writeln("      } catch (%sException e) {", NameSpace)
 		w.Writeln("        e.printStackTrace();")
 		w.Writeln("      }")
@@ -759,12 +759,12 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 	w.Writelns(indent + indent, initCommands)
 
 	if doInitCall {
-		w.Writeln("    %scheckError(%s, %s%s.invokeInt(new Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
+		w.Writeln("    %scheckError(%s, %s%s.invokeInt(new java.lang.Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, initCallParameters)
 	}
 
 	w.Writelns(indent + indent, postInitCommands)
 
-	w.Writeln("    %scheckError(%s, %s%s.invokeInt(new Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
+	w.Writeln("    %scheckError(%s, %s%s.invokeInt(new java.lang.Object[]{%s}));", wrapperCallPrefix, errorInstanceHandle, wrapperCallPrefix, callFunctionName, callFunctionParameters)
 
 	w.Writelns(indent + indent, resultCommands)
 
@@ -1109,7 +1109,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("    name.write(0, bytes, 0, bytes.length);")
 	w.Writeln("    name.setByte(bytes.length, (byte)0);")
 	w.Writeln("    Pointer address = new Memory(8);")
-	w.Writeln("    Object[] addressParam = new Object[]{name, address};")
+	w.Writeln("    java.lang.Object[] addressParam = new java.lang.Object[]{name, address};")
 	w.Writeln("    checkError(null, lookupMethod.invokeInt(addressParam));")
 	w.Writeln("    return Function.getFunction(address.getPointer(0));")
 	w.Writeln("  }")
