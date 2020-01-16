@@ -40,6 +40,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 )
 
 const (
@@ -297,19 +298,31 @@ func createComponent(component ComponentDefinition, outfolderBase string) (error
 			}
 		case "Java":
 			{
-				outputFolderBindingJava := outputFolderBindings + "/Java"
+				version := 9
+				if len(binding.Version) > 0 {
+					if (binding.Version == "8") || (binding.Version == "1.8") {
+						version = 8
+					} else if (binding.Version == "9") || (binding.Version == "1.9") {
+						version = 9
+					} else {
+						log.Fatal("Unknown/Unsupported java binding version: " + binding.Version)
+						log.Fatal("Supported java versions are 8 and 9")
+					}
+				}
+				versionStr := strconv.Itoa(version)
+				outputFolderBindingJava := outputFolderBindings + "/Java" + versionStr
 				err = os.MkdirAll(outputFolderBindingJava, os.ModePerm)
 				if err != nil {
 					return err
 				}
 
-				outputFolderExampleJava := outputFolderExamples + "/Java"
+				outputFolderExampleJava := outputFolderExamples + "/Java" + versionStr
 				err = os.MkdirAll(outputFolderExampleJava, os.ModePerm)
 				if err != nil {
 					return err
 				}
 
-				err = BuildBindingJavaDynamic(component, outputFolderBindingJava, outputFolderExampleJava, indentString)
+				err = BuildBindingJavaDynamic(component, outputFolderBindingJava, outputFolderExampleJava, indentString, version)
 				if err != nil {
 					return err
 				}
