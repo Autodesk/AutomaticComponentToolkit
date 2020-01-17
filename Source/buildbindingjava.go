@@ -187,6 +187,16 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 	return nil;
 }
 
+func decorateSpecialFunction(name string) string {
+	name = MakeFirstLowerCase(name)
+	if (name == "clone" || name == "toString" || name == "equals" ||
+		name == "hashCode" || name == "finalize" || name == "wait" ||
+		name == "notify" || name == "notifyAll" || name == "getClass"){
+			return name + "_"
+	}
+	return name
+}
+
 func buildDynamicJavaExample(component ComponentDefinition, w LanguageWriter, outputFolder string) error {
 	NameSpace := component.NameSpace
 
@@ -741,12 +751,17 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				resultCommands = append(resultCommands, fmt.Sprintf("Pointer value%s = buffer%s.getPointer(0);", param.ParamName, param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
 				if param.ParamType == "class" {
-				  resultCommands = append(resultCommands, fmt.Sprintf("if (value%s == Pointer.NULL) {", param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("  throw new %sException(%sException.%s_ERROR_NORESULTAVAILABLE, \"%s was a null pointer\");", 
-						NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
-  				resultCommands = append(resultCommands, "}")
+					resultCommands = append(resultCommands, fmt.Sprintf("if (value%s == Pointer.NULL) {", param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("  throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"%s was a null pointer\");", 
+							NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
+					resultCommands = append(resultCommands, "}")
+					resultCommands = append(resultCommands, fmt.Sprintf("%s = new %s(%s, value%s);", MakeFirstLowerCase(param.ParamName), theParamClass, theWrapperInstance, param.ParamName))
+				} else {
+					resultCommands = append(resultCommands, fmt.Sprintf("if (value%s != Pointer.NULL) {", param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("  %s = new %s(%s, value%s);", MakeFirstLowerCase(param.ParamName), theParamClass, theWrapperInstance, param.ParamName))
+					resultCommands = append(resultCommands, "}")
 				}
-				ReturnItem.ParamValue = fmt.Sprintf("(value%s == Pointer.NULL) ? null : new %s(%s, value%s);", param.ParamName, theParamClass, theWrapperInstance, param.ParamName)
+				ReturnItem.ParamValue = fmt.Sprintf("%s;", MakeFirstLowerCase(param.ParamName))
 				ReturnTuple = append(ReturnTuple, ReturnItem)
 
 			default:
@@ -766,7 +781,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 	w.Writeln("   * @throws %sException", NameSpace)
 	w.Writeln("   */")
-	w.Writeln("  public %s %s(%s) throws %sException%s {", ReturnType, MakeFirstLowerCase(method.MethodName), parameters, NameSpace, additionalExceptions)
+	w.Writeln("  public %s %s(%s) throws %sException%s {", ReturnType, decorateSpecialFunction(method.MethodName), parameters, NameSpace, additionalExceptions)
 
 	if len(defineCommands) > 0 {
 		w.Writelns(indent + indent, defineCommands)
@@ -837,16 +852,6 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 		element := structinfo.Members[j]
 		arrayprefix := ""
 		arraysuffix := ""
-		if element.Rows > 0 {
-			if element.Columns > 0 {
-				arrayprefix = fmt.Sprintf("[][]")
-				arraysuffix = fmt.Sprintf("[%d][%d]", element.Columns-1, element.Rows-1)
-			} else {
-				arrayprefix = fmt.Sprintf("[]")
-				arraysuffix = fmt.Sprintf("[%d]", element.Rows-1)
-			}
-		}
-
 		fieldType, bytes, err := getJavaParameterType(element.Type, component.NameSpace, "", "in", true)
 		if err != nil {
 			return err
@@ -855,7 +860,7 @@ func buildJavaStruct(component ComponentDefinition, w LanguageWriter, indent str
 		if element.Rows > 0 {
 			if element.Columns > 0 {
 				arrayprefix = fmt.Sprintf("[][]")
-				arraysuffix = fmt.Sprintf("[%d][%d]", element.Columns, element.Rows)
+				arraysuffix = fmt.Sprintf("[%d][%d]", element.Rows, element.Columns)
 				byteSum = byteSum + bytes * element.Columns * element.Rows;
 			} else {
 				arrayprefix = fmt.Sprintf("[]")
