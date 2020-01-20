@@ -693,11 +693,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 					return err
 				}
 
-				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(8);", param.ParamName))
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = (int) countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %d * count%s));", param.ParamName, ElementBytes, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
@@ -718,11 +718,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 			case "structarray":
 
-				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(4);", param.ParamName))
+				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(8);", param.ParamName))
 
 				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = countNeeded%s.getInt(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = (int) countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, count%s * %s.SIZE));", param.ParamName, param.ParamName, param.ParamClass))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
