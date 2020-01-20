@@ -593,16 +593,16 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCommands = append(initCommands, fmt.Sprintf("  buffer%s.set%s(%d * i, %s);", param.ParamName, MakeFirstUpperCase(ArrayType), ElementBytes, Value))
 				initCommands = append(initCommands, "}")
 
-				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
-				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				callFunctionParameters = callFunctionParameters + "(long) " + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				initCallParameters = initCallParameters + "(long) " + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 
 			case "structarray":
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %s.SIZE * %s.length));", param.ParamName, param.ParamClass, MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("for (int i = 0; i < %s.length; i++) {", MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, fmt.Sprintf("  %s[i].writeToPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
 				initCommands = append(initCommands, "}")
-				callFunctionParameters = callFunctionParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
-				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				callFunctionParameters = callFunctionParameters + "(long) " + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
+				initCallParameters = initCallParameters + "(long) " + MakeFirstLowerCase(param.ParamName) + ".length, buffer" + param.ParamName
 
 			case "struct":
 				initCommands = append(initCommands, fmt.Sprintf("Pointer buffer%s = new Memory(%s.SIZE);", param.ParamName, param.ParamClass))
