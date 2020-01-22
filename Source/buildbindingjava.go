@@ -695,22 +695,22 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(8);", param.ParamName))
 
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, Pointer.NULL", param.ParamName)
+				initCallParameters = initCallParameters + fmt.Sprintf("0L, countNeeded%s, Pointer.NULL", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = (int) countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("long count%s = countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, %d * count%s));", param.ParamName, ElementBytes, param.ParamName))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
 				if param.ParamClass == "bool" {
-					resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[count%s];", ArrayType, MakeFirstLowerCase(param.ParamName), ArrayType, param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("byte[] bytes%s = buffer%s.getByteArray(0, count%s);", param.ParamName, param.ParamName, param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[(int)count%s];", ArrayType, MakeFirstLowerCase(param.ParamName), ArrayType, param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("byte[] bytes%s = buffer%s.getByteArray(0, (int)count%s);", param.ParamName, param.ParamName, param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < (int)count%s; i++) {", param.ParamName))
 					resultCommands = append(resultCommands, fmt.Sprintf("  %s[i] = bytes%s[i] != (byte) 0;", MakeFirstLowerCase(param.ParamName), param.ParamName))
 					resultCommands = append(resultCommands, "}")
 					ReturnItem.ParamValue = MakeFirstLowerCase(param.ParamName) + ";"
 				} else {
-					ReturnItem.ParamValue = fmt.Sprintf("buffer%s.get%sArray(0, count%s);", param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName)
+					ReturnItem.ParamValue = fmt.Sprintf("buffer%s.get%sArray(0, (int)count%s);", param.ParamName, MakeFirstUpperCase(ArrayType), param.ParamName)
 				}
 				ReturnTuple = append(ReturnTuple, ReturnItem)
 
@@ -720,15 +720,15 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 				initCommands = append(initCommands, fmt.Sprintf("Pointer countNeeded%s = new Memory(8);", param.ParamName))
 
-				initCallParameters = initCallParameters + fmt.Sprintf("0, countNeeded%s, null", param.ParamName)
+				initCallParameters = initCallParameters + fmt.Sprintf("0L, countNeeded%s, null", param.ParamName)
 
-				postInitCommands = append(postInitCommands, fmt.Sprintf("int count%s = (int) countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
+				postInitCommands = append(postInitCommands, fmt.Sprintf("long count%s = countNeeded%s.getLong(0);", param.ParamName,  param.ParamName))
 				postInitCommands = append(postInitCommands, fmt.Sprintf("Pointer buffer%s = new Memory(Math.max(1, count%s * %s.SIZE));", param.ParamName, param.ParamName, param.ParamClass))
 
 				callFunctionParameters = callFunctionParameters + fmt.Sprintf("count%s, countNeeded%s, buffer%s", param.ParamName, param.ParamName, param.ParamName)
 
-				resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[count%s];", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < count%s; i++) {", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("%s %s[] = new %s[(int)count%s];", param.ParamClass, MakeFirstLowerCase(param.ParamName), param.ParamClass, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("for (int i = 0; i < (int)count%s; i++) {", param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("  %s[i] = new %s();", MakeFirstLowerCase(param.ParamName), param.ParamClass))
 				resultCommands = append(resultCommands, fmt.Sprintf("  %s[i].readFromPointer(buffer%s, i * %s.SIZE);", MakeFirstLowerCase(param.ParamName), param.ParamName, param.ParamClass))
 				resultCommands = append(resultCommands, "}")
