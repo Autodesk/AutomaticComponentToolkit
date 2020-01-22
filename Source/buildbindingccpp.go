@@ -480,7 +480,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	if (!useStrictC) {
 		w.Writeln("#include <vector>")
 	}
-	w.Writeln("#include <windows.h>")
+	w.Writeln("#include <libloaderapi.h>")
 
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
@@ -1120,7 +1120,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	w.Writeln("#ifdef _WIN32")
-	w.Writeln("#include <windows.h>")
+	w.Writeln("#include <libloaderapi.h>")
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
 	w.Writeln("#endif // _WIN32")
