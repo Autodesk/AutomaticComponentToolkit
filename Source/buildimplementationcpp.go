@@ -244,7 +244,7 @@ func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, Nam
 	wImpl.Writeln(" Class E%sInterfaceException", NameSpace);
 	wImpl.Writeln("**************************************************************************************************************************/");
 	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode)", NameSpace, NameSpace, NameSpace);
-	wImpl.Writeln("  : m_errorMessage(\"%s Error \" + std::to_string (errorCode))", NameSpace);
+	wImpl.Writeln("  : m_errorMessage(%s_GETERRORSTRING (errorCode))",  strings.ToUpper (NameSpace));
 	wImpl.Writeln("{");
 	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
