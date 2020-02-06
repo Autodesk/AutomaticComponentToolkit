@@ -537,6 +537,16 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 				fmt.Sprintf("n%s = %s_VERSION_MICRO;", method.Params[2].ParamName, strings.ToUpper(NameSpace)) )
 			thisMethodDefaultImpl = versionImplementation
 		}
+		if (isSpecialFunction == eSpecialMethodError) {
+			var errorImplementation []string
+			errorImplementation = append(errorImplementation,
+				fmt.Sprintf("if (p%s) {", method.Params[0].ParamName),
+				fmt.Sprintf("  return p%s->%s (s%s);", method.Params[0].ParamName, GetLastErrorMessageMethod().MethodName, method.Params[1].ParamName),
+				"} else {",
+				"  return false;",
+				"}");
+			thisMethodDefaultImpl = errorImplementation
+		}
 		if (isSpecialFunction == eSpecialMethodRelease) {
 			var releaseImplementation []string
 			releaseImplementation = append(releaseImplementation,
@@ -986,7 +996,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		
 		if (component.isBaseClass(class)) {
-			stubheaderw.Writeln("  std::unique_ptr<std::list<std::string>> m_pErrors;")
+			stubheaderw.Writeln("  std::unique_ptr<std::string> m_pLastError;")
 			stubheaderw.Writeln("  %s_uint32 m_nReferenceCount = 1;", NameSpace)
 			stubheaderw.Writeln("")
 		}
@@ -1034,21 +1044,20 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			methods[4] = DecRefCountMethod()
 
 			var implementations [5][]string
-			implementations[0] = append(implementations[0], "if (m_pErrors && !m_pErrors->empty()) {")
-			implementations[0] = append(implementations[0], "  sErrorMessage = m_pErrors->back();")
+			implementations[0] = append(implementations[0], "if (m_pLastError) {")
+			implementations[0] = append(implementations[0], "  sErrorMessage = *m_pLastError;")
 			implementations[0] = append(implementations[0], "  return true;")
 			implementations[0] = append(implementations[0], "} else {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = \"\";")
 			implementations[0] = append(implementations[0], "  return false;")
 			implementations[0] = append(implementations[0], "}")
 
-			implementations[1] = append(implementations[1], "m_pErrors.reset();")
+			implementations[1] = append(implementations[1], "m_pLastError.reset();")
 
-			implementations[2] = append(implementations[2], "if (!m_pErrors) {")
-			implementations[2] = append(implementations[2], "  m_pErrors.reset(new std::list<std::string>());")
+			implementations[2] = append(implementations[2], "if (!m_pLastError) {")
+			implementations[2] = append(implementations[2], "  m_pLastError.reset(new std::string());")
 			implementations[2] = append(implementations[2], "}")
-			implementations[2] = append(implementations[2], "m_pErrors->clear();")
-			implementations[2] = append(implementations[2], "m_pErrors->push_back(sErrorMessage);")
+			implementations[2] = append(implementations[2], "*m_pLastError = sErrorMessage;")
 
 			implementations[3] = append(implementations[3], "++m_nReferenceCount;")
 
