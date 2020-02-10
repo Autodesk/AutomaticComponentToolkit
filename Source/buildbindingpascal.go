@@ -1183,11 +1183,11 @@ func buildDynamicPascalExample(w LanguageWriter, component ComponentDefinition, 
 	w.Writeln("    A%sWrapper.%s(AMajor, AMinor, AMicro);", NameSpace, global.VersionMethod)
 	w.Writeln("    AVersionString := Format('%s.version = %s', [AMajor, AMinor, AMicro]);", NameSpace, "%d.%d.%d")
 	if len(global.PrereleaseMethod) > 0 {
-		w.Writeln("    if (A%sWrapper.%s(APreReleaseInfo) then", NameSpace, global.PrereleaseMethod)
+		w.Writeln("    if (A%sWrapper.%s(APreReleaseInfo)) then", NameSpace, global.PrereleaseMethod)
 		w.Writeln("      AVersionString := AVersionString + '-' + APreReleaseInfo;")
 	}
 	if len(global.BuildinfoMethod) > 0 {
-		w.Writeln("    if (A%sWrapper.%s(ABuildInfo) then", NameSpace, global.BuildinfoMethod)
+		w.Writeln("    if (A%sWrapper.%s(ABuildInfo)) then", NameSpace, global.BuildinfoMethod)
 		w.Writeln("      AVersionString := AVersionString + '-' + ABuildInfo;")
 	}
 	w.Writeln("    writeln(AVersionString);")

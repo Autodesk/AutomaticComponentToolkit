@@ -144,6 +144,22 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	}
 
 	w.Writeln("");
+
+	w.Writeln("/*************************************************************************************************************************");
+	w.Writeln(" Error strings for %s", NameSpace);
+	w.Writeln("**************************************************************************************************************************/");
+	w.Writeln("");
+	w.Writeln("inline const char * %s_GETERRORSTRING (%sResult nErrorCode) {", strings.ToUpper (NameSpace), NameSpace);
+	w.Writeln("  switch (nErrorCode) {");
+	w.Writeln("    case %s_SUCCESS: return \"no error\";", strings.ToUpper (NameSpace));
+	for i := 0; i < len(component.Errors.Errors); i++ {
+		errorcode := component.Errors.Errors[i];
+		w.Writeln("    case %s_ERROR_%s: return \"%s\";", strings.ToUpper (NameSpace), errorcode.Name, errorcode.Description);
+	}
+	w.Writeln("    default: return \"unknown error\";");
+	w.Writeln("  }");
+	w.Writeln("}");
+	w.Writeln("");
 	
 	w.Writeln("/*************************************************************************************************************************");
 	w.Writeln(" Declaration of handle classes ");
