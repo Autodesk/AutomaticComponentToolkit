@@ -354,7 +354,9 @@ func buildJavaException(component ComponentDefinition, w LanguageWriter, indent 
 	w.Writeln("    super(message);")
 	w.Writeln("    mErrorCode = errorCode;")
 	w.Writeln("    mErrorString = ErrorCodeMap.get(errorCode);")
+	w.Writeln("    mErrorString = (mErrorString != null) ? mErrorString : \"Unknown error code\";")
 	w.Writeln("    mErrorDescription = ErrorDescriptionMap.get(errorCode);")
+	w.Writeln("    mErrorDescription = (mErrorDescription != null) ? mErrorDescription : \"\";")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  @Override")
@@ -451,7 +453,7 @@ func buildJavaClass(component ComponentDefinition, w LanguageWriter, indent stri
 			w.Writeln("  @Override")
 			w.Writeln("  protected void finalize() throws Throwable {")
 			w.Writeln("    super.finalize();")
-			w.Writeln("    mWrapper.releaseInstance(this);")
+			w.Writeln("    mWrapper.%s(this);", MakeFirstLowerCase(component.Global.ReleaseMethod))
 			w.Writeln("  }")
 		}
 	}
