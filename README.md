@@ -67,6 +67,7 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 | Golang          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return |       ?       |       ?       |      ?        |       ?    |      ?      |     -     |         -        | - |
 | NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |     ?    |      ?      |     -     |         +        | - |
 | C#              | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        | - |
+| Java            | ![](Documentation/images/Tick.png) experimental            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |    in,out  |    in,out   |    in     |         +        | + |
 | PHP             | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |       -    |      -      |     -     |         -        | - |
 
 #### Feature Matrix: Implementation Stubs

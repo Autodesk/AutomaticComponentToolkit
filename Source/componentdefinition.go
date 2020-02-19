@@ -135,6 +135,7 @@ type ComponentDefinitionBinding struct {
 	Language string `xml:"language,attr"`
 	Indentation string `xml:"indentation,attr"`
 	ClassIdentifier string `xml:"classidentifier,attr"`
+	Version string `xml:"version,attr"`
 }
 
 // ComponentDefinitionImplementation definition of a specific languages for which bindings to the component's API will be generated
