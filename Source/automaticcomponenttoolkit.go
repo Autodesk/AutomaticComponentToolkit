@@ -88,7 +88,6 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 	}
 	
 	if (!suppressBindings) {
-
 		if len(component.BindingList.Bindings) > 0 {
 			err = os.MkdirAll(outputFolderBindings, os.ModePerm)
 			if err != nil {
@@ -146,8 +145,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				}
 
 			case "CppDynamic":
-				{
-								
+				{		
 					outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
 					err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
 					if err != nil {
@@ -314,6 +312,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						log.Fatal (err);
 					}
 				}
+
 			case "Python":
 				{
 					outputFolderBindingPython := outputFolderBindings + "/Python"
@@ -336,7 +335,6 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 				}
-
 
 			case "Java":
 				{
@@ -369,6 +367,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 				}
+
 			case "Fortran":
 				{
 					log.Printf("Interface binding for language \"%s\" is not yet supported.", binding.Language)
@@ -448,7 +447,6 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				outputFolderImplementationPascalStub := outputFolderImplementations + "/Pascal/Stub"
 
 				if (!suppressStub) {
-				
 					if (stubDirectoryOverride != "") {
 						outputFolderImplementationPascalStub = stubDirectoryOverride;
 					}
@@ -461,17 +459,13 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 
 				if (!suppressInterfaces) {
-				
 					if (interfacesDirectoryOverride != "") {
 						outputFolderImplementationPascal = interfacesDirectoryOverride;
 					}
-				
-
 					err = os.MkdirAll(outputFolderImplementationPascal, os.ModePerm)
 					if err != nil {
 						return err
 					}
-
 					err = BuildImplementationPascal(component, outputFolderImplementationPascal, outputFolderImplementationPascalStub,
 						outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces)
 					if err != nil {
@@ -496,13 +490,22 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 func printUsageInfo() {
 	fmt.Fprintln(os.Stdout, "Run ACT with the Interface Description XML as command line parameter:")
-	fmt.Fprintln(os.Stdout, "  $>act INTERFACEDESCRIPTION.xml [FLAG]")
+	fmt.Fprintln(os.Stdout, "  $>act INTERFACEDESCRIPTION.xml [FLAGS]")
 	fmt.Fprintln(os.Stdout, "  ")
 	fmt.Fprintln(os.Stdout, "  run  act -h  to print this message.")
 	fmt.Fprintln(os.Stdout, "  ")
-	fmt.Fprintln(os.Stdout, "ACT has the following optional and mutually exlcusive flags:")
+	fmt.Fprintln(os.Stdout, "ACT has the following optional flags:")
 	fmt.Fprintln(os.Stdout, "  -o: specify a path for the generated source code: \"-o ABSOLUTE_PATH_TO_OUTPUT_FOLDER\"")
 	fmt.Fprintln(os.Stdout, "  -d: create a diff between two versions of an Interface Description XML: \"-d OTHER_IDL_FILE\"")
+	fmt.Fprintln(os.Stdout, "  -bindings: specify a bindings override directory: \"-bindings TARGET_PATH_TO_BINDINGS\"")
+	fmt.Fprintln(os.Stdout, "  -interfaces: specify a interfaces override directory: \"-bindings TARGET_PATH_TO_INTERFACES\"; Note that all implementations will use the same path.")
+	fmt.Fprintln(os.Stdout, "  -stubs: specify a stubs override directory: \"-bindings TARGET_PATH_TO_STUBS\"; Note that all implementations will use the same path.")
+	fmt.Fprintln(os.Stdout, "  -suppresslicense: do not generate a license-file")
+	fmt.Fprintln(os.Stdout, "  -suppressbindings: do not generate bindings (even if the XML-file specifies them)")
+	fmt.Fprintln(os.Stdout, "  -suppressstub: do not generate the content of the stubs-folder")
+	fmt.Fprintln(os.Stdout, "  -suppressinterfaces: do not generate the contents of the interfaces-folder")
+	fmt.Fprintln(os.Stdout, "  -suppresssubcomponents: do not generate any files for subcomponents")
+	fmt.Fprintln(os.Stdout, "  -suppressexamples: do not generate any examples")
 	fmt.Fprintln(os.Stdout, "  ")
 	fmt.Fprintln(os.Stdout, "Tutorials, info and source-code on: https://github.com/Autodesk/AutomaticComponentToolkit/ .")
 	fmt.Fprintln(os.Stdout, "ACT stops now.")
@@ -543,9 +546,7 @@ func main() {
 	suppressExamples := false;
 	
 	if len(os.Args) >= 4 {
-	
 		for idx := 2; idx < len(os.Args); idx ++ {
-	
 			if os.Args[idx] == "-o" {
 				outfolderBase = os.Args[idx + 1]
 			}
@@ -657,7 +658,6 @@ func main() {
 	// 	}
 	// }
 	
-
 	err = createComponent(component, outfolderBase, bindingsDirectoryOverride, interfacesDirectoryOverride, stubDirectoryOverride, suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
 	if (err != nil) {
 		log.Println("Fatal error")
