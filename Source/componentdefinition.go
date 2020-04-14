@@ -692,7 +692,11 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 		}
 
 	}
-
+	
+	
+	if ((len (method.getStringOutParameters ()) > 0) && (len (method.getArrayOutParameters ()) > 0)) {
+		return fmt.Errorf ("String and Array out parameters for method \"%s.%s\"", className, method.MethodName);
+	}
 
 	return nil
 }
@@ -1275,7 +1279,20 @@ func (method *ComponentDefinitionMethod) getStringOutParameters() ([]string) {
 	return outParameters;
 }
 
+func (method *ComponentDefinitionMethod) getArrayOutParameters() ([]string) {
 
+	var outParameters []string;
+
+	for i := 0; i < len(method.Params); i++ {
+		if ((method.Params[i].ParamType == "basicarray") || (method.Params[i].ParamType == "structarray")) {		
+			if ((method.Params[i].ParamPass == "out") || (method.Params[i].ParamPass == "return")) {
+				outParameters = append (outParameters, method.Params[i].ParamName);
+			}			
+		}
+	}
+	
+	return outParameters;
+}
 
 
 func (class *ComponentDefinitionClass) countMaxOutParameters() (uint32) {
