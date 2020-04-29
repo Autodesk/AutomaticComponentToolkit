@@ -145,7 +145,6 @@ func buildGoExample(component ComponentDefinition, w LanguageWriter, outputFolde
 	w.Writeln("")
 }
 
-
 func buildGoEnums(component ComponentDefinition, w LanguageWriter) {
 	if len(component.Enums) <= 0 {
 		return
@@ -174,7 +173,7 @@ func buildGoEnums(component ComponentDefinition, w LanguageWriter) {
 	w.Writeln("")
 }
 
-func buildGoStructs(component ComponentDefinition, w LanguageWriter) (error) {
+func buildGoStructs(component ComponentDefinition, w LanguageWriter) error {
 	if len(component.Structs) <= 0 {
 		return nil
 	}
@@ -278,7 +277,7 @@ func buildGoImplementation(component ComponentDefinition, implw LanguageWriter) 
 	implw.Writeln("")
 }
 
-func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWriter) {	
+func buildGoImplementationHandle(component ComponentDefinition, implw LanguageWriter) {
 	NameSpace := component.NameSpace
 	implw.Writeln("type %sImplementationHandle interface {", NameSpace)
 	implw.Writeln("  %sHandle", NameSpace)
@@ -465,26 +464,25 @@ func buildGoCallFunction(component ComponentDefinition, implw LanguageWriter) {
 	implw.Writeln("")
 }
 
-
-func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, implw LanguageWriter, NameSpace string, classdefinitions* []string) (error) {
+func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, implw LanguageWriter, NameSpace string, classdefinitions *[]string) error {
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf(""))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("/*************************************************************************************************************************"))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("Class definition %s%s", NameSpace, class.ClassName))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("**************************************************************************************************************************/"))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf(""))
-	*classdefinitions = append(*classdefinitions, fmt.Sprintf("type %s%s struct {",  NameSpace, class.ClassName))
+	*classdefinitions = append(*classdefinitions, fmt.Sprintf("type %s%s struct {", NameSpace, class.ClassName))
 
-	if (component.Global.BaseClassName == class.ClassName) {
-		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  Interface %sGoInterface",  NameSpace))
+	if component.Global.BaseClassName == class.ClassName {
+		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  Interface %sGoInterface", NameSpace))
 		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  Handle %sHandle", NameSpace))
 	} else {
-		if len(class.ParentClass)>0 {
+		if len(class.ParentClass) > 0 {
 			*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %s%s", NameSpace, class.ParentClass))
 		} else {
 			*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %s%s", NameSpace, component.Global.BaseClassName))
 		}
 	}
-	
+
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("}"))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf(""))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("func (instance *%s%s) Close() (error) {", NameSpace, class.ClassName))
@@ -514,7 +512,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter, implw Langu
 
 	buildGoEnums(component, w)
 	err := buildGoStructs(component, w)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 	buildGoInterfaces(component, w)
@@ -540,7 +538,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter, implw Langu
 	buildGoHelperFunctions(implw)
 
 	buildGoErrorHandling(component, implw)
-	
+
 	implw.Writeln("")
 	implw.Writeln("func (implementation *%sImplementation) GetWrapperHandle(handle %sHandle) (%sImplementationHandle, error) {", NameSpace, NameSpace, NameSpace)
 	implw.Writeln("  implementation_handle, ok := handle.(%sImplementationHandle)", NameSpace)
@@ -661,18 +659,30 @@ func getGoBasicType(paramType string) (string, error) {
 func paramFunction(paramType string, paramPass string) (string, error) {
 	paramFunctionStr := ""
 	switch paramType {
-	case "uint8":		paramFunctionStr = "UInt8"
-	case "uint16":		paramFunctionStr = "UInt16"
-	case "uint32":		paramFunctionStr = "UInt32"
-	case "uint64":		paramFunctionStr = "UInt64"
-	case "int8":		paramFunctionStr = "Int8"
-	case "int16":		paramFunctionStr = "Int16"
-	case "int32":		paramFunctionStr = "Int32"
-	case "int64":		paramFunctionStr = "Int64"
-	case "bool":		paramFunctionStr = "bool"
-	case "single":		paramFunctionStr = "Float32"
-	case "double":		paramFunctionStr = "Float64"
-	case "pointer":		paramFunctionStr = "UInt64"
+	case "uint8":
+		paramFunctionStr = "UInt8"
+	case "uint16":
+		paramFunctionStr = "UInt16"
+	case "uint32":
+		paramFunctionStr = "UInt32"
+	case "uint64":
+		paramFunctionStr = "UInt64"
+	case "int8":
+		paramFunctionStr = "Int8"
+	case "int16":
+		paramFunctionStr = "Int16"
+	case "int32":
+		paramFunctionStr = "Int32"
+	case "int64":
+		paramFunctionStr = "Int64"
+	case "bool":
+		paramFunctionStr = "bool"
+	case "single":
+		paramFunctionStr = "Float32"
+	case "double":
+		paramFunctionStr = "Float64"
+	case "pointer":
+		paramFunctionStr = "UInt64"
 	default:
 		return "", errors.New("Invalid basic type: " + paramType)
 	}
@@ -682,19 +692,19 @@ func paramFunction(paramType string, paramPass string) (string, error) {
 	} else {
 		paramFunctionStr += "OutValue"
 	}
-	return paramFunctionStr , nil
+	return paramFunctionStr, nil
 }
 
-func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw LanguageWriter, NameSpace string, ClassName string, isGlobal bool, classdefinitions* []string) error {
+func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw LanguageWriter, NameSpace string, ClassName string, isGlobal bool, classdefinitions *[]string) error {
 
 	parameters := ""
 	callparameters := ""
 	returnvalues := ""
-	
+
 	var comments []string
 
 	var implDeclarations []string
-	implDeclarations = append(implDeclarations, fmt.Sprintf("var err error = nil"))
+	implDeclarations = append(implDeclarations, fmt.Sprintf("var err error"))
 	var implCasts []string
 
 	implReturnValues := ""
@@ -721,14 +731,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				errorReturn = errorReturn + fmt.Sprintf("h%s, ", param.ParamName)
 			case "functiontype":
 				errorReturn = errorReturn + fmt.Sprintf("0, ")
-			case "basicarray":
-				basicType, err := getGoBasicType(param.ParamClass)
-				if err != nil {
-					return err
-				}
-				errorReturn = errorReturn + fmt.Sprintf("make([]%s, 0), ", basicType)
-			case "structarray":
-				errorReturn = errorReturn + fmt.Sprintf("make([]s%s%s, 0), ", NameSpace, param.ParamClass)
+			case "basicarray", "structarray":
+				errorReturn = errorReturn + fmt.Sprint("nil, ")
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
@@ -769,7 +773,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64":
-				goParamName := "n"+param.ParamName
+				goParamName := "n" + param.ParamName
 				comments = append(comments, fmt.Sprintf("* @param[in] %s - %s", goParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("%s %s", goParamName, param.ParamType)
 				goParamFunction, err := paramFunction(param.ParamType, param.ParamPass)
@@ -859,9 +863,9 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implCasts = append(implCasts, fmt.Sprintf(""))
 
 				implCasts = append(implCasts, fmt.Sprintf("%sDLLHandle := implementation_%s.GetDLLInHandle()", param.ParamName, strings.ToLower(param.ParamName)))
-				if (param.ParamType == "class") {
+				if param.ParamType == "class" {
 					implCasts = append(implCasts, fmt.Sprintf("if (%sDLLHandle == 0) {", param.ParamName))
-					implCasts = append(implCasts, fmt.Sprintf("  err := fmt.Errorf(\"Handle must not be 0.\")", ))
+					implCasts = append(implCasts, fmt.Sprintf("  err := fmt.Errorf(\"Handle must not be 0.\")"))
 					implCasts = append(implCasts, fmt.Sprintf("  return %s", errorReturn))
 					implCasts = append(implCasts, fmt.Sprintf("}"))
 				}
@@ -887,7 +891,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				if err != nil {
 					return err
 				}
-				goParamName := "n"+param.ParamName
+				goParamName := "n" + param.ParamName
 				returnvalues = returnvalues + fmt.Sprintf("%s, ", basicType)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var %s %s = 0", goParamName, param.ParamType))
 				implReturnValues = implReturnValues + fmt.Sprintf("%s(%s), ", basicType, goParamName)
@@ -951,7 +955,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				requiresInitCall = true
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var neededfor%s int64 = 0", param.ParamName))
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var filledin%s int64 = 0", param.ParamName))
-				
+
 				thisInitImplCallParamter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
 
 				implInitCallLines = append(implInitCallLines, fmt.Sprintf("bufferSize%s := neededfor%s", param.ParamName, param.ParamName))
@@ -977,43 +981,34 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				classReturnString = classReturnString + "e" + param.ParamName + ", "
 				classReturnTypes = classReturnTypes + fmt.Sprintf("E%s%s, ", NameSpace, param.ParamClass)
 
-			case "basicarray":
-				requiresInitCall = true
-				basicType, err := getGoBasicType(param.ParamClass)
-				if err != nil {
-					return err
+			case "basicarray", "structarray":
+				var arrayType string
+				if param.ParamType == "basicarray" {
+					var err error
+					arrayType, err = getGoBasicType(param.ParamClass)
+					if err != nil {
+						return err
+					}
+				} else {
+					arrayType = fmt.Sprintf("s%s%s", NameSpace, param.ParamClass)
 				}
-				implDeclarations = append(implDeclarations, fmt.Sprintf("var neededfor%s int64 = 0", param.ParamName))
-				implDeclarations = append(implDeclarations, fmt.Sprintf("var filledin%s int64 = 0", param.ParamName))
+				requiresInitCall = true
+				needSizeVar := fmt.Sprintf("neededfor%s", param.ParamName)
+				implDeclarations = append(implDeclarations, fmt.Sprintf("var %s int64", needSizeVar))
 
 				bufferName := fmt.Sprintf("buffer%s", param.ParamName)
-				implDeclarations = append(implDeclarations, fmt.Sprintf("%s := make([]%s, 0)", bufferName, basicType))
 
-				thisInitImplCallParamter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
+				thisInitImplCallParamter = fmt.Sprintf(", 0, Int64OutValue(&%s), 0", needSizeVar)
 
-				implInitCallLines = append(implInitCallLines, fmt.Sprintf("bufferSize%s := neededfor%s", param.ParamName, param.ParamName))
-				implInitCallLines = append(implInitCallLines, fmt.Sprintf("%s = make([]%s, bufferSize%s)", bufferName, basicType, param.ParamName))
+				implInitCallLines = append(implInitCallLines, fmt.Sprintf("%s := make([]%s, %s)", bufferName, arrayType, needSizeVar))
+				thisImplCallParamter = fmt.Sprintf(", Int64InValue(%s), 0, uintptr(unsafe.Pointer(&%s[0]))", needSizeVar, bufferName)
 
-				thisImplCallParamter = fmt.Sprintf(", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&%s[0]))", param.ParamName, param.ParamName, bufferName)
-
-				returnvalues = returnvalues + fmt.Sprintf("[]%s, ", basicType)
+				returnvalues = returnvalues + fmt.Sprintf("[]%s, ", arrayType)
 				implReturnValues = implReturnValues + fmt.Sprintf("%s, ", bufferName)
 
 				classReturnVariables = classReturnVariables + bufferName + ", "
 				classReturnString = classReturnString + bufferName + ", "
-				classReturnTypes = classReturnTypes + fmt.Sprintf("[]%s, ", basicType)
-
-			case "structarray":
-				requiresInitCall = true
-				returnvalues = returnvalues + fmt.Sprintf("[]s%s%s, ", NameSpace, param.ParamClass)
-				implDeclarations = append(implDeclarations, fmt.Sprintf("array%s := make([]s%s%s, 0)", param.ParamName, NameSpace, param.ParamClass))
-				implReturnValues = implReturnValues + fmt.Sprintf("array%s, ", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", 0, 0, 0")
-				thisInitImplCallParamter = thisImplCallParamter
-
-				classReturnVariables = classReturnVariables + "array" + param.ParamName + ", "
-				classReturnString = classReturnString + "array" + param.ParamName + ", "
-				classReturnTypes = classReturnTypes + fmt.Sprintf("[]s%s%s, ", NameSpace, param.ParamClass)
+				classReturnTypes = classReturnTypes + fmt.Sprintf("[]%s, ", arrayType)
 
 			case "functiontype":
 				returnvalues = returnvalues + fmt.Sprintf("uint64, ")
@@ -1021,7 +1016,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implReturnValues = implReturnValues + fmt.Sprintf("p%s, ", param.ParamName)
 				thisImplCallParamter = fmt.Sprintf(", UInt64OutValue(&p%s)", param.ParamName)
 				thisInitImplCallParamter = thisImplCallParamter
-				
+
 				classReturnVariables = classReturnVariables + "p" + param.ParamName + ", "
 				classReturnString = classReturnString + "p" + param.ParamName + ", "
 				classReturnTypes = classReturnTypes + fmt.Sprintf("uint64, ")
@@ -1061,8 +1056,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 			return fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 
-		implCallParameters += thisImplCallParamter 
-		implInitCallParameters += thisInitImplCallParamter 
+		implCallParameters += thisImplCallParamter
+		implInitCallParameters += thisInitImplCallParamter
 	}
 
 	w.Writeln("")
@@ -1084,7 +1079,6 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 		w.Writeln("  %s_%s(%s%s) (%serror)\n", ClassName, method.MethodName, handleparameter, parameters, returnvalues)
 	}
 
-
 	// Implementation
 	implmethodname := "implementation." + NameSpace + "_"
 	implGetHandleFunction := ""
@@ -1093,7 +1087,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 		implGetHandleFunction = fmt.Sprintf(", implementation_%s.GetDLLInHandle()", strings.ToLower(ClassName))
 	}
 	implmethodname += strings.ToLower(method.MethodName)
-	
+
 	if isGlobal {
 		implw.Writeln("func (implementation *%sImplementation) %s(%s%s) (%serror) {", NameSpace, method.MethodName, handleparameter, parameters, returnvalues)
 	} else {
@@ -1130,7 +1124,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %serror := instance.Interface.%s_%s(instance.Handle%s)", classReturnVariables, ClassName, method.MethodName, callparameters))
 	}
 	for _, line := range classReturnImplementation {
-		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %s", line ))
+		*classdefinitions = append(*classdefinitions, fmt.Sprintf("  %s", line))
 	}
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("  return %serror", classReturnString))
 	*classdefinitions = append(*classdefinitions, fmt.Sprintf("}"))
@@ -1138,4 +1132,3 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 
 	return nil
 }
-
