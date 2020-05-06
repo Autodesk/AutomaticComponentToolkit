@@ -165,7 +165,7 @@ func buildGoEnums(component ComponentDefinition, w LanguageWriter) {
 		for j := 0; j < len(enum.Options); j++ {
 
 			option := enum.Options[j]
-			w.Writeln("    e%s_%s = %d", enum.Name, option.Name, option.Value)
+			w.Writeln("    %s_%s = %d", enum.Name, option.Name, option.Value)
 		}
 		w.Writeln(")")
 		w.Writeln("")
@@ -451,6 +451,12 @@ func buildGoCallFunction(component ComponentDefinition, implw LanguageWriter) {
 	implw.Writeln("    case 10: ret, _, _ = syscall.Syscall12(funcptr, 10, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), 0, 0)")
 	implw.Writeln("    case 11: ret, _, _ = syscall.Syscall12(funcptr, 11, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), 0)")
 	implw.Writeln("    case 12: ret, _, _ = syscall.Syscall12(funcptr, 12, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]))")
+	implw.Writeln("    case 13: ret, _, _ = syscall.Syscall15(funcptr, 13, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), 0, 0)")
+	implw.Writeln("    case 14: ret, _, _ = syscall.Syscall15(funcptr, 14, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), uintptr(parameters[13]), 0)")
+	implw.Writeln("    case 15: ret, _, _ = syscall.Syscall15(funcptr, 15, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), uintptr(parameters[13]), uintptr(parameters[14]))")
+	implw.Writeln("    case 16: ret, _, _ = syscall.Syscall18(funcptr, 16, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), uintptr(parameters[13]), uintptr(parameters[14]), uintptr(parameters[15]), 0, 0)")
+	implw.Writeln("    case 17: ret, _, _ = syscall.Syscall18(funcptr, 17, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), uintptr(parameters[13]), uintptr(parameters[14]), uintptr(parameters[15]), uintptr(parameters[16]), 0)")
+	implw.Writeln("    case 18: ret, _, _ = syscall.Syscall18(funcptr, 18, uintptr(parameters[0]), uintptr(parameters[1]), uintptr(parameters[2]), uintptr(parameters[3]), uintptr(parameters[4]), uintptr(parameters[5]), uintptr(parameters[6]), uintptr(parameters[7]), uintptr(parameters[8]), uintptr(parameters[9]), uintptr(parameters[10]), uintptr(parameters[11]), uintptr(parameters[12]), uintptr(parameters[13]), uintptr(parameters[14]), uintptr(parameters[15]), uintptr(parameters[16]), uintptr(parameters[17]))")
 	implw.Writeln("    default: ")
 	implw.Writeln("      return errors.New(\"Invalid DLL function parameter count!\");")
 	implw.Writeln("  }")
@@ -751,17 +757,20 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 	requiresInitCall := false
 	implCallParameters := ""
 	implInitCallParameters := ""
+    implCallParameterCount := 0;
+	
 	var implInitCallLines []string
 
 	var classReturnImplementation []string
 	classReturnVariables := ""
 	classReturnString := ""
-	classReturnTypes := ""
+	classReturnTypes := ""	
 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
-		thisImplCallParamter := ""
-		thisInitImplCallParamter := ""
+		thisImplCallParameter := ""
+		thisInitImplCallParameter := ""
+		thisImplCallParameterCount := 1
 		switch param.ParamPass {
 		case "in":
 			if parameters != "" {
@@ -780,7 +789,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				if err != nil {
 					return err
 				}
-				thisImplCallParamter = fmt.Sprintf(", %s(%s)", goParamFunction, goParamName)
+				thisImplCallParameter = fmt.Sprintf(", %s(%s)", goParamFunction, goParamName)
 				callparameters = callparameters + goParamName
 
 			case "bool":
@@ -791,43 +800,43 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("}"))
 				implDeclarations = append(implDeclarations, fmt.Sprintf(""))
 				parameters = parameters + fmt.Sprintf("b%s bool", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", UInt8InValue(n%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", UInt8InValue(n%s)", param.ParamName)
 				callparameters = callparameters + "b" + param.ParamName
 
 			case "single":
 				comments = append(comments, fmt.Sprintf("* @param[in] f%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("f%s float32", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", Float32InValue(f%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", Float32InValue(f%s)", param.ParamName)
 				callparameters = callparameters + "f" + param.ParamName
 
 			case "double":
 				comments = append(comments, fmt.Sprintf("* @param[in] d%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("d%s float64", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", Float64InValue(d%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", Float64InValue(d%s)", param.ParamName)
 				callparameters = callparameters + "d" + param.ParamName
 
 			case "pointer":
 				comments = append(comments, fmt.Sprintf("* @param[in] n%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("n%s uint64", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", UInt64InValue(n%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", UInt64InValue(n%s)", param.ParamName)
 				callparameters = callparameters + "n" + param.ParamName
 
 			case "string":
 				comments = append(comments, fmt.Sprintf("* @param[in] s%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("s%s string", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", StringInValue(s%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", StringInValue(s%s)", param.ParamName)
 				callparameters = callparameters + "s" + param.ParamName
 
 			case "enum":
 				comments = append(comments, fmt.Sprintf("* @param[in] e%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("e%s E%s%s", param.ParamName, NameSpace, param.ParamClass)
-				thisImplCallParamter = fmt.Sprintf(", uintptr(e%s)", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", uintptr(e%s)", param.ParamName)
 				callparameters = callparameters + "e" + param.ParamName
 
 			case "struct":
 				comments = append(comments, fmt.Sprintf("* @param[in] s%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("s%s s%s%s", param.ParamName, NameSpace, param.ParamClass)
-				thisImplCallParamter = fmt.Sprintf(", uintptr(unsafe.Pointer(&s%s))", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", uintptr(unsafe.Pointer(&s%s))", param.ParamName)
 				callparameters = callparameters + "s" + param.ParamName
 
 			case "basicarray":
@@ -837,19 +846,28 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				}
 				comments = append(comments, fmt.Sprintf("* @param[in] %s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("%s []%s", param.ParamName, basicType)
-				thisImplCallParamter = fmt.Sprintf(", 0, 0")
+
+				implCasts = append(implCasts, fmt.Sprintf("var ptr%s uintptr = 0;", param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("len%s := uintptr (len(%s));", param.ParamName, param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("if (len%s > 0) {", param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("  ptr%s = uintptr(unsafe.Pointer(&%s[0]));", param.ParamName, param.ParamName))
+				implCasts = append(implCasts, fmt.Sprintf("}"))
+
+				thisImplCallParameter = fmt.Sprintf(", len%s, ptr%s", param.ParamName, param.ParamName)
+				thisImplCallParameterCount = 2
 				callparameters = callparameters + param.ParamName
 
 			case "structarray":
 				comments = append(comments, fmt.Sprintf("* @param[in] %s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("%s []s%s%s", param.ParamName, NameSpace, param.ParamClass)
-				thisImplCallParamter = fmt.Sprintf(", 0, 0")
+				thisImplCallParameter = fmt.Sprintf(", 0, 0")
+				thisImplCallParameterCount = 2
 				callparameters = callparameters + param.ParamName
 
 			case "functiontype":
 				comments = append(comments, fmt.Sprintf("* @param[in] p%s - %s", param.ParamName, param.ParamDescription))
 				parameters = parameters + fmt.Sprintf("p%s int64", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", 0")
+				thisImplCallParameter = fmt.Sprintf(", 0")
 				callparameters = callparameters + "p" + param.ParamName
 
 			case "class", "optionalclass":
@@ -869,14 +887,14 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 					implCasts = append(implCasts, fmt.Sprintf("  return %s", errorReturn))
 					implCasts = append(implCasts, fmt.Sprintf("}"))
 				}
-				thisImplCallParamter = fmt.Sprintf(", %sDLLHandle", param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", %sDLLHandle", param.ParamName)
 				callparameters = callparameters + param.ParamName
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
 
-			thisInitImplCallParamter = thisImplCallParamter
+			thisInitImplCallParameter = thisImplCallParameter
 
 		case "out", "return":
 			comments = append(comments, fmt.Sprintf("* @return %s", param.ParamDescription))
@@ -896,8 +914,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var %s %s = 0", goParamName, param.ParamType))
 				implReturnValues = implReturnValues + fmt.Sprintf("%s(%s), ", basicType, goParamName)
 
-				thisImplCallParamter = fmt.Sprintf(", %s(&%s)", goParamFunction, goParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", %s(&%s)", goParamFunction, goParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + goParamName + ", "
 				classReturnString = classReturnString + goParamName + ", "
@@ -908,8 +926,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var n%s uint64 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("n%s, ", param.ParamName)
 
-				thisImplCallParamter = fmt.Sprintf(", UInt64OutValue(&n%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", UInt64OutValue(&n%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "n" + param.ParamName + ", "
 				classReturnString = classReturnString + "n" + param.ParamName + ", "
@@ -920,8 +938,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var b%s int64 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("(b%s != 0), ", param.ParamName)
 
-				thisImplCallParamter = fmt.Sprintf(", Int64OutValue(&b%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", Int64OutValue(&b%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "b" + param.ParamName + ", "
 				classReturnString = classReturnString + "b" + param.ParamName + ", "
@@ -932,8 +950,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var f%s float32 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("f%s, ", param.ParamName)
 
-				thisImplCallParamter = fmt.Sprintf(", Float32OutValue(&f%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", Float32OutValue(&f%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "f" + param.ParamName + ", "
 				classReturnString = classReturnString + "f" + param.ParamName + ", "
@@ -944,8 +962,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var d%s float64 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("d%s, ", param.ParamName)
 
-				thisImplCallParamter = fmt.Sprintf(", Float64OutValue(&d%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", Float64OutValue(&d%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "d" + param.ParamName + ", "
 				classReturnString = classReturnString + "d" + param.ParamName + ", "
@@ -956,12 +974,13 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var neededfor%s int64 = 0", param.ParamName))
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var filledin%s int64 = 0", param.ParamName))
 
-				thisInitImplCallParamter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
+				thisInitImplCallParameter = fmt.Sprintf(", Int64InValue(0), Int64OutValue(&neededfor%s), Int64InValue(0)", param.ParamName)
 
 				implInitCallLines = append(implInitCallLines, fmt.Sprintf("bufferSize%s := neededfor%s", param.ParamName, param.ParamName))
 				implInitCallLines = append(implInitCallLines, fmt.Sprintf("buffer%s := make([]byte, bufferSize%s)", param.ParamName, param.ParamName))
 
-				thisImplCallParamter = fmt.Sprintf(", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&buffer%s[0]))", param.ParamName, param.ParamName, param.ParamName)
+				thisImplCallParameter = fmt.Sprintf(", Int64InValue(bufferSize%s), Int64OutValue(&filledin%s), uintptr(unsafe.Pointer(&buffer%s[0]))", param.ParamName, param.ParamName, param.ParamName)
+				thisImplCallParameterCount = 3
 
 				implReturnValues = implReturnValues + fmt.Sprintf("string(buffer%s[:(filledin%s-1)]), ", param.ParamName, param.ParamName)
 
@@ -974,8 +993,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				returnvalues = returnvalues + fmt.Sprintf("E%s%s, ", NameSpace, param.ParamClass)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var e%s uint64 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("E%s%s (e%s), ", NameSpace, param.ParamClass, param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", UInt64OutValue(&e%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", UInt64OutValue(&e%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "e" + param.ParamName + ", "
 				classReturnString = classReturnString + "e" + param.ParamName + ", "
@@ -998,10 +1017,11 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 
 				bufferName := fmt.Sprintf("buffer%s", param.ParamName)
 
-				thisInitImplCallParamter = fmt.Sprintf(", 0, Int64OutValue(&%s), 0", needSizeVar)
+				thisInitImplCallParameter = fmt.Sprintf(", 0, Int64OutValue(&%s), 0", needSizeVar)
 
 				implInitCallLines = append(implInitCallLines, fmt.Sprintf("%s := make([]%s, %s)", bufferName, arrayType, needSizeVar))
-				thisImplCallParamter = fmt.Sprintf(", Int64InValue(%s), 0, uintptr(unsafe.Pointer(&%s[0]))", needSizeVar, bufferName)
+				thisImplCallParameter = fmt.Sprintf(", Int64InValue(%s), 0, uintptr(unsafe.Pointer(&%s[0]))", needSizeVar, bufferName)
+				thisImplCallParameterCount = 3
 
 				returnvalues = returnvalues + fmt.Sprintf("[]%s, ", arrayType)
 				implReturnValues = implReturnValues + fmt.Sprintf("%s, ", bufferName)
@@ -1014,8 +1034,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				returnvalues = returnvalues + fmt.Sprintf("uint64, ")
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var p%s uint64 = 0", param.ParamName))
 				implReturnValues = implReturnValues + fmt.Sprintf("p%s, ", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", UInt64OutValue(&p%s)", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", UInt64OutValue(&p%s)", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "p" + param.ParamName + ", "
 				classReturnString = classReturnString + "p" + param.ParamName + ", "
@@ -1025,8 +1045,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				returnvalues = returnvalues + fmt.Sprintf("s%s%s, ", NameSpace, param.ParamClass)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("var s%s s%s%s", param.ParamName, NameSpace, param.ParamClass))
 				implReturnValues = implReturnValues + fmt.Sprintf("s%s, ", param.ParamName)
-				thisImplCallParamter = fmt.Sprintf(", 0")
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", 0")
+				thisInitImplCallParameter = thisImplCallParameter
 
 				classReturnVariables = classReturnVariables + "s" + param.ParamName + ", "
 				classReturnString = classReturnString + "s" + param.ParamName + ", "
@@ -1036,8 +1056,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 				returnvalues = returnvalues + fmt.Sprintf("%sHandle, ", NameSpace)
 				implDeclarations = append(implDeclarations, fmt.Sprintf("h%s := implementation.NewHandle()", param.ParamName))
 
-				thisImplCallParamter = fmt.Sprintf(", h%s.GetDLLOutHandle()", param.ParamName)
-				thisInitImplCallParamter = thisImplCallParamter
+				thisImplCallParameter = fmt.Sprintf(", h%s.GetDLLOutHandle()", param.ParamName)
+				thisInitImplCallParameter = thisImplCallParameter
 
 				implReturnValues = implReturnValues + fmt.Sprintf("h%s, ", param.ParamName)
 				classReturnVariables = classReturnVariables + "h" + param.ParamName + ", "
@@ -1056,8 +1076,13 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, implw Lan
 			return fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s (%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 
-		implCallParameters += thisImplCallParamter
-		implInitCallParameters += thisInitImplCallParamter
+		implCallParameters += thisImplCallParameter
+		implInitCallParameters += thisInitImplCallParameter
+		implCallParameterCount += thisImplCallParameterCount
+		if (implCallParameterCount > 18) {
+			return fmt.Errorf("too many function call parameters for Go Bindings in %s.%s (%s)", ClassName, method.MethodName, param.ParamName)
+		}
+
 	}
 
 	w.Writeln("")
