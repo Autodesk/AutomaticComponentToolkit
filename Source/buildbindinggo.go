@@ -515,27 +515,47 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "uintptr":
 		tp.Type = ptrStr + paramType
 		tp.CType = fmt.Sprintf("%sC.%s_t", ptrStr, paramType)
-		tp.CToGo = fmt.Sprintf("(%s%s)(%s)", ptrStr, tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s%s)(%s)", ptrStr, tp.CType, paramName)
-		tp.Empty = "0"
+		if isPtr {
+			tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
+		} else {
+			tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("%s(%s)", tp.CType, paramName)
+			tp.Empty = "0"
+		}
 	case "bool":
 		tp.Type = ptrStr + paramType
 		tp.CType = fmt.Sprintf("%sC.%s", ptrStr, paramType)
-		tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
-		tp.Empty = "false"
+		if isPtr {
+			tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
+		} else {
+			tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("%s(%s)", tp.CType, paramName)
+			tp.Empty = "false"
+		}
 	case "single":
 		tp.Type = ptrStr + "float32"
 		tp.CType = ptrStr + "C.float"
-		tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
-		tp.Empty = "0"
+		if isPtr {
+			tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
+		} else {
+			tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("%s(%s)", tp.CType, paramName)
+			tp.Empty = "0"
+		}
 	case "double":
 		tp.Type = ptrStr + "float64"
 		tp.CType = ptrStr + "C.double"
-		tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
-		tp.Empty = "0"
+		if isPtr {
+			tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
+		} else {
+			tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("%s(%s)", tp.CType, paramName)
+			tp.Empty = "0"
+		}
 	case "string":
 		tp.Type = ptrStr + "string"
 		tp.CType = ptrStr + "*C.char"
@@ -551,9 +571,14 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 	case "enum":
 		tp.Type = ptrStr + paramClass
 		tp.CType = fmt.Sprintf("%sC.e%s%s", ptrStr, namespace, paramClass)
-		tp.CToGo = fmt.Sprintf("(%s)(%s)", tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
-		tp.Empty = "0"
+		if isPtr {
+			tp.CToGo = fmt.Sprintf("(*%s)(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("(*%s)(%s)", tp.CType, paramName)
+		} else {
+			tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+			tp.GoToC = fmt.Sprintf("%s(%s)", tp.CType, paramName)
+			tp.Empty = "0"
+		}
 	case "struct":
 		tp.Type = ptrStr + paramClass
 		tp.CType = fmt.Sprintf("%sC.s%s%s", ptrStr, namespace, paramClass)
@@ -738,11 +763,18 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	classReturnTypes = append(classReturnTypes, "error")
 	errorReturn = append(errorReturn, "makeError(uint32(ret))")
 
+	var returnString string
+	if len(classReturnTypes) == 1 {
+		returnString = "error"
+	} else {
+		returnString = fmt.Sprintf("(%s)", strings.Join(classReturnTypes, ", "))
+	}
+
 	w.Writeln("// %s %s", method.MethodName, endWithDot(lowerFirst(method.MethodDescription)))
 	if isGlobal {
-		w.Writeln("func %s(%s) (%s) {", method.MethodName, strings.Join(parameters, ", "), strings.Join(classReturnTypes, ", "))
+		w.Writeln("func %s(%s) %s {", method.MethodName, strings.Join(parameters, ", "), returnString)
 	} else {
-		w.Writeln("func (inst %s) %s(%s) (%s) {", className, method.MethodName, strings.Join(parameters, ", "), strings.Join(classReturnTypes, ", "))
+		w.Writeln("func (inst %s) %s(%s) %s {", className, method.MethodName, strings.Join(parameters, ", "), returnString)
 	}
 	if !isGlobal {
 		initCallParameters = append([]string{"inst.ref"}, initCallParameters...)
