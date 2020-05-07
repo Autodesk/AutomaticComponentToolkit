@@ -247,7 +247,7 @@ func buildGoFuncs(component ComponentDefinition, w LanguageWriter) error {
 			paramCToGo = append(paramCToGo, tp.CToGo)
 		}
 		w.Writeln("")
-		w.Writeln("// %sFunc %s.", fn.FunctionName, fn.FunctionDescription)
+		w.Writeln("// %sFunc %s", fn.FunctionName, endWithDot(lowerFirst(fn.FunctionDescription)))
 		w.Writeln("type %sFunc = func(%s)", fn.FunctionName, strings.Join(params, ", "))
 		w.Writeln("")
 		w.Writeln("var %sFunc %sFunc", fnName, fn.FunctionName)
@@ -607,6 +607,13 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 	return
 }
 
+func endWithDot(s string) string {
+	if !strings.HasSuffix(s, ".") {
+		s += "."
+	}
+	return s
+}
+
 func lowerFirst(s string) string {
 	if s == "" {
 		return ""
@@ -731,7 +738,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	classReturnTypes = append(classReturnTypes, "error")
 	errorReturn = append(errorReturn, "makeError(uint32(ret))")
 
-	w.Writeln("// %s %s", method.MethodName, lowerFirst(method.MethodDescription))
+	w.Writeln("// %s %s", method.MethodName, endWithDot(lowerFirst(method.MethodDescription)))
 	if isGlobal {
 		w.Writeln("func %s(%s) (%s) {", method.MethodName, strings.Join(parameters, ", "), strings.Join(classReturnTypes, ", "))
 	} else {
