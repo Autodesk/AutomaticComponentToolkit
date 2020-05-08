@@ -418,16 +418,10 @@ func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass,
 func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	packageName := strings.ToLower(component.BaseName)
 
-	libName := packageName
-	if strings.HasPrefix(libName, "lib") {
-		libName = libName[3:]
-	}
-
 	w.Writeln("")
 	w.Writeln("package %s", packageName)
 	w.Writeln("")
 	w.Writeln("/*")
-	w.Writeln("#cgo LDFLAGS: -L./ -l%s", libName)
 	w.Writeln("#include \"%s_abi.h\"", packageName)
 	err := buildCFuncsForward(component, w)
 	if err != nil {
@@ -437,9 +431,9 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("import \"C\"")
 	w.Writeln("")
 	w.Writeln("import (")
-	w.Writeln("    \"fmt\"")
-	w.Writeln("    \"unsafe\"")
-	w.Writeln("    \"runtime\"")
+	w.Writeln("  \"fmt\"")
+	w.Writeln("  \"unsafe\"")
+	w.Writeln("  \"runtime\"")
 	w.Writeln(")")
 	w.Writeln("")
 	w.Writeln("type ref = C.%sHandle", component.NameSpace)
