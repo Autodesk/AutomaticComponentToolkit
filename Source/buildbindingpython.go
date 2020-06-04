@@ -295,6 +295,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("      raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(e))", NameSpace )
 	w.Writeln("    ")
 	w.Writeln("    self._checkBinaryVersion()")
+	w.Writeln("    self._%sWrapper = self", NameSpace)
 	w.Writeln("  ")
 
 	w.Writeln("  def _loadFunctionTableFromMethod(self, symbolLookupMethodAddress):")
