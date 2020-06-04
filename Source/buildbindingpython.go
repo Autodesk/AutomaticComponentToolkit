@@ -828,7 +828,11 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				subNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(subNameSpace) > 0 {
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
-					subNameSpace = subNameSpace + "."
+					if subNameSpace != NameSpace {
+						subNameSpace = subNameSpace + ".";
+					} else {
+					    subNameSpace = "";
+					}
 				}
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
