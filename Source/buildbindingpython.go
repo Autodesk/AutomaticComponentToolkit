@@ -252,6 +252,16 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	}
 
 	w.Writeln("")
+	w.Writeln("'''Extended handle type")
+	w.Writeln("'''")
+	w.Writeln("class %sExtendedHandle(ctypes.Structure):", NameSpace)
+	w.Writeln("  _pack_ = 1")
+	w.Writeln("  _fields_ = [")
+	w.Writeln("    ('handle', ctypes.c_void_p)")
+	w.Writeln("    ('symbolLookupMethod', ctypes.c_void_p)")
+
+
+	w.Writeln("")
 	w.Writeln("'''Wrapper Class Implementation")
 	w.Writeln("'''")
 	w.Writeln("class Wrapper:")
@@ -504,6 +514,10 @@ func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter
 	return nil
 }
 
+func getExtendedHandleName(NameSpace string, ParamClass string)(string) {
+	return ParamClass + "ExtendedHandle";
+}
+
 func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string, isPlain bool)(string, error) {
 	CTypesParamTypeName := "";
 	switch (ParamTypeName) {
@@ -548,7 +562,7 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 		case "functiontype":
 			return fmt.Sprintf("%s", ParamClass), nil
 		case "class", "optionalclass":
-			CTypesParamTypeName = "ctypes.c_void_p";
+			CTypesParamTypeName = getExtendedHandleName(ParamClass, NameSpace);
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for Python parameter", ParamTypeName);
 	}
