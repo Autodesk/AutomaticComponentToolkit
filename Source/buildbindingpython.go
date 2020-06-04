@@ -448,7 +448,7 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 func getMethodCParams(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool) (string, error) {
 	parameters := ""
 	if (!isGlobal) {
-		parameters = "ctypes.c_void_p"
+		parameters = getExtendedHandleName(NameSpace)
 	}
 	for k:=0; k<len(method.Params); k++ {
 		param := method.Params[k]
@@ -515,8 +515,8 @@ func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter
 	return nil
 }
 
-func getExtendedHandleName(NameSpace string, ParamClass string)(string) {
-	return ParamClass + "ExtendedHandle";
+func getExtendedHandleName(NameSpace string)(string) {
+	return NameSpace + "ExtendedHandle";
 }
 
 func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamClass string, isPlain bool)(string, error) {
@@ -563,7 +563,7 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 		case "functiontype":
 			return fmt.Sprintf("%s", ParamClass), nil
 		case "class", "optionalclass":
-			CTypesParamTypeName = getExtendedHandleName(ParamClass, NameSpace);
+			CTypesParamTypeName = getExtendedHandleName(NameSpace);
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for Python parameter", ParamTypeName);
 	}
