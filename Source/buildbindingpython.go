@@ -257,8 +257,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("class %sExtendedHandle(ctypes.Structure):", NameSpace)
 	w.Writeln("  _pack_ = 1")
 	w.Writeln("  _fields_ = [")
-	w.Writeln("    ('handle', ctypes.c_void_p)")
+	w.Writeln("    ('handle', ctypes.c_void_p),")
 	w.Writeln("    ('symbolLookupMethod', ctypes.c_void_p)")
+	w.Writeln("  ]")
 
 
 	w.Writeln("")
