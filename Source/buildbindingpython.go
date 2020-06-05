@@ -391,26 +391,6 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	return nil
 }
 
-
-func generateCTypeParemeters(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool)([]ctypesParameter, error) {
-	parameters := []ctypesParameter{}
-	if (!isGlobal) {
-		cParams := make([]ctypesParameter,1)
-		cParams[0].ParamName = "Object"
-		cParams[0].ParamType = "ctypes.c_void_p"
-		cParams[0].ParamComment = "#"
-		parameters = append(parameters, cParams...);
-	}
-	for k:=0; k<len(method.Params); k++ {
-		cParams, err := generateCTypesParameter(method.Params[k], ClassName, method.MethodName, NameSpace)
-		if (err != nil) {
-			return nil, err
-		}
-		parameters = append(parameters, cParams...);
-	}
-	return parameters, nil
-}
-
 func writeCDLLFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
 	w.Writeln("      self.lib.%s.restype = ctypes.c_int32", exportName)
