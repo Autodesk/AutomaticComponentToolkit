@@ -145,7 +145,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	}
 	w.Writeln("")
 
-	w.Writeln("'''Definition of Function Table")
+	w.Writeln("'''Definition of Function Tables")
 	w.Writeln("'''")
 	w.Writeln("class FunctionTable:")
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
@@ -160,6 +160,15 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 	w.Writeln("")
+	for i:=0; i<len(componentdefinition.Classes); i++ {
+		class := componentdefinition.Classes[i]
+		w.Writeln("class FunctionTable%s:", class.ClassName)
+		for j:=0; j<len(class.Methods); j++ {
+			method := class.Methods[j]
+			w.Writeln("  %s_%s_%s = None", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
+		}
+		w.Writeln("")
+	}
 
 	if (len(componentdefinition.Enums) > 0) {
 		w.Writeln("'''Definition of Enumerations")
@@ -338,11 +347,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 
 	
-	w.Writeln("  def checkError(self, instance, errorCode):")
+	w.Writeln("  def checkError(self, errorCode):")
 	w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
-	w.Writeln("      if instance:")
-	w.Writeln("        if instance._wrapper != self:")
-	w.Writeln("          raise E%sException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace)
 	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
 	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
@@ -391,19 +397,19 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	return nil
 }
 
-func writeCDLLFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeCDLLFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, TableName string, isGlobal bool) error {
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
-	w.Writeln("      self.lib.%s.restype = ctypes.c_int32", exportName)
+	w.Writeln("      self._functionTable%s.%s.restype = ctypes.c_int32", TableName, exportName)
 	parameters, err := getMethodCParams(method, NameSpace, ClassName, isGlobal)
 	if err != nil {
 		return err
 	}
-	w.Writeln("      self.lib.%s.argtypes = [%s]", exportName, parameters)
+	w.Writeln("      self._functionTable%s.%s.argtypes = [%s]", TableName, exportName, parameters)
 	w.Writeln("      ")
 	return nil
 }
 
-func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, TableName string, isGlobal bool) error {
 	linearMethodName := ""
 	if (isGlobal) {
 		linearMethodName = strings.ToLower(NameSpace + "_" + method.MethodName)
@@ -420,7 +426,7 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 	w.Writeln("if err != 0:")
 	w.Writeln("  raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))", NameSpace)
 	w.Writeln("methodType = ctypes.CFUNCTYPE(ctypes.c_int32, " + params + ")")
-	w.Writeln("self.lib.%s = methodType(int(methodAddress.value))", linearMethodName)
+	w.Writeln("self._functionTable%s.%s = methodType(int(methodAddress.value))", TableName, linearMethodName)
 	w.Writeln("")
 	return nil
 }
@@ -456,7 +462,7 @@ func loadFunctionTableFromMethod(componentdefinition ComponentDefinition, w Lang
 
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
 		method := componentdefinition.Global.Methods[j]
-		err := writeFunctionTableMethod(method, w, componentdefinition.NameSpace, "Wrapper", true)
+		err := writeFunctionTableMethod(method, w, componentdefinition.NameSpace, "Wrapper", "Wrapper", true)
 		if err != nil {
 			return err
 		}
@@ -465,7 +471,7 @@ func loadFunctionTableFromMethod(componentdefinition ComponentDefinition, w Lang
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		class := componentdefinition.Classes[i]
 		for j:=0; j<len(class.Methods); j++ {
-			err := writeFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, false)
+			err := writeFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, "Wrapper", false)
 			if err != nil {
 				return err
 			}
@@ -477,7 +483,7 @@ func loadFunctionTableFromMethod(componentdefinition ComponentDefinition, w Lang
 
 func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter) error {
 	for j:=0; j<len(componentdefinition.Global.Methods); j++ {
-		err := writeCDLLFunctionTableMethod(componentdefinition.Global.Methods[j], w, componentdefinition.NameSpace, "Wrapper", true)
+		err := writeCDLLFunctionTableMethod(componentdefinition.Global.Methods[j], w, componentdefinition.NameSpace, "Wrapper", "Wrapper", true)
 		if err != nil {
 			return err
 		}
@@ -486,7 +492,7 @@ func loadFunctionTable(componentdefinition ComponentDefinition, w LanguageWriter
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		class := componentdefinition.Classes[i]
 		for j:=0; j<len(class.Methods); j++ {
-			err := writeCDLLFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, false)
+			err := writeCDLLFunctionTableMethod(class.Methods[j], w, componentdefinition.NameSpace, class.ClassName, "Wrapper", false)
 			if err != nil {
 				return err
 			}
@@ -716,7 +722,6 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 	return cParams, nil;
 }
 
-
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
 
@@ -730,21 +735,37 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		} else {
 			parentClass = pythonBaseClassName
 		}
-		w.Writeln("class %s(%s):", class.ClassName, parentClass)
-		w.Writeln("  def __init__(self, handle, wrapper):")
-		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
+	}
 
+	if (!component.isBaseClass(class)) {
+		w.Writeln("class %s(%s):", class.ClassName, parentClass)
+		w.Writeln("  _mapMethodToFunctionTable%s={}", class.ClassName)
+		w.Writeln("  ")
+		w.Writeln("  def __init__(self, handle):")
+		w.Writeln("    %s.__init__(self, handle)", parentClass)
 	} else {
 		w.Writeln("class %s:", class.ClassName)
-		w.Writeln("  def __init__(self, handle, wrapper):")
-		w.Writeln("    if not handle or not wrapper:")
-		w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
+		w.Writeln("  _mapMethodToFunctionTable%s={}", class.ClassName)
+		w.Writeln("  ")
+		w.Writeln("  def __init__(self, handle):")
+	    w.Writeln("    if not handle:")
+	    w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
 		w.Writeln("    self._handle = handle")
-		w.Writeln("    self._wrapper = wrapper")
-		w.Writeln("    self._wrapper.%s(self)", component.Global.AcquireMethod)
+	}
+
+	w.Writeln("    self._functionTable%s = %s._lookupFunctionTable%s(handle)", class.ClassName, class.ClassName, class.ClassName)
+
+	if (component.isBaseClass(class)) {
+		w.Writeln("    self.%s(self)", component.Global.AcquireMethod)
 		w.Writeln("  ")
 		w.Writeln("  def __del__(self):")
-		w.Writeln("    self._wrapper.%s(self)", component.Global.ReleaseMethod)
+		w.Writeln("    self.%s(self)", component.Global.ReleaseMethod)
+	}
+	w.Writeln("")
+	writeFunctionTableLookup(class, w)
+	err := writeFunctionTableLoadFromMethod(class, w, NameSpace)
+	if (err != nil) {
+		return err
 	}
 
 	for i:=0; i<len(class.Methods); i++ {
@@ -756,6 +777,37 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 	return nil
 }
 
+func writeFunctionTableLookup(class ComponentDefinitionClass, w LanguageWriter) {
+	w.Writeln("  @staticmethod")
+	w.Writeln("  def _lookupFunctionTable%s(cls, handle):", class.ClassName)
+	w.Writeln("    method = handle.symbolLookupMethod")
+	w.Writeln("    if method in cls._mapMethodToFunctionTable%s:", class.ClassName)
+	w.Writeln("      return cls._mapMethodToFunctionTable%s[method]", class.ClassName)
+	w.Writeln("    table = self._loadFunctionTable%sFromMethod(method)", class.ClassName)
+	w.Writeln("    cls._mapMethodToFunctionTable%s[method] = table", class.ClassName)
+	w.Writeln("    return table")
+	w.Writeln("")
+}
+
+func writeFunctionTableLoadFromMethod(class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
+	w.Writeln("  def _loadFunctionTable%s(self, handle):", class.ClassName)
+	w.Writeln("    try:")
+	w.Writeln("      symbolLookupMethod = handle.symbolLookupMethod")
+	w.Writeln("      methodAddress = ctypes.c_void_p()")
+	w.Writeln("      ")
+	w.AddIndentationLevel(3)
+	for j:=0; j<len(class.Methods); j++ {
+		err := writeFunctionTableMethod(class.Methods[j], w, NameSpace, class.ClassName, class.ClassName, false)
+		if err != nil {
+			return err
+		}
+	}
+	w.Writeln("    except AttributeError as ae:")
+    w.Writeln("      raise EDMKCalcException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])")
+	w.Writeln("")
+	return nil
+}
+
 func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, implementationLines []string, isGlobal bool) error {
 	preCallLines := []string{}
 	checkCallLines := []string{}
@@ -763,13 +815,6 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 	
 	retVals := ""
 	pythonInParams := ""
-
-	wrapperReference := "self"
-	selfReference := "None"
-	if (!isGlobal) {
-		wrapperReference = "self._wrapper"
-		selfReference = "self"
-	}
 	cArguments := ""
 	if (!isGlobal) {
 		cArguments = "self._handle"
@@ -805,20 +850,11 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cArguments = cArguments + newArgument
 				cCheckArguments = cCheckArguments + newArgument
 
-				theWrapperReference := wrapperReference
 				subNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
-				if len(subNameSpace) > 0 {
-					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
-					if subNameSpace != NameSpace {
-						subNameSpace = subNameSpace + ".";
-					} else {
-					    subNameSpace = "";
-					}
-				}
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("  %sObject = %s%s(%sHandle, %s)",
-					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
+					fmt.Sprintf("  %sObject = %s%s(%sHandle)",
+					param.ParamName, subNameSpace, paramClassName, param.ParamName))
 				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
 				if (param.ParamType == "optionalclass") {
 					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))
@@ -979,10 +1015,10 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 	w.Writeln("  def %s(self%s):", method.MethodName, pythonInParams)
 	w.Writelns("    ", preCallLines)
 	if (doCheckCall) {
-		w.Writeln("    %s.checkError(%s, %s.lib.%s(%s))", wrapperReference, selfReference, wrapperReference, exportName, cCheckArguments)
+		w.Writeln("    self.checkError(self._functionTable%s.%s(%s))", ClassName, exportName, cCheckArguments)
 		w.Writelns("    ", checkCallLines)
 	}
-	w.Writeln("    %s.checkError(%s, %s.lib.%s(%s))", wrapperReference, selfReference, wrapperReference, exportName, cArguments)
+	w.Writeln("    self.checkError(self._functionTable%s.%s(%s))", ClassName, exportName, cArguments)
 	w.Writelns("    ", postCallLines)
 	w.Writeln("    ")
 
