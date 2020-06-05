@@ -741,6 +741,7 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
 		w.Writeln("    self._handle = handle")
 		w.Writeln("    self._wrapper = wrapper")
+		w.Writeln("    self._wrapper.%s(self)", component.Global.AcquireMethod)
 		w.Writeln("  ")
 		w.Writeln("  def __del__(self):")
 		w.Writeln("    self._wrapper.%s(self)", component.Global.ReleaseMethod)
