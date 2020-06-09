@@ -246,7 +246,7 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln(" Function Table Structure")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	w.Writeln("typedef struct {")
+	w.Writeln("typedef struct s%sDynamicWrapperTableStruct {", NameSpace)
 	w.Writeln("  void * m_LibraryHandle;")
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -267,22 +267,24 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		structName := fmt.Sprintf("s%sFunctionTable%sStruct", NameSpace, class.ClassName)
+		typedefName := fmt.Sprintf("s%sFunctionTable%s", NameSpace, class.ClassName)
 		if len(class.ParentClass) > 0 {
 			paramNameSpace, paramClassName, _ := decomposeParamClassName(class.ParentClass)
 			if len(paramNameSpace) == 0 {
-				w.Writeln("typedef struct : s%sFunctionTable%s {", NameSpace, class.ParentClass)
+				w.Writeln("typedef struct %s : s%sFunctionTable%s {", structName, NameSpace, class.ParentClass)
 			} else {
-				w.Writeln("typedef struct : s%sFunctionTable%s {", component.ImportedComponentDefinitions[paramNameSpace].NameSpace, paramClassName)
+				w.Writeln("typedef struct %s : s%sFunctionTable%s {", structName, component.ImportedComponentDefinitions[paramNameSpace].NameSpace, paramClassName)
 			}
 		} else {
-			w.Writeln("typedef struct {")
+			w.Writeln("typedef struct %s {", structName)
 		}
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			w.Writeln("  P%s%s_%sPtr m_%s_%s;", NameSpace, class.ClassName, method.MethodName, class.ClassName, method.MethodName)
 		}
-		w.Writeln("} s%sFunctionTable%s;", NameSpace, class.ClassName)
+		w.Writeln("} %s;", typedefName)
 		w.Writeln("")
 	}
 
