@@ -18,8 +18,3 @@ debug
 *_component
 
 Examples/*.xml
-*.txt
-*.py
-ACT.code-workspace
-test/AbstractCAM.xml
-test/dcamcomponents.xml
