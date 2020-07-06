@@ -297,7 +297,7 @@ class Wrapper:
 	
 	def checkError(self, errorCode):
 		if errorCode != ErrorCodes.SUCCESS.value:
-			message,_ = self.GetLastError(instance)
+			message,_ = self.GetLastError()
 			raise ECalculationException(errorCode, message)
 	
 	def CreateCalculator(self):
@@ -370,7 +370,7 @@ class Base:
 	
 	def checkError(self, errorCode):
 		if errorCode != ErrorCodes.SUCCESS.value:
-			message,_ = self.GetLastError(instance)
+			message,_ = self.GetLastError()
 			raise ECalculationException(errorCode, message)
 	
 
