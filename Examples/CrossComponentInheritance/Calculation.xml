@@ -12,6 +12,7 @@
 	
 	<bindings>
 		<binding language="CppDynamic" indentation="tabs" />
+		<binding language="Python" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
