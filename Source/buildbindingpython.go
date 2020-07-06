@@ -350,7 +350,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	
 	w.Writeln("  def checkError(self, errorCode):")
 	w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
-	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
+	w.Writeln("      message,_ = self.%s()", componentdefinition.Global.ErrorMethod)
 	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
 	
@@ -768,7 +768,7 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		w.Writeln("  ")
 		w.Writeln("  def checkError(self, errorCode):")
 	    w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
-	    w.Writeln("      message,_ = self.%s(instance)", component.Global.ErrorMethod)
+	    w.Writeln("      message,_ = self.%s()", component.Global.ErrorMethod)
 	    w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	    w.Writeln("  ")
 	}

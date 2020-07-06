@@ -253,7 +253,7 @@ class Wrapper:
 	
 	def checkError(self, errorCode):
 		if errorCode != ErrorCodes.SUCCESS.value:
-			message,_ = self.GetLastError(instance)
+			message,_ = self.GetLastError()
 			raise ESpecialException(errorCode, message)
 	
 	def CreateSpecialVariableAsVariable(self, InitialValue):
@@ -323,7 +323,7 @@ class Base:
 	
 	def checkError(self, errorCode):
 		if errorCode != ErrorCodes.SUCCESS.value:
-			message,_ = self.GetLastError(instance)
+			message,_ = self.GetLastError()
 			raise ESpecialException(errorCode, message)
 	
 
