@@ -208,6 +208,15 @@ type ComponentDefinitionStruct struct {
 	Members []ComponentDefinitionMember `xml:"member"`
 }
 
+// ComponentDefinitionDynamicStruct definition of all dynamic structs provided by the component's API
+type ComponentDefinitionDynamicStruct struct {
+	ComponentDiffableElement
+	XMLName xml.Name `xml:"dynamicstruct"`
+	Name string `xml:"name,attr"`
+	Members []ComponentDefinitionMember `xml:"member"`
+}
+
+
 // ComponentDefinitionLicenseLine a single line of the component's license
 type ComponentDefinitionLicenseLine struct {
 	ComponentDiffableElement
@@ -239,6 +248,7 @@ type ComponentDefinition struct {
 	ImplementationList ComponentDefinitionImplementationList `xml:"implementations"`
 	Enums []ComponentDefinitionEnum `xml:"enum"`
 	Structs []ComponentDefinitionStruct `xml:"struct"`
+	DynamicStructs []ComponentDefinitionDynamicStruct `xml:"dynamicstruct"`
 	Global ComponentDefinitionGlobal `xml:"global"`
 	Errors ComponentDefinitionErrors `xml:"errors"`
 	ImportComponents []ComponentDefinitionImportComponent `xml:"importcomponent"`
@@ -479,6 +489,7 @@ func (component *ComponentDefinition) checkEnums() (error) {
 	
 func (component *ComponentDefinition) checkStructs() (error) {
 	structs := component.Structs
+	dynamicstructs := component.DynamicStructs
 	var structNameList = &component.NameMapsLookup.structMap
 	structLowerNameList := make(map[string]bool, 0)
 	
@@ -501,6 +512,27 @@ func (component *ComponentDefinition) checkStructs() (error) {
 			}
 		}
 	}
+	
+	
+	for i := 0; i < len(dynamicstructs); i++ {
+		mstruct := dynamicstructs[i];
+		if !nameIsValidIdentifier(mstruct.Name) {
+			return fmt.Errorf ("invalid struct name \"%s\"", mstruct.Name)
+		}
+		if structLowerNameList[mstruct.Name] == true {
+			return fmt.Errorf ("duplicate struct name \"%s\"", mstruct.Name)
+		}
+		(*structNameList)[mstruct.Name] = true
+		structLowerNameList[strings.ToLower(mstruct.Name)] = true
+
+		for j := 0; j < len(mstruct.Members); j++ {
+			member := mstruct.Members[j]
+			if !nameIsValidIdentifier(member.Name) {
+				return fmt.Errorf ("invalid member name \"%s\"", member.Name);
+			}
+		}
+	}
+	
 	return nil
 }
 
@@ -1334,5 +1366,17 @@ func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
 	}
 
 	return maxOutParameters;
+}
+
+
+func (member *ComponentDefinitionMember) isStatic () (bool) {
+	switch (member.Type) {
+		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer", "enum":
+			return true;
+			
+		default:
+			return false;
+	}
+			
 }
 

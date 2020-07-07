@@ -51,7 +51,9 @@ func CreateCPPTypesHeader(component ComponentDefinition, CTypesHeaderName string
 	return err;
 }
 
-func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string) (string, error) {
+func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string, allowDynamicMembers bool) (string, error) {
+	defaultError := fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
+
 	switch (member.Type) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 			typeName, err := getCPPParameterTypeName(member.Type, NameSpace, "")
@@ -61,11 +63,66 @@ func getCPPMemberLine(member ComponentDefinitionMember, NameSpace string, arrays
 			return fmt.Sprintf("%s m_%s%s;", typeName, member.Name, arraysuffix), nil
 		case "enum":
 			return fmt.Sprintf("e%s m_%s%s;", member.Class, member.Name, arraysuffix), nil
+		case "string":
+			if allowDynamicMembers {
+				return fmt.Sprintf("std::string m_%s%s;", member.Name, arraysuffix), nil						
+			} else {
+				return "", defaultError;			
+			}			
+		
 		default:
-			return "", fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
+			return "", defaultError
 		
 	}
 }
+
+
+func getCPPSeralizeLines (member ComponentDefinitionMember, Prefix string, structName string) ([]string, error) {
+	defaultError := fmt.Errorf ("it is not possible for struct %s to serialize a %s member", structName, member.Type);
+	resultLines := make ([]string, 0);	
+	
+	count := 1;
+	
+	if (member.Rows > 0) {
+		if (member.Columns > 0) {
+			count = member.Columns * member.Rows;
+		} else {
+			count = member.Rows;
+		}
+	}
+
+
+	for i := 0; i < count; i++ {
+			
+		arraysuffix := "";
+		if (member.Rows > 0) {
+			if (member.Columns > 0) {
+				arraysuffix = fmt.Sprintf ("[%d][%d]", i / member.Rows, i % member.Rows)
+			} else {
+				arraysuffix = fmt.Sprintf ("[%d]", i)
+			}
+		}
+			
+		switch (member.Type) {		
+		
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
+				resultLines = append (resultLines, fmt.Sprintf ("%s_%s (m_%s%s);", Prefix, member.Type, member.Name, arraysuffix));
+			
+			case "enum":
+				resultLines = append (resultLines, fmt.Sprintf ("%s_enum ((uint32_t) m_%s%s);", Prefix, member.Name, arraysuffix));
+						
+			case "string":			
+				resultLines = append (resultLines, fmt.Sprintf ("%s_string (m_%s%s);", Prefix, member.Name, arraysuffix));
+			
+			default:
+				return resultLines, defaultError
+			
+		}
+	}
+	
+	return resultLines, nil;
+}
+
 
 // CreateCPPAbiHeader creates a CPP header file for the component's API
 func CreateCPPAbiHeader(component ComponentDefinition, CHeaderName string) (error) {

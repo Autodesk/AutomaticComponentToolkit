@@ -175,7 +175,10 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	return nil
 }
 
-func getCMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string) (string, error) {
+
+func getCMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuffix string, structName string, allowDynamicMembers bool) (string, error) {
+    defaultError := fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
+
 	switch (member.Type) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 			typeName, err := getCParameterTypeName(member.Type, NameSpace, "")
@@ -185,8 +188,16 @@ func getCMemberLine(member ComponentDefinitionMember, NameSpace string, arraysuf
 			return fmt.Sprintf("%s m_%s%s;", typeName, member.Name, arraysuffix), nil
 		case "enum":
 			return fmt.Sprintf("structEnum%s%s m_%s%s;", NameSpace, member.Class, member.Name, arraysuffix), nil
+			
+		case "string":
+			if allowDynamicMembers {
+				return fmt.Sprintf("const char * m_%s%s;", member.Name, arraysuffix), nil						
+			} else {
+				return "", defaultError;			
+			}			
+			
 		default:
-			return "", fmt.Errorf ("it is not possible for struct %s to contain a %s member", structName, member.Type);
+			return "", defaultError;
 	}
 }
 
@@ -441,7 +452,7 @@ func WriteCCPPAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, Name
 }
 
 func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace string, useCPPTypes bool) (error) {
-	if (len(component.Structs) == 0) {
+	if ((len(component.Structs) == 0) && (len(component.DynamicStructs) == 0)) {
 		return nil
 	}
 
@@ -451,43 +462,164 @@ func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace
 	w.Writeln(" Declaration of structs");
 	w.Writeln("**************************************************************************************************************************/");
 	w.Writeln("");
-		
+	
 	w.Writeln("#pragma pack (1)");
-	w.Writeln("");
+	w.Writeln("");	
 
-	for i := 0; i < len(component.Structs); i++ {
-		structinfo := component.Structs[i];
+	if (len(component.Structs) > 0) {	
+	
+		for i := 0; i < len(component.Structs); i++ {
+			structinfo := component.Structs[i];
+			w.Writeln("typedef struct {");
+			
+			for j := 0; j < len(structinfo.Members); j++ {
+				member := structinfo.Members[j];
+				arraysuffix := "";
+				if (member.Rows > 0) {
+					if (member.Columns > 0) {
+						arraysuffix = fmt.Sprintf ("[%d][%d]", member.Columns, member.Rows)
+					} else {
+						arraysuffix = fmt.Sprintf ("[%d]",member.Rows)
+					}
+				}
+				var memberLine string
+				if (useCPPTypes) {
+					memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, false)
+				} else {
+					memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name, false)
+				}
+				if (err!=nil) {
+					return err
+				}
+				w.Writeln("  %s", memberLine)
+			}
+			
+			
+			if (useCPPTypes) {
+				w.Writeln("} s%s;", structinfo.Name);
+			} else {
+				w.Writeln("} s%s%s;", NameSpace, structinfo.Name);
+			}
+			w.Writeln("");
+		}
+	
+	}
+	
+	
+	for i := 0; i < len(component.DynamicStructs); i++ {
+		structinfo := component.DynamicStructs[i];
 		w.Writeln("typedef struct {");
+		if (!useCPPTypes) {		
+			w.Writeln("  // Private Members - Never change manually");
+			w.Writeln("  unsigned void ** m_Buffers;");
+			w.Writeln("  unsigned int m_BufferCount;");
+			w.Writeln("");
+			w.Writeln("  // Dynamic Members - Read Only");
+		} else {
+			w.Writeln("  // Dynamic Members");
+		}
+
+		for j := 0; j < len(structinfo.Members); j++ {
+			member := structinfo.Members[j];
+			
+			if (!member.isStatic ()) {
+			
+				arraysuffix := "";
+				if (member.Rows > 0) {
+					if (member.Columns > 0) {
+						arraysuffix = fmt.Sprintf ("[%d][%d]", member.Columns, member.Rows)
+					} else {
+						arraysuffix = fmt.Sprintf ("[%d]",member.Rows)
+					}
+				}
+				var memberLine string
+				if (useCPPTypes) {
+					memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, true)
+				} else {
+					memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name, true)
+				}
+				if (err!=nil) {
+					return err
+				}
+				w.Writeln("  %s", memberLine)
+			}
+		}
+		w.Writeln("");
+
+		if (!useCPPTypes) {		
+			w.Writeln("  // Static Members - Read/Write");
+		} else {
+			w.Writeln("  // Static Members");
+		}
 		
 		for j := 0; j < len(structinfo.Members); j++ {
 			member := structinfo.Members[j];
-			arraysuffix := "";
-			if (member.Rows > 0) {
-				if (member.Columns > 0) {
-					arraysuffix = fmt.Sprintf ("[%d][%d]", member.Columns, member.Rows)
-				} else {
-					arraysuffix = fmt.Sprintf ("[%d]",member.Rows)
+			
+			if (member.isStatic ()) {
+			
+				arraysuffix := "";
+				if (member.Rows > 0) {
+					if (member.Columns > 0) {
+						arraysuffix = fmt.Sprintf ("[%d][%d]", member.Columns, member.Rows)
+					} else {
+						arraysuffix = fmt.Sprintf ("[%d]",member.Rows)
+					}
 				}
+				var memberLine string
+				if (useCPPTypes) {
+					memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, false)
+				} else {
+					memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name, false)
+				}
+				if (err!=nil) {
+					return err
+				}
+				w.Writeln("  %s", memberLine)
 			}
-			var memberLine string
-			if (useCPPTypes) {
-				memberLine, err= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
-			} else {
-				memberLine, err= getCMemberLine(member, NameSpace, arraysuffix, structinfo.Name)
-			}
-			if (err!=nil) {
-				return err
-			}
-			w.Writeln("    %s", memberLine)
 		}
+		w.Writeln("");
+		
 		if (useCPPTypes) {
+			w.Writeln("  void _serialize (ACT::Serializer & serializer) {");
+			for j := 0; j < len(structinfo.Members); j++ {
+				member := structinfo.Members[j];	
+				memberLines, err := getCPPSeralizeLines (member, "serializer.write", structinfo.Name);
+				if (err != nil) {
+					return err
+				}
+				
+				w.Writelns("    ", memberLines);
+				
+			}			
+			w.Writeln("  }");
+			w.Writeln("");
+						
+			w.Writeln("  void _deserialize (ACT::Serializer & serializer) {");
+			for j := 0; j < len(structinfo.Members); j++ {
+				member := structinfo.Members[j];	
+				memberLines, err := getCPPSeralizeLines (member, "serializer.read", structinfo.Name);
+				if (err != nil) {
+					return err
+				}
+				
+				w.Writelns("    ", memberLines);
+				
+			}			
+			w.Writeln("  }");
+			w.Writeln("");
+			
 			w.Writeln("} s%s;", structinfo.Name);
+			
 		} else {
 			w.Writeln("} s%s%s;", NameSpace, structinfo.Name);
 		}
 		w.Writeln("");
+		
+		
+	
+	
 	}
-
+	
 	w.Writeln("#pragma pack ()");
 	w.Writeln("");
 
