@@ -475,6 +475,44 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				}
 			}
 
+		case "CSharp":
+			{
+				outputFolderImplementationProject := outputFolderImplementations + "/Sharp"
+				outputFolderImplementationCSharp := outputFolderImplementations + "/CSharp/Interfaces"
+				outputFolderImplementationCSharpStub := outputFolderImplementations + "/CSharp/Stub"
+
+				if (!suppressStub) {
+				
+					if (stubDirectoryOverride != "") {
+						outputFolderImplementationCSharpStub = stubDirectoryOverride;
+					}
+				
+					err = os.MkdirAll(outputFolderImplementationCSharpStub, os.ModePerm)
+					if err != nil {
+						return err
+					}
+				}
+
+				if (!suppressInterfaces) {
+
+					if (interfacesDirectoryOverride != "") {
+						outputFolderImplementationCSharp = interfacesDirectoryOverride;
+					}
+
+					err = os.MkdirAll(outputFolderImplementationCSharp, os.ModePerm)
+					if err != nil {
+						return err
+					}
+
+				}
+
+				err = BuildImplementationCSharp(component, outputFolderImplementationCSharp, outputFolderImplementationCSharpStub,
+					outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces)
+				if err != nil {
+					return err
+				}
+			}
+
 		case "Fortran":
 			{
 				log.Printf("Implementation in language \"%s\" is not yet supported.", implementation.Language)
