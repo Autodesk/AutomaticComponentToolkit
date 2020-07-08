@@ -503,6 +503,19 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					if err != nil {
 						return err
 					}
+					
+					CTypesHeaderName := path.Join(outputFolderImplementationCSharp, component.BaseName+"_types.hpp")
+					err = CreateCPPTypesHeader(component, CTypesHeaderName)
+					if err != nil {
+						return err
+					}
+
+					CHeaderName := path.Join(outputFolderImplementationCSharp, component.BaseName+"_abi.hpp")
+					err = CreateCPPAbiHeader(component, CHeaderName)
+					if err != nil {
+						return err
+					}
+					
 
 				}
 

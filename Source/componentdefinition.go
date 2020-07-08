@@ -86,6 +86,8 @@ type ComponentDefinitionClass struct {
 	XMLName xml.Name `xml:"class"`
 	ClassName string `xml:"name,attr"`
 	ClassDescription string `xml:"description,attr"`
+	CLSID string `xml:"clsid,attr"`
+	IID string `xml:"iid,attr"`
 	ParentClass string `xml:"parent,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
@@ -125,6 +127,8 @@ type ComponentDefinitionGlobal struct {
 	VersionMethod string `xml:"versionmethod,attr"`
 	PrereleaseMethod string `xml:"prereleasemethod,attr"`
 	BuildinfoMethod string `xml:"buildinfomethod,attr"`
+	CLSID string `xml:"clsid,attr"`
+	IID string `xml:"iid,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 

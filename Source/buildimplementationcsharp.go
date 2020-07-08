@@ -37,6 +37,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"errors"
 	"path"
 	"strings"
 )
@@ -84,27 +85,10 @@ func BuildImplementationCSharp(component ComponentDefinition, outputFolder strin
 
 
 
-func buildCSharpInterface(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string) error {
+func buildCSharpInterface(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, stubintfw LanguageWriter) error {
+
 		outIntfName := "I" + ClassIdentifier + class.ClassName;
 		CSharpBaseClassName := "I" + component.Global.BaseClassName;
-
-		StubIntfFileName := path.Join(outputFolder, BaseName + "_I" + class.ClassName +".cs");
-
-		log.Printf("Creating \"%s\"", StubIntfFileName)
-		stubintfw, err := CreateLanguageFile(StubIntfFileName, indentString)
-		if err != nil {
-			return err
-		}
-		stubintfw.WriteCLicenseHeader(component,
-			fmt.Sprintf("This is the class declaration of %s", outIntfName),
-			false)
-		
-
-		stubintfw.Writeln("")
-		stubintfw.Writeln("using System;")
-		stubintfw.Writeln("using System.Runtime.InteropServices;")
-		stubintfw.Writeln("")
-		stubintfw.Writeln("namespace %s {", NameSpace)
 
 		if (!component.isBaseClass(class)) {
 			if (class.ParentClass == "") {
@@ -113,15 +97,14 @@ func buildCSharpInterface(component ComponentDefinition, class ComponentDefiniti
 		}
 
 		stubintfw.Writeln("")
-		stubintfw.Writeln("/*************************************************************************************************************************")
-		stubintfw.Writeln(" Class interface of %s ", outIntfName)
-		stubintfw.Writeln("**************************************************************************************************************************/")
+		stubintfw.Writeln("  /*************************************************************************************************************************")
+		stubintfw.Writeln("   COM interface of %s ", outIntfName)
+		stubintfw.Writeln("  **************************************************************************************************************************/")
 		stubintfw.Writeln("")
 
 		stubintfw.Writeln("  [ComVisible(true)]")
 		stubintfw.Writeln("  [Guid(ContractGuids.IID_%s)]", outIntfName)
 		stubintfw.Writeln("  [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]")
-		stubintfw.Writeln("  ")
 		
 		CSharpParentIntfName := ""
 		if !component.isBaseClass(class) {
@@ -151,8 +134,7 @@ func buildCSharpInterface(component ComponentDefinition, class ComponentDefiniti
 
 		stubintfw.Writeln("")
 		
-		stubintfw.Writeln("}")
-		stubintfw.Writeln("")
+
 
 	return nil
 }
@@ -162,37 +144,139 @@ func buildCSharpInterface(component ComponentDefinition, class ComponentDefiniti
 
 func buildCSharpInterfaces(component ComponentDefinition, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string) error {
 
+	StubIntfFileName := path.Join(outputFolder, BaseName + "_Interfaces.cs");
+
+	log.Printf("Creating \"%s\"", StubIntfFileName)
+	stubintfw, err := CreateLanguageFile(StubIntfFileName, indentString)
+	if err != nil {
+		return err
+	}
+	stubintfw.WriteCLicenseHeader(component,
+		fmt.Sprintf("This is the interface declaration file of %s", NameSpace),
+		false)
+	
+
+	stubintfw.Writeln("")
+	stubintfw.Writeln("using System;")
+	stubintfw.Writeln("using System.Runtime.InteropServices;")
+	stubintfw.Writeln("")
+	
+	stubintfw.Writeln("namespace %s {", NameSpace)
+
+	stubintfw.Writeln("")
+	stubintfw.Writeln("  /*************************************************************************************************************************")
+	stubintfw.Writeln("   Error Codes and Exception definition of %s ", NameSpace)
+	stubintfw.Writeln("  **************************************************************************************************************************/")
+	stubintfw.Writeln("");
+
+	stubintfw.Writeln("  public class ErrorCodes {")
+
+	for i := 0; i < len(component.Errors.Errors); i++ {
+		errorcode := component.Errors.Errors[i]
+		stubintfw.Writeln("    public const UInt32 %s = %d;", errorcode.Name, errorcode.Code)
+	}
+
+	stubintfw.Writeln("  }")
+
+
+	stubintfw.Writeln("");
+	stubintfw.Writeln("  [Serializable()]")
+	stubintfw.Writeln("  public class %sException : System.Exception", NameSpace)
+	stubintfw.Writeln("  {")
+	stubintfw.Writeln("    public static string ErrorCodeToString (UInt32 errorCode)")
+	stubintfw.Writeln("    {")
+	stubintfw.Writeln("      switch (errorCode)")
+	stubintfw.Writeln("      {")
+	for i := 0; i < len(component.Errors.Errors); i++ {
+		errorcode := component.Errors.Errors[i]
+		stubintfw.Writeln("        case ErrorCodes.%s: return \"%s\";", errorcode.Name, errorcode.Description)
+	}
+
+	stubintfw.Writeln("        default: return String.Format(\"Unknown Error #{0}\", errorCode);")
+	stubintfw.Writeln("      }")
+	stubintfw.Writeln("    }")
+	stubintfw.Writeln("    ")
+	
+	stubintfw.Writeln("    public %sException() : base() { }", NameSpace)	
+	stubintfw.Writeln("    public %sException(UInt32 errorCode) : base(ErrorCodeToString (errorCode)) { }", NameSpace)
+	stubintfw.Writeln("    public %sException(string message) : base(message) { }", NameSpace)
+	stubintfw.Writeln("    public %sException(string message, System.Exception inner) : base(message, inner) { }", NameSpace)
+	stubintfw.Writeln("    protected %sException(System.Runtime.Serialization.SerializationInfo info,", NameSpace)
+	stubintfw.Writeln("       System.Runtime.Serialization.StreamingContext context) : base(info, context) { }")
+	stubintfw.Writeln("  }")
+
+	
+	
+
+	stubintfw.Writeln("")
+	stubintfw.Writeln("  /*************************************************************************************************************************")
+	stubintfw.Writeln("   COM GUID definitions of %s ", NameSpace)
+	stubintfw.Writeln("  **************************************************************************************************************************/")
+	stubintfw.Writeln("")
+
+
+	stubintfw.Writeln("  internal sealed class ContractGuids")
+	stubintfw.Writeln("  {")
+	
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		err :=  buildCSharpInterface(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString)
+		
+		if (strings.TrimSpace (class.CLSID) == "") {
+			return errors.New ("Invalid class CLSID for " + class.ClassName);
+		}
+
+		if (strings.TrimSpace (class.IID) == "") {
+			return errors.New ("Invalid class IID for " + class.ClassName);
+		}
+		
+		stubintfw.Writeln("    public const string CLSID_I%s = \"%s\";", class.ClassName, strings.ToUpper (strings.TrimSpace (class.CLSID)));
+		stubintfw.Writeln("    public const string IID_I%s = \"%s\";", class.ClassName, strings.ToUpper (strings.TrimSpace (class.IID)));
+	}
+
+	stubintfw.Writeln("    public const string CLSID_I%s = \"%s\";", "Wrapper", strings.ToUpper (strings.TrimSpace (component.Global.CLSID)));
+	stubintfw.Writeln("    public const string IID_I%s = \"%s\";", "Wrapper", strings.ToUpper (strings.TrimSpace (component.Global.IID)));
+
+	if (strings.TrimSpace (component.Global.CLSID) == "") {
+		return errors.New ("Invalid wrapper CLSID");
+	}
+
+	if (strings.TrimSpace (component.Global.IID) == "") {
+		return errors.New ("Invalid wrapper IID");
+	}
+
+
+	stubintfw.Writeln("  }")
+	stubintfw.Writeln("")
+
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		err :=  buildCSharpInterface(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, stubintfw)
 		if err != nil {
 			return err
 		}
 	}
 
+	stubintfw.Writeln("}")
+	stubintfw.Writeln("")
+	
 	return nil
 }
 
 
 
 func buildCSharpStubClass(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool) error {
+
+		CSharpBaseClassName := "C" + component.Global.BaseClassName;
+		
 		outClassName := "C" + ClassIdentifier + class.ClassName
 
-		StubIntfFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_I" + class.ClassName +".cs");
-		StubImplFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_" + class.ClassName +".cs");
-		if !forceRecreation && ( FileExists(StubIntfFileName) || FileExists(StubImplFileName) ) {
+		StubImplFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_C" + class.ClassName +".cs");
+		if !forceRecreation && ( FileExists(StubImplFileName) ) {
 			log.Printf("Omitting recreation of Stub implementation for \"%s\"", outClassName)
 			return nil
 		}
 
-		log.Printf("Creating \"%s\"", StubIntfFileName)
-		stubintfw, err := CreateLanguageFile(StubIntfFileName, indentString)
-		if err != nil {
-			return err
-		}
-		stubintfw.WriteCLicenseHeader(component,
-			fmt.Sprintf("This is the class declaration of %s", outClassName),
-			false)
 		
 		log.Printf("Creating \"%s\"", StubImplFileName)
 		stubimplw, err := CreateLanguageFile(StubImplFileName, indentString)
@@ -203,11 +287,11 @@ func buildCSharpStubClass(component ComponentDefinition, class ComponentDefiniti
 			fmt.Sprintf("This is a stub class definition of %s", outClassName),
 			false)
 
-		stubintfw.Writeln("")
-		stubintfw.Writeln("using System;")
-		stubintfw.Writeln("using System.Runtime.InteropServices;")
-		stubintfw.Writeln("")
-		stubintfw.Writeln("namespace %s {", NameSpace)
+		stubimplw.Writeln("")
+		stubimplw.Writeln("using System;")
+		stubimplw.Writeln("using System.Runtime.InteropServices;")
+		stubimplw.Writeln("")
+		stubimplw.Writeln("namespace %s {", NameSpace)
 
 		if (!component.isBaseClass(class)) {
 			if (class.ParentClass == "") {
@@ -215,13 +299,52 @@ func buildCSharpStubClass(component ComponentDefinition, class ComponentDefiniti
 			}
 		}
 
-		stubintfw.Writeln("")
-		stubintfw.Writeln("/*************************************************************************************************************************")
-		stubintfw.Writeln(" Class interface of %s ", outClassName)
-		stubintfw.Writeln("**************************************************************************************************************************/")
-		stubintfw.Writeln("")
+		stubimplw.Writeln("")
+		stubimplw.Writeln("  /*************************************************************************************************************************")
+		stubimplw.Writeln("   Class implementation of %s ", outClassName)
+		stubimplw.Writeln("  **************************************************************************************************************************/")
+		stubimplw.Writeln("")
 
-		stubintfw.Writeln("")
+		stubimplw.Writeln("  [ComVisible(true)]")
+		stubimplw.Writeln("  [Guid(ContractGuids.CLSID_I%s)]", class.ClassName)
+		
+		CSharpParentClassName := ""
+		if !component.isBaseClass(class) {
+			if class.ParentClass == "" {
+				CSharpParentClassName = ": " + CSharpBaseClassName + ", I" + class.ClassName
+			} else {
+				CSharpParentClassName = ": C" + class.ParentClass + ", I" + class.ClassName
+			}
+		} else {
+			
+			CSharpParentClassName = ": I" + class.ClassName
+		
+		}
+		
+		stubimplw.Writeln("  public interface %s %s", outClassName, CSharpParentClassName)
+		stubimplw.Writeln("  {")
+ 
+		for j := 0; j < len(class.Methods); j++ {
+			method := class.Methods[j]
+
+			parameters, returnType, err := getCSharpClassParameters(method, NameSpace, class.ClassName, false)
+			if err != nil {
+				return err
+			}
+
+			stubimplw.Writeln("    %s I%s.%s (%s)", returnType, class.ClassName, method.MethodName, parameters)
+			stubimplw.Writeln("    {")
+			stubimplw.Writeln("      throw new %sException (ErrorCodes.NOTIMPLEMENTED);", NameSpace)
+			stubimplw.Writeln("    }")
+			stubimplw.Writeln("")
+		} 
+ 
+		stubimplw.Writeln("  }")
+
+		stubimplw.Writeln("")
+		
+		stubimplw.Writeln("}")
+		stubimplw.Writeln("")
 
 	return nil
 }
