@@ -1372,12 +1372,16 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 	JavaParamTypeName := ""
 	Bytes := 0;
 	switch ParamTypeName {
-	case "uint8":
-		JavaParamTypeName = "char"
+	case "uint8", "int8":
+		JavaParamTypeName = "byte"
 		Bytes = 1;
 
-	case "uint16", "int16":
+	case "int16":
 		JavaParamTypeName = "short"
+		Bytes = 2;
+
+	case "uint16":
+		JavaParamTypeName = "char"
 		Bytes = 2;
 
 	case "uint32", "int32":
@@ -1387,10 +1391,6 @@ func getJavaParameterType(ParamTypeName string, NameSpace string, ParamClass str
 	case "uint64", "int64":
 		JavaParamTypeName = "long"
 		Bytes = 8;
-
-	case "int8":
-		JavaParamTypeName = "byte"
-		Bytes = 1;
 
 	case "bool":
 		JavaParamTypeName = "boolean"
