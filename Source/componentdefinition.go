@@ -116,6 +116,7 @@ type ComponentDefinitionGlobal struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"global"`
 	BaseClassName string `xml:"baseclassname,attr"`
+	StringOutBaseClassName string `xml:"stringoutclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
@@ -691,7 +692,11 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 		}
 
 	}
-
+	
+	
+	if ((len (method.getStringOutParameters ()) > 0) && (len (method.getArrayOutParameters ()) > 0)) {
+		return fmt.Errorf ("String and Array out parameters for method \"%s.%s\"", className, method.MethodName);
+	}
 
 	return nil
 }
@@ -1238,3 +1243,96 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	log.Fatal("No base class available")
 	return out
 }
+
+func (component *ComponentDefinition) isStringOutBaseClass(class ComponentDefinitionClass) (bool) {
+	return class.ClassName == component.Global.StringOutBaseClassName
+}
+
+
+func (method *ComponentDefinitionMethod) countOutParameters() (uint32) {
+
+	var outParameters uint32;
+	outParameters = 0;
+
+	for i := 0; i < len(method.Params); i++ {
+		if ((method.Params[i].ParamPass == "out") || (method.Params[i].ParamPass == "return")) {
+			outParameters++;
+		}
+	}
+	
+	return outParameters;
+}
+
+
+func (method *ComponentDefinitionMethod) getStringOutParameters() ([]string) {
+
+	var outParameters []string;
+
+	for i := 0; i < len(method.Params); i++ {
+		if (method.Params[i].ParamType == "string") {		
+			if ((method.Params[i].ParamPass == "out") || (method.Params[i].ParamPass == "return")) {
+				outParameters = append (outParameters, method.Params[i].ParamName);
+			}			
+		}
+	}
+	
+	return outParameters;
+}
+
+func (method *ComponentDefinitionMethod) getArrayOutParameters() ([]string) {
+
+	var outParameters []string;
+
+	for i := 0; i < len(method.Params); i++ {
+		if ((method.Params[i].ParamType == "basicarray") || (method.Params[i].ParamType == "structarray")) {		
+			if ((method.Params[i].ParamPass == "out") || (method.Params[i].ParamPass == "return")) {
+				outParameters = append (outParameters, method.Params[i].ParamName);
+			}			
+		}
+	}
+	
+	return outParameters;
+}
+
+
+func (class *ComponentDefinitionClass) countMaxOutParameters() (uint32) {
+
+	var maxOutParameters uint32;
+	maxOutParameters = 0;
+
+	for i := 0; i < len(class.Methods); i++ {
+		outParameters := class.Methods[i].countOutParameters ();
+		if (outParameters > maxOutParameters) {
+			maxOutParameters = outParameters;	
+		}
+	}
+	
+	return maxOutParameters;
+}
+
+func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
+
+	var maxOutParameters uint32;
+	maxOutParameters = 0;
+
+	classes := component.Classes
+	for i := 0; i < len(classes); i++ {
+		class := classes[i]
+		
+		outParameters := class.countMaxOutParameters ();
+		if (outParameters > maxOutParameters) {
+			maxOutParameters = outParameters;	
+		}
+	}
+	
+	methods := component.Global.Methods;
+	for i := 0; i < len(methods); i++ {
+		outParameters := methods[i].countOutParameters ();
+		if (outParameters > maxOutParameters) {
+			maxOutParameters = outParameters;	
+		}
+	}
+
+	return maxOutParameters;
+}
+

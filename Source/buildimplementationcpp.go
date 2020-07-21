@@ -263,12 +263,6 @@ func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, Nam
 	wImpl.Writeln("  m_errorCode = errorCode;");
 	wImpl.Writeln("}");
 	wImpl.Writeln("");
-	wImpl.Writeln("E%sInterfaceException::E%sInterfaceException(%sResult errorCode, std::string errorMessage)", NameSpace, NameSpace, NameSpace);
-	wImpl.Writeln("  : m_errorMessage(errorMessage + \" (\" + std::to_string (errorCode) + \")\")");
-	wImpl.Writeln("{");
-	wImpl.Writeln("  m_errorCode = errorCode;");
-	wImpl.Writeln("}");
-	wImpl.Writeln("");
 	wImpl.Writeln("%sResult E%sInterfaceException::getErrorCode ()", NameSpace, NameSpace);
 	wImpl.Writeln("{");
 	wImpl.Writeln("  return m_errorCode;");
@@ -337,6 +331,13 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	
 	classInterfaceName := fmt.Sprintf("I%s%s", ClassIdentifier, class.ClassName)
 	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
+
+	if (component.isStringOutBaseClass(class)) {
+		w.Writeln("private:")
+		w.Writeln("  std::auto_ptr<ParameterCache> m_ParameterCache;")
+	
+	}
+
 	w.Writeln("public:")
 
 	if (component.isBaseClass(class)) {
@@ -390,6 +391,28 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		}
 	}
 
+	if (component.isStringOutBaseClass(class)) {
+	
+		w.Writeln("")	
+		w.Writeln("  /**")
+		w.Writeln("  * %s::_setCache - set parameter cache of object", classInterfaceName)
+		w.Writeln("  */")
+		w.Writeln("  void _setCache(ParameterCache * pCache)")	
+		w.Writeln("  {")	
+		w.Writeln("    m_ParameterCache.reset(pCache);")	
+		w.Writeln("  }")	
+		w.Writeln("")	
+		
+		w.Writeln("  /**")
+		w.Writeln("  * %s::_getCache - returns parameter cache of object", classInterfaceName)
+		w.Writeln("  */")
+		w.Writeln("  ParameterCache* _getCache()")	
+		w.Writeln("  {")	
+		w.Writeln("    return m_ParameterCache.get();")	
+		w.Writeln("  }")	
+		w.Writeln("")			
+	}
+
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
@@ -421,6 +444,60 @@ func writeClassDefinitions(component ComponentDefinition, w LanguageWriter, Name
 		writeCPPClassInterface(component, class, w, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName)
 	}
 }
+
+
+func writeParameterCacheDefinitions(component ComponentDefinition, w LanguageWriter, NameSpaceImplementation string, ClassIdentifier string) {
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Parameter Cache definitions")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("class ParameterCache {")
+	w.Writeln("  public:")
+	w.Writeln("    virtual ~ParameterCache() {}")
+	w.Writeln("};")
+	w.Writeln("")
+	
+	maxParamCount := component.countMaxOutParameters ();
+	
+	for paramCount := uint32(1); paramCount <= maxParamCount; paramCount++ {
+	
+		classString := "class T1";
+		constructorString := "const T1 & param1";
+		assignmentString := "m_param1 (param1)";
+		retrieveString := "T1 & param1";
+		for paramIdx := uint32(2); paramIdx <= paramCount; paramIdx++ {
+			classString += fmt.Sprintf (", class T%d", paramIdx);
+			constructorString += fmt.Sprintf (", const T%d & param%d", paramIdx, paramIdx);
+			assignmentString += fmt.Sprintf (", m_param%d (param%d)", paramIdx, paramIdx);
+			retrieveString += fmt.Sprintf (", T%d & param%d", paramIdx, paramIdx);
+		}
+
+		w.Writeln("template <%s> class ParameterCache_%d : public ParameterCache {", classString, paramCount);
+		w.Writeln("  private:")
+		for paramIdx := uint32(1); paramIdx <= paramCount; paramIdx++ {
+			w.Writeln("    T%d m_param%d;", paramIdx, paramIdx)
+		}
+		w.Writeln("  public:")
+		w.Writeln("    ParameterCache_%d (%s)", paramCount, constructorString)
+		w.Writeln("      : %s", assignmentString)
+		w.Writeln("    {")
+		w.Writeln("    }")
+		w.Writeln("")
+		w.Writeln("    void retrieveData (%s)", retrieveString)
+		w.Writeln("    {")
+		for paramIdx := uint32(1); paramIdx <= paramCount; paramIdx++ {
+			w.Writeln("      param%d = m_param%d;", paramIdx, paramIdx)
+		}
+		w.Writeln("    }")
+		w.Writeln("};")
+		w.Writeln("")
+
+	}
+	
+}
+
 
 func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpaceImplementation string, ClassIdentifier string) error {
 	NameSpace := component.NameSpace
@@ -456,6 +533,8 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	}
 	w.Writeln("")
 	w.Writeln("")
+
+	writeParameterCacheDefinitions(component, w, NameSpaceImplementation, ClassIdentifier)
 
 	writeClassDefinitions(component, w, NameSpaceImplementation, ClassIdentifier)
 
@@ -793,6 +872,29 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	return nil
 }
 
+
+func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpace string) (string, error) {
+	result := "";
+	
+	for i := 0; i < len (method.Params); i++ {
+		param := method.Params[i];
+		
+		if ((param.ParamPass == "out") || (param.ParamPass == "return")) {
+			if (result != "") {
+				result += ", ";
+			}
+		
+			cppParamType := getCppParamType(param, NameSpace, true);
+			result += cppParamType;
+		}
+		
+	
+	}
+	
+	return result, nil;
+}
+
+
 func writeCImplementationMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int) error {
 	CMethodName := ""
 	cParams, err := GenerateCParameters(method, ClassName, NameSpace)
@@ -820,7 +922,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 
 	callCPPFunctionCode := make([]string, 0)
 	
-	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(component, method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
+	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, outCallParameters, err := generatePrePostCallCPPFunctionCode(component, method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
 	if err != nil {
 		return err
 	}
@@ -856,7 +958,50 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		if err != nil {
 			return err
 		}
-		callCPPFunctionCode = append(callCPPFunctionCode, callCode)
+								
+		stringOutParameters := method.getStringOutParameters ();
+		outParameterCount := method.countOutParameters ();
+		bHasCacheCall := (len (stringOutParameters) > 0) && (!isGlobal);
+
+		if (bHasCacheCall) {
+		
+			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace);
+			if err != nil {
+				return err
+			}
+		
+			cacheClassName := fmt.Sprintf ("ParameterCache_%d<%s>", outParameterCount, templateParameters);
+			cacheClassParameters := outCallParameters;
+			cacheCallCondition := "";
+			
+			for i := 0; i < len (stringOutParameters); i++ {
+				if (i > 0) {
+					cacheCallCondition = cacheCallCondition + " || ";
+				}
+				
+				cacheCallCondition += fmt.Sprintf ("(p%sBuffer == nullptr)", stringOutParameters[i]);
+			}
+			
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("bool isCacheCall = %s;", cacheCallCondition));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("if (isCacheCall) {"));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  " + callCode))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  pI%s->_setCache (new %s (%s));", ClassName, cacheClassName, cacheClassParameters));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("}"));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("else {"));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  auto cache = dynamic_cast<%s*> (pI%s->_getCache ());", cacheClassName, ClassName));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  if (cache == nullptr)"));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("    throw E%sInterfaceException(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)) );
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  cache->retrieveData (%s);", cacheClassParameters));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("  pI%s->_setCache (nullptr);", ClassName));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf ("}"));
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf (""));
+		
+		} else {
+				
+			callCPPFunctionCode = append(callCPPFunctionCode, callCode);
+			
+		}
+		
 	}
 	
 	journalInitFunctionCode := make([]string, 0)
@@ -1006,7 +1151,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		
 		if (component.isBaseClass(class)) {
-			stubheaderw.Writeln("  std::vector<std::string> m_errors;")
+			stubheaderw.Writeln("  std::auto_ptr<std::string> m_pLastError;")
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
@@ -1177,7 +1322,7 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 	parameters := ""
 	returntype := "void"
 	commentcode := ""
-
+	
 	templateimplementation := ""
 
 	for k := 0; k < len(method.Params); k++ {
@@ -1419,10 +1564,11 @@ func getCppParamType (param ComponentDefinitionParam, NameSpace string, isInput 
 	return "";
 }
 
-func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, string, error) {
 	preCallCode := make([]string, 0)
 	postCallCode := make([]string, 0)
 	callParameters := ""
+	outCallParameters := "";
 	returnVariable := ""
 	checkInputCode := make([]string, 0)
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
@@ -1482,13 +1628,17 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				callParameters = callParameters + variableName
 
 			default:
-				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
 
 		case "out":
 			if callParameters != "" {
 				callParameters = callParameters + ", "
 			}
+			if outCallParameters != "" {
+				outCallParameters = outCallParameters + ", "
+			}
+
 
 			switch param.ParamType {
 
@@ -1496,6 +1646,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (!p%s)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + "*p" + param.ParamName
+				outCallParameters = outCallParameters + "*p" + param.ParamName
 
 			case "basicarray", "structarray":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((!p%sBuffer) && !(p%sNeededCount))", param.ParamName, param.ParamName))
@@ -1508,6 +1659,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				callParameters = callParameters + variableName
+				outCallParameters = outCallParameters + variableName
 
 				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sNeededChars)", param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
@@ -1532,18 +1684,24 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(%s.get());", theWrapper, acqurireMethod, outVarName))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
 					callParameters = callParameters + outVarName
+					outCallParameters = outCallParameters + outVarName
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 					callParameters = callParameters + "pBase" + param.ParamName
+					outCallParameters = outCallParameters + "pBase" + param.ParamName
 				}
 				
 
 			default:
-				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", "", fmt.Errorf("method parameter type \"%s\" of param pass \"%s\" is not implemented for %s::%s(%s) )", param.ParamType, param.ParamPass, ClassName, method.MethodName, param.ParamName)
 			}
 
 		case "return":
+		
+			if outCallParameters != "" {
+				outCallParameters = outCallParameters + ", "
+			}
 
 			switch param.ParamType {
 
@@ -1552,12 +1710,14 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
+				outCallParameters = outCallParameters + returnVariable;
 
 			case "struct":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
+				outCallParameters = outCallParameters + returnVariable;
 
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
@@ -1565,6 +1725,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				returnVariable = variableName
+				outCallParameters = outCallParameters + returnVariable;
 
 				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sNeededChars)", param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
@@ -1593,17 +1754,19 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 				}
+				outCallParameters = outCallParameters + returnVariable;
+				
 
 			default:
-				return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
+				return checkInputCode, preCallCode, postCallCode, "", "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
 			}
 
 		default:
-			return checkInputCode, preCallCode, postCallCode, "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+			return checkInputCode, preCallCode, postCallCode, "", "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
 	}
 
-	return checkInputCode, preCallCode, postCallCode, returnVariable, callParameters, nil
+	return checkInputCode, preCallCode, postCallCode, returnVariable, callParameters, outCallParameters, nil
 }
 
 func generateCallCPPFunctionCode(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, returnVariable string, callParameters string, isGlobal bool) (string, error) {
