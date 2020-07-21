@@ -1533,7 +1533,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
 					callParameters = callParameters + outVarName
 				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("I%s* pBase%s(nullptr);", paramClassName, param.ParamName))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 					callParameters = callParameters + "pBase" + param.ParamName
 				}
