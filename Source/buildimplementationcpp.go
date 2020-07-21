@@ -623,11 +623,8 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	w.Writeln("{")
 
 	w.AddIndentationLevel(1)
-	w.Writeln("static bool sbProcAddressMapHasBeenInitialized = false;")
-	w.Writeln("static std::map<std::string, void*> sProcAddressMap;")
-	w.Writeln("if (!sbProcAddressMapHasBeenInitialized) {")
-
-	w.AddIndentationLevel(1)
+	
+	var processfuncMap []string;
 	
 	global := component.Global;
 	for i := 0; i < len(component.Classes); i++ {
@@ -635,21 +632,15 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			procName := strings.ToLower(class.ClassName + "_" + method.MethodName)
-			w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+			processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));
 		}
 	}
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		w.Writeln(fmt.Sprintf("sProcAddressMap[\"%s_%s\"] = (void*)&%s_%s;", strings.ToLower(NameSpace), procName, strings.ToLower(NameSpace), procName))
+		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));		
 	}
-
-	w.AddIndentationLevel(-1)
-
-	w.Writeln("  ")
-	w.Writeln("  sbProcAddressMapHasBeenInitialized = true;")
-	w.Writeln("}")
 
 	w.Writeln("if (pProcName == nullptr)")		
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
@@ -659,15 +650,15 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 	w.Writeln("std::string sProcName (pProcName);")
 	w.Writeln("")
 
-	w.Writeln("auto procPair = sProcAddressMap.find(sProcName);")
-	w.Writeln("if (procPair == sProcAddressMap.end()) {")
-	w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
-	w.Writeln("}")
-	w.Writeln("else {")
-	w.Writeln("  *ppProcAddress = procPair->second;")
-	w.Writeln("  return %s_SUCCESS;", strings.ToUpper (NameSpace))
-	w.Writeln("}")
+	for j := 0; j < len (processfuncMap); j++ {
+		w.Writeln("if (sProcName == \"%s\") ", processfuncMap[j])
+		w.Writeln("  *ppProcAddress = &%s;", processfuncMap[j])
+	}
+
 	w.Writeln("")
+	w.Writeln("if (*ppProcAddress == nullptr) ")
+	w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
+	w.Writeln("return %s_SUCCESS;", strings.ToUpper (NameSpace))
 	w.AddIndentationLevel(-1)
 	w.Writeln("}")
 	return nil;
