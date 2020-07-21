@@ -334,7 +334,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 	if (component.isStringOutBaseClass(class)) {
 		w.Writeln("private:")
-		w.Writeln("  std::auto_ptr<ParameterCache> m_ParameterCache;")
+		w.Writeln("  std::unique_ptr<ParameterCache> m_ParameterCache;")
 	
 	}
 
@@ -1151,7 +1151,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("")
 		
 		if (component.isBaseClass(class)) {
-			stubheaderw.Writeln("  std::auto_ptr<std::string> m_pLastError;")
+			stubheaderw.Writeln("  std::unique_ptr<std::string> m_pLastError;")
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
