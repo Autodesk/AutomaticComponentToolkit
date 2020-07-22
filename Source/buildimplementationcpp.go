@@ -37,6 +37,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"errors"
 	"path"
 	"strings"
 )
@@ -682,7 +683,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, class.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone)
+		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, class.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone, component.isStringOutClass (class))
 		if err != nil {
 			return err
 		}
@@ -861,7 +862,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		}
 
 		// Write Static function implementation
-		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction)
+		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction, false)
 		if err != nil {
 			return err
 		}
@@ -895,7 +896,7 @@ func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpac
 }
 
 
-func writeCImplementationMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int) error {
+func writeCImplementationMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, BaseName string, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, ClassName string, BaseClassName string, isGlobal bool, doJournal bool, isSpecialFunction int, isStringOutClass bool) error {
 	CMethodName := ""
 	cParams, err := GenerateCParameters(method, ClassName, NameSpace)
 	if err != nil {
@@ -961,9 +962,18 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 								
 		stringOutParameters := method.getStringOutParameters ();
 		outParameterCount := method.countOutParameters ();
-		bHasCacheCall := (len (stringOutParameters) > 0) && (!isGlobal);
-
+		
+		
+		bHasCacheCall := (len (stringOutParameters) > 0) && (isSpecialFunction != eSpecialMethodError); // GetLastError is an exception for string outs in global functions!
 		if (bHasCacheCall) {
+		
+			if (isGlobal) {
+				return errors.New ("String out parameter not allowed in global functions.");			
+			}
+		
+			if (!isStringOutClass) {
+				return errors.New ("String out parameter without being the string out base class.");			
+			}
 		
 			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace);
 			if err != nil {
@@ -1152,6 +1162,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		
 		if (component.isBaseClass(class)) {
 			stubheaderw.Writeln("  std::unique_ptr<std::string> m_pLastError;")
+			stubheaderw.Writeln("  uint32_t m_nReferenceCount = 1;")			
 			stubheaderw.Writeln("")
 		}
 		stubheaderw.Writeln("  /**")
@@ -1198,7 +1209,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			methods[4] = DecRefCountMethod()
 
 			var implementations [5][]string
-			implementations[0] = append(implementations[0], "if (m_pLastError) {")
+			implementations[0] = append(implementations[0], "if (m_pLastError.get() != nullptr) {")
 			implementations[0] = append(implementations[0], "  sErrorMessage = *m_pLastError;")
 			implementations[0] = append(implementations[0], "  return true;")
 			implementations[0] = append(implementations[0], "} else {")
@@ -1207,7 +1218,7 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 			implementations[0] = append(implementations[0], "}")
 			implementations[1] = append(implementations[1], "m_pLastError.reset();")
 
-			implementations[2] = append(implementations[2], "if (!m_pLastError) {")
+			implementations[2] = append(implementations[2], "if (m_pLastError.get() == nullptr) {")
 			implementations[2] = append(implementations[2], "  m_pLastError.reset(new std::string());")
 			implementations[2] = append(implementations[2], "}")
 			implementations[2] = append(implementations[2], "*m_pLastError = sErrorMessage;")

@@ -1244,9 +1244,33 @@ func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	return out
 }
 
+
 func (component *ComponentDefinition) isStringOutBaseClass(class ComponentDefinitionClass) (bool) {
 	return class.ClassName == component.Global.StringOutBaseClassName
 }
+
+
+func (component *ComponentDefinition) isStringOutClass(class ComponentDefinitionClass) (bool) {
+
+	if (component.isStringOutBaseClass (class)) {
+		return true;
+	}
+	
+	if (class.ParentClass != "") {
+		
+		for i := 0; i < len(component.Classes); i++ {
+			parentClass := component.Classes[i];
+			if (parentClass.ClassName == class.ParentClass) {
+				return component.isStringOutClass (parentClass);
+			}
+		}
+	
+	}
+	
+	return false;
+
+}
+
 
 
 func (method *ComponentDefinitionMethod) countOutParameters() (uint32) {
