@@ -732,7 +732,7 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 
 	for j := 0; j < len (processfuncMap); j++ {
 		w.Writeln("if (sProcName == \"%s\") ", processfuncMap[j])
-		w.Writeln("  *ppProcAddress = &%s;", processfuncMap[j])
+		w.Writeln("  *ppProcAddress = (void*) &%s;", processfuncMap[j])
 	}
 
 	w.Writeln("")
