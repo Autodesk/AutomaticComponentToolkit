@@ -343,7 +343,9 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	w.Writeln("")
 
 
+	w.Writeln("#ifdef __cplusplus");
 	w.Writeln("extern \"C\" {");
+	w.Writeln("#endif");
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i];
@@ -368,7 +370,9 @@ func buildCAbiHeader(component ComponentDefinition, w LanguageWriter, NameSpace 
 	}
 	
 	w.Writeln("");
+	w.Writeln("#ifdef __cplusplus");
 	w.Writeln("}");
+	w.Writeln("#endif");
 	w.Writeln("");
 	w.Writeln("#endif // %s", sIncludeGuard);
 	w.Writeln("");
