@@ -233,7 +233,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						}
 					}
 
-					err := BuildBindingGo(component, outputFolderBindingGo, outputFolderExampleGo)
+					err := BuildBindingGo(component, outputFolderBindingGo, outputFolderExampleGo, indentString)
 					if err != nil {
 						return err
 					}
