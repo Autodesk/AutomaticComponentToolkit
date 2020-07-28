@@ -143,10 +143,14 @@ func buildCFuncsWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("")
 	w.Writeln("/*")
 	w.Writeln("#include \"%s_types.h\"", packageName)
+	
+	/*
+	TODO
 	err := buildCFuncs(component, w)
 	if err != nil {
 		return err
-	}
+	} */
+	
 	w.Writeln("*/")
 	w.Writeln("import \"C\"")
 	w.Writeln("")
@@ -396,7 +400,7 @@ func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass,
 	w.Writeln("type %s struct {", class.ClassName)
 	if component.Global.BaseClassName == class.ClassName {
 		w.Writeln("  _     [0]func() // uncomparable; to make == not compile")
-		w.Writeln("  ref   ref       // identifies a C value, see ref type")		
+		w.Writeln("  Ref   ref       // identifies a C value, see ref type")		
 		w.Writeln("  wrapperRef *Wrapper")
 		w.Writeln("  gcPtr *ref      // used to trigger the finalizer when the Value is not referenced any more")
 	} else {
@@ -416,7 +420,7 @@ func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass,
 		w.Writeln("  gcPtr := new(ref)")
 		w.Writeln("  *gcPtr = r")
 		w.Writeln("  runtime.SetFinalizer(gcPtr, wrapper.releaseC)")
-		w.Writeln("  return %s{ref: r, gcPtr: gcPtr, wrapperRef: wrapper}", class.ClassName)
+		w.Writeln("  return %s{Ref: r, gcPtr: gcPtr, wrapperRef: wrapper}", class.ClassName)
 		w.Writeln("}")
 		w.Writeln("")
 		w.Writeln("// Release releases the C pointer.")
@@ -433,12 +437,12 @@ func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass,
 		w.Writeln("")
 		w.Writeln("// Equal reports whether inst and w refer to the same C pointer.")
 		w.Writeln("func (inst %s) Equal(w %s) bool {", class.ClassName, class.ClassName)
-		w.Writeln("  return inst.ref == w.ref")
+		w.Writeln("  return inst.Ref == w.Ref")
 		w.Writeln("}")
 	} else {
-		w.Writeln("func (wrapper * Wrapper) new%s(r ref) %s {", class.ClassName, class.ClassName)
+		w.Writeln("func (wrapper * Wrapper) New%s(r ref) %s {", class.ClassName, class.ClassName)
 		if class.ParentClass != "" && class.ParentClass != component.Global.BaseClassName {
-			w.Writeln("  return %s{wrapper.new%s(r)}", class.ClassName, class.ParentClass)
+			w.Writeln("  return %s{wrapper.New%s(r)}", class.ClassName, class.ParentClass)
 		} else {
 			w.Writeln("  return %s{wrapper.New%s(r)}", class.ClassName, component.Global.BaseClassName)
 		}
@@ -471,7 +475,7 @@ func WriteCGoAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameS
 	
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params [k];
-		cParams, err := generateCCPPParameter(param, ClassName, method.MethodName, NameSpace, true);
+		cParams, err := generateCCPPParameter(param, ClassName, method.MethodName, NameSpace, false);
 		if (err != nil) {
 			return err;
 		}
@@ -548,6 +552,9 @@ func writeGoCCalls(component ComponentDefinition, w LanguageWriter) error {
 
 
 func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
+
+	var err error;
+
 	packageName := strings.ToLower(component.BaseName)
 
 	w.Writeln("")
@@ -587,10 +594,14 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("}")
 	w.Writeln("")
 		
-	err := buildCFuncsForward(component, w)
+	/* TODO! 
+	
+	err = buildCFuncsForward(component, w)
 	if err != nil {
 		return err
 	}
+	*/
+	
 	err = writeGoCCalls (component, w);
 	if err != nil {
 		return err
@@ -649,7 +660,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("  if r == nil || *r == nil {")
 	w.Writeln("    return nil")
 	w.Writeln("  }")
-	w.Writeln("  return wrapper.%s(%s{ref: *r})", component.Global.ReleaseMethod, component.Global.BaseClassName)
+	w.Writeln("  return wrapper.%s(%s{Ref: *r})", component.Global.ReleaseMethod, component.Global.BaseClassName)
 	w.Writeln("}")
 	w.Writeln("")
 	w.Writeln("func (wrapper * Wrapper) CheckBinaryVersion() error {")
@@ -745,11 +756,11 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.GoToC = fmt.Sprintf("(%s)(unsafe.Pointer(&[]byte(%s)[0]))", tp.CType, paramName)
 		tp.Empty = "\"\""
 	case "pointer":
-		tp.Type = "interface{}"
-		tp.CType = fmt.Sprintf("C.%s_pvoid", namespace)
-		tp.CToGo = fmt.Sprintf("*(*%s)(unsafe.Pointer(%s))", tp.Type, paramName)
-		tp.GoToC = fmt.Sprintf("(%s)(unsafe.Pointer(&%s))", tp.CType, paramName)
-		tp.Empty = "nil"
+		tp.Type = "uint64"
+		tp.CType = fmt.Sprintf("C.uint64_t")
+		tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
+		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
+		tp.Empty = "0"
 	case "enum":
 		tp.Type = ptrStr + paramClass
 		tp.CType = fmt.Sprintf("%sC.e%s%s", ptrStr, namespace, paramClass)
@@ -775,13 +786,13 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.Type = paramClass
 		tp.CType = fmt.Sprintf("C.%s_%s", namespace, paramClass)
 		tp.CToGo = ""
-		tp.GoToC = fmt.Sprintf("%s.ref", paramName)
+		tp.GoToC = fmt.Sprintf("%s.Ref", paramName)
 		tp.Empty = paramClass + "{}"
 	case "optionalclass":
 		tp.Type = "*" + paramClass
 		tp.CType = fmt.Sprintf("*C.%s_%s", namespace, paramClass)
 		tp.CToGo = ""
-		tp.GoToC = fmt.Sprintf("%s.ref", paramName)
+		tp.GoToC = fmt.Sprintf("%s.Ref", paramName)
 		tp.Empty = "nil"
 	case "functiontype":
 		tp.Type = paramClass + "Func"
@@ -920,15 +931,26 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 				callParameters = append(callParameters, callParam)
 				initCallParameters = append(initCallParameters, callParam)
 				if param.ParamType == "optionalclass" {
-					preOKReturn = append(preOKReturn,
-						fmt.Sprintf("var _%sPtr %s", param.ParamName, tp.Type),
-						fmt.Sprintf("if %s == nil {", param.ParamName),
-						fmt.Sprintf("  _%sPtrVal := new%s(%s)", param.ParamName, param.ParamClass, param.ParamName),
-						fmt.Sprintf("  _%sPtr = &_%sPtrVal", param.ParamName, param.ParamName),
-						"}")
+					preOKReturn = append(preOKReturn, fmt.Sprintf("var _%sPtr %s", param.ParamName, tp.Type));
+					preOKReturn = append(preOKReturn,fmt.Sprintf("if %s == nil {", param.ParamName));
+						
+					if (isGlobal) {
+						preOKReturn = append(preOKReturn,fmt.Sprintf("  _%sPtrVal := wrapper.New%s(%s)", param.ParamName, param.ParamClass, param.ParamName));
+					} else {
+						preOKReturn = append(preOKReturn, fmt.Sprintf("  _%sPtrVal := inst.wrapperRef.New%s(%s)", param.ParamName, param.ParamClass, param.ParamName));
+					}
+					preOKReturn = append(preOKReturn,fmt.Sprintf("  _%sPtr = &_%sPtrVal", param.ParamName, param.ParamName));
+					preOKReturn = append(preOKReturn, "}");
+					
 					returnValues = append(returnValues, fmt.Sprintf("_%sPtr", param.ParamName))
 				} else {
-					returnValues = append(returnValues, fmt.Sprintf("wrapper.new%s(%s)", param.ParamClass, param.ParamName))
+				
+					if (isGlobal) {
+						returnValues = append(returnValues, fmt.Sprintf("wrapper.New%s(%s)", param.ParamClass, param.ParamName))
+					} else {
+						returnValues = append(returnValues, fmt.Sprintf("inst.wrapperRef.New%s(%s)", param.ParamClass, param.ParamName))
+					}
+				
 				}
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, className, method.MethodName, param.ParamName)
@@ -959,8 +981,8 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 		w.Writeln("func (inst %s) %s(%s) %s {", className, method.MethodName, strings.Join(parameters, ", "), returnString)
 	}
 	if !isGlobal {
-		initCallParameters = append([]string{"inst.ref"}, initCallParameters...)
-		callParameters = append([]string{"inst.ref"}, callParameters...)
+		initCallParameters = append([]string{"inst.Ref"}, initCallParameters...)
+		callParameters = append([]string{"inst.Ref"}, callParameters...)
 		implmethodname += strings.ToLower(className) + "_"
 	}
 	implmethodname += strings.ToLower(method.MethodName)
