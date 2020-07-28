@@ -484,7 +484,8 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
-	w.Writeln("#endif // _WIN32")
+	w.Writeln("#include <stdlib.h>")
+		w.Writeln("#endif // _WIN32")
 
 	w.Writeln("")
 	w.Writeln("%sResult Init%sWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, NameSpace, NameSpace)
