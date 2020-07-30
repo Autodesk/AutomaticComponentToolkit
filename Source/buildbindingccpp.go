@@ -651,10 +651,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					paramNameSpace = NameSpace
 				}
 
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", paramNameSpace, param.ParamName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle();", param.ParamName, variableName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = %s.GetHandle();", paramNameSpace, param.ParamName, variableName))
 				callParameter = "h" + param.ParamName
 				initCallParameter = callParameter
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
@@ -888,7 +885,7 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  /**")
 	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
-	w.Writeln("  %sHandle GetHandle()", NameSpace)
+	w.Writeln("  %sHandle GetHandle() const", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    return m_pHandle;")
 	w.Writeln("  }")
@@ -1040,7 +1037,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class", "optionalclass":
 		if isInput {
-			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
+			return fmt.Sprintf("classParam<%s%s%s%s>", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
 		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
 	case "functiontype":
@@ -1135,6 +1132,35 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix, ClassIdentifier)
+
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" classParam Definition")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("template<class T> class classParam {")
+	w.Writeln("private:")
+	w.Writeln("  const T* m_ptr;")
+	w.Writeln("")
+	w.Writeln("public:")
+	w.Writeln("  classParam(const T* ptr)")
+	w.Writeln("    : m_ptr (ptr)")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  classParam(std::shared_ptr <T> sharedPtr)")
+	w.Writeln("    : m_ptr (sharedPtr.get())")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  %sHandle GetHandle()", NameSpace)
+	w.Writeln("  {")
+	w.Writeln("    if (m_ptr != nullptr)")
+	w.Writeln("      return m_ptr->GetHandle();")
+	w.Writeln("    return nullptr;")
+	w.Writeln("  }")
+	w.Writeln("};")
 
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
