@@ -535,6 +535,22 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("/*")
 	w.Writeln("#include \"%s_dynamic.cc\"", packageName)
 	w.Writeln("")
+
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("// Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+
+			w.Writeln("%sHandle inject%sHandle (void * p%sHandle)", subNameSpace, subNameSpace, subNameSpace)
+			w.Writeln("{");
+			w.Writeln("  return (%sHandle) p%sHandle;", subNameSpace, subNameSpace);
+			w.Writeln("}");
+			w.Writeln("");					
+		}
+	}
+	
+
+	w.Writeln("")	
 	w.Writeln("%sHandle load%sLibrary (const char * pFileName)", component.NameSpace, component.NameSpace)
 	w.Writeln("{")
 	w.Writeln("  %sResult nResult;", component.NameSpace)
@@ -586,6 +602,15 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("  \"fmt\"")
 	w.Writeln("  \"unsafe\"")
 	w.Writeln("  \"runtime\"")
+	
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("  // Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("  \"../%s\"", subNameSpace)
+		}
+	}
+	
 	w.Writeln(")")
 	w.Writeln("")
 	w.Writeln("type ref = C.%sHandle", component.NameSpace)
@@ -608,7 +633,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("// Wrapper represents the number wrapper")
 	w.Writeln("type Wrapper struct {")
 	w.Writeln("  _ [0]func() // uncomparable; to make == not compile")
-	w.Writeln("  LibraryHandle ref")
+	w.Writeln("  LibraryHandle C.%sHandle", component.NameSpace)
 	w.Writeln("}")
 
 	for _, class := range component.Classes {
@@ -724,7 +749,7 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.Type = ptrStr + "string"
 		tp.CType = ptrStr + "*C.char"
 		tp.CToGo = ""
-		tp.GoToC = fmt.Sprintf("(%s)(unsafe.Pointer(&[]byte(%s)[0]))", tp.CType, paramName)
+		tp.GoToC = fmt.Sprintf("C.CString(%s)", paramName)
 		tp.Empty = "\"\""
 	case "pointer":
 		tp.Type = "uint64"
@@ -936,7 +961,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	implmethodname := "C.CCall_" + packageName + "_"
 	returnValues = append(returnValues, "nil")
 	classReturnTypes = append(classReturnTypes, "error")
-	errorReturn = append(errorReturn, "makeError(uint32(ret))")
+	errorReturn = append(errorReturn, "makeError(uint32(returnValue))")
 
 	var returnString string
 	if len(classReturnTypes) == 1 {
@@ -961,12 +986,12 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	retInst := ":"
 	if requiresInitCall {
 		if isGlobal {
-			w.Writeln("  ret := %s(wrapper.LibraryHandle, %s)", implmethodname, strings.Join(initCallParameters, ", "))
+			w.Writeln("  returnValue := %s(wrapper.LibraryHandle, %s)", implmethodname, strings.Join(initCallParameters, ", "))
 		} else {
-			w.Writeln("  ret := %s(inst.wrapperRef.LibraryHandle, %s)", implmethodname, strings.Join(initCallParameters, ", "))
+			w.Writeln("  returnValue := %s(inst.wrapperRef.LibraryHandle, %s)", implmethodname, strings.Join(initCallParameters, ", "))
 		}
 
-		w.Writeln("  if ret != 0 {")
+		w.Writeln("  if returnValue != 0 {")
 		w.Writeln("    return %s", strings.Join(errorReturn, ", "))
 		w.Writeln("  }")
 		w.Writelns("  ", initCallLines)
@@ -974,12 +999,12 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 	}
 
 	if isGlobal {
-		w.Writeln("  ret %s= %s(wrapper.LibraryHandle, %s)", retInst, implmethodname, strings.Join(callParameters, ", "))
+		w.Writeln("  returnValue %s= %s(wrapper.LibraryHandle, %s)", retInst, implmethodname, strings.Join(callParameters, ", "))
 	} else {
-		w.Writeln("  ret %s= %s(inst.wrapperRef.LibraryHandle, %s)", retInst, implmethodname, strings.Join(callParameters, ", "))
+		w.Writeln("  returnValue %s= %s(inst.wrapperRef.LibraryHandle, %s)", retInst, implmethodname, strings.Join(callParameters, ", "))
 	}
 
-	w.Writeln("  if ret != 0 {")
+	w.Writeln("  if returnValue != 0 {")
 	w.Writeln("    return %s", strings.Join(errorReturn, ", "))
 	w.Writeln("  }")
 	w.Writelns("  ", preOKReturn)
