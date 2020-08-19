@@ -533,6 +533,8 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("package %s", packageName)
 	w.Writeln("")
 	w.Writeln("/*")
+	w.Writeln("#cgo linux LDFLAGS: -ldl")
+	w.Writeln("#include <stdlib.h>")
 	w.Writeln("#include \"%s_dynamic.cc\"", packageName)
 	w.Writeln("")
 

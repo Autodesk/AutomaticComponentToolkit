@@ -1129,6 +1129,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("#include <windows.h>")
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
+	w.Writeln("#include <stddef.h>")
 	w.Writeln("#endif // _WIN32")
 	w.Writeln("#include <string>")
 	w.Writeln("#include <memory>")
