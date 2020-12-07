@@ -17,6 +17,12 @@ Interface version: 1.0.0
 #include "rtti_interfaces.hpp"
 #include "rtti_interfaceexception.hpp"
 
+#include "rtti_giraffe.hpp"
+#include "rtti_snake.hpp"
+#include "rtti_tiger.hpp"
+#include "rtti_turtle.hpp"
+#include "rtti_zoo.hpp"
+
 using namespace RTTI;
 using namespace RTTI::Impl;
 
@@ -48,7 +54,22 @@ void CWrapper::AcquireInstance(IBase* pInstance)
 
 IZoo * CWrapper::CreateZoo()
 {
-	throw ERTTIInterfaceException(RTTI_ERROR_NOTIMPLEMENTED);
+	auto zoo = new CZoo();
+
+	auto& animals = zoo->Animals();
+
+	animals.emplace_back(new CGiraffe);
+	animals.emplace_back(new CTiger);
+	animals.emplace_back(new CTiger);
+	animals.emplace_back(new CSnake);
+	animals.emplace_back(new CTurtle);
+	animals.emplace_back(new CTurtle);
+	animals.emplace_back(new CTurtle);
+	animals.emplace_back(new CSnake);
+	animals.emplace_back(new CTiger);
+	animals.emplace_back(new CGiraffe);
+
+	return zoo;
 }
 
 

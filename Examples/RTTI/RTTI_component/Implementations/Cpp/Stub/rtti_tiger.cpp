@@ -12,7 +12,7 @@ Abstract: This is a stub class definition of CTiger
 #include "rtti_interfaceexception.hpp"
 
 // Include custom headers here.
-
+#include <iostream>
 
 using namespace RTTI::Impl;
 
@@ -22,6 +22,6 @@ using namespace RTTI::Impl;
 
 void CTiger::Roar()
 {
-	throw ERTTIInterfaceException(RTTI_ERROR_NOTIMPLEMENTED);
+	std::cout << "ROAAAAARRRRR!!" << std::endl;
 }
 

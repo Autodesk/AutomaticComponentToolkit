@@ -22,11 +22,12 @@ Abstract: This is the class declaration of CAnimalIterator
 #endif
 
 // Include custom headers here.
-
+#include <vector>
 
 namespace RTTI {
 namespace Impl {
 
+class CAnimal;
 
 /*************************************************************************************************************************
  Class declaration of CAnimalIterator 
@@ -38,7 +39,8 @@ private:
 	/**
 	* Put private members here.
 	*/
-
+        std::vector<CAnimal *>::iterator m_Current;
+	std::vector<CAnimal *>::iterator m_End;
 protected:
 
 	/**
@@ -50,7 +52,7 @@ public:
 	/**
 	* Put additional public members here. They will not be visible in the external API.
 	*/
-
+        CAnimalIterator(std::vector<CAnimal *>::iterator begin, std::vector<CAnimal *>::iterator end);
 
 	/**
 	* Public member functions to implement.

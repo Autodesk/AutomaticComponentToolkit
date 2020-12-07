@@ -22,12 +22,12 @@ Abstract: This is the class declaration of CZoo
 #endif
 
 // Include custom headers here.
-
+#include <vector>
 
 namespace RTTI {
 namespace Impl {
 
-
+class CAnimal;
 /*************************************************************************************************************************
  Class declaration of CZoo 
 **************************************************************************************************************************/
@@ -38,6 +38,7 @@ private:
 	/**
 	* Put private members here.
 	*/
+        std::vector<CAnimal*> m_Animals;
 
 protected:
 
@@ -50,6 +51,7 @@ public:
 	/**
 	* Put additional public members here. They will not be visible in the external API.
 	*/
+        std::vector<CAnimal*>& Animals();
 
 
 	/**

@@ -12,7 +12,7 @@ Abstract: This is a stub class definition of CZoo
 #include "rtti_interfaceexception.hpp"
 
 // Include custom headers here.
-
+#include "rtti_animaliterator.hpp"
 
 using namespace RTTI::Impl;
 
@@ -20,8 +20,12 @@ using namespace RTTI::Impl;
  Class definition of CZoo 
 **************************************************************************************************************************/
 
-IAnimalIterator * CZoo::Iterator()
+std::vector<CAnimal *> &CZoo::Animals()
 {
-	throw ERTTIInterfaceException(RTTI_ERROR_NOTIMPLEMENTED);
+	return m_Animals;
 }
 
+IAnimalIterator * CZoo::Iterator()
+{
+	return new CAnimalIterator(m_Animals.begin(), m_Animals.end());
+}
