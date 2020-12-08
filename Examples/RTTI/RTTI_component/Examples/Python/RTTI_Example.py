@@ -28,6 +28,13 @@ def main():
 	print("RTTI version: {:d}.{:d}.{:d}".format(major, minor, micro), end="")
 	print("")
 
+	zoo = wrapper.CreateZoo()
+	iter = zoo.Iterator()
+
+	while animal := iter.GetNextAnimal():
+		print("animal: " + str(animal._handle))
+		if tiger := RTTI.Tiger.cast(animal):
+			tiger.Roar()
 
 if __name__ == "__main__":
 	try:

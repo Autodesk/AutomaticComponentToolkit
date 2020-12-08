@@ -92,6 +92,11 @@ typedef PTurtle PRTTITurtle;
 typedef PAnimalIterator PRTTIAnimalIterator;
 typedef PZoo PRTTIZoo;
 
+/*************************************************************************************************************************
+ rtti_cast Definition
+**************************************************************************************************************************/
+template <class T>
+inline std::shared_ptr<T> rtti_cast(PBase obj);
 
 /*************************************************************************************************************************
  classParam Definition
@@ -238,6 +243,7 @@ public:
 	}
 	
 	inline void CheckError(CBase * pBaseClass, RTTIResult nResult);
+	inline bool ImplementsInterface(CBase *pBaseClass, const std::string& sClassname);
 
 	inline void GetVersion(RTTI_uint32 & nMajor, RTTI_uint32 & nMinor, RTTI_uint32 & nMicro);
 	inline bool GetLastError(classParam<CBase> pInstance, std::string & sErrorMessage);
@@ -283,7 +289,7 @@ private:
 **************************************************************************************************************************/
 class CBase {
 public:
-	
+	static const std::string CLASSNAME;
 protected:
 	/* Wrapper Object that created the class. */
 	CWrapper * m_pWrapper;
@@ -332,6 +338,8 @@ public:
 	}
 	
 	friend class CWrapper;
+	template <class T>
+	friend std::shared_ptr<T> rtti_cast(PBase obj);
 };
 	
 /*************************************************************************************************************************
@@ -339,7 +347,8 @@ public:
 **************************************************************************************************************************/
 class CAnimal : public CBase {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
 	*/
@@ -355,7 +364,8 @@ public:
 **************************************************************************************************************************/
 class CMammal : public CAnimal {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
 	*/
@@ -371,7 +381,8 @@ public:
 **************************************************************************************************************************/
 class CReptile : public CAnimal {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
 	*/
@@ -387,7 +398,8 @@ public:
 **************************************************************************************************************************/
 class CGiraffe : public CMammal {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
 	*/
@@ -403,7 +415,8 @@ public:
 **************************************************************************************************************************/
 class CTiger : public CMammal {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
 	*/
@@ -420,7 +433,8 @@ public:
 **************************************************************************************************************************/
 class CSnake : public CReptile {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
 	*/
@@ -436,7 +450,8 @@ public:
 **************************************************************************************************************************/
 class CTurtle : public CReptile {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
 	*/
@@ -452,7 +467,8 @@ public:
 **************************************************************************************************************************/
 class CAnimalIterator : public CBase {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
 	*/
@@ -469,7 +485,8 @@ public:
 **************************************************************************************************************************/
 class CZoo : public CBase {
 public:
-	
+	static const std::string CLASSNAME;
+
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
 	*/
@@ -480,7 +497,30 @@ public:
 	
 	inline PAnimalIterator Iterator();
 };
-	
+
+	const std::string CBase::CLASSNAME = "Base";
+	const std::string CAnimal::CLASSNAME = "Animal";
+	const std::string CMammal::CLASSNAME = "Mammal";
+	const std::string CReptile::CLASSNAME = "Reptile";
+	const std::string CGiraffe::CLASSNAME = "Giraffe";
+	const std::string CTiger::CLASSNAME = "Tiger";
+	const std::string CSnake::CLASSNAME = "Snake";
+	const std::string CTurtle::CLASSNAME = "Turtle";
+	const std::string CAnimalIterator::CLASSNAME = "AnimalIterator";
+	const std::string CZoo::CLASSNAME = "Zoo";
+
+	template <class T>
+	std::shared_ptr<T> rtti_cast(PBase pObj)
+	{
+		static_assert(std::is_convertible<T, CBase>::value, "T must be convertible to RTTI::CBase");
+
+                if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::CLASSNAME)){
+			return std::make_shared<T>(pObj->m_pWrapper, pObj->m_pHandle);
+		}
+
+		return nullptr;
+	}
+
 	/**
 	* CWrapper::GetVersion - retrieves the binary version of this library.
 	* @param[out] nMajor - returns the major version of this library
@@ -583,7 +623,15 @@ public:
 			throw ERTTIException(nResult, sErrorMessage);
 		}
 	}
-	
+
+	inline bool CWrapper::ImplementsInterface(CBase *pBaseClass, const std::string& sClassname)
+	{
+		bool resultImplementsInterface = false;
+		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(pBaseClass->m_pHandle, sClassname.c_str(), &resultImplementsInterface));
+
+		return resultImplementsInterface;
+	}
+
 
 	inline RTTIResult CWrapper::initWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable)
 	{
@@ -596,6 +644,7 @@ public:
 		pWrapperTable->m_Zoo_Iterator = nullptr;
 		pWrapperTable->m_GetVersion = nullptr;
 		pWrapperTable->m_GetLastError = nullptr;
+                pWrapperTable->m_ImplementsInterface = nullptr;
 		pWrapperTable->m_ReleaseInstance = nullptr;
 		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_InjectComponent = nullptr;
@@ -684,7 +733,7 @@ public:
 		#endif // _WIN32
 		if (pWrapperTable->m_GetVersion == nullptr)
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
+
 		#ifdef _WIN32
 		pWrapperTable->m_GetLastError = (PRTTIGetLastErrorPtr) GetProcAddress(hLibrary, "rtti_getlasterror");
 		#else // _WIN32
@@ -693,7 +742,17 @@ public:
 		#endif // _WIN32
 		if (pWrapperTable->m_GetLastError == nullptr)
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
+
+		#ifdef _WIN32
+			  pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) GetProcAddress(hLibrary, "rtti_implementsinterface");
+		#else // _WIN32
+			  pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) dlsym(hLibrary, "rtti_implementsinterface");
+			  dlerror();
+		#endif // _WIN32
+			  if (pWrapperTable->m_ImplementsInterface == nullptr)
+			    return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+
+
 		#ifdef _WIN32
 		pWrapperTable->m_ReleaseInstance = (PRTTIReleaseInstancePtr) GetProcAddress(hLibrary, "rtti_releaseinstance");
 		#else // _WIN32

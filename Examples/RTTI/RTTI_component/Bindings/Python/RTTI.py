@@ -58,6 +58,7 @@ class ErrorCodes(enum.IntEnum):
 class FunctionTable:
 	rtti_getversion = None
 	rtti_getlasterror = None
+	rtti_implementsinterface = None
 	rtti_releaseinstance = None
 	rtti_acquireinstance = None
 	rtti_injectcomponent = None
@@ -114,13 +115,19 @@ class Wrapper:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32))
 			self.lib.rtti_getversion = methodType(int(methodAddress.value))
-			
+
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_getlasterror")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
 			self.lib.rtti_getlasterror = methodType(int(methodAddress.value))
-			
+
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_implementsinterface")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
+			self.lib.rtti_implementsinterface = methodType(int(methodAddress.value))
+
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_releaseinstance")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
@@ -179,7 +186,10 @@ class Wrapper:
 			
 			self.lib.rtti_getlasterror.restype = ctypes.c_int32
 			self.lib.rtti_getlasterror.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
-			
+
+			self.lib.rtti_implementsinterface.restype = ctypes.c_int32
+			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
+
 			self.lib.rtti_releaseinstance.restype = ctypes.c_int32
 			self.lib.rtti_releaseinstance.argtypes = [ctypes.c_void_p]
 			
@@ -244,7 +254,21 @@ class Wrapper:
 		self.checkError(None, self.lib.rtti_getlasterror(InstanceHandle, nErrorMessageBufferSize, nErrorMessageNeededChars, pErrorMessageBuffer, pHasError))
 		
 		return pErrorMessageBuffer.value.decode(), pHasError.value
-	
+
+	def ImplementsInterface(self, InstanceObject, ClassName):
+		InstanceHandle = None
+		if InstanceObject:
+			InstanceHandle = InstanceObject._handle
+		else:
+			return False
+
+		pImplementsInterface = ctypes.c_bool()
+		pClassName = ctypes.c_char_p(str.encode(ClassName))
+
+		self.checkError(None, self.lib.rtti_implementsinterface(InstanceHandle, pClassName, pImplementsInterface))
+
+		return pImplementsInterface.value
+
 	def ReleaseInstance(self, InstanceObject):
 		InstanceHandle = None
 		if InstanceObject:
@@ -294,6 +318,10 @@ class Wrapper:
 ''' Class Implementation for Base
 '''
 class Base:
+	@staticmethod
+	def ClassName():
+		return "Base"
+
 	def __init__(self, handle, wrapper):
 		if not handle or not wrapper:
 			raise ERTTIException(ErrorCodes.INVALIDPARAM)
@@ -303,10 +331,19 @@ class Base:
 	def __del__(self):
 		self._wrapper.ReleaseInstance(self)
 
+	@classmethod
+	def cast(cls, instance):
+		if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):
+			return Tiger(instance._handle, instance._wrapper)
+		return None
 
 ''' Class Implementation for Animal
 '''
 class Animal(Base):
+	@staticmethod
+	def ClassName():
+		return "Animal"
+
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 
@@ -314,6 +351,10 @@ class Animal(Base):
 ''' Class Implementation for Mammal
 '''
 class Mammal(Animal):
+	@staticmethod
+	def ClassName():
+		return "Mammal"
+
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
 
@@ -321,6 +362,10 @@ class Mammal(Animal):
 ''' Class Implementation for Reptile
 '''
 class Reptile(Animal):
+	@staticmethod
+	def ClassName():
+		return "Reptile"
+
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
 
@@ -328,6 +373,10 @@ class Reptile(Animal):
 ''' Class Implementation for Giraffe
 '''
 class Giraffe(Mammal):
+	@staticmethod
+	def ClassName():
+		return "Giraffe"
+
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
 
@@ -335,6 +384,10 @@ class Giraffe(Mammal):
 ''' Class Implementation for Tiger
 '''
 class Tiger(Mammal):
+	@staticmethod
+	def ClassName():
+		return "Tiger"
+
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
 	def Roar(self):
@@ -346,6 +399,10 @@ class Tiger(Mammal):
 ''' Class Implementation for Snake
 '''
 class Snake(Reptile):
+	@staticmethod
+	def ClassName():
+		return "Snake"
+
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -353,6 +410,10 @@ class Snake(Reptile):
 ''' Class Implementation for Turtle
 '''
 class Turtle(Reptile):
+	@staticmethod
+	def ClassName():
+		return "Turtle"
+
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -360,6 +421,10 @@ class Turtle(Reptile):
 ''' Class Implementation for AnimalIterator
 '''
 class AnimalIterator(Base):
+	@staticmethod
+	def ClassName():
+		return "AnimalIterator"
+
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def GetNextAnimal(self):
@@ -377,6 +442,10 @@ class AnimalIterator(Base):
 ''' Class Implementation for Zoo
 '''
 class Zoo(Base):
+	@staticmethod
+	def ClassName():
+		return "Zoo"
+
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def Iterator(self):

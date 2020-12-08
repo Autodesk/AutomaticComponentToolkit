@@ -27,6 +27,18 @@ int main()
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "RTTI.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;
+
+
+		auto zoo = wrapper->CreateZoo();
+		auto iter = zoo->Iterator();
+
+		using namespace RTTI;
+		while (auto animal = iter->GetNextAnimal()) {
+			std::cout << "Animal: 0x" << std::hex << animal->handle() << std::endl;
+			if (auto tiger = rtti_cast<CTiger>(animal)) {
+				tiger->Roar();
+                        }
+		}
 	}
 	catch (std::exception &e)
 	{
