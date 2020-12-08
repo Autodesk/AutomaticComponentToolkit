@@ -195,9 +195,11 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 		*ppProcAddress = (void*) &rtti_zoo_iterator;
 	if (sProcName == "rtti_getversion") 
 		*ppProcAddress = (void*) &rtti_getversion;
-	if (sProcName == "rtti_getlasterror") 
+	if (sProcName == "rtti_getlasterror")
 		*ppProcAddress = (void*) &rtti_getlasterror;
-	if (sProcName == "rtti_releaseinstance") 
+	if (sProcName == "rtti_implementsinterface")
+		*ppProcAddress = (void*) &rtti_implementsinterface;
+	if (sProcName == "rtti_releaseinstance")
 		*ppProcAddress = (void*) &rtti_releaseinstance;
 	if (sProcName == "rtti_acquireinstance") 
 		*ppProcAddress = (void*) &rtti_acquireinstance;
@@ -211,6 +213,88 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 	if (*ppProcAddress == nullptr) 
 		return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 	return RTTI_SUCCESS;
+}
+
+/*************************************************************************************************************************
+ RTTI implementation
+**************************************************************************************************************************/
+
+RTTIResult rtti_implementsinterface(RTTI_Base pInstance, const char * pClassName, bool * pImplementsInterface)
+{
+	IBase* pIBaseClassInstance = (IBase *)pInstance;
+	std::string sClassName(pClassName);
+
+	// TODO: Optimize these lookups in a static (generated) way
+	switch (pClassName[0]) {
+	case 'a':
+	case 'A':
+		if (sClassName == "Animal") {
+			*pImplementsInterface = dynamic_cast<IAnimal*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		if (sClassName == "AnimalIterator") {
+			*pImplementsInterface = dynamic_cast<IAnimalIterator*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 'b':
+	case 'B':
+		if (sClassName == "Base") {
+			*pImplementsInterface = dynamic_cast<IBase*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 'g':
+	case 'G':
+		if (sClassName == "Giraffe") {
+			*pImplementsInterface = dynamic_cast<IGiraffe*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 'm':
+	case 'M':
+		if (sClassName == "Mammal") {
+			*pImplementsInterface = dynamic_cast<IMammal*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 'r':
+	case 'R':
+		if (sClassName == "Reptile") {
+			*pImplementsInterface = dynamic_cast<IReptile*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 's':
+	case 'S':
+		if (sClassName == "Snake") {
+			*pImplementsInterface = dynamic_cast<ISnake*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 't':
+	case 'T':
+		if (sClassName == "Tiger") {
+			*pImplementsInterface = dynamic_cast<ITiger*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		if (sClassName == "Turtle") {
+			*pImplementsInterface = dynamic_cast<ITurtle*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	case 'z':
+	case 'Z':
+		if (sClassName == "Zoo") {
+			*pImplementsInterface = dynamic_cast<IZoo*>(pIBaseClassInstance) != nullptr;
+			return RTTI_SUCCESS;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return RTTI_ERROR_INVALIDPARAM;
 }
 
 /*************************************************************************************************************************
