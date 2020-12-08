@@ -289,7 +289,7 @@ private:
 **************************************************************************************************************************/
 class CBase {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 protected:
 	/* Wrapper Object that created the class. */
 	CWrapper * m_pWrapper;
@@ -347,7 +347,7 @@ public:
 **************************************************************************************************************************/
 class CAnimal : public CBase {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
@@ -364,7 +364,7 @@ public:
 **************************************************************************************************************************/
 class CMammal : public CAnimal {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
@@ -381,7 +381,7 @@ public:
 **************************************************************************************************************************/
 class CReptile : public CAnimal {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
@@ -398,7 +398,7 @@ public:
 **************************************************************************************************************************/
 class CGiraffe : public CMammal {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
@@ -415,7 +415,7 @@ public:
 **************************************************************************************************************************/
 class CTiger : public CMammal {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
@@ -433,7 +433,7 @@ public:
 **************************************************************************************************************************/
 class CSnake : public CReptile {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
@@ -450,7 +450,7 @@ public:
 **************************************************************************************************************************/
 class CTurtle : public CReptile {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
@@ -467,7 +467,7 @@ public:
 **************************************************************************************************************************/
 class CAnimalIterator : public CBase {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
@@ -485,7 +485,7 @@ public:
 **************************************************************************************************************************/
 class CZoo : public CBase {
 public:
-	static const std::string CLASSNAME;
+	static const std::string &getClassName();
 
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
@@ -498,23 +498,63 @@ public:
 	inline PAnimalIterator Iterator();
 };
 
-	const std::string CBase::CLASSNAME = "Base";
-	const std::string CAnimal::CLASSNAME = "Animal";
-	const std::string CMammal::CLASSNAME = "Mammal";
-	const std::string CReptile::CLASSNAME = "Reptile";
-	const std::string CGiraffe::CLASSNAME = "Giraffe";
-	const std::string CTiger::CLASSNAME = "Tiger";
-	const std::string CSnake::CLASSNAME = "Snake";
-	const std::string CTurtle::CLASSNAME = "Turtle";
-	const std::string CAnimalIterator::CLASSNAME = "AnimalIterator";
-	const std::string CZoo::CLASSNAME = "Zoo";
+	const std::string &CBase::getClassName()
+{
+		static const std::string s_sClassName = "Base";
+		return s_sClassName;
+	}
+	const std::string &CAnimal::getClassName()
+        {
+		static const std::string s_sClassName = "Animal";
+		return s_sClassName;
+	}
+	const std::string &CMammal::getClassName()
+        {
+		static const std::string s_sClassName = "Mammal";
+		return s_sClassName;
+	}
+	const std::string &CReptile::getClassName()
+        {
+		static const std::string s_sClassName = "Reptile";
+		return s_sClassName;
+	}
+	const std::string &CGiraffe::getClassName()
+        {
+		static const std::string s_sClassName = "Giraffe";
+		return s_sClassName;
+	}
+	const std::string &CTiger::getClassName()
+        {
+		static const std::string s_sClassName = "Tiger";
+		return s_sClassName;
+	}
+	const std::string &CSnake::getClassName()
+        {
+		static const std::string s_sClassName = "Snake";
+		return s_sClassName;
+	}
+	const std::string &CTurtle::getClassName()
+        {
+		static const std::string s_sClassName = "Turtle";
+		return s_sClassName;
+	}
+	const std::string &CAnimalIterator::getClassName()
+        {
+		static const std::string s_sClassName = "AnimalIterator";
+		return s_sClassName;
+	}
+	const std::string &CZoo::getClassName()
+	{
+		static const std::string s_sClassName = "Zoo";
+		return s_sClassName;
+	}
 
 	template <class T>
 	std::shared_ptr<T> rtti_cast(PBase pObj)
 	{
 		static_assert(std::is_convertible<T, CBase>::value, "T must be convertible to RTTI::CBase");
 
-                if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::CLASSNAME)){
+                if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::getClassName())){
 			return std::make_shared<T>(pObj->m_pWrapper, pObj->m_pHandle);
 		}
 
