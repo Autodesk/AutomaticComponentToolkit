@@ -566,7 +566,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 			return err
 		}
 		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
-			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			(isSpecialFunction == eSpecialMethodSymbolLookup) || (isSpecialFunction == eSpecialMethodImplementsInterface ) {
 			continue
 		}
 
@@ -624,7 +624,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 			return err
 		}
 		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
-			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			(isSpecialFunction == eSpecialMethodSymbolLookup) || (isSpecialFunction == eSpecialMethodImplementsInterface) {
 			continue
 		}
 		if (isSpecialFunction == eSpecialMethodVersion) {
@@ -691,6 +691,38 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
+func writeCImplementsInterfaceMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) error {
+	cParams, err := GenerateCParameters(method, "", NameSpace)
+	if err != nil {
+		return err
+	}
+
+	cparameters := ""
+	for _, cParam := range cParams {
+		if cparameters != "" {
+			cparameters = cparameters + ", "
+		}
+		cparameters = cparameters + cParam.ParamType + " " + cParam.ParamName
+	}
+
+	CMethodName := fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln("  %s", method.MethodDescription)
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+
+	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
+	w.Writeln("{")
+	w.Writeln("	 // TODO")
+	w.Writeln("  return %s_SUCCESS;", strings.ToUpper (NameSpace))
+	w.Writeln("}")
+	w.Writeln("")
+
+	return nil
+}
+
 func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string) error {
 
 	w.Writeln("")
@@ -719,8 +751,9 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));		
+		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));
 	}
+	
 
 	w.Writeln("if (pProcName == nullptr)")		
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
@@ -850,7 +883,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		method := global.Methods[j]
 				
 		// Check for special functions
-		isSpecialFunction, err := CheckHeaderSpecialFunction (method, global);
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
 		}
@@ -860,6 +893,16 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		if (isSpecialFunction == eSpecialMethodJournal) {
 			doMethodJournal = false;
 		}
+
+		
+		if (isSpecialFunction == eSpecialMethodImplementsInterface) {
+			err = writeCImplementsInterfaceMethod(method, w, NameSpace)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		
 
 		// Write Static function implementation
 		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction, false)
