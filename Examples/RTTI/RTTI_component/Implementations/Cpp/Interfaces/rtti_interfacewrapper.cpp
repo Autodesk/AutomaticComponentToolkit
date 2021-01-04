@@ -197,8 +197,6 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 		*ppProcAddress = (void*) &rtti_getversion;
 	if (sProcName == "rtti_getlasterror")
 		*ppProcAddress = (void*) &rtti_getlasterror;
-	if (sProcName == "rtti_implementsinterface")
-		*ppProcAddress = (void*) &rtti_implementsinterface;
 	if (sProcName == "rtti_releaseinstance")
 		*ppProcAddress = (void*) &rtti_releaseinstance;
 	if (sProcName == "rtti_acquireinstance") 
@@ -207,6 +205,8 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 		*ppProcAddress = (void*) &rtti_injectcomponent;
 	if (sProcName == "rtti_getsymbollookupmethod") 
 		*ppProcAddress = (void*) &rtti_getsymbollookupmethod;
+	if (sProcName == "rtti_implementsinterface") 
+		*ppProcAddress = (void*) &rtti_implementsinterface;
 	if (sProcName == "rtti_createzoo") 
 		*ppProcAddress = (void*) &rtti_createzoo;
 	

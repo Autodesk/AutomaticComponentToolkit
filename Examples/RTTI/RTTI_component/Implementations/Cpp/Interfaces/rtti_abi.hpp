@@ -126,16 +126,6 @@ RTTI_DECLSPEC RTTIResult rtti_getversion(RTTI_uint32 * pMajor, RTTI_uint32 * pMi
 RTTI_DECLSPEC RTTIResult rtti_getlasterror(RTTI_Base pInstance, const RTTI_uint32 nErrorMessageBufferSize, RTTI_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
-* Test whether an object implements a given interface
-*
-* @param[in] pObject - Instance Handle
-* @param[in] pClassName - Class name of the interface to test
-* @param[out] pImplementsInterface - will be set to true if pInstance implements the interface, false otherwise
-* @return error code or 0 (success)
-*/
-RTTI_DECLSPEC RTTIResult rtti_implementsinterface(RTTI_Base pInstance, const char * pClassName, bool * pImplementsInterface);
-
-/**
 * Releases shared ownership of an Instance
 *
 * @param[in] pInstance - Instance Handle
@@ -167,6 +157,16 @@ RTTI_DECLSPEC RTTIResult rtti_injectcomponent(const char * pNameSpace, RTTI_pvoi
 * @return error code or 0 (success)
 */
 RTTI_DECLSPEC RTTIResult rtti_getsymbollookupmethod(RTTI_pvoid * pSymbolLookupMethod);
+
+/**
+* Test whether an object implements a given interface
+*
+* @param[in] pObject - Instance Handle
+* @param[in] pClassName - Class name of the interface to test
+* @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_implementsinterface(RTTI_Base pObject, const char * pClassName, bool * pImplementsInterface);
 
 /**
 * Create a new zoo with animals

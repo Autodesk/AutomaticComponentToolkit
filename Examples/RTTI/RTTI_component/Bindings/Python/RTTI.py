@@ -58,11 +58,11 @@ class ErrorCodes(enum.IntEnum):
 class FunctionTable:
 	rtti_getversion = None
 	rtti_getlasterror = None
-	rtti_implementsinterface = None
 	rtti_releaseinstance = None
 	rtti_acquireinstance = None
 	rtti_injectcomponent = None
 	rtti_getsymbollookupmethod = None
+	rtti_implementsinterface = None
 	rtti_createzoo = None
 	rtti_tiger_roar = None
 	rtti_animaliterator_getnextanimal = None
@@ -122,12 +122,6 @@ class Wrapper:
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
 			self.lib.rtti_getlasterror = methodType(int(methodAddress.value))
 
-			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_implementsinterface")), methodAddress)
-			if err != 0:
-				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
-			self.lib.rtti_implementsinterface = methodType(int(methodAddress.value))
-
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_releaseinstance")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
@@ -151,6 +145,12 @@ class Wrapper:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_void_p))
 			self.lib.rtti_getsymbollookupmethod = methodType(int(methodAddress.value))
+			
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_implementsinterface")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
+			self.lib.rtti_implementsinterface = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_createzoo")), methodAddress)
 			if err != 0:
@@ -187,9 +187,6 @@ class Wrapper:
 			self.lib.rtti_getlasterror.restype = ctypes.c_int32
 			self.lib.rtti_getlasterror.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
 
-			self.lib.rtti_implementsinterface.restype = ctypes.c_int32
-			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
-
 			self.lib.rtti_releaseinstance.restype = ctypes.c_int32
 			self.lib.rtti_releaseinstance.argtypes = [ctypes.c_void_p]
 			
@@ -201,6 +198,9 @@ class Wrapper:
 			
 			self.lib.rtti_getsymbollookupmethod.restype = ctypes.c_int32
 			self.lib.rtti_getsymbollookupmethod.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+			
+			self.lib.rtti_implementsinterface.restype = ctypes.c_int32
+			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
 			
 			self.lib.rtti_createzoo.restype = ctypes.c_int32
 			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
@@ -255,20 +255,6 @@ class Wrapper:
 		
 		return pErrorMessageBuffer.value.decode(), pHasError.value
 
-	def ImplementsInterface(self, InstanceObject, ClassName):
-		InstanceHandle = None
-		if InstanceObject:
-			InstanceHandle = InstanceObject._handle
-		else:
-			return False
-
-		pImplementsInterface = ctypes.c_bool()
-		pClassName = ctypes.c_char_p(str.encode(ClassName))
-
-		self.checkError(None, self.lib.rtti_implementsinterface(InstanceHandle, pClassName, pImplementsInterface))
-
-		return pImplementsInterface.value
-
 	def ReleaseInstance(self, InstanceObject):
 		InstanceHandle = None
 		if InstanceObject:
@@ -302,6 +288,18 @@ class Wrapper:
 		self.checkError(None, self.lib.rtti_getsymbollookupmethod(pSymbolLookupMethod))
 		
 		return pSymbolLookupMethod.value
+	
+	def ImplementsInterface(self, ObjectObject, ClassName):
+		ObjectHandle = None
+		if ObjectObject:
+			ObjectHandle = ObjectObject._handle
+		else:
+			raise ERTTIException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
+		pClassName = ctypes.c_char_p(str.encode(ClassName))
+		pImplementsInterface = ctypes.c_bool()
+		self.checkError(None, self.lib.rtti_implementsinterface(ObjectHandle, pClassName, pImplementsInterface))
+		
+		return pImplementsInterface.value
 	
 	def CreateZoo(self):
 		InstanceHandle = ctypes.c_void_p()

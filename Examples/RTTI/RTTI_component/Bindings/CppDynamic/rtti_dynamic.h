@@ -113,16 +113,6 @@ typedef RTTIResult (*PRTTIGetVersionPtr) (RTTI_uint32 * pMajor, RTTI_uint32 * pM
 typedef RTTIResult (*PRTTIGetLastErrorPtr) (RTTI_Base pInstance, const RTTI_uint32 nErrorMessageBufferSize, RTTI_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError);
 
 /**
-* Test whether an object implements a given interface
-*
-* @param[in] pObject - Instance Handle
-* @param[in] pClassName - Class name of the interface to test
-* @param[out] pImplementsInterface - will be set to true if pInstance implements the interface, false otherwise
-* @return error code or 0 (success)
-*/
-typedef RTTIResult (*PRTTIImplementsInterfacePtr) (RTTI_Base pInstance, const char * pClassName, bool * pImplementsInterface);
-
-/**
 * Releases shared ownership of an Instance
 *
 * @param[in] pInstance - Instance Handle
@@ -156,6 +146,16 @@ typedef RTTIResult (*PRTTIInjectComponentPtr) (const char * pNameSpace, RTTI_pvo
 typedef RTTIResult (*PRTTIGetSymbolLookupMethodPtr) (RTTI_pvoid * pSymbolLookupMethod);
 
 /**
+* Test whether an object implements a given interface
+*
+* @param[in] pObject - Instance Handle
+* @param[in] pClassName - Class name of the interface to test
+* @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
+* @return error code or 0 (success)
+*/
+typedef RTTIResult (*PRTTIImplementsInterfacePtr) (RTTI_Base pObject, const char * pClassName, bool * pImplementsInterface);
+
+/**
 * Create a new zoo with animals
 *
 * @param[out] pInstance - 
@@ -174,11 +174,11 @@ typedef struct {
 	PRTTIZoo_IteratorPtr m_Zoo_Iterator;
 	PRTTIGetVersionPtr m_GetVersion;
 	PRTTIGetLastErrorPtr m_GetLastError;
-        PRTTIImplementsInterfacePtr m_ImplementsInterface;
 	PRTTIReleaseInstancePtr m_ReleaseInstance;
 	PRTTIAcquireInstancePtr m_AcquireInstance;
 	PRTTIInjectComponentPtr m_InjectComponent;
 	PRTTIGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
+	PRTTIImplementsInterfacePtr m_ImplementsInterface;
 	PRTTICreateZooPtr m_CreateZoo;
 } sRTTIDynamicWrapperTable;
 

@@ -243,7 +243,6 @@ public:
 	}
 	
 	inline void CheckError(CBase * pBaseClass, RTTIResult nResult);
-	inline bool ImplementsInterface(CBase *pBaseClass, const std::string& sClassname);
 
 	inline void GetVersion(RTTI_uint32 & nMajor, RTTI_uint32 & nMinor, RTTI_uint32 & nMicro);
 	inline bool GetLastError(classParam<CBase> pInstance, std::string & sErrorMessage);
@@ -251,6 +250,7 @@ public:
 	inline void AcquireInstance(classParam<CBase> pInstance);
 	inline void InjectComponent(const std::string & sNameSpace, const RTTI_pvoid pSymbolAddressMethod);
 	inline RTTI_pvoid GetSymbolLookupMethod();
+	inline bool ImplementsInterface(classParam<CBase> pObject, const std::string & sClassName);
 	inline PZoo CreateZoo();
 
 private:
@@ -639,6 +639,21 @@ public:
 	}
 	
 	/**
+	* CWrapper::ImplementsInterface - Test whether an object implements a given interface
+	* @param[in] pObject - Instance Handle
+	* @param[in] sClassName - Class name of the interface to test
+	* @return Will be set to true if pInstance implements the interface, false otherwise
+	*/
+	inline bool CWrapper::ImplementsInterface(classParam<CBase> pObject, const std::string & sClassName)
+	{
+		RTTIHandle hObject = pObject.GetHandle();
+		bool resultImplementsInterface = 0;
+		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(hObject, sClassName.c_str(), &resultImplementsInterface));
+		
+		return resultImplementsInterface;
+	}
+	
+	/**
 	* CWrapper::CreateZoo - Create a new zoo with animals
 	* @return 
 	*/
@@ -664,14 +679,6 @@ public:
 		}
 	}
 
-	inline bool CWrapper::ImplementsInterface(CBase *pBaseClass, const std::string& sClassname)
-	{
-		bool resultImplementsInterface = false;
-		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(pBaseClass->m_pHandle, sClassname.c_str(), &resultImplementsInterface));
-
-		return resultImplementsInterface;
-	}
-
 
 	inline RTTIResult CWrapper::initWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable)
 	{
@@ -684,11 +691,11 @@ public:
 		pWrapperTable->m_Zoo_Iterator = nullptr;
 		pWrapperTable->m_GetVersion = nullptr;
 		pWrapperTable->m_GetLastError = nullptr;
-                pWrapperTable->m_ImplementsInterface = nullptr;
 		pWrapperTable->m_ReleaseInstance = nullptr;
 		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_InjectComponent = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
+		pWrapperTable->m_ImplementsInterface = nullptr;
 		pWrapperTable->m_CreateZoo = nullptr;
 		
 		return RTTI_SUCCESS;
@@ -784,16 +791,6 @@ public:
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 
 		#ifdef _WIN32
-			  pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) GetProcAddress(hLibrary, "rtti_implementsinterface");
-		#else // _WIN32
-			  pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) dlsym(hLibrary, "rtti_implementsinterface");
-			  dlerror();
-		#endif // _WIN32
-			  if (pWrapperTable->m_ImplementsInterface == nullptr)
-			    return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-
-
-		#ifdef _WIN32
 		pWrapperTable->m_ReleaseInstance = (PRTTIReleaseInstancePtr) GetProcAddress(hLibrary, "rtti_releaseinstance");
 		#else // _WIN32
 		pWrapperTable->m_ReleaseInstance = (PRTTIReleaseInstancePtr) dlsym(hLibrary, "rtti_releaseinstance");
@@ -827,6 +824,15 @@ public:
 		dlerror();
 		#endif // _WIN32
 		if (pWrapperTable->m_GetSymbolLookupMethod == nullptr)
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		#ifdef _WIN32
+		pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) GetProcAddress(hLibrary, "rtti_implementsinterface");
+		#else // _WIN32
+		pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) dlsym(hLibrary, "rtti_implementsinterface");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_ImplementsInterface == nullptr)
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
@@ -888,6 +894,10 @@ public:
 		
 		eLookupError = (*pLookup)("rtti_getsymbollookupmethod", (void**)&(pWrapperTable->m_GetSymbolLookupMethod));
 		if ( (eLookupError != 0) || (pWrapperTable->m_GetSymbolLookupMethod == nullptr) )
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
+		eLookupError = (*pLookup)("rtti_implementsinterface", (void**)&(pWrapperTable->m_ImplementsInterface));
+		if ( (eLookupError != 0) || (pWrapperTable->m_ImplementsInterface == nullptr) )
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		eLookupError = (*pLookup)("rtti_createzoo", (void**)&(pWrapperTable->m_CreateZoo));

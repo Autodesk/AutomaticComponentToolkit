@@ -159,6 +159,16 @@ RTTI_DECLSPEC RTTIResult rtti_injectcomponent(const char * pNameSpace, RTTI_pvoi
 RTTI_DECLSPEC RTTIResult rtti_getsymbollookupmethod(RTTI_pvoid * pSymbolLookupMethod);
 
 /**
+* Test whether an object implements a given interface
+*
+* @param[in] pObject - Instance Handle
+* @param[in] pClassName - Class name of the interface to test
+* @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_implementsinterface(RTTI_Base pObject, const char * pClassName, bool * pImplementsInterface);
+
+/**
 * Create a new zoo with animals
 *
 * @param[out] pInstance - 
