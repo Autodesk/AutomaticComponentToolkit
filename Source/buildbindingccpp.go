@@ -898,8 +898,10 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("    return m_pWrapper;")
 	w.Writeln("  }")
 
-	w.Writeln("  ")
+	w.Writeln("")
 	w.Writeln("  friend class CWrapper;")
+	w.Writeln("  template <class T>")
+	w.Writeln("  friend std::shared_ptr<T> %s_cast(PBase obj);", strings.ToLower(NameSpace))
 	return nil
 }
 
@@ -1142,6 +1144,12 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix, ClassIdentifier)
 
 
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" rtti_cast Definition")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("template <class T>")
+	w.Writeln("inline std::shared_ptr<T> %s_cast(PBase obj);", strings.ToLower(NameSpace))
+
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" classParam Definition")
@@ -1360,6 +1368,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("**************************************************************************************************************************/")
 		w.Writeln("class %s %s{", cppClassName, inheritanceSpecifier)
 		w.Writeln("public:")
+		w.Writeln("  static const std::string &getClassName();")
 		w.Writeln("  ")
 		if !component.isBaseClass(class) {
 			w.Writeln("  /**")
@@ -1388,6 +1397,41 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		}
 		w.Writeln("};")
 	}
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" RTTI static getClassName implementations")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("  const std::string &C%s::getClassName()", class.ClassName)
+		w.Writeln("  {")
+		w.Writeln("  static const std::string s_sClassName = \"%s\";", class.ClassName)
+		w.Writeln("  return s_sClassName;")
+		w.Writeln("  }")
+		w.Writeln("")
+	}
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" RTTI cast implementation")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+
+	w.Writeln("  template <class T>")
+	w.Writeln("  std::shared_ptr<T> %s_cast(PBase pObj)", strings.ToLower(NameSpace))
+	w.Writeln("  {")
+	w.Writeln("    static_assert(std::is_convertible<T, CBase>::value, \"T must be convertible to %s::CBase\");", NameSpace)
+	w.Writeln("")
+	w.Writeln("    if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::getClassName())){")
+	w.Writeln("      return std::make_shared<T>(pObj->m_pWrapper, pObj->m_pHandle);")
+	w.Writeln("    }")
+	w.Writeln("")
+	w.Writeln("    return nullptr;")
+	w.Writeln("  }")
+
 
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]

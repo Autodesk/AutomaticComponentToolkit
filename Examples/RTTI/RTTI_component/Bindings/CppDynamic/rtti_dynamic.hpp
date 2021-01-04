@@ -290,6 +290,7 @@ private:
 class CBase {
 public:
 	static const std::string &getClassName();
+	
 protected:
 	/* Wrapper Object that created the class. */
 	CWrapper * m_pWrapper;
@@ -336,7 +337,7 @@ public:
 	{
 		return m_pWrapper;
 	}
-	
+
 	friend class CWrapper;
 	template <class T>
 	friend std::shared_ptr<T> rtti_cast(PBase obj);
@@ -348,7 +349,7 @@ public:
 class CAnimal : public CBase {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
 	*/
@@ -365,7 +366,7 @@ public:
 class CMammal : public CAnimal {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
 	*/
@@ -382,7 +383,7 @@ public:
 class CReptile : public CAnimal {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
 	*/
@@ -399,7 +400,7 @@ public:
 class CGiraffe : public CMammal {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
 	*/
@@ -416,7 +417,7 @@ public:
 class CTiger : public CMammal {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
 	*/
@@ -434,7 +435,7 @@ public:
 class CSnake : public CReptile {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
 	*/
@@ -451,7 +452,7 @@ public:
 class CTurtle : public CReptile {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
 	*/
@@ -468,7 +469,7 @@ public:
 class CAnimalIterator : public CBase {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
 	*/
@@ -486,7 +487,7 @@ public:
 class CZoo : public CBase {
 public:
 	static const std::string &getClassName();
-
+	
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
 	*/
@@ -498,69 +499,87 @@ public:
 	inline PAnimalIterator Iterator();
 };
 
+/*************************************************************************************************************************
+ RTTI static getClassName implementations
+**************************************************************************************************************************/
+
 	const std::string &CBase::getClassName()
-{
-		static const std::string s_sClassName = "Base";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Base";
+	return s_sClassName;
 	}
+
 	const std::string &CAnimal::getClassName()
-        {
-		static const std::string s_sClassName = "Animal";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Animal";
+	return s_sClassName;
 	}
+
 	const std::string &CMammal::getClassName()
-        {
-		static const std::string s_sClassName = "Mammal";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Mammal";
+	return s_sClassName;
 	}
+
 	const std::string &CReptile::getClassName()
-        {
-		static const std::string s_sClassName = "Reptile";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Reptile";
+	return s_sClassName;
 	}
+
 	const std::string &CGiraffe::getClassName()
-        {
-		static const std::string s_sClassName = "Giraffe";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Giraffe";
+	return s_sClassName;
 	}
+
 	const std::string &CTiger::getClassName()
-        {
-		static const std::string s_sClassName = "Tiger";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Tiger";
+	return s_sClassName;
 	}
+
 	const std::string &CSnake::getClassName()
-        {
-		static const std::string s_sClassName = "Snake";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Snake";
+	return s_sClassName;
 	}
+
 	const std::string &CTurtle::getClassName()
-        {
-		static const std::string s_sClassName = "Turtle";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "Turtle";
+	return s_sClassName;
 	}
+
 	const std::string &CAnimalIterator::getClassName()
-        {
-		static const std::string s_sClassName = "AnimalIterator";
-		return s_sClassName;
+	{
+	static const std::string s_sClassName = "AnimalIterator";
+	return s_sClassName;
 	}
+
 	const std::string &CZoo::getClassName()
 	{
-		static const std::string s_sClassName = "Zoo";
-		return s_sClassName;
+	static const std::string s_sClassName = "Zoo";
+	return s_sClassName;
 	}
+
+
+/*************************************************************************************************************************
+ RTTI cast implementation
+**************************************************************************************************************************/
 
 	template <class T>
 	std::shared_ptr<T> rtti_cast(PBase pObj)
 	{
 		static_assert(std::is_convertible<T, CBase>::value, "T must be convertible to RTTI::CBase");
 
-                if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::getClassName())){
+		if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::getClassName())){
 			return std::make_shared<T>(pObj->m_pWrapper, pObj->m_pHandle);
 		}
 
 		return nullptr;
 	}
-
+	
 	/**
 	* CWrapper::GetVersion - retrieves the binary version of this library.
 	* @param[out] nMajor - returns the major version of this library
@@ -678,7 +697,7 @@ public:
 			throw ERTTIException(nResult, sErrorMessage);
 		}
 	}
-
+	
 
 	inline RTTIResult CWrapper::initWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable)
 	{
@@ -780,7 +799,7 @@ public:
 		#endif // _WIN32
 		if (pWrapperTable->m_GetVersion == nullptr)
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-
+		
 		#ifdef _WIN32
 		pWrapperTable->m_GetLastError = (PRTTIGetLastErrorPtr) GetProcAddress(hLibrary, "rtti_getlasterror");
 		#else // _WIN32
@@ -789,7 +808,7 @@ public:
 		#endif // _WIN32
 		if (pWrapperTable->m_GetLastError == nullptr)
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-
+		
 		#ifdef _WIN32
 		pWrapperTable->m_ReleaseInstance = (PRTTIReleaseInstancePtr) GetProcAddress(hLibrary, "rtti_releaseinstance");
 		#else // _WIN32
