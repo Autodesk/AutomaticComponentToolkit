@@ -691,7 +691,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
-func writeCImplementsInterfaceMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) error {
+func writeCImplementsInterfaceMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) error {
 	cParams, err := GenerateCParameters(method, "", NameSpace)
 	if err != nil {
 		return err
@@ -715,8 +715,15 @@ func writeCImplementsInterfaceMethod(method ComponentDefinitionMethod, w Languag
 
 	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
-	w.Writeln("	 // TODO")
-	w.Writeln("  return %s_SUCCESS;", strings.ToUpper (NameSpace))
+	w.Writeln("  IBase* pIBaseClassInstance = (IBase *)pObject;")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		w.Writeln("	 if (strcmp(pClassName, \"%s\") == 0) {", class.ClassName)
+		w.Writeln("    *pImplementsInterface = dynamic_cast<I%s*>(pIBaseClassInstance) != nullptr;", class.ClassName)
+		w.Writeln("    return RTTI_SUCCESS;")
+		w.Writeln("  }")
+	}
+	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("}")
 	w.Writeln("")
 
@@ -894,9 +901,8 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 			doMethodJournal = false;
 		}
 
-		
 		if (isSpecialFunction == eSpecialMethodImplementsInterface) {
-			err = writeCImplementsInterfaceMethod(method, w, NameSpace)
+			err = writeCImplementsInterfaceMethod(component, method, w, NameSpace)
 			if err != nil {
 				return err
 			}
