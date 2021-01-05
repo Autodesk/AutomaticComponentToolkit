@@ -735,11 +735,27 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 			parentClass = pythonBaseClassName
 		}
 		w.Writeln("class %s(%s):", class.ClassName, parentClass)
+		w.Writeln("  @staticmethod")
+		w.Writeln("  def ClassName():")
+		w.Writeln("    return \"%s\"", class.ClassName)
+		w.Writeln("  ")
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
 	} else {
 		w.Writeln("class %s:", class.ClassName)
+		w.Writeln("  @staticmethod")
+		w.Writeln("  def ClassName():")
+		w.Writeln("    return \"%s\"", class.ClassName)
+		w.Writeln("  ")
+
+		w.Writeln("  @classmethod")
+		w.Writeln("  def cast(cls, instance):")
+		w.Writeln("  	if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):")
+		w.Writeln("  		return cls(instance._handle, instance._wrapper)")
+		w.Writeln("  	return None")
+		w.Writeln("  ")
+
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    if not handle or not wrapper:")
 		w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
