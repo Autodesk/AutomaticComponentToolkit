@@ -1145,7 +1145,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" rtti_cast Definition")
+	w.Writeln(" %s_cast Definition", strings.ToLower(NameSpace))
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("template <class T>")
 	w.Writeln("inline std::shared_ptr<T> %s_cast(PBase obj);", strings.ToLower(NameSpace))

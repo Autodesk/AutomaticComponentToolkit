@@ -720,7 +720,7 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 		class := component.Classes[i]
 		w.Writeln("	 if (strcmp(pClassName, \"%s\") == 0) {", class.ClassName)
 		w.Writeln("    *pImplementsInterface = dynamic_cast<I%s*>(pIBaseClassInstance) != nullptr;", class.ClassName)
-		w.Writeln("    return RTTI_SUCCESS;")
+		w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
 		w.Writeln("  }")
 	}
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
