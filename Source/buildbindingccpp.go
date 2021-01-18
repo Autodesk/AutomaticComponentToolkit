@@ -1368,7 +1368,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("**************************************************************************************************************************/")
 		w.Writeln("class %s %s{", cppClassName, inheritanceSpecifier)
 		w.Writeln("public:")
-		w.Writeln("  static const std::string &getClassName();")
+		w.Writeln("  static inline const std::string &getClassName();")
 		w.Writeln("  ")
 		if !component.isBaseClass(class) {
 			w.Writeln("  /**")
