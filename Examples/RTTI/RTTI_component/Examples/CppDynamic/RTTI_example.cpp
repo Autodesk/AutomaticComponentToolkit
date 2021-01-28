@@ -34,10 +34,10 @@ int main()
 
 		using namespace RTTI;
 		while (auto animal = iter->GetNextAnimal()) {
-			std::cout << "Animal: 0x" << std::hex << animal->handle() << std::endl;
 			if (auto tiger = rtti_cast<CTiger>(animal)) {
 				tiger->Roar();
                         }
+			std::cout << "Animal name: " << animal->Name() << std::endl;
 		}
 	}
 	catch (std::exception &e)

@@ -32,9 +32,9 @@ def main():
 	iter = zoo.Iterator()
 
 	while animal := iter.GetNextAnimal():
-		print("animal: " + str(animal._handle))
 		if tiger := RTTI.Tiger.cast(animal):
 			tiger.Roar()
+		print("Animal name: " + animal.Name())
 
 if __name__ == "__main__":
 	try:
