@@ -333,6 +333,7 @@ class Base:
 	@classmethod
 	def cast(cls, instance):
 		if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):
+			instance._wrapper.AcquireInstance(instance)
 			return cls(instance._handle, instance._wrapper)
 		return None
 	

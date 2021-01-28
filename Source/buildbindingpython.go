@@ -751,9 +751,10 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 
 		w.Writeln("  @classmethod")
 		w.Writeln("  def cast(cls, instance):")
-		w.Writeln("  	if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):")
-		w.Writeln("  		return cls(instance._handle, instance._wrapper)")
-		w.Writeln("  	return None")
+		w.Writeln("    if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):")
+		w.Writeln("      instance._wrapper.AcquireInstance(instance)")
+		w.Writeln("      return cls(instance._handle, instance._wrapper)")
+		w.Writeln("    return None")
 		w.Writeln("  ")
 
 		w.Writeln("  def __init__(self, handle, wrapper):")
