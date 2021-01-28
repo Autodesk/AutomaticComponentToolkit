@@ -289,7 +289,7 @@ private:
 **************************************************************************************************************************/
 class CBase {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 protected:
 	/* Wrapper Object that created the class. */
@@ -348,7 +348,7 @@ public:
 **************************************************************************************************************************/
 class CAnimal : public CBase {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
@@ -366,7 +366,7 @@ public:
 **************************************************************************************************************************/
 class CMammal : public CAnimal {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
@@ -383,7 +383,7 @@ public:
 **************************************************************************************************************************/
 class CReptile : public CAnimal {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
@@ -400,7 +400,7 @@ public:
 **************************************************************************************************************************/
 class CGiraffe : public CMammal {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
@@ -417,7 +417,7 @@ public:
 **************************************************************************************************************************/
 class CTiger : public CMammal {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
@@ -435,7 +435,7 @@ public:
 **************************************************************************************************************************/
 class CSnake : public CReptile {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
@@ -452,7 +452,7 @@ public:
 **************************************************************************************************************************/
 class CTurtle : public CReptile {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
@@ -469,7 +469,7 @@ public:
 **************************************************************************************************************************/
 class CAnimalIterator : public CBase {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
@@ -487,7 +487,7 @@ public:
 **************************************************************************************************************************/
 class CZoo : public CBase {
 public:
-	static const std::string &getClassName();
+	static inline const std::string &getClassName();
 	
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
