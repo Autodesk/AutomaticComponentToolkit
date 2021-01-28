@@ -110,6 +110,8 @@ template <class T1, class T2, class T3> class ParameterCache_3 : public Paramete
 **************************************************************************************************************************/
 
 class IBase {
+private:
+	std::unique_ptr<ParameterCache> m_ParameterCache;
 public:
 	/**
 	* IBase::~IBase - virtual destructor of IBase
@@ -167,6 +169,23 @@ public:
 	* @return Has the object been released
 	*/
 	virtual bool DecRefCount() = 0;
+
+	/**
+	* IBase::_setCache - set parameter cache of object
+	*/
+	void _setCache(ParameterCache * pCache)
+	{
+		m_ParameterCache.reset(pCache);
+	}
+
+	/**
+	* IBase::_getCache - returns parameter cache of object
+	*/
+	ParameterCache* _getCache()
+	{
+		return m_ParameterCache.get();
+	}
+
 };
 
 
@@ -208,6 +227,12 @@ typedef IBaseSharedPtr<IBase> PIBase;
 
 class IAnimal : public virtual IBase {
 public:
+	/**
+	* IAnimal::Name - Get the name of the animal
+	* @return 
+	*/
+	virtual std::string Name() = 0;
+
 };
 
 typedef IBaseSharedPtr<IAnimal> PIAnimal;

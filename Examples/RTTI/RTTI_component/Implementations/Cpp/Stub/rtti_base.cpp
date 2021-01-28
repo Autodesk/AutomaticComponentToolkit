@@ -12,7 +12,7 @@ Abstract: This is a stub class definition of CBase
 #include "rtti_interfaceexception.hpp"
 
 // Include custom headers here.
-
+#include <iostream>
 
 using namespace RTTI::Impl;
 

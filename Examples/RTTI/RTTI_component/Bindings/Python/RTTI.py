@@ -64,6 +64,7 @@ class FunctionTable:
 	rtti_getsymbollookupmethod = None
 	rtti_implementsinterface = None
 	rtti_createzoo = None
+	rtti_animal_name = None
 	rtti_tiger_roar = None
 	rtti_animaliterator_getnextanimal = None
 	rtti_zoo_iterator = None
@@ -158,6 +159,12 @@ class Wrapper:
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_void_p))
 			self.lib.rtti_createzoo = methodType(int(methodAddress.value))
 			
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animal_name")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p)
+			self.lib.rtti_animal_name = methodType(int(methodAddress.value))
+			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_tiger_roar")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
@@ -204,6 +211,9 @@ class Wrapper:
 			
 			self.lib.rtti_createzoo.restype = ctypes.c_int32
 			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+			
+			self.lib.rtti_animal_name.restype = ctypes.c_int32
+			self.lib.rtti_animal_name.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p]
 			
 			self.lib.rtti_tiger_roar.restype = ctypes.c_int32
 			self.lib.rtti_tiger_roar.argtypes = [ctypes.c_void_p]
@@ -345,6 +355,17 @@ class Animal(Base):
 	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
+	def Name(self):
+		nResultBufferSize = ctypes.c_uint64(0)
+		nResultNeededChars = ctypes.c_uint64(0)
+		pResultBuffer = ctypes.c_char_p(None)
+		self._wrapper.checkError(self, self._wrapper.lib.rtti_animal_name(self._handle, nResultBufferSize, nResultNeededChars, pResultBuffer))
+		nResultBufferSize = ctypes.c_uint64(nResultNeededChars.value)
+		pResultBuffer = (ctypes.c_char * (nResultNeededChars.value))()
+		self._wrapper.checkError(self, self._wrapper.lib.rtti_animal_name(self._handle, nResultBufferSize, nResultNeededChars, pResultBuffer))
+		
+		return pResultBuffer.value.decode()
+	
 
 
 ''' Class Implementation for Mammal

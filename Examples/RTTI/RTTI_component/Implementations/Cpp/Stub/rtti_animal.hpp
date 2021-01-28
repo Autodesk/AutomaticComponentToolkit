@@ -38,13 +38,15 @@ private:
 	/**
 	* Put private members here.
 	*/
-
+	std::string m_sName;
 protected:
 
 	/**
 	* Put protected members here.
 	*/
-
+	CAnimal();
+	~CAnimal();
+	explicit CAnimal(std::string sName);
 public:
 
 	/**
@@ -55,6 +57,7 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
+	std::string Name() override;
 
 };
 

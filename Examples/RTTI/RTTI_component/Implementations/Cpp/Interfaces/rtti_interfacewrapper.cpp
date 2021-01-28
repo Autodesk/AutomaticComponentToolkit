@@ -60,6 +60,54 @@ RTTIResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Animal
 **************************************************************************************************************************/
+RTTIResult rtti_animal_name(RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer)
+{
+	IBase* pIBaseClass = (IBase *)pAnimal;
+
+	try {
+		if ( (!pResultBuffer) && !(pResultNeededChars) )
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		std::string sResult("");
+		IAnimal* pIAnimal = dynamic_cast<IAnimal*>(pIBaseClass);
+		if (!pIAnimal)
+			throw ERTTIInterfaceException(RTTI_ERROR_INVALIDCAST);
+		
+		bool isCacheCall = (pResultBuffer == nullptr);
+		if (isCacheCall) {
+			sResult = pIAnimal->Name();
+
+			pIAnimal->_setCache (new ParameterCache_1<std::string> (sResult));
+		}
+		else {
+			auto cache = dynamic_cast<ParameterCache_1<std::string>*> (pIAnimal->_getCache ());
+			if (cache == nullptr)
+				throw ERTTIInterfaceException(RTTI_ERROR_INVALIDCAST);
+			cache->retrieveData (sResult);
+			pIAnimal->_setCache (nullptr);
+		}
+		
+		if (pResultNeededChars)
+			*pResultNeededChars = (RTTI_uint32) (sResult.size()+1);
+		if (pResultBuffer) {
+			if (sResult.size() >= nResultBufferSize)
+				throw ERTTIInterfaceException (RTTI_ERROR_BUFFERTOOSMALL);
+			for (size_t iResult = 0; iResult < sResult.size(); iResult++)
+				pResultBuffer[iResult] = sResult[iResult];
+			pResultBuffer[sResult.size()] = 0;
+		}
+		return RTTI_SUCCESS;
+	}
+	catch (ERTTIInterfaceException & Exception) {
+		return handleRTTIException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for Mammal
@@ -187,6 +235,8 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 	*ppProcAddress = nullptr;
 	std::string sProcName (pProcName);
 	
+	if (sProcName == "rtti_animal_name") 
+		*ppProcAddress = (void*) &rtti_animal_name;
 	if (sProcName == "rtti_tiger_roar") 
 		*ppProcAddress = (void*) &rtti_tiger_roar;
 	if (sProcName == "rtti_animaliterator_getnextanimal") 

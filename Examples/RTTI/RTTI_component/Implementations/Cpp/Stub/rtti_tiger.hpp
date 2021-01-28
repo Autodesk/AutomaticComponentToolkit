@@ -50,7 +50,7 @@ public:
 	/**
 	* Put additional public members here. They will not be visible in the external API.
 	*/
-
+	explicit CTiger(std::string sName);
 
 	/**
 	* Public member functions to implement.

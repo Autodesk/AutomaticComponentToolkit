@@ -358,6 +358,7 @@ public:
 	{
 	}
 	
+	inline std::string Name();
 };
 	
 /*************************************************************************************************************************
@@ -705,6 +706,7 @@ public:
 			return RTTI_ERROR_INVALIDPARAM;
 		
 		pWrapperTable->m_LibraryHandle = nullptr;
+		pWrapperTable->m_Animal_Name = nullptr;
 		pWrapperTable->m_Tiger_Roar = nullptr;
 		pWrapperTable->m_AnimalIterator_GetNextAnimal = nullptr;
 		pWrapperTable->m_Zoo_Iterator = nullptr;
@@ -763,6 +765,15 @@ public:
 			return RTTI_ERROR_COULDNOTLOADLIBRARY;
 		dlerror();
 		#endif // _WIN32
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Animal_Name = (PRTTIAnimal_NamePtr) GetProcAddress(hLibrary, "rtti_animal_name");
+		#else // _WIN32
+		pWrapperTable->m_Animal_Name = (PRTTIAnimal_NamePtr) dlsym(hLibrary, "rtti_animal_name");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Animal_Name == nullptr)
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
 		pWrapperTable->m_Tiger_Roar = (PRTTITiger_RoarPtr) GetProcAddress(hLibrary, "rtti_tiger_roar");
@@ -879,6 +890,10 @@ public:
 		SymbolLookupType pLookup = (SymbolLookupType)pSymbolLookupMethod;
 		
 		RTTIResult eLookupError = RTTI_SUCCESS;
+		eLookupError = (*pLookup)("rtti_animal_name", (void**)&(pWrapperTable->m_Animal_Name));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Animal_Name == nullptr) )
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
 		eLookupError = (*pLookup)("rtti_tiger_roar", (void**)&(pWrapperTable->m_Tiger_Roar));
 		if ( (eLookupError != 0) || (pWrapperTable->m_Tiger_Roar == nullptr) )
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
@@ -935,6 +950,21 @@ public:
 	/**
 	 * Method definitions for class CAnimal
 	 */
+	
+	/**
+	* CAnimal::Name - Get the name of the animal
+	* @return 
+	*/
+	std::string CAnimal::Name()
+	{
+		RTTI_uint32 bytesNeededResult = 0;
+		RTTI_uint32 bytesWrittenResult = 0;
+		CheckError(m_pWrapper->m_WrapperTable.m_Animal_Name(m_pHandle, 0, &bytesNeededResult, nullptr));
+		std::vector<char> bufferResult(bytesNeededResult);
+		CheckError(m_pWrapper->m_WrapperTable.m_Animal_Name(m_pHandle, bytesNeededResult, &bytesWrittenResult, &bufferResult[0]));
+		
+		return std::string(&bufferResult[0]);
+	}
 	
 	/**
 	 * Method definitions for class CMammal

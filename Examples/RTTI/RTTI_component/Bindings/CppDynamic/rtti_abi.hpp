@@ -41,6 +41,17 @@ extern "C" {
  Class definition for Animal
 **************************************************************************************************************************/
 
+/**
+* Get the name of the animal
+*
+* @param[in] pAnimal - Animal instance.
+* @param[in] nResultBufferSize - size of the buffer (including trailing 0)
+* @param[out] pResultNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+* @param[out] pResultBuffer -  buffer of , may be NULL
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_animal_name(RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer);
+
 /*************************************************************************************************************************
  Class definition for Mammal
 **************************************************************************************************************************/

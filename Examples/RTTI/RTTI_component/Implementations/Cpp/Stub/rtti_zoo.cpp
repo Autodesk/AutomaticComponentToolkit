@@ -12,6 +12,7 @@ Abstract: This is a stub class definition of CZoo
 #include "rtti_interfaceexception.hpp"
 
 // Include custom headers here.
+#include "rtti_animal.hpp"
 #include "rtti_animaliterator.hpp"
 
 using namespace RTTI::Impl;
@@ -19,6 +20,13 @@ using namespace RTTI::Impl;
 /*************************************************************************************************************************
  Class definition of CZoo 
 **************************************************************************************************************************/
+CZoo::~CZoo()
+{
+	for(auto &&i: m_Animals) 
+	{
+		i->DecRefCount();
+	}
+}
 
 std::vector<CAnimal *> &CZoo::Animals()
 {

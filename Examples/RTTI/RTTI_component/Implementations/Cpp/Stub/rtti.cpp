@@ -58,16 +58,16 @@ IZoo * CWrapper::CreateZoo()
 
 	auto& animals = zoo->Animals();
 
-	animals.emplace_back(new CGiraffe);
-	animals.emplace_back(new CTiger);
-	animals.emplace_back(new CTiger);
-	animals.emplace_back(new CSnake);
-	animals.emplace_back(new CTurtle);
-	animals.emplace_back(new CTurtle);
-	animals.emplace_back(new CTurtle);
-	animals.emplace_back(new CSnake);
-	animals.emplace_back(new CTiger);
-	animals.emplace_back(new CGiraffe);
+	animals.emplace_back(new CGiraffe("Gerald Giraffe"));
+	animals.emplace_back(new CTiger("Timmy Tiger"));
+	animals.emplace_back(new CTiger("Tony Tiger"));
+	animals.emplace_back(new CSnake("Sebastian Snake"));
+	animals.emplace_back(new CTurtle("Tobias Turtle"));
+	animals.emplace_back(new CTurtle("Theo Turtle"));
+	animals.emplace_back(new CTurtle("Tomás Turtle"));
+	animals.emplace_back(new CSnake("Slytherin Snake"));
+	animals.emplace_back(new CTiger("Travis Tiger"));
+	animals.emplace_back(new CGiraffe("Gary Giraffe"));
 
 	return zoo;
 }
