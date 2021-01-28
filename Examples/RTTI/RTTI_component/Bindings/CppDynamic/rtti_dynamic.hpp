@@ -339,8 +339,6 @@ public:
 	}
 
 	friend class CWrapper;
-	template <class T>
-	friend std::shared_ptr<T> rtti_cast(PBase obj);
 };
 	
 /*************************************************************************************************************************
@@ -574,8 +572,12 @@ public:
 	{
 		static_assert(std::is_convertible<T, CBase>::value, "T must be convertible to RTTI::CBase");
 
-		if (pObj && pObj->m_pWrapper->ImplementsInterface(pObj.get(), T::getClassName())){
-			return std::make_shared<T>(pObj->m_pWrapper, pObj->m_pHandle);
+		if (pObj) {
+			CWrapper *pWrapper = pObj->wrapper();
+			if (pWrapper->ImplementsInterface(pObj.get(), T::getClassName())) {
+				pWrapper->AcquireInstance(pObj);
+				return std::make_shared<T>(pWrapper, pObj->handle());
+			}
 		}
 
 		return nullptr;
