@@ -32,7 +32,10 @@
 	<class name="Base">
 	</class>
 
-	<class name="Animal" description="">
+	<class name="Animal" parent="Base" description="">
+		<method name="Name" description="Get the name of the animal">
+			<param name="Result" type="string" pass="return" />
+		</method>
 	</class>
 
 	<class name="Mammal" parent="Animal" description="">
@@ -68,7 +71,8 @@
 	
 	<global baseclassname="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
 			versionmethod="GetVersion" errormethod="GetLastError" injectionmethod="InjectComponent"
-			symbollookupmethod="GetSymbolLookupMethod" implementsinterfacemethod="ImplementsInterface">
+			symbollookupmethod="GetSymbolLookupMethod" implementsinterfacemethod="ImplementsInterface"
+			stringoutclassname="Base">
 		<method name="GetVersion" description="retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library"/>
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library"/>
