@@ -24,10 +24,10 @@ echo "Build act.darwin"
 GOOS="darwin"
 go build -o ../act.darwin $Sources || failed "Error compiling act.darwin"
 
-echo "Build act.arm" || failed "Error compiling act.arm"
+echo "Build act.arm.linux" || failed "Error compiling act.arm.linux"
 GOOS="linux"
 GOARCH="arm"
 GOARM="5"
-go build -o ../act.arm $Sources
+go build -o ../act.arm.linux $Sources
 
 cd "$startingpath"

@@ -24,7 +24,7 @@ go build -o ..\act.darwin %Sources%
 set GOOS=linux
 set GOARCH=arm
 set GOARM=5
-echo "Build act.arm"
-go build -o ..\act.arm %Sources%
+echo "Build act.arm.linux"
+go build -o ..\act.arm.linux %Sources%
 
 cd %startingDir%
