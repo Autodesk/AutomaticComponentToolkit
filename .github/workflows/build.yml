@@ -25,4 +25,24 @@ jobs:
           submodules: true
       - run: ./build.bat
         working-directory: ./Build 
+      - name: Upload Windows Binary
+        uses: actions/upload-artifacts@v2
+        with:
+          name: act.exe
+          path: act.exe
+      - name: Upload MacOS Binary
+        uses: actions/upload-artifacts@v2
+        with:
+          name: act.darwin
+          path: act.darwin
+      - name: Upload Linux Binary
+        uses: actions/upload-artifacts@v2
+        with:
+          name: act.linux
+          path: act.linux
+      - name: Upload Linux Arm Binary
+        uses: actions/upload-artifacts@v2
+        with:
+          name: act.arm.linux
+          path: act.arm.linux
 
