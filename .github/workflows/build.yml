@@ -1,0 +1,48 @@
+on: [push, pull_request]
+name: Build
+jobs:
+  build-linux:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: sh build.sh
+        working-directory: ./Build 
+  build-macos:
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: sh build.sh
+        working-directory: ./Build 
+  build-windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: ./build.bat
+        working-directory: ./Build 
+      - name: Upload Windows Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.exe
+          path: act.exe
+      - name: Upload MacOS Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.darwin
+          path: act.darwin
+      - name: Upload Linux Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.linux
+          path: act.linux
+      - name: Upload Linux Arm Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.arm.linux
+          path: act.arm.linux
+
