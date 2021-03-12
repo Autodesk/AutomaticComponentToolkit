@@ -1276,16 +1276,22 @@ func (component *ComponentDefinition) isStringOutClass(class ComponentDefinition
 		return true;
 	}
 	
-	if (class.ParentClass != "") {
+	
+	parentClassName := class.ParentClass;
+	if ((parentClassName == "") && (class.ClassName != component.Global.BaseClassName)) {
+		parentClassName = component.Global.BaseClassName;
+	}
+	
+	if (parentClassName != "") {
 		
 		for i := 0; i < len(component.Classes); i++ {
 			parentClass := component.Classes[i];
-			if (parentClass.ClassName == class.ParentClass) {
+			if (parentClass.ClassName == parentClassName) {
 				return component.isStringOutClass (parentClass);
 			}
 		}
 	
-	}
+	} 
 	
 	return false;
 
