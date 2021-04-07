@@ -723,6 +723,8 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
+	
+	global := component.Global
 
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
@@ -751,8 +753,8 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 
 		w.Writeln("  @classmethod")
 		w.Writeln("  def cast(cls, instance):")
-		w.Writeln("    if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):")
-		w.Writeln("      instance._wrapper.AcquireInstance(instance)")
+		w.Writeln("    if instance and instance._wrapper.%s(instance, cls.ClassName()):", global.ImplementsInterfaceMethod)
+		w.Writeln("      instance._wrapper.%s(instance)", global.AcquireMethod)
 		w.Writeln("      return cls(instance._handle, instance._wrapper)")
 		w.Writeln("    return None")
 		w.Writeln("  ")

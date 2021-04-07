@@ -560,7 +560,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		// Omit Journal Method
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
@@ -618,7 +618,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 
 		thisMethodDefaultImpl := defaultImplementation
 		
-		// Treat special functions
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
 		if err != nil {
 			return err
@@ -691,7 +691,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
-func writeCImplementsInterfaceMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) error {
+func writeCImplementsInterfaceMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, IBaseClassName string) error {
 	cParams, err := GenerateCParameters(method, "", NameSpace)
 	if err != nil {
 		return err
@@ -715,7 +715,7 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 
 	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
-	w.Writeln("  IBase* pIBaseClassInstance = (IBase *)pObject;")
+	w.Writeln("  %s* pIBaseClassInstance = (%s *)pObject;", IBaseClassName, IBaseClassName)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("	 if (strcmp(pClassName, \"%s\") == 0) {", class.ClassName)
@@ -902,7 +902,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		}
 
 		if (isSpecialFunction == eSpecialMethodImplementsInterface) {
-			err = writeCImplementsInterfaceMethod(component, method, w, NameSpace)
+			err = writeCImplementsInterfaceMethod(component, method, w, NameSpace, IBaseClassName)
 			if err != nil {
 				return err
 			}
