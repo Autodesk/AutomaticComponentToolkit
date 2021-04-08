@@ -1416,18 +1416,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  }")
 		w.Writeln("")
 
-		classHash := md5.New()
-		classHash.Write([]byte(class.ClassName))
-		classHashBytes := classHash.Sum(nil)
+		classHash := class.classHash()
 
 		w.Writeln("  const %s_ClassHash &C%s::getClassHash()", NameSpace, class.ClassName)
 		w.Writeln("  {")
-		w.Writeln("    // MD5(%s): %X", class.ClassName, classHashBytes)
+		w.Writeln("    // MD5(%s): %X", class.ClassName, classHash)
 
 		w.BeginLine()
 		w.Printf("    static const %s_ClassHash s_sClassHash = {", NameSpace)
-		for j := 0; j < len(classHashBytes); j++ {
-			w.Printf(" 0x%X,", classHashBytes[j])
+		for j := 0; j < len(classHash); j++ {
+			w.Printf(" 0x%02X,", classHash[j])
 		}
 		w.Printf(" };")
 		w.EndLine()

@@ -35,10 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"crypto/md5"
+	"errors"
 	"fmt"
 	"log"
-	"errors"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -707,6 +709,14 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 
 	CMethodName := fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 
+	classHashMap := make(map[string][]ComponentDefinitionClass)
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		key := fmt.Sprintf("%02X", class.classHash()[0])
+		classHashMap[key] = append(classHashMap[key], class)
+	}
+
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln("  %s", method.MethodDescription)
@@ -715,14 +725,41 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 
 	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
+	w.Writeln("  if (nClassHashBufferSize != %d) // Hash length must be as expected", md5.Size)
+	w.Writeln("    return RTTI_ERROR_INVALIDPARAM;")
+	w.Writeln("")
 	w.Writeln("  %s* pIBaseClassInstance = (%s *)pObject;", IBaseClassName, IBaseClassName)
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		w.Writeln("	 if (strcmp(pClassName, \"%s\") == 0) {", class.ClassName)
-		w.Writeln("    *pImplementsInterface = dynamic_cast<I%s*>(pIBaseClassInstance) != nullptr;", class.ClassName)
-		w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
-		w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  switch(pClassHashBuffer[0]) {")
+
+	keys := make([]string, 0, len(classHashMap))
+	for key := range classHashMap {
+		keys = append(keys, key)
 	}
+	sort.Strings(keys)
+
+	for i := range keys {
+		w.Writeln("    case 0x%s:", keys[i])
+		classes := classHashMap[keys[i]]
+		for j := range classes {
+			class := classes[j]
+			hash := class.classHash()
+			w.BeginLine()
+			w.Printf("      static const RTTI_uint8 s_%sHash[] = {", class.ClassName)
+			for j := 0; j < len(hash); j++ {
+				w.Printf(" 0x%02X,", hash[j])
+			}
+			w.Printf(" };")
+			w.EndLine()
+
+			w.Writeln("      if (memcmp(pClassHashBuffer, s_%sHash, 16) == 0) {", class.ClassName)
+			w.Writeln("        *pImplementsInterface = dynamic_cast<I%s *>(pIBaseClassInstance) != nullptr;", class.ClassName)
+			w.Writeln("        return RTTI_SUCCESS;")
+			w.Writeln("      }")
+		}
+		w.Writeln("      break;")
+	}
+	w.Writeln("  }")
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("}")
 	w.Writeln("")

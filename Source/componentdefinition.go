@@ -34,17 +34,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"strconv"
-	"fmt"
-	"errors"
+	"crypto/md5"
 	"encoding/xml"
-	"regexp"
-	"strings"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
-	"io/ioutil"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -513,8 +514,10 @@ func (component *ComponentDefinition) checkClasses() (error) {
 
 	classLowerNameList := make(map[string]bool, 0)
 	classNameIndex := make(map[string]int, 0)
+	classHashIndex := make(map[string]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
+		hashString := fmt.Sprintf("%X", class.classHash());
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
@@ -524,10 +527,15 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
 			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
+		collision, hashExists := classHashIndex[hashString]
+		if hashExists {
+			return fmt.Errorf ("hash collision for classes \"%s\" and \"%s\"", classes[collision].ClassName, class.ClassName);
+		}
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
+		classHashIndex[hashString] = i
 	}
 
 	// Check parent class definitions
@@ -1386,3 +1394,8 @@ func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
 	return maxOutParameters;
 }
 
+func (class *ComponentDefinitionClass) classHash() []byte {
+	hash := md5.New()
+	hash.Write([]byte(class.ClassName))
+	return hash.Sum(nil)
+}
