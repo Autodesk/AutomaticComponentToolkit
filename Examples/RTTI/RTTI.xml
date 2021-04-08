@@ -98,7 +98,7 @@
 		</method>
 		<method name="ImplementsInterface" description="Test whether an object implements a given interface">
 			<param name="Object" type="class" class="Base" pass="in" description="Instance Handle" />
-			<param name="ClassName" type="string" class="Base" pass="in" description="Class name of the interface to test" />
+			<param name="ClassHash" type="basicarray" class="uint8" pass="in" description="Hashed class name of the interface to test" />
 			<param name="ImplementsInterface" type="bool" pass="return" description="Will be set to true if pInstance implements the interface, false otherwise" />
 		</method>
 		<method name="CreateZoo" description="Create a new zoo with animals">

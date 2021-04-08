@@ -160,11 +160,12 @@ typedef RTTIResult (*PRTTIGetSymbolLookupMethodPtr) (RTTI_pvoid * pSymbolLookupM
 * Test whether an object implements a given interface
 *
 * @param[in] pObject - Instance Handle
-* @param[in] pClassName - Class name of the interface to test
+* @param[in] nClassHashBufferSize - Number of elements in buffer
+* @param[in] pClassHashBuffer - uint8 buffer of Hashed class name of the interface to test
 * @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
 * @return error code or 0 (success)
 */
-typedef RTTIResult (*PRTTIImplementsInterfacePtr) (RTTI_Base pObject, const char * pClassName, bool * pImplementsInterface);
+typedef RTTIResult (*PRTTIImplementsInterfacePtr) (RTTI_Base pObject, RTTI_uint64 nClassHashBufferSize, const RTTI_uint8 * pClassHashBuffer, bool * pImplementsInterface);
 
 /**
 * Create a new zoo with animals

@@ -150,7 +150,7 @@ class Wrapper:
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_implementsinterface")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_bool))
 			self.lib.rtti_implementsinterface = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_createzoo")), methodAddress)
@@ -207,7 +207,7 @@ class Wrapper:
 			self.lib.rtti_getsymbollookupmethod.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
 			
 			self.lib.rtti_implementsinterface.restype = ctypes.c_int32
-			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
+			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_bool)]
 			
 			self.lib.rtti_createzoo.restype = ctypes.c_int32
 			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
@@ -299,15 +299,16 @@ class Wrapper:
 		
 		return pSymbolLookupMethod.value
 	
-	def ImplementsInterface(self, ObjectObject, ClassName):
+	def ImplementsInterface(self, ObjectObject, ClassHash):
 		ObjectHandle = None
 		if ObjectObject:
 			ObjectHandle = ObjectObject._handle
 		else:
 			raise ERTTIException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
-		pClassName = ctypes.c_char_p(str.encode(ClassName))
+		nClassHashCount = ctypes.c_uint64(len(ClassHash))
+		pClassHashBuffer = (ctypes.c_uint8*len(ClassHash))(*ClassHash)
 		pImplementsInterface = ctypes.c_bool()
-		self.checkError(None, self.lib.rtti_implementsinterface(ObjectHandle, pClassName, pImplementsInterface))
+		self.checkError(None, self.lib.rtti_implementsinterface(ObjectHandle, nClassHashCount, pClassHashBuffer, pImplementsInterface))
 		
 		return pImplementsInterface.value
 	

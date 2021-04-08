@@ -25,6 +25,7 @@ Interface version: 1.0.0
 #else // _WIN32
 #include <dlfcn.h>
 #endif // _WIN32
+#include <array>
 #include <string>
 #include <memory>
 #include <vector>
@@ -97,6 +98,8 @@ typedef PZoo PRTTIZoo;
 **************************************************************************************************************************/
 template <class T>
 inline std::shared_ptr<T> rtti_cast(PBase obj);
+
+using RTTI_ClassHash = std::array<RTTI_uint8, 16>;
 
 /*************************************************************************************************************************
  classParam Definition
@@ -250,7 +253,7 @@ public:
 	inline void AcquireInstance(classParam<CBase> pInstance);
 	inline void InjectComponent(const std::string & sNameSpace, const RTTI_pvoid pSymbolAddressMethod);
 	inline RTTI_pvoid GetSymbolLookupMethod();
-	inline bool ImplementsInterface(classParam<CBase> pObject, const std::string & sClassName);
+	inline bool ImplementsInterface(classParam<CBase> pObject, const CInputVector<RTTI_uint8> & ClassHashBuffer);
 	inline PZoo CreateZoo();
 
 private:
@@ -290,6 +293,7 @@ private:
 class CBase {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 protected:
 	/* Wrapper Object that created the class. */
@@ -347,6 +351,7 @@ public:
 class CAnimal : public CBase {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
@@ -365,6 +370,7 @@ public:
 class CMammal : public CAnimal {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
@@ -382,6 +388,7 @@ public:
 class CReptile : public CAnimal {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
@@ -399,6 +406,7 @@ public:
 class CGiraffe : public CMammal {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
@@ -416,6 +424,7 @@ public:
 class CTiger : public CMammal {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
@@ -434,6 +443,7 @@ public:
 class CSnake : public CReptile {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
@@ -451,6 +461,7 @@ public:
 class CTurtle : public CReptile {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
@@ -468,6 +479,7 @@ public:
 class CAnimalIterator : public CBase {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
@@ -486,6 +498,7 @@ public:
 class CZoo : public CBase {
 public:
 	static inline const std::string &getClassName();
+	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
@@ -508,10 +521,24 @@ public:
 	return s_sClassName;
 	}
 
+	const RTTI_ClassHash &CBase::getClassHash()
+	{
+		// MD5(Base): 095A1B43EFFEC73955E31E790438DE49
+		static const RTTI_ClassHash s_sClassHash = { 0x9, 0x5A, 0x1B, 0x43, 0xEF, 0xFE, 0xC7, 0x39, 0x55, 0xE3, 0x1E, 0x79, 0x4, 0x38, 0xDE, 0x49, };
+		return s_sClassHash;
+	}
+
 	const std::string &CAnimal::getClassName()
 	{
 	static const std::string s_sClassName = "Animal";
 	return s_sClassName;
+	}
+
+	const RTTI_ClassHash &CAnimal::getClassHash()
+	{
+		// MD5(Animal): 161E7CE7BFDC89AB4B9F52C1D4C94212
+		static const RTTI_ClassHash s_sClassHash = { 0x16, 0x1E, 0x7C, 0xE7, 0xBF, 0xDC, 0x89, 0xAB, 0x4B, 0x9F, 0x52, 0xC1, 0xD4, 0xC9, 0x42, 0x12, };
+		return s_sClassHash;
 	}
 
 	const std::string &CMammal::getClassName()
@@ -520,10 +547,24 @@ public:
 	return s_sClassName;
 	}
 
+	const RTTI_ClassHash &CMammal::getClassHash()
+	{
+		// MD5(Mammal): 37426113D129E79F548F4C90930FA697
+		static const RTTI_ClassHash s_sClassHash = { 0x37, 0x42, 0x61, 0x13, 0xD1, 0x29, 0xE7, 0x9F, 0x54, 0x8F, 0x4C, 0x90, 0x93, 0xF, 0xA6, 0x97, };
+		return s_sClassHash;
+	}
+
 	const std::string &CReptile::getClassName()
 	{
 	static const std::string s_sClassName = "Reptile";
 	return s_sClassName;
+	}
+
+	const RTTI_ClassHash &CReptile::getClassHash()
+	{
+		// MD5(Reptile): AA645186A4B5F3F27952C2FA5485FAB2
+		static const RTTI_ClassHash s_sClassHash = { 0xAA, 0x64, 0x51, 0x86, 0xA4, 0xB5, 0xF3, 0xF2, 0x79, 0x52, 0xC2, 0xFA, 0x54, 0x85, 0xFA, 0xB2, };
+		return s_sClassHash;
 	}
 
 	const std::string &CGiraffe::getClassName()
@@ -532,10 +573,24 @@ public:
 	return s_sClassName;
 	}
 
+	const RTTI_ClassHash &CGiraffe::getClassHash()
+	{
+		// MD5(Giraffe): 427DEBB81D265A0EDD8789F30B11BEB6
+		static const RTTI_ClassHash s_sClassHash = { 0x42, 0x7D, 0xEB, 0xB8, 0x1D, 0x26, 0x5A, 0xE, 0xDD, 0x87, 0x89, 0xF3, 0xB, 0x11, 0xBE, 0xB6, };
+		return s_sClassHash;
+	}
+
 	const std::string &CTiger::getClassName()
 	{
 	static const std::string s_sClassName = "Tiger";
 	return s_sClassName;
+	}
+
+	const RTTI_ClassHash &CTiger::getClassHash()
+	{
+		// MD5(Tiger): 454C9843110686BF6F67CE5115B66617
+		static const RTTI_ClassHash s_sClassHash = { 0x45, 0x4C, 0x98, 0x43, 0x11, 0x6, 0x86, 0xBF, 0x6F, 0x67, 0xCE, 0x51, 0x15, 0xB6, 0x66, 0x17, };
+		return s_sClassHash;
 	}
 
 	const std::string &CSnake::getClassName()
@@ -544,10 +599,24 @@ public:
 	return s_sClassName;
 	}
 
+	const RTTI_ClassHash &CSnake::getClassHash()
+	{
+		// MD5(Snake): DFA90F1B4EB3AFFBD3B46AF34ED2477C
+		static const RTTI_ClassHash s_sClassHash = { 0xDF, 0xA9, 0xF, 0x1B, 0x4E, 0xB3, 0xAF, 0xFB, 0xD3, 0xB4, 0x6A, 0xF3, 0x4E, 0xD2, 0x47, 0x7C, };
+		return s_sClassHash;
+	}
+
 	const std::string &CTurtle::getClassName()
 	{
 	static const std::string s_sClassName = "Turtle";
 	return s_sClassName;
+	}
+
+	const RTTI_ClassHash &CTurtle::getClassHash()
+	{
+		// MD5(Turtle): 06DEBA5908B007EB6F32D8D95F3F61B5
+		static const RTTI_ClassHash s_sClassHash = { 0x6, 0xDE, 0xBA, 0x59, 0x8, 0xB0, 0x7, 0xEB, 0x6F, 0x32, 0xD8, 0xD9, 0x5F, 0x3F, 0x61, 0xB5, };
+		return s_sClassHash;
 	}
 
 	const std::string &CAnimalIterator::getClassName()
@@ -556,10 +625,24 @@ public:
 	return s_sClassName;
 	}
 
+	const RTTI_ClassHash &CAnimalIterator::getClassHash()
+	{
+		// MD5(AnimalIterator): C2B36A84C6C032204E5C923C581071E7
+		static const RTTI_ClassHash s_sClassHash = { 0xC2, 0xB3, 0x6A, 0x84, 0xC6, 0xC0, 0x32, 0x20, 0x4E, 0x5C, 0x92, 0x3C, 0x58, 0x10, 0x71, 0xE7, };
+		return s_sClassHash;
+	}
+
 	const std::string &CZoo::getClassName()
 	{
 	static const std::string s_sClassName = "Zoo";
 	return s_sClassName;
+	}
+
+	const RTTI_ClassHash &CZoo::getClassHash()
+	{
+		// MD5(Zoo): BFA888A354DB97C7CBEFB9D050B94CA3
+		static const RTTI_ClassHash s_sClassHash = { 0xBF, 0xA8, 0x88, 0xA3, 0x54, 0xDB, 0x97, 0xC7, 0xCB, 0xEF, 0xB9, 0xD0, 0x50, 0xB9, 0x4C, 0xA3, };
+		return s_sClassHash;
 	}
 
 
@@ -574,7 +657,9 @@ public:
 
 		if (pObj) {
 			CWrapper *pWrapper = pObj->wrapper();
-			if (pWrapper->ImplementsInterface(pObj.get(), T::getClassName())) {
+			const RTTI_ClassHash & ClassHash = T::getClassHash();
+			CInputVector<RTTI_uint8> ClassHashBuffer(ClassHash.data(), ClassHash.size());
+			if (pWrapper->ImplementsInterface(pObj.get(), ClassHashBuffer)) {
 				pWrapper->AcquireInstance(pObj);
 				return std::make_shared<T>(pWrapper, pObj->handle());
 			}
@@ -663,14 +748,14 @@ public:
 	/**
 	* CWrapper::ImplementsInterface - Test whether an object implements a given interface
 	* @param[in] pObject - Instance Handle
-	* @param[in] sClassName - Class name of the interface to test
+	* @param[in] ClassHashBuffer - Hashed class name of the interface to test
 	* @return Will be set to true if pInstance implements the interface, false otherwise
 	*/
-	inline bool CWrapper::ImplementsInterface(classParam<CBase> pObject, const std::string & sClassName)
+	inline bool CWrapper::ImplementsInterface(classParam<CBase> pObject, const CInputVector<RTTI_uint8> & ClassHashBuffer)
 	{
 		RTTIHandle hObject = pObject.GetHandle();
 		bool resultImplementsInterface = 0;
-		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(hObject, sClassName.c_str(), &resultImplementsInterface));
+		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(hObject, (RTTI_uint64)ClassHashBuffer.size(), ClassHashBuffer.data(), &resultImplementsInterface));
 		
 		return resultImplementsInterface;
 	}

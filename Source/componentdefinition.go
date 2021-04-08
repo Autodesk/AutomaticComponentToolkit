@@ -1136,7 +1136,7 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		}
 		
 		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamPass != "in") || 
-			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "in") || 
+			(method.Params[1].ParamType != "basicarray") || (method.Params[1].ParamClass != "uint8") || (method.Params[1].ParamPass != "in") ||
 			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
 			(method.Params[0].ParamClass != global.BaseClassName) {
 			return eSpecialMethodNone, errors.New ("Implements Interface method does not match the expected function template");

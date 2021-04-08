@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"log"
 	"path"
@@ -1130,6 +1131,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
 	w.Writeln("#endif // _WIN32")
+	w.Writeln("#include <array>")
 	w.Writeln("#include <string>")
 	w.Writeln("#include <memory>")
 	w.Writeln("#include <vector>")
@@ -1147,6 +1149,8 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("template <class T>")
 	w.Writeln("inline std::shared_ptr<T> %s_cast(PBase obj);", strings.ToLower(NameSpace))
+	w.Writeln("")
+	w.Writeln("using %s_ClassHash = std::array<%s_uint8, %d>;", NameSpace, NameSpace, md5.Size)
 
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
@@ -1367,6 +1371,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("class %s %s{", cppClassName, inheritanceSpecifier)
 		w.Writeln("public:")
 		w.Writeln("  static inline const std::string &getClassName();")
+		w.Writeln("  static inline const %s_ClassHash &getClassHash();", NameSpace)
 		w.Writeln("  ")
 		if !component.isBaseClass(class) {
 			w.Writeln("  /**")
@@ -1410,6 +1415,25 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  return s_sClassName;")
 		w.Writeln("  }")
 		w.Writeln("")
+
+		classHash := md5.New()
+		classHash.Write([]byte(class.ClassName))
+		classHashBytes := classHash.Sum(nil)
+
+		w.Writeln("  const %s_ClassHash &C%s::getClassHash()", NameSpace, class.ClassName)
+		w.Writeln("  {")
+		w.Writeln("    // MD5(%s): %X", class.ClassName, classHashBytes)
+
+		w.BeginLine()
+		w.Printf("    static const %s_ClassHash s_sClassHash = {", NameSpace)
+		for j := 0; j < len(classHashBytes); j++ {
+			w.Printf(" 0x%X,", classHashBytes[j])
+		}
+		w.Printf(" };")
+		w.EndLine()
+		w.Writeln("    return s_sClassHash;")
+		w.Writeln("  }")
+		w.Writeln("")
 	}
 
 	w.Writeln("")
@@ -1425,7 +1449,9 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 	w.Writeln("    if (pObj) {")
 	w.Writeln("      CWrapper *pWrapper = pObj->wrapper();")
-	w.Writeln("      if (pWrapper->%s(pObj.get(), T::getClassName())) {", global.ImplementsInterfaceMethod)
+	w.Writeln("      const %s_ClassHash & ClassHash = T::getClassHash();", NameSpace)
+	w.Writeln("      CInputVector<%s_uint8> ClassHashBuffer(ClassHash.data(), ClassHash.size());", NameSpace)
+	w.Writeln("      if (pWrapper->%s(pObj.get(), ClassHashBuffer)) {", global.ImplementsInterfaceMethod)
 	w.Writeln("        pWrapper->%s(pObj);", global.AcquireMethod)
 	w.Writeln("        return std::make_shared<T>(pWrapper, pObj->handle());")
 	w.Writeln("      }")

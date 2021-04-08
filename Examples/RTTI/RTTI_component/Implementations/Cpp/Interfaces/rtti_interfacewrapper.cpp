@@ -437,7 +437,7 @@ RTTIResult rtti_getsymbollookupmethod(RTTI_pvoid * pSymbolLookupMethod)
 	Test whether an object implements a given interface
 **************************************************************************************************************************/
 
-RTTIResult rtti_implementsinterface(RTTI_Base pObject, const char * pClassName, bool * pImplementsInterface)
+RTTIResult rtti_implementsinterface(RTTI_Base pObject, RTTI_uint64 nClassHashBufferSize, const RTTI_uint8 * pClassHashBuffer, bool * pImplementsInterface)
 {
 	IBase* pIBaseClassInstance = (IBase *)pObject;
 	 if (strcmp(pClassName, "Base") == 0) {
