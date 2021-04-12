@@ -730,6 +730,12 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 	w.Writeln("'''")
 	
 	parentClass := ""
+	hash := class.classHash()
+	hashString := ""
+	for i := range hash {
+		hashString = hashString + fmt.Sprintf("\\x%02X", hash[i])
+	}
+
 	if (!component.isBaseClass(class)) {
 		if (class.ParentClass != "") {
 			parentClass = fmt.Sprintf("%s", class.ParentClass)
@@ -741,6 +747,10 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		w.Writeln("  def ClassName():")
 		w.Writeln("    return \"%s\"", class.ClassName)
 		w.Writeln("  ")
+		w.Writeln("  @staticmethod")
+		w.Writeln("  def ClassHash():")
+		w.Writeln("    return bytearray(b'%s')", hashString)
+		w.Writeln("  ")
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
@@ -750,10 +760,14 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		w.Writeln("  def ClassName():")
 		w.Writeln("    return \"%s\"", class.ClassName)
 		w.Writeln("  ")
+		w.Writeln("  @staticmethod")
+		w.Writeln("  def ClassHash():")
+		w.Writeln("    return bytearray(b'%s')", hashString)
+		w.Writeln("  ")
 
 		w.Writeln("  @classmethod")
 		w.Writeln("  def cast(cls, instance):")
-		w.Writeln("    if instance and instance._wrapper.%s(instance, cls.ClassName()):", global.ImplementsInterfaceMethod)
+		w.Writeln("    if instance and instance._wrapper.%s(instance, cls.ClassHash()):", global.ImplementsInterfaceMethod)
 		w.Writeln("      instance._wrapper.%s(instance)", global.AcquireMethod)
 		w.Writeln("      return cls(instance._handle, instance._wrapper)")
 		w.Writeln("    return None")

@@ -331,9 +331,13 @@ class Base:
 	def ClassName():
 		return "Base"
 	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x09\x5A\x1B\x43\xEF\xFE\xC7\x39\x55\xE3\x1E\x79\x04\x38\xDE\x49')
+	
 	@classmethod
 	def cast(cls, instance):
-		if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassName()):
+		if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassHash()):
 			instance._wrapper.AcquireInstance(instance)
 			return cls(instance._handle, instance._wrapper)
 		return None
@@ -354,6 +358,10 @@ class Animal(Base):
 	@staticmethod
 	def ClassName():
 		return "Animal"
+	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x16\x1E\x7C\xE7\xBF\xDC\x89\xAB\x4B\x9F\x52\xC1\xD4\xC9\x42\x12')
 	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
@@ -377,6 +385,10 @@ class Mammal(Animal):
 	def ClassName():
 		return "Mammal"
 	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x37\x42\x61\x13\xD1\x29\xE7\x9F\x54\x8F\x4C\x90\x93\x0F\xA6\x97')
+	
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
 
@@ -387,6 +399,10 @@ class Reptile(Animal):
 	@staticmethod
 	def ClassName():
 		return "Reptile"
+	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\xAA\x64\x51\x86\xA4\xB5\xF3\xF2\x79\x52\xC2\xFA\x54\x85\xFA\xB2')
 	
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
@@ -399,6 +415,10 @@ class Giraffe(Mammal):
 	def ClassName():
 		return "Giraffe"
 	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x42\x7D\xEB\xB8\x1D\x26\x5A\x0E\xDD\x87\x89\xF3\x0B\x11\xBE\xB6')
+	
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
 
@@ -409,6 +429,10 @@ class Tiger(Mammal):
 	@staticmethod
 	def ClassName():
 		return "Tiger"
+	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x45\x4C\x98\x43\x11\x06\x86\xBF\x6F\x67\xCE\x51\x15\xB6\x66\x17')
 	
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
@@ -425,6 +449,10 @@ class Snake(Reptile):
 	def ClassName():
 		return "Snake"
 	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\xDF\xA9\x0F\x1B\x4E\xB3\xAF\xFB\xD3\xB4\x6A\xF3\x4E\xD2\x47\x7C')
+	
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -436,6 +464,10 @@ class Turtle(Reptile):
 	def ClassName():
 		return "Turtle"
 	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\x06\xDE\xBA\x59\x08\xB0\x07\xEB\x6F\x32\xD8\xD9\x5F\x3F\x61\xB5')
+	
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -446,6 +478,10 @@ class AnimalIterator(Base):
 	@staticmethod
 	def ClassName():
 		return "AnimalIterator"
+	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\xC2\xB3\x6A\x84\xC6\xC0\x32\x20\x4E\x5C\x92\x3C\x58\x10\x71\xE7')
 	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
@@ -467,6 +503,10 @@ class Zoo(Base):
 	@staticmethod
 	def ClassName():
 		return "Zoo"
+	
+	@staticmethod
+	def ClassHash():
+		return bytearray(b'\xBF\xA8\x88\xA3\x54\xDB\x97\xC7\xCB\xEF\xB9\xD0\x50\xB9\x4C\xA3')
 	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
