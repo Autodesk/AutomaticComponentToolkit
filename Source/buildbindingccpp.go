@@ -1299,21 +1299,23 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  const char* getErrorName() const noexcept")
 	w.Writeln("  {")
 	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"SUCCESS\";", strings.ToUpper(NameSpace))
 	for _, errorDef := range(component.Errors.Errors) {
 		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Name)
 	}
 	w.Writeln("    }")
-	w.Writeln("    return \"\"");
+	w.Writeln("    return \"UNKNOWN\";");
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  const char* getErrorDescription() const noexcept")
 	w.Writeln("  {")
 	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"success\";", strings.ToUpper(NameSpace))
 	for _, errorDef := range(component.Errors.Errors) {
 		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Description)
 	}
 	w.Writeln("    }")
-	w.Writeln("    return \"\"");
+	w.Writeln("    return \"unknown error\";");
 	w.Writeln("  }")
 	w.Writeln("")
 
