@@ -1184,15 +1184,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  * Error message for the Exception.")
 	w.Writeln("  */")
 	w.Writeln("  std::string m_errorMessage;")
+	w.Writeln("  std::string m_originalErrorMessage;")
 	w.Writeln("")
 	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
 	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
-	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string(errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
+	w.Writeln("    : m_originalErrorMessage(sErrorMessage), m_errorCode(errorCode)")
 	w.Writeln("  {")
-	w.Writeln("    m_errorCode = errorCode;")
+	w.Writeln("    m_errorMessage = buildErrorMessage();")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
@@ -1210,7 +1211,44 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")
+	w.Writeln("");
+	w.Writeln("  const char* getErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    return m_originalErrorMessage.c_str();")
+	w.Writeln("  }")
 	w.Writeln("")
+	w.Writeln("  const char* getErrorName() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Name)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"\"");
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  const char* getErrorDescription() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Description)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"\"");
+	w.Writeln("  }")
+	w.Writeln("")
+
+	w.Writeln("private:")
+	w.Writeln("")
+
+	w.Writeln("  std::string buildErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    std::string msg = m_originalErrorMessage;")
+	w.Writeln("    if (msg.empty()) {")
+	w.Writeln("      msg = getErrorDescription();")
+	w.Writeln("    }")
+	w.Writeln("    return std::string(\"Error: \") + getErrorName() + \": \" + msg;")
+	w.Writeln("  }")
 
 	w.Writeln("};")
 
