@@ -1191,7 +1191,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
 	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
-	w.Writeln("    : m_originalErrorMessage(sErrorMessage), m_errorCode(errorCode)")
+	w.Writeln("    : m_errorCode(errorCode), m_originalErrorMessage(sErrorMessage)")
 	w.Writeln("  {")
 	w.Writeln("    m_errorMessage = buildErrorMessage();")
 	w.Writeln("  }")
