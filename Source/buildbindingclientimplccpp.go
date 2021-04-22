@@ -475,7 +475,7 @@ inline {{.NameSpace}}_pvoid C{{.ClassName}}::GetSymbolLookupMethod()
 
 inline {{.NameSpace}}ExtendedHandle C{{.ClassName}}::GetExtendedHandle() const
 {
-    return { (void*) this, &SymbolLookupFunction_ABI };
+    return { (void*) this, ({{.NameSpace}}SymbolLookupType) const_cast<C{{.ClassName}}*>(this)->GetSymbolLookupMethod()};
 }
 
 inline bool C{{.ClassName}}::GetLastError(std::string & sErrorMessage)
