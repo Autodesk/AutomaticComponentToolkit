@@ -1612,7 +1612,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("} // namespace %s", NameSpace)
 	w.Writeln("")
 
-	if err := buildClientImplementationSection(component, w); err != nil {
+	if err := WriteClientImpl(component, w); err != nil {
 		return err
 	}
 
