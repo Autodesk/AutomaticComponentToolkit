@@ -7,6 +7,46 @@ import (
 )
 
 // WriteClientImpl writes client implementation binding code for the given component.
+// This does nothing if there are no abstract classes in the component definition.
+//
+// The generated code goes into namespace <component>::Binding::ClientImpl. What
+// you get is a set of abstract C++ classes, one for each abstract class in the
+// component definition, plus a base class from which they all derive. The base
+// class corresponds to the base class defined in the component.
+//
+// A instance of a client impl class is an object that can be 'wrapped' in an
+// instance of the corresponding class in <component>::Binding, and passed
+// into binding functions as parameters. The boilerplate for doing this is
+// automatically generated, so from the user's perspective they are simply
+// deriving from an ordinary C++ class.
+//
+// The way this works is as follows:
+//
+// In ACT, an object is represented by an 'extended handle': a handle, plus a
+// pointer to a 'symbol lookup' function. These are passed across the ABI
+// together, and the lookup function is used by the binding or implementation
+// to obtain pointers to functions that call the object's methods.
+//
+// To 'derive' an implementation of such an object in client code, we need to
+// provide those two things. The client impl classes provide all the boilerplate
+// necessary to do this.
+//
+// Each class has a set of public virtual 'API' methods corresponding to the
+// methods declared on the class in the XML. The user needs to override these
+// to provide their implementation.   Each class also has a set of generated
+// 'ABI' versions of those functions, static functions that cast a handle to
+// a pointer to an instance and call the appropriate method on it.  Finally,
+// each class provides a symbol lookup function that can resolve those ABI
+// functions. An 'extended handle' comprising a pointer to an instance of
+// one of these classes, plus the symbol lookup function for that class, can
+// thus be used to construct an instance of the corresponding 'binding' class
+// and passed across the ABI.
+//
+// Functions are provided to deal with wrapping and unwrapping of instances.
+//
+// Client impl classes derive from a common base class. This provides an
+// implementation of reference counting and other methods needed by all
+// classes.
 func WriteClientImpl(component ComponentDefinition, w LanguageWriter) error {
 
     // Find abstract derived & base classes
@@ -67,6 +107,12 @@ func WriteClientImpl(component ComponentDefinition, w LanguageWriter) error {
     return nil
 }
 
+// Note: structs can be passed directly into the template execution and
+// the template can reference struct fields, even doing things like looping
+// over slices.   I didn't realise this to begin with, hence the conversion
+// to a map.  It might be possible to simplify this code by passing in the
+// ComponentDefinition* structs directly.
+
 // getComponentPropertyMap returns a map containing properties pertaining to
 // a component, useful for writeSubstitution
 func getComponentPropertyMap(component ComponentDefinition) map[string]interface{} {
@@ -116,6 +162,55 @@ func writeSubstitution(templateString string, properties map[string]interface{},
     s := buf.String()
     w.Writeln(s)
     return nil
+}
+
+// buildCppClientImplClassDecl writes the declaration for a client impl class.
+func buildCppClientImplClassDecl(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
+    err := error(nil)
+    err = buildCppClientImplClassDeclPublic(component, class, w)
+    if err != nil {
+        return err
+    }
+    err = buildCppClientImplAPIMethodDecls(component, class, w)
+    if err != nil {
+        return err
+    }
+    err = buildCppClientImplClassDeclProtected(component, class, w)
+    if err != nil {
+        return err
+    }
+    err = buildCppClientImplABIMethodDecls(component, class, w)
+    if err != nil {
+        return err
+    }
+    err = buildCppClientImplClassDeclPrivate(component, class, w)
+    if err != nil {
+        return err
+    }
+    return nil;
+}
+
+// buildCppclientImplClassImpl will output the 'implementation' code for a client
+// impl class.   This assumes the declaration code has already been written.
+func buildCppClientImplClassImpl(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
+    err := error(nil)
+    err = buildCppClientImplClassImplCode(component, class, w)
+    if (err != nil) {
+        return err
+    }
+    err = buildCppClientImplSymbolLookupFunctionABI(component, class, false, w)
+    if (err != nil) {
+        return err
+    }
+    err = buildCppClientImplAPIMethodImpls(component, class, w)
+    if (err != nil) {
+        return err
+    }
+    err = buildCppClientImplABIMethodImpls(component, class, w)
+    if (err != nil) {
+        return err
+    }
+    return err
 }
 
 // buildCppClientImplPreamble writes the initial section of the client implementation,
@@ -239,56 +334,8 @@ func buildCppClientImplEnd(component ComponentDefinition, w LanguageWriter) erro
     return writeSubstitution(code, getComponentPropertyMap(component), w)
 }
 
-// buildCppClientImplClassDecl writes the declaration for a client impl class.
-func buildCppClientImplClassDecl(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
-    err := error(nil)
-    err = buildCppClientImplClassDeclPublic(component, class, w)
-    if err != nil {
-        return err
-    }
-    err = buildCppClientImplAPIMethodDecls(component, class, w)
-    if err != nil {
-        return err
-    }
-    err = buildCppClientImplClassDeclProtected(component, class, w)
-    if err != nil {
-        return err
-    }
-    err = buildCppClientImplABIMethodDecls(component, class, w)
-    if err != nil {
-        return err
-    }
-    err = buildCppClientImplClassDeclPrivate(component, class, w)
-    if err != nil {
-        return err
-    }
-    return nil;
-}
-
-// buildCppclientImplClassImpl will output the 'implementation' code for a client
-// impl class.   This assumes the declaration code has already been written.
-func buildCppClientImplClassImpl(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
-    err := error(nil)
-    err = buildCppClientImplClassImplCode(component, class, w)
-    if (err != nil) {
-        return err
-    }
-    err = buildCppClientImplSymbolLookupFunctionABI(component, class, false, w)
-    if (err != nil) {
-        return err
-    }
-    err = buildCppClientImplAPIMethodImpls(component, class, w)
-    if (err != nil) {
-        return err
-    }
-    err = buildCppClientImplABIMethodImpls(component, class, w)
-    if (err != nil) {
-        return err
-    }
-    return err
-}
-
-// buildCppClientImplClassDeclPublic writes the public section of a client impl class declaration
+// buildCppClientImplClassDeclPublic writes the public section of a client 
+// impl class declaration.
 func buildCppClientImplClassDeclPublic(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
 /*************************************************************************************************************************
@@ -329,18 +376,22 @@ public:
     return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
 
+// buildCppClientImplAPIMethodDecls writes a declaration for each method on a
+// client impl class declaration.
 func buildCppClientImplAPIMethodDecls(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     for _, method := range class.Methods {
         returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, component.NameSpace, "", "C"+class.ClassName)
         if err != nil {
             return err
         }
-        w.Writeln("  virtual %s %s(%s);", returnType, method.MethodName, parameters)
+        w.Writeln("  inline virtual %s %s(%s);", returnType, method.MethodName, parameters)
         w.Writeln("")
     }
     return nil
 }
 
+// buildCppClientImplClassDeclProtected writes the 'protected' section for a client
+// impl class declation.
 func buildCppClientImplClassDeclProtected(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
 protected:
@@ -356,6 +407,8 @@ protected:
       return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
 
+// buildCppClientImplABIMethodDecls outputs a declaration for each 'ABI' method for a client
+// impl class.
 func buildCppClientImplABIMethodDecls(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     for _, method := range class.Methods {
         sComments, _, sParameters, err := WriteCCPPAbiMethod(method, component.NameSpace, class.ClassName, false, false, true)
@@ -369,6 +422,8 @@ func buildCppClientImplABIMethodDecls(component ComponentDefinition, class Compo
     return nil
 }
 
+// buildCppClientImplClassDeclPrivate generates the private section of a client impl
+// class declaration.
 func buildCppClientImplClassDeclPrivate(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
 private:
@@ -383,19 +438,15 @@ private:
 // buildCppClientImplClassImplCode will output the code for the 'special' methods
 // on a ClientImpl class, including the constructor and destructor.
 func buildCppClientImplClassImplCode(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
-    classProperties := getClassPropertyMap(component, class)
-    if component.isBaseClass(class) {
-        classProperties["Initialiser"] = "  : m_refcount(0)"
-    } else {
-        classProperties["Initialiser"] = ""
-    }
-    commonMethodsCode := `
+    code := `
 /*************************************************************************************************************************
 C{{.ClassName}} Implementation
 **************************************************************************************************************************/
 
 inline C{{.ClassName}}::C{{.ClassName}}()
-{{.Initialiser}}
+{{ if .IsBaseClass }}
+   : m_refcount(0)
+{{ end }}
 {
 }
 
@@ -407,11 +458,9 @@ inline {{.NameSpace}}_pvoid C{{.ClassName}}::GetSymbolLookupMethod()
 {
     return ({{.NameSpace}}_pvoid) &SymbolLookupMethod_ABI;
 }
-`
-    if err := writeSubstitution(commonMethodsCode, classProperties, w); err != nil {
-        return err
-    }
-    baseMethodsCode := `
+
+{{ if .IsBaseClass }}
+
 inline bool C{{.ClassName}}::GetLastError(std::string & sErrorMessage)
 {
     return false;
@@ -440,11 +489,9 @@ inline void C{{.ClassName}}::GetVersion(
     nMinor = {{.NameSpaceUpper}}_VERSION_MINOR;
     nMicro = {{.NameSpaceUpper}}_VERSION_MICRO;
 }
+{{ end }}
 `
-    if component.isBaseClass(class) {
-        return writeSubstitution(baseMethodsCode, getClassPropertyMap(component, class), w)
-    }
-    return nil
+    return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
 
 // buildCppClientImplSymbolLookupFunctionABI generates a static function implementation
@@ -478,22 +525,18 @@ inline {{.NameSpace}}Result C{{.ClassName}}::SymbolLookupFunction_ABI(
         }
     }
 
-    endCode := ""
-    if isBaseClass {
-        endCode = `
+    endCode := `
   }
+{{ if .IsBaseClass }}
   return LookupSymbolInMap(pProcName, sProcAddressMap, ppProcAddress);
-}`
-    } else {
-        endCode = `
-  }
+{{ else }}
   {{.NameSpace}}Result ret = LookupSymbolInMap(pProcName, sProcAddressMap, ppProcAddress);
   if (ret == {{.NameSpaceUpper}}_ERROR_COULDNOTFINDLIBRARYEXPORT) {
       ret = tBASE::SymbolLookupFunction_ABI(pProcName, sProcAddressMap, ppProcAddress);
   }
   return ret;
+{{ end }}
 }`
-    }
     err = writeSubstitution(endCode, properties, w)
     if err != nil {
         return err
