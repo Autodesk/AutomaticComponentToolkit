@@ -468,10 +468,15 @@ inline C{{.ClassName}}::~C{{.ClassName}}()
 
 inline {{.NameSpace}}_pvoid C{{.ClassName}}::GetSymbolLookupMethod()
 {
-  return ({{.NameSpace}}_pvoid) &GetSymbolLookupMethod_ABI;
+  return ({{.NameSpace}}_pvoid) &SymbolLookupFunction_ABI;
 }
 
 {{- if .IsBaseClass }}
+
+inline {{.NameSpace}}ExtendedHandle C{{.ClassName}}::GetExtendedHandle() const
+{
+    return { (void*) this, &SymbolLookupFunction_ABI };
+}
 
 inline bool C{{.ClassName}}::GetLastError(std::string & sErrorMessage)
 {
