@@ -981,8 +981,6 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		return err
 	}
 
-	// TODO: binding exceptions
-
 	exceptionType := ""
 	if (isClientImpl) {
 		exceptionType = fmt.Sprintf("E%sException", component.NameSpace)
@@ -1002,7 +1000,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		CMethodName = fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	} else {
 		if isClientImpl {
-			CMethodName = fmt.Sprintf("%s::%s_ABI", ClassName, method.MethodName)
+			CMethodName = fmt.Sprintf("%s%s::%s_ABI", ClassIdentifier, ClassName, method.MethodName)
 		} else {
 			CMethodName = fmt.Sprintf("%s_%s_%s", strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		}
@@ -1014,7 +1012,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 
 	callCPPFunctionCode := make([]string, 0)
 	
-	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(component, method, NameSpace, ClassIdentifier, ClassName, BaseClassName)
+	checkInputCPPFunctionCode, preCallCPPFunctionCode, postCallCPPFunctionCode, returnVariable, callParameters, err := generatePrePostCallCPPFunctionCode(component, method, NameSpace, ClassIdentifier, ClassName, BaseClassName, isClientImpl)
 	if err != nil {
 		return err
 	}
@@ -1066,7 +1064,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 	if !isGlobal {
 		typeName := ""
 		if isClientImpl {
-			typeName = ClassName
+			typeName = ClassIdentifier + ClassName
 		} else {
 			typeName = fmt.Sprintf("I%s%s*", ClassIdentifier, ClassName)
 		}
@@ -1085,7 +1083,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 
 	IBaseClassName := ""
 	if (isClientImpl) {
-		IBaseClassName = fmt.Sprintf("C%s", BaseClassName)
+		IBaseClassName = fmt.Sprintf("%s%s", ClassIdentifier, BaseClassName)
 	} else {
 		IBaseClassName = fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	}
@@ -1771,7 +1769,7 @@ func getCppParamType(param ComponentDefinitionParam, NameSpace string, isInput b
 	return "";
 }
 
-func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, QualifyingNameSpace string, ClassIdentifier string, ClassName string, BaseClassName string) ([]string, []string, []string, string, string, error) {
+func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method ComponentDefinitionMethod, QualifyingNameSpace string, ClassIdentifier string, ClassName string, BaseClassName string, isClientImpl bool) ([]string, []string, []string, string, string, error) {
 	NameSpace := component.NameSpace
 	preCallCode := make([]string, 0)
 	postCallCode := make([]string, 0)
@@ -1779,6 +1777,12 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 	returnVariable := ""
 	checkInputCode := make([]string, 0)
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
+	exceptionType := ""
+	if (isClientImpl) {
+		exceptionType = fmt.Sprintf("E%sException", component.NameSpace)
+	} else {
+		exceptionType = fmt.Sprintf("E%sInterfaceException", component.NameSpace)
+	}
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		variableName := getCppVariableName(param)
@@ -1799,13 +1803,21 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				callParameters = callParameters + "*p" + param.ParamName
 			case "basicarray":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
+				if (isClientImpl) {
+					callParameters = callParameters + fmt.Sprintf("%sInputVector(%s, n%sBufferSize)", ClassIdentifier, variableName, param.ParamName) 
+				} else {
+					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
+				}
 			case "structarray":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
-				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
-
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
+				if (isClientImpl) {
+					callParameters = callParameters + fmt.Sprintf("%sInputVector(%s, n%sBufferSize)", ClassIdentifier, variableName, param.ParamName) 
+				} else {
+					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
+				}
 			case "class", "optionalclass":
 				paramClass := param.ParamClass
 				if ((method.Component != nil) && (method.Component.NameSpace != component.NameSpace)) {
@@ -1845,14 +1857,14 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				
 				if (param.ParamType == "class") {
 					preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
-					preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
+					preCallCode = append(preCallCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDCAST);", exceptionType, strings.ToUpper(NameSpace)))
 					preCallCode = append(preCallCode, "")
 				}
 				
 				callParameters = callParameters + fmt.Sprintf("pI%s", param.ParamName)
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s(%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(p%s);", variableName, param.ParamName))
 				callParameters = callParameters + variableName
 
@@ -1872,17 +1884,17 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 			case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "enum", "struct", "pointer":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (!p%s)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + "*p" + param.ParamName
 
 			case "basicarray", "structarray":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((!p%sBuffer) && !(p%sNeededCount))", param.ParamName, param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, p%sNeededCount, ", param.ParamName, param.ParamName) + variableName
 
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				callParameters = callParameters + variableName
@@ -1891,7 +1903,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
 				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sBuffer) {", param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  if (%s.size() >= n%sBufferSize)", variableName, param.ParamName))
-				postCallCode = append(postCallCode, fmt.Sprintf("    throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
+				postCallCode = append(postCallCode, fmt.Sprintf("    throw %s (%s_ERROR_BUFFERTOOSMALL);", exceptionType, strings.ToUpper(NameSpace)))
 				postCallCode = append(postCallCode, fmt.Sprintf("  for (size_t i%s = 0; i%s < %s.size(); i%s++)", param.ParamName, param.ParamName, variableName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("    p%sBuffer[i%s] = %s[i%s];", param.ParamName, param.ParamName, variableName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
@@ -1899,7 +1911,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 			case "class", "optionalclass":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
@@ -1932,19 +1944,19 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "enum", "pointer":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
 
 			case "struct":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
 
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				preCallCode = append(preCallCode, fmt.Sprintf("std::string %s(\"\");", variableName))
 				returnVariable = variableName
@@ -1953,7 +1965,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				postCallCode = append(postCallCode, fmt.Sprintf("  *p%sNeededChars = (%s_uint32) (%s.size()+1);", param.ParamName, NameSpace, variableName))
 				postCallCode = append(postCallCode, fmt.Sprintf("if (p%sBuffer) {", param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  if (%s.size() >= n%sBufferSize)", variableName, param.ParamName))
-				postCallCode = append(postCallCode, fmt.Sprintf("    throw E%sInterfaceException (%s_ERROR_BUFFERTOOSMALL);", NameSpace, strings.ToUpper(NameSpace)))
+				postCallCode = append(postCallCode, fmt.Sprintf("    throw %s (%s_ERROR_BUFFERTOOSMALL);", exceptionType, strings.ToUpper(NameSpace)))
 				postCallCode = append(postCallCode, fmt.Sprintf("  for (size_t i%s = 0; i%s < %s.size(); i%s++)", param.ParamName, param.ParamName, variableName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("    p%sBuffer[i%s] = %s[i%s];", param.ParamName, param.ParamName, variableName, param.ParamName))
 				postCallCode = append(postCallCode, fmt.Sprintf("  p%sBuffer[%s.size()] = 0;", param.ParamName, variableName))
@@ -1963,7 +1975,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				_, class, _ := component.getClassByName(param.ParamClass)
 
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
-				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if (class.IsAbstract()) {

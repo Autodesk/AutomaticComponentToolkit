@@ -233,12 +233,12 @@ namespace ClientImpl {
 // the appropriate type. The result can thus be passed into functions that deal
 // in binding types.
 template <typename tCLASS, typename... tARGS>                         
-static tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
+static typename tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
 {          
   auto ptr = std::make_unique<tCLASS>(std::forward<tARGS>(args)...);  
   ptr->AcquireInstance(); // CBase ctor doesn't acquire         
-  return tBINDING_PTR(
-    new tCLASS::tBINDING_CLASS(ptr.release()->GetExtendedHandle())
+  return typename tCLASS::tBINDING_PTR(
+    new typename tCLASS::tBINDING_CLASS(ptr.release()->GetExtendedHandle())
   );
 }
 
@@ -246,9 +246,9 @@ static tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
 // implementation instance. The caller is responsible for ensuring that the
 // binding object really does wrap a client implementation.
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance(tCLASS::tBINDING_PTR pBindingPtr)
+static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr)
 {
-    return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetExtendedHandle())
+  return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetExtendedHandle())
 }
 
 // Cast a handle to a client implementation instance. The caller is responsible for
@@ -256,15 +256,15 @@ static tCLASS* UnsafeGetWrappedInstance(tCLASS::tBINDING_PTR pBindingPtr)
 template <typename tCLASS>
 static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}ExtendedHandle extendedHandle)
 {
-    return UnsafeGetWrappedInstance<tCLASS>(extendedHandle.m_hHandle);
+  return UnsafeGetWrappedInstance<tCLASS>(extendedHandle.m_hHandle);
 }
 
 // Cast a handle to a client implementation instance. The caller is responsible for
 // ensuring that the binding object really does wrap a client implementation.
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance<tCLASS>({{.NameSpace}}Handle handle)
+static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}Handle handle)
 {
-    return (tCLASS*) handle;
+  return (tCLASS*) handle;
 }
 
 // Static handler for E{{.NameSpace}}Exception from client impl abi wrapper function.
@@ -272,7 +272,7 @@ static tCLASS* UnsafeGetWrappedInstance<tCLASS>({{.NameSpace}}Handle handle)
 template <typename tCLASS>
 {{.NameSpace}}Result handle{{.NameSpace}}Exception(tCLASS* object, const E{{.NameSpace}}Exception& e)
 {
-    return e.getErrorCode();
+  return e.getErrorCode();
 }
 
 // Static handler for std::exception from client impl abi wrapper function.
@@ -280,7 +280,7 @@ template <typename tCLASS>
 template <typename tCLASS>
 {{.NameSpace}}Result handleStdException(tCLASS* object, const std::exception& e)
 {
-    return {{.NameSpaceUpper}}_ERROR_GENERICEXCEPTION;
+  return {{.NameSpaceUpper}}_ERROR_GENERICEXCEPTION;
 }
 
 // Static handler for generic exception from client impl abi wrapper function.
@@ -288,16 +288,16 @@ template <typename tCLASS>
 template <typename tCLASS>
 {{.NameSpace}}Result handleUnhandledException(tCLASS* object)
 {
-    return {{.NameSpaceUpper}}_ERROR_GENERICEXCEPTION;
+  return {{.NameSpaceUpper}}_ERROR_GENERICEXCEPTION;
 }
 
 // Utility method for SymbolLookupFunction_ABI. Attempt to find the symbol in 
 // the map, outputting it if present, and returning an appropriate error code if
 // not.
 inline static {{.NameSpace}}Result LookupSymbolInMap(
-    const char* pProcName, 
-    std::map<std::string, void*>& procAddressMap, 
-    void** ppProcAddress
+  const char* pProcName, 
+  std::map<std::string, void*>& procAddressMap, 
+  void** ppProcAddress
 )
 {
     try {
@@ -338,40 +338,50 @@ func buildCppClientImplEnd(component ComponentDefinition, w LanguageWriter) erro
 // impl class declaration.
 func buildCppClientImplClassDeclPublic(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
+{{- /**/ -}}
 /*************************************************************************************************************************
  Class C{{.ClassName}}
 **************************************************************************************************************************/
-class C{{.ClassName}} {{ if .IsBaseClass }}: public C{{.BaseClassName}} {{ end }}{
+class C{{.ClassName}} {{ if not .IsBaseClass }}: public C{{.BaseClassName}} {{ end }}{
 public:
 
-    // Associated types.  These are used by certain template functions.
-    using tBINDING_PTR = {{.NameSpace}}::Binding::P{{.ClassName}};
-    using tBINDING_CLASS = {{.NameSpace}}::Binding::C{{.ClassName}};
-{{if not .IsBaseClass}}
-    using tBASE = {{.NameSpace}}::Binding::ClientImpl::C{{.BaseClassName}};
-{{ end }}
+  // Associated types.  These are used by certain template functions.
+  using tBINDING_PTR = {{.NameSpace}}::Binding::P{{.ClassName}};
+  using tBINDING_CLASS = {{.NameSpace}}::Binding::C{{.ClassName}};
+{{- if not .IsBaseClass }}
+  using tBASE = {{.NameSpace}}::Binding::ClientImpl::C{{.BaseClassName}};
+{{- end }}
 
-    // Default constructor.
-    inline C{{.ClassName}}();
+  // Default constructor.
+  inline C{{.ClassName}}();
 
-    // Copying is prohibited
-    C{{.ClassName}}(const C{{.ClassName}}& that) = delete;
+  // Copying is prohibited
+  C{{.ClassName}}(const C{{.ClassName}}& that) = delete;
 
-    // Assignment is prohibited
-    C{{.ClassName}}& operator=(const C{{.ClassName}}& that) = delete;
+  // Assignment is prohibited
+  C{{.ClassName}}& operator=(const C{{.ClassName}}& that) = delete;
 
-    // Destructor
-    inline virtual ~C{{.ClassName}}() {{ if not .IsBaseClass }}override{{ end }};
+  // Destructor
+  inline virtual ~C{{.ClassName}}() {{- if not .IsBaseClass }} override{{ end }};
 
-{{ if .IsBaseClass }}
-    inline {{.NameSpace}}ExtendedHandle GetExtendedHandle() const;
-{{ end }}
+{{- if .IsBaseClass }}
 
-    // Return the symbol lookup method for this class.    In a derived
-    // class, this is overridden to return a function that exposes the
-    // symbols of that class, calling down to the base class function
-    // if a symbol is not found.
-    inline virtual {{.NameSpace}}_pvoid GetSymbolLookupMethod() const {{ if not .IsBaseClass }}override{{ end }};
+  // Get the extended handle for this instance. The extended handle can
+  // be wrapped in a tBINDING_CLASS instance and passed into binding
+  // methods as a parameter.
+  inline {{.NameSpace}}ExtendedHandle GetExtendedHandle() const;
+{{- end }}
+
+{{- if not .IsBaseClass }}
+
+  // Return the symbol lookup method for this class.    In a derived
+  // class, this is overridden to return a function that exposes the
+  // symbols of that class, calling down to the base class function
+  // if a symbol is not found.
+  inline virtual {{.NameSpace}}_pvoid GetSymbolLookupMethod() override;
+{{- end }}
+
+  // API methods
 `
     return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
@@ -380,7 +390,7 @@ public:
 // client impl class declaration.
 func buildCppClientImplAPIMethodDecls(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     for _, method := range class.Methods {
-        returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, component.NameSpace, "", "C"+class.ClassName)
+        returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, component.NameSpace, "", "C"+class.ClassName, true)
         if err != nil {
             return err
         }
@@ -394,17 +404,18 @@ func buildCppClientImplAPIMethodDecls(component ComponentDefinition, class Compo
 // impl class declation.
 func buildCppClientImplClassDeclProtected(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
+{{- /**/ -}}
 protected:
     
-      // Symbol lookup function for the methods on this class. Looks up the _ABI
-      // functions of this class by name.    Derived classes must add their own
-      // symbol lookup function exposing their own functions, which should call
-      // down to this function when a symbol cannot be found.
-      inline static {{.NameSpace}}Result SymbolLookupFunction_ABI(
-          const char* pProcName, 
-          void** ppProcAddress
-      );`
-      return writeSubstitution(code, getClassPropertyMap(component, class), w)
+  // Symbol lookup function for the methods on this class. Looks up the _ABI
+  // functions of this class by name.    Derived classes must add their own
+  // symbol lookup function exposing their own functions, which should call
+  // down to this function when a symbol cannot be found.
+  inline static {{.NameSpace}}Result SymbolLookupFunction_ABI(
+    const char* pProcName, 
+    void** ppProcAddress
+  );`
+    return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
 
 // buildCppClientImplABIMethodDecls outputs a declaration for each 'ABI' method for a client
@@ -427,11 +438,12 @@ func buildCppClientImplABIMethodDecls(component ComponentDefinition, class Compo
 func buildCppClientImplClassDeclPrivate(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
     code := `
 private:
-{{if .IsBaseClass}}
-      // Reference count
-      {{.NameSpace}}_uint64 m_refcount;
-{{end}}
-};`
+{{- if .IsBaseClass }}
+  // Reference count
+  {{.NameSpace}}_uint64 m_refcount;
+{{- end }}
+};
+`
     return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
 
@@ -444,9 +456,9 @@ C{{.ClassName}} Implementation
 **************************************************************************************************************************/
 
 inline C{{.ClassName}}::C{{.ClassName}}()
-{{ if .IsBaseClass }}
+{{ if .IsBaseClass -}}
    : m_refcount(0)
-{{ end }}
+{{ end -}}
 {
 }
 
@@ -456,40 +468,40 @@ inline C{{.ClassName}}::~C{{.ClassName}}()
 
 inline {{.NameSpace}}_pvoid C{{.ClassName}}::GetSymbolLookupMethod()
 {
-    return ({{.NameSpace}}_pvoid) &SymbolLookupMethod_ABI;
+  return ({{.NameSpace}}_pvoid) &GetSymbolLookupMethod_ABI;
 }
 
-{{ if .IsBaseClass }}
+{{- if .IsBaseClass }}
 
 inline bool C{{.ClassName}}::GetLastError(std::string & sErrorMessage)
 {
-    return false;
+  return false;
 }
 
 inline void C{{.ClassName}}::ReleaseInstance()
 {
-    --m_refcount;
-    if (m_refcount == 0) {
-        delete this;
-    }
+  --m_refcount;
+  if (m_refcount == 0) {
+    delete this;
+  }
 }
 
 inline void C{{.ClassName}}::AcquireInstance()
 {
-    ++m_refcount;
+  ++m_refcount;
 }
 
 inline void C{{.ClassName}}::GetVersion(
-    {{.NameSpace}}_uint32 & nMajor, 
-    {{.NameSpace}}_uint32 & nMinor,
-    {{.NameSpace}}_uint32 & nMicro
+  {{.NameSpace}}_uint32 & nMajor, 
+  {{.NameSpace}}_uint32 & nMinor,
+  {{.NameSpace}}_uint32 & nMicro
 )
 {
-    nMajor = {{.NameSpaceUpper}}_VERSION_MAJOR;
-    nMinor = {{.NameSpaceUpper}}_VERSION_MINOR;
-    nMicro = {{.NameSpaceUpper}}_VERSION_MICRO;
+  nMajor = {{.NameSpaceUpper}}_VERSION_MAJOR;
+  nMinor = {{.NameSpaceUpper}}_VERSION_MINOR;
+  nMicro = {{.NameSpaceUpper}}_VERSION_MICRO;
 }
-{{ end }}
+{{- end -}}
 `
     return writeSubstitution(code, getClassPropertyMap(component, class), w)
 }
@@ -525,17 +537,16 @@ inline {{.NameSpace}}Result C{{.ClassName}}::SymbolLookupFunction_ABI(
         }
     }
 
-    endCode := `
-  }
-{{ if .IsBaseClass }}
+    endCode := `  }
+{{- if .IsBaseClass }}
   return LookupSymbolInMap(pProcName, sProcAddressMap, ppProcAddress);
-{{ else }}
+{{- else }}
   {{.NameSpace}}Result ret = LookupSymbolInMap(pProcName, sProcAddressMap, ppProcAddress);
   if (ret == {{.NameSpaceUpper}}_ERROR_COULDNOTFINDLIBRARYEXPORT) {
-      ret = tBASE::SymbolLookupFunction_ABI(pProcName, sProcAddressMap, ppProcAddress);
+      ret = tBASE::SymbolLookupFunction_ABI(pProcName, ppProcAddress);
   }
   return ret;
-{{ end }}
+{{- end }}
 }`
     err = writeSubstitution(endCode, properties, w)
     if err != nil {
@@ -587,7 +598,7 @@ func buildCppClientImplAPIMethodImpls(component ComponentDefinition, class Compo
     methodCode := `
 inline {{.ReturnType}} C{{.ClassName}}::{{.MethodName}}({{.Parameters}})
 {
-    throw E{{.NameSpace}}Exception({{.NameSpaceUpper}}_ERROR_NOTIMPLEMENTED, "");
+  throw E{{.NameSpace}}Exception({{.NameSpaceUpper}}_ERROR_NOTIMPLEMENTED, "");
 }
 `
 
@@ -602,7 +613,7 @@ inline {{.ReturnType}} C{{.ClassName}}::{{.MethodName}}({{.Parameters}})
         // Otherwise output a dummy implementation
         properties := getMethodPropertyMap(component, class, method)
         classIdentifier := ""
-        returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, component.NameSpace, classIdentifier, class.ClassName)
+        returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, component.NameSpace, classIdentifier, class.ClassName, true)
         if err != nil {
             return err
         }
@@ -635,7 +646,7 @@ func buildCppClientImplABIMethodImpls(component ComponentDefinition, class Compo
         doJournal := false
         isSpecialFunction := eSpecialMethodNone
         isClientImpl := true
-        if err := writeCImplementationMethod(component, method, w, baseName, component.NameSpace, classIdentifier, class.ClassName, class.Component.BaseName, isGlobal, doJournal, isSpecialFunction, isClientImpl); err != nil {
+        if err := writeCImplementationMethod(component, method, w, baseName, component.NameSpace, classIdentifier, class.ClassName, component.Global.BaseClassName, isGlobal, doJournal, isSpecialFunction, isClientImpl); err != nil {
             return err
         }
     }

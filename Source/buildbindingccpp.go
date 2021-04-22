@@ -564,7 +564,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	return nil
 }
 
-func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string) (string, string, error) {
+func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, isClientImpl bool) (string, string, error) {
 	parameters := ""
 	returntype := "void"
 
@@ -578,7 +578,7 @@ func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpac
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true, isClientImpl)
 
 			switch param.ParamType {
 			case "string":
@@ -593,13 +593,13 @@ func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpac
 				parameters = parameters + fmt.Sprintf("const %s %s", cppParamType, variableName)
 			}
 		case "out":
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, isClientImpl)
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
 			parameters = parameters + fmt.Sprintf("%s & %s", cppParamType, variableName)
 		case "return":
-			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, isClientImpl)
 		default:
 			return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
@@ -666,7 +666,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true, false)
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @param[in] %s - %s", variableName, param.ParamDescription))
 
 			switch param.ParamType {
@@ -703,7 +703,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			}
 
 		case "out":
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, false)
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @param[out] %s - %s", variableName, param.ParamDescription))
 
 			if parameters != "" {
@@ -765,7 +765,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 
 		case "return":
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @return %s", param.ParamDescription))
-			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, false)
 
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
@@ -1102,7 +1102,7 @@ func decomposeParamClassNameCPP(paramClassName string, NameSpace string) (string
 	return paramNameSpace, paramClassName, err
 }
 
-func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool) string {
+func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool, isClientImpl bool) string {
 
 	paramNameSpace, paramClassName, _ := decomposeParamClassNameCPP(paramClass, NameSpace)
 
@@ -1121,7 +1121,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		switch paramClass {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double",
 			"bool", "pointer":
-			cppBasicType = getBindingCppParamType(paramClass, "", NameSpace, ClassIdentifier, isInput)
+			cppBasicType = getBindingCppParamType(paramClass, "", NameSpace, ClassIdentifier, isInput, isClientImpl)
 		default:
 			log.Fatal("Invalid parameter type: ", paramClass)
 		}
@@ -1140,7 +1140,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 	case "struct":
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class", "optionalclass":
-		if isInput {
+		if isInput && !isClientImpl {
 			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
 		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
@@ -1265,6 +1265,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
+	w.Writeln("  * Exception Constructor.")
+	w.Writeln("  */")
+	w.Writeln("  E%sException(%sResult errorCode)", NameSpace, NameSpace)
+	w.Writeln("    : E%sException(errorCode, \"\")", NameSpace)
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  /**")
 	w.Writeln("  * Returns error code")
 	w.Writeln("  */")
 	w.Writeln("  %sResult getErrorCode() const noexcept", NameSpace)
@@ -1360,7 +1368,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, "Wrapper")
+		returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, "Wrapper", false)
 		if err != nil {
 			return err
 		}
@@ -1470,7 +1478,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, cppClassName)
+			returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, cppClassName, false)
 			if err != nil {
 				return err
 			}
