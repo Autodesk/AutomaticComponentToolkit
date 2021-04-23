@@ -246,7 +246,7 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln(" Function Table Structure")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	w.Writeln("typedef struct {")
+	w.Writeln("typedef struct s%sDynamicWrapperTableStruct {", NameSpace)
 	w.Writeln("  void * m_LibraryHandle;")
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -267,22 +267,24 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		structName := fmt.Sprintf("s%sFunctionTable%sStruct", NameSpace, class.ClassName)
+		typedefName := fmt.Sprintf("s%sFunctionTable%s", NameSpace, class.ClassName)
 		if len(class.ParentClass) > 0 {
 			paramNameSpace, paramClassName, _ := decomposeParamClassName(class.ParentClass)
 			if len(paramNameSpace) == 0 {
-				w.Writeln("typedef struct : s%sFunctionTable%s {", NameSpace, class.ParentClass)
+				w.Writeln("typedef struct %s : s%sFunctionTable%s {", structName, NameSpace, class.ParentClass)
 			} else {
-				w.Writeln("typedef struct : s%sFunctionTable%s {", component.ImportedComponentDefinitions[paramNameSpace].NameSpace, paramClassName)
+				w.Writeln("typedef struct %s : s%sFunctionTable%s {", structName, component.ImportedComponentDefinitions[paramNameSpace].NameSpace, paramClassName)
 			}
 		} else {
-			w.Writeln("typedef struct {")
+			w.Writeln("typedef struct %s {", structName)
 		}
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			w.Writeln("  P%s%s_%sPtr m_%s_%s;", NameSpace, class.ClassName, method.MethodName, class.ClassName, method.MethodName)
 		}
-		w.Writeln("} s%sFunctionTable%s;", NameSpace, class.ClassName)
+		w.Writeln("} %s;", typedefName)
 		w.Writeln("")
 	}
 
@@ -609,7 +611,7 @@ func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpac
 }
 
 func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, ClassIdentifier string, ClassName string,
-	implementationLines []string, isGlobal bool, includeComments bool, checkErrorSafely bool, useCPPTypes bool, ExplicitLinking bool) error {
+	implementationLines []string, isGlobal bool, includeComments bool, checkErrorSafely bool, useCPPTypes bool, ExplicitLinking bool, isAbstract bool) error {
 	NameSpace := component.NameSpace
 
 	CMethodName := ""
@@ -868,6 +870,10 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 
 	w.Writeln("  {")
 	w.Writelns("    ", definitionCodeLines)
+	if isAbstract {
+		w.Writeln("    if (!%s)", CMethodName)
+		w.Writeln("      throw E%sException(%s_ERROR_NOTIMPLEMENTED, \"Method '%s' not found\");", NameSpace, strings.ToUpper(NameSpace), method.MethodName)
+	}
 	if requiresInitCall {
 		w.Writeln("    %s%s(%s)%s;", checkErrorCodeBegin, CMethodName, initCallParameters, checkErrorCodeEnd)
 	}
@@ -903,8 +909,12 @@ func writeLoadingOfClassFunctionTable(component ComponentDefinition, stubfile La
 
 	for k := 0; k < len(class.Methods); k++ {
 		method := class.Methods[k]
+		readMethod := "readMethodInto"
+		if (class.IsAbstract()) {
+			readMethod = "readAbstractMethodInto"
+		}
 		CMethodName := strings.ToLower(fmt.Sprintf("%s_%s_%s", NameSpace, class.ClassName, method.MethodName));
-		stubfile.Writeln("      %s::readMethodInto(pLookupFunction, \"%s\", (void**)&(%s->m_%s_%s));", WrapperName, CMethodName, sTableName, class.ClassName, method.MethodName);
+		stubfile.Writeln("      %s::%s(pLookupFunction, \"%s\", (void**)&(%s->m_%s_%s));", WrapperName, readMethod, CMethodName, sTableName, class.ClassName, method.MethodName);
 	}
 }
 
@@ -1253,15 +1263,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  * Error message for the Exception.")
 	w.Writeln("  */")
 	w.Writeln("  std::string m_errorMessage;")
+	w.Writeln("  std::string m_originalErrorMessage;")
 	w.Writeln("")
 	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
 	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
-	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string(errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
+	w.Writeln("    : m_originalErrorMessage(sErrorMessage), m_errorCode(errorCode)")
 	w.Writeln("  {")
-	w.Writeln("    m_errorCode = errorCode;")
+	w.Writeln("    m_errorMessage = buildErrorMessage();")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
@@ -1287,7 +1298,46 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")
+	w.Writeln("");
+	w.Writeln("  const char* getErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    return m_originalErrorMessage.c_str();")
+	w.Writeln("  }")
 	w.Writeln("")
+	w.Writeln("  const char* getErrorName() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"SUCCESS\";", strings.ToUpper(NameSpace))
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Name)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"UNKNOWN\";");
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  const char* getErrorDescription() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"success\";", strings.ToUpper(NameSpace))
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Description)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"unknown error\";");
+	w.Writeln("  }")
+	w.Writeln("")
+
+	w.Writeln("private:")
+	w.Writeln("")
+
+	w.Writeln("  std::string buildErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    std::string msg = m_originalErrorMessage;")
+	w.Writeln("    if (msg.empty()) {")
+	w.Writeln("      msg = getErrorDescription();")
+	w.Writeln("    }")
+	w.Writeln("    return std::string(\"Error: \") + getErrorName() + \": \" + msg;")
+	w.Writeln("  }")
 
 	w.Writeln("};")
 
@@ -1421,6 +1471,13 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  }")
 	w.Writeln("")
 
+	w.Writeln("  static void readAbstractMethodInto(%sSymbolLookupType pLookupMethod, std::string sFunctionName, void** pfnTarget) {", NameSpace )
+	w.Writeln("    %sResult eLookupError = (*pLookupMethod)(sFunctionName.c_str(), pfnTarget);", NameSpace);
+	w.Writeln("    if (eLookupError != %s_SUCCESS)", strings.ToUpper(NameSpace))
+	w.Writeln("      *pfnTarget = 0;")
+	w.Writeln("  }")
+	w.Writeln("")
+
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -1518,7 +1575,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			checkErrorSafely = true
 		}
 
-		err = writeDynamicCPPMethod(component, method, w, ClassIdentifier, "Wrapper", implementationLines, true, true, checkErrorSafely, useCPPTypes, ExplicitLinking)
+		err = writeDynamicCPPMethod(component, method, w, ClassIdentifier, "Wrapper", implementationLines, true, true, checkErrorSafely, useCPPTypes, ExplicitLinking, false)
 		if err != nil {
 			return err
 		}
@@ -1607,7 +1664,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 				checkErrorSafely = true
 			}
 
-			err := writeDynamicCPPMethod(component, method, w, ClassIdentifier, class.ClassName, make([]string,0), false, true, checkErrorSafely, useCPPTypes, ExplicitLinking)
+			err := writeDynamicCPPMethod(component, method, w, ClassIdentifier, class.ClassName, make([]string,0), false, true, checkErrorSafely, useCPPTypes, ExplicitLinking, class.IsAbstract())
 			if err != nil {
 				return err
 			}
