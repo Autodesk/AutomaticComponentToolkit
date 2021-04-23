@@ -1066,7 +1066,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		if isClientImpl {
 			typeName = ClassIdentifier + ClassName
 		} else {
-			typeName = fmt.Sprintf("I%s%s*", ClassIdentifier, ClassName)
+			typeName = fmt.Sprintf("I%s%s", ClassIdentifier, ClassName)
 		}
 		preCallCPPFunctionCode = append(preCallCPPFunctionCode, fmt.Sprintf("%s* pI%s = dynamic_cast<%s*>(pIBaseClass);", typeName, ClassName, typeName))
 		preCallCPPFunctionCode = append(preCallCPPFunctionCode, fmt.Sprintf("if (!pI%s)", ClassName))

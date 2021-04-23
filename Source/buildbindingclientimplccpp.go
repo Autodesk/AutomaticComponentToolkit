@@ -248,7 +248,7 @@ static typename tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
 template <typename tCLASS>
 static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr)
 {
-  return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetExtendedHandle())
+  return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetHandle());
 }
 
 // Cast a handle to a client implementation instance. The caller is responsible for
