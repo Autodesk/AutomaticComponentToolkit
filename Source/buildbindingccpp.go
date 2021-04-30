@@ -566,7 +566,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	return nil
 }
 
-func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string) (string, string, error) {
+func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpace string, ClassIdentifier string, ClassName string, isClientImpl bool) (string, string, error) {
 	parameters := ""
 	returntype := "void"
 
@@ -580,7 +580,7 @@ func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpac
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true, isClientImpl)
 
 			switch param.ParamType {
 			case "string":
@@ -595,13 +595,13 @@ func buildDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, NameSpac
 				parameters = parameters + fmt.Sprintf("const %s %s", cppParamType, variableName)
 			}
 		case "out":
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, isClientImpl)
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
 			parameters = parameters + fmt.Sprintf("%s & %s", cppParamType, variableName)
 		case "return":
-			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, isClientImpl)
 		default:
 			return "", "", fmt.Errorf("invalid method parameter passing \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
 		}
@@ -668,7 +668,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			if parameters != "" {
 				parameters = parameters + ", "
 			}
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, true, false)
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @param[in] %s - %s", variableName, param.ParamDescription))
 
 			switch param.ParamType {
@@ -705,7 +705,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 			}
 
 		case "out":
-			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			cppParamType := getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, false)
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @param[out] %s - %s", variableName, param.ParamDescription))
 
 			if parameters != "" {
@@ -767,7 +767,7 @@ func writeDynamicCPPMethod(component ComponentDefinition, method ComponentDefini
 
 		case "return":
 			commentcodeLines = append(commentcodeLines, fmt.Sprintf("* @return %s", param.ParamDescription))
-			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false)
+			returntype = getBindingCppParamType(param.ParamType, param.ParamClass, NameSpace, ClassIdentifier, false, false)
 
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
@@ -1112,7 +1112,7 @@ func decomposeParamClassNameCPP(paramClassName string, NameSpace string) (string
 	return paramNameSpace, paramClassName, err
 }
 
-func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool) string {
+func getBindingCppParamType(paramType string, paramClass string, NameSpace string, ClassIdentifier string, isInput bool, isClientImpl bool) string {
 
 	paramNameSpace, paramClassName, _ := decomposeParamClassNameCPP(paramClass, NameSpace)
 
@@ -1131,7 +1131,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		switch paramClass {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double",
 			"bool", "pointer":
-			cppBasicType = getBindingCppParamType(paramClass, "", NameSpace, ClassIdentifier, isInput)
+			cppBasicType = getBindingCppParamType(paramClass, "", NameSpace, ClassIdentifier, isInput, isClientImpl)
 		default:
 			log.Fatal("Invalid parameter type: ", paramClass)
 		}
@@ -1150,7 +1150,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 	case "struct":
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class", "optionalclass":
-		if isInput {
+		if isInput && !isClientImpl {
 			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
 		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
@@ -1270,9 +1270,17 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
 	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
-	w.Writeln("    : m_originalErrorMessage(sErrorMessage), m_errorCode(errorCode)")
+	w.Writeln("    : m_errorCode(errorCode), m_originalErrorMessage(sErrorMessage)")
 	w.Writeln("  {")
 	w.Writeln("    m_errorMessage = buildErrorMessage();")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * Exception Constructor.")
+	w.Writeln("  */")
+	w.Writeln("  E%sException(%sResult errorCode)", NameSpace, NameSpace)
+	w.Writeln("    : E%sException(errorCode, \"\")", NameSpace)
+	w.Writeln("  {")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
@@ -1410,7 +1418,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, "Wrapper")
+		returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, "Wrapper", false)
 		if err != nil {
 			return err
 		}
@@ -1527,7 +1535,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, cppClassName)
+			returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, ClassIdentifier, cppClassName, false)
 			if err != nil {
 				return err
 			}
@@ -1669,6 +1677,10 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("} // namespace %s", NameSpace)
 	w.Writeln("")
 
+	if err := WriteClientImpl(component, w); err != nil {
+		return err
+	}
+
 	w.Writeln("#endif // %s", sIncludeGuard)
 	w.Writeln("")
 
@@ -1742,28 +1754,6 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 				buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, outputFolderExample, ExplicitLinking)
 		} else {
 			log.Printf("Omitting recreation of C++Dynamic example file \"%s\"", DynamicCPPCMake)
-		}
-
-
-		clientImplHeader := path.Join(outputFolderExample, baseName+"_dynamic_client.hpp")
-		log.Printf("Creating \"%s\"", clientImplHeader)
-		dynclientfile, err := CreateLanguageFile(clientImplHeader, indentString)
-		if err != nil {
-			return err
-		}
-		dynclientfile.WriteCLicenseHeader(component,
-			fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s", libraryname),
-			true)
-
-		clientImplSource := path.Join(outputFolderExample, baseName+"_dynamic_client.cpp")
-		log.Printf("Creating \"%s\"", clientImplSource)
-		dynclientfilesource, err := CreateLanguageFile(clientImplSource, indentString)
-		if err != nil {
-			return err
-		}
-		err = buildCppClientImplementations(component, dynclientfile, dynclientfilesource, outputFolderExample, false, true)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -2020,338 +2010,5 @@ func buildCDynamicExampleCMake(componentdefinition ComponentDefinition, w Langua
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
 	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
-	return nil
-}
-
-func buildCppClientImplementations(component ComponentDefinition, w LanguageWriter, wImpl LanguageWriter, outputFolder string, useStrictC bool, ExplicitLinking bool) error {
-	libraryname := component.LibraryName
-	BaseName := component.BaseName
-
-	// Implementation of all base-class
-	err := buildCppClientImplementationClass(component, component.baseClass(), w, wImpl, false, true)
-	if err != nil {
-		return err
-	}
-
-	// Implementation of all abstract classes
-	for i := 0; i < len(component.Classes); i++ {
-		class := component.Classes[i]
-		if (class.IsAbstract()) {
-			clientImplHeader := path.Join(outputFolder, BaseName+"_dynamic_client_"+strings.ToLower(class.ClassName)+".hpp")
-			log.Printf("Creating \"%s\"", clientImplHeader)
-			dynclientfile, err := CreateLanguageFile(clientImplHeader, w.IndentString)
-			if err != nil {
-				return err
-			}
-			dynclientfile.WriteCLicenseHeader(component,
-				fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s", libraryname),
-				true)
-
-			clientImplSource := path.Join(outputFolder, BaseName+"_dynamic_client_"+strings.ToLower(class.ClassName)+".cpp")
-			log.Printf("Creating \"%s\"", clientImplSource)
-			dynclientfilesource, err := CreateLanguageFile(clientImplSource, w.IndentString)
-			if err != nil {
-				return err
-			}
-
-			err = buildCppClientImplementationClass(component, class, dynclientfile, dynclientfilesource, false, true)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func buildCppClientImplementationClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, wImpl LanguageWriter, useStrictC bool, ExplicitLinking bool) error {
-	theClass := class
-	theClassName := theClass.ClassName
-
-	bIsBaseClass := theClass.ClassName == component.baseClass().ClassName
-
-	NameSpace := component.NameSpace
-	NameSpaceUpper := strings.ToUpper(NameSpace)
-	NameSpaceLower := strings.ToLower(NameSpace)
-	BaseName := component.BaseName
-
-	sIncludeGuard := "__" + strings.ToUpper(NameSpace + "_CLIENT_" + theClassName)
-	w.Writeln("#ifndef %s", sIncludeGuard)
-	w.Writeln("#define %s", sIncludeGuard)
-
-	w.Writeln("")
-	
-	if (bIsBaseClass) {
-		w.Writeln("#include \"%s_dynamic.hpp\"", BaseName)
-	} else {
-		w.Writeln("#include \"%s_dynamic_client.hpp\"", BaseName)
-	}
-
-	if (bIsBaseClass) {
-		w.Writeln("")
-		w.Writeln("// %s_BEGIN_WRAP_CALL / %s_END_WRAP_CALL: used to implement an 'ABI' wrapper", NameSpaceUpper, NameSpaceUpper)
-		w.Writeln("// function.  Call the corresponding instance method between these macros")
-		w.Writeln("// to convert exceptions to error codes.")
-		w.Writeln("#define %s_BEGIN_WRAP_CALL try", NameSpaceUpper)
-		w.Writeln("#define %s_END_WRAP_CALL                                     \\", NameSpaceUpper)
-		w.Writeln("catch (%s::Binding::E%sException&) {    \\", NameSpace, NameSpace)
-		w.Writeln("  return %s_ERROR_GENERICEXCEPTION;              \\", NameSpaceUpper)
-		w.Writeln("} catch (std::exception&) {                               \\")
-		w.Writeln("  return %s_ERROR_GENERICEXCEPTION;              \\", NameSpaceUpper)
-		w.Writeln("} catch (...) {                                           \\")
-		w.Writeln("  return %s_ERROR_GENERICEXCEPTION;              \\", NameSpaceUpper)
-		w.Writeln("}                                                         \\")
-		w.Writeln("return %s_SUCCESS;", NameSpaceUpper)
-		w.Writeln("")
-		w.Writeln("")
-		
-		w.Writeln("// %s_IMPL_DECLARE/IMPLEMENT macros.  Use these for each derived impl class.", NameSpaceUpper)
-		w.Writeln("#define %s_IMPL_DECLARE(NAME, BINDINGNAME)                             \\", NameSpaceUpper)
-		w.Writeln("  public:                                                              \\")
-		w.Writeln("    using tBINDING_PTR = %s::Binding::P ## BINDINGNAME;                \\", NameSpace)
-		w.Writeln("    using tBINDING_CLASS = %s::Binding::C ## BINDINGNAME;              \\", NameSpace)
-		w.Writeln("    %s GetExtendedHandle();                                            \\", component.getExtendedHandleName())
-		w.Writeln("    template <typename... Args>                                        \\")
-		w.Writeln("    static tBINDING_PTR CreateWrappedInstance(Args&&... args) {        \\")
-		w.Writeln("      auto ptr = std::make_unique<NAME>(std::forward<Args>(args)...);  \\")
-		w.Writeln("      ptr->%s(); /* CBase ctor doesn't acquire */          \\", theClass.AcquireMethod)
-		w.Writeln("      return tBINDING_PTR(                                             \\")
-		w.Writeln("        new tBINDING_CLASS(ptr.release()->GetExtendedHandle())         \\")
-		w.Writeln("      );                                                               \\")
-		w.Writeln("    }                                                                  \\")
-		w.Writeln("    virtual %s_pvoid GetSymbolLookupMethod() override;                 \\", NameSpace)
-		w.Writeln("  protected:                                                           \\")
-		w.Writeln("    static %sResult SymbolLookupFunction_ABI(                              \\", NameSpace)
-		w.Writeln("      const char* pProcName,                                           \\")
-		w.Writeln("      void** ppProcAddress                                             \\")
-		w.Writeln("    );                                                                 \\")
-		w.Writeln("    static NAME* FromExtendedHandle(%s& handle);", component.getExtendedHandleName())
-		w.Writeln("")
-		w.Writeln("#define %s_IMPL_IMPLEMENT(NAME)                           \\", NameSpaceUpper)
-		w.Writeln("  %s NAME::GetExtendedHandle()                                         \\", component.getExtendedHandleName())
-		w.Writeln("  {                                                                    \\")
-		w.Writeln("    return { this, &NAME::SymbolLookupFunction_ABI };                      \\")
-		w.Writeln("  }                                                                    \\")
-		w.Writeln("  %s_pvoid NAME::GetSymbolLookupMethod()                               \\", NameSpace)
-		w.Writeln("  {                                                                    \\")
-		w.Writeln("    return (void*) &NAME::SymbolLookupFunction_ABI;                        \\")
-		w.Writeln("  }                                                                    \\")
-		w.Writeln("  NAME* NAME::FromExtendedHandle(%s& handle)                    \\", component.getExtendedHandleName())
-		w.Writeln("  {                                                                    \\")
-		w.Writeln("    return (NAME*) handle.m_hHandle;                            \\")
-		w.Writeln("  }                                                                    \\")
-		w.Writeln("")
-		w.Writeln("")
-
-		w.Writeln("#define %s_IMPL_LOOKUP_IMPLEMENT_BEGIN(NAME, BASE, RAWNAME)        \\", NameSpaceUpper)
-		w.Writeln("  %sResult NAME::SymbolLookupFunction_ABI(                    \\", NameSpace)
-		w.Writeln("    const char* pProcName,                                \\")
-		w.Writeln("    void** ppProcAddress                                  \\")
-		w.Writeln("  )                                                       \\")
-		w.Writeln("  {                                                       \\")
-		w.Writeln("    using tBASE = BASE;                                   \\")
-		w.Writeln("    std::string className = #RAWNAME;                     \\")
-		w.Writeln("    static std::map<std::string, void*> sProcAddressMap;  \\")
-		w.Writeln("    if (sProcAddressMap.empty()) {")
-		w.Writeln("")
-		w.Writeln("#define %s_IMPL_LOOKUP_ADD(FUNCTION)                                    \\", NameSpaceUpper)
-		w.Writeln("      {                                                                 \\")
-		w.Writeln("        std::string functionName = #FUNCTION;                           \\")
-		w.Writeln("        std::string mapName = \"%s_\" + className +              \\", NameSpaceLower)
-		w.Writeln("          std::string(\"_\") + functionName;                              \\")
-		w.Writeln("        std::transform(mapName.begin(), mapName.end(), mapName.begin(), \\")
-		w.Writeln("                       [](unsigned char c){ return std::tolower(c); }); \\")
-		w.Writeln("        sProcAddressMap[mapName] = (void*) &FUNCTION##_ABI;             \\")
-		w.Writeln("      }")
-		w.Writeln("")
-		w.Writeln("#define %s_IMPL_LOOKUP_IMPLEMENT_END()                                \\", NameSpaceUpper)
-		w.Writeln("    }                                                              \\")
-		w.Writeln("    %sResult ret = LookupSymbolInMap(                     \\", NameSpace)
-		w.Writeln("      pProcName, sProcAddressMap, ppProcAddress);                  \\")
-		w.Writeln("    if (ret == %s_ERROR_COULDNOTFINDLIBRARYEXPORT) {      \\", NameSpaceUpper)
-		w.Writeln("      ret = tBASE::SymbolLookupFunction_ABI(pProcName, ppProcAddress); \\")
-		w.Writeln("    }                                                              \\")
-		w.Writeln("    return ret;                                                    \\")
-		w.Writeln("  }                                                                \\")
-		w.Writeln("")
-	}
-	
-	w.Writeln("")
-	w.Writeln("#include <algorithm>")
-	w.Writeln("#include <memory>")
-	w.Writeln("#include <string>")
-	w.Writeln("")
-
-	// Declaration and Implementation of abstract or base - class
-	w.Writeln("")
-	w.Writeln("namespace %s {", NameSpace)
-	w.Writeln("namespace ClientImpl {")
-	w.Writeln("")
-	
-	ClientImplClassPrefix := "C"
-
-	clientImplClassName := ClientImplClassPrefix + theClassName
-	if (bIsBaseClass) {
-		w.Writeln("class %s {", clientImplClassName)
-	} else {
-		w.Writeln("class %s : public %s {", clientImplClassName, ClientImplClassPrefix +  component.baseClass().ClassName)
-		w.Writeln("")
-		w.Writeln("  %s_IMPL_DECLARE(%s, %s)", NameSpaceUpper, clientImplClassName, theClassName)
-		w.Writeln("")
-	}
-	w.Writeln("public:")
-	w.Writeln("  %s();", clientImplClassName)
-	w.Writeln("  virtual ~%s();", clientImplClassName)
-	w.Writeln("")
-
-	if (bIsBaseClass) {
-		wImpl.Writeln("#include \"%s_dynamic_client.hpp\"", BaseName)
-		wImpl.Writeln("")
-		wImpl.Writeln("")
-		wImpl.Writeln("using namespace %s;", NameSpace)
-		wImpl.Writeln("using namespace %s::ClientImpl;", NameSpace)
-		wImpl.Writeln("")
-	} else {
-		wImpl.Writeln("#include \"%s_dynamic_client_%s.hpp\"", BaseName, strings.ToLower(theClassName))
-		wImpl.Writeln("")
-		wImpl.Writeln("")
-		wImpl.Writeln("using namespace %s;", NameSpace)
-		wImpl.Writeln("using namespace %s::ClientImpl;", NameSpace)
-		wImpl.Writeln("")
-
-		wImpl.Writeln("%s_IMPL_IMPLEMENT(%s)", NameSpaceUpper, clientImplClassName)
-		wImpl.Writeln("%s_IMPL_LOOKUP_IMPLEMENT_BEGIN(%s, %s, %s)", NameSpaceUpper, clientImplClassName, ClientImplClassPrefix +  component.baseClass().ClassName, theClassName)
-		for j := 0; j < len(class.Methods); j++ {
-			method := class.Methods[j]
-			wImpl.Writeln("%s_IMPL_LOOKUP_ADD(%s)", NameSpaceUpper, method.MethodName)
-		}
-		wImpl.Writeln("%s_IMPL_LOOKUP_IMPLEMENT_END()", NameSpaceUpper)
-		wImpl.Writeln("")
-	}
-		
-	wImpl.Writeln("%s::%s()", clientImplClassName, clientImplClassName)
-	if (bIsBaseClass) {
-		wImpl.Writeln("  : m_refcount(0)")
-	}
-	wImpl.Writeln("{")
-	wImpl.Writeln("}")
-
-	wImpl.Writeln("")
-	wImpl.Writeln("%s::~%s()", clientImplClassName, clientImplClassName)
-	wImpl.Writeln("{")
-	wImpl.Writeln("}")
-	wImpl.Writeln("")
-
-	w.Writeln("  // API-methods")
-	wImpl.Writeln("/*************************************************************************************************************************")
-	wImpl.Writeln(" API-methods")
-	wImpl.Writeln("**************************************************************************************************************************/")
-	wImpl.Writeln("")
-	for j := 0; j < len(class.Methods); j++ {
-		method := class.Methods[j]
-		returnType, parameters, err := buildDynamicCPPMethodDeclaration(method, NameSpace, "", theClassName)
-		if err != nil {
-			return err
-		}
-		w.Writeln("  virtual %s %s(%s);", returnType, method.MethodName, parameters)
-		w.Writeln("")
-
-		wImpl.Writeln("%s %s::%s(%s)", returnType, clientImplClassName, method.MethodName, parameters)
-		wImpl.Writeln("{")
-		wImpl.Writeln("  throw %s::Binding::E%sException(%s_ERROR_NOTIMPLEMENTED, \"\");", NameSpace, NameSpace, NameSpaceUpper)
-		wImpl.Writeln("}")
-		wImpl.Writeln("")
-	}
-	w.Writeln("")
-	w.Writeln("protected:")
-	w.Writeln("")
-	if (bIsBaseClass) {
-		w.Writeln("  // NOTE: helper for derived classes.")
-		w.Writeln("  static %sResult LookupSymbolInMap(const char* pProcName, std::map<std::string, void*>& procAddressMap, void** ppProcAddress);", NameSpace)
-		w.Writeln("")
-		wImpl.Writeln("%sResult %s::LookupSymbolInMap(const char* pProcName, std::map<std::string, void*>& procAddressMap, void** ppProcAddress)", NameSpace, clientImplClassName)
-		wImpl.Writeln("{")
-		wImpl.Writeln("  %s_BEGIN_WRAP_CALL {", NameSpaceUpper)
-		wImpl.Writeln("    if (pProcName == nullptr)")
-		wImpl.Writeln("      return %s_ERROR_INVALIDPARAM;", NameSpaceUpper)
-		wImpl.Writeln("    if (ppProcAddress == nullptr)")
-		wImpl.Writeln("      return %s_ERROR_INVALIDPARAM;", NameSpaceUpper)
-		wImpl.Writeln("    auto it = procAddressMap.find(pProcName);")
-		wImpl.Writeln("    *ppProcAddress = it != end(procAddressMap) ? it->second : nullptr;")
-		wImpl.Writeln("    if (!*ppProcAddress) {")
-		wImpl.Writeln("      return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", NameSpaceUpper)
-		wImpl.Writeln("    }")
-		wImpl.Writeln("  } %s_END_WRAP_CALL", NameSpaceUpper)
-		wImpl.Writeln("}")
-		wImpl.Writeln("")
-		
-		w.Writeln("  // Lookup method for this class.")
-		w.Writeln("  // NOTE: derived class must wrap this and call it")
-		w.Writeln("  static %sResult SymbolLookupFunction_ABI(const char* pProcName, void** ppProcAddress);", NameSpace)
-		wImpl.Writeln("%sResult %s::SymbolLookupFunction_ABI(const char* pProcName, void** ppProcAddress)", NameSpace, clientImplClassName)
-		wImpl.Writeln("{")
-		wImpl.Writeln("  static std::map<std::string, void*> sProcAddressMap;")
-		wImpl.Writeln("  if (sProcAddressMap.empty()) {")
-		for j := 0; j < len(class.Methods); j++ {
-			method := class.Methods[j]
-			wImpl.Writeln("    sProcAddressMap[\"%s_%s_%s\"] = (void*)& %s_ABI;", NameSpaceLower, strings.ToLower(theClassName), strings.ToLower(method.MethodName), method.MethodName)
-		}
-		wImpl.Writeln("  }")
-		wImpl.Writeln("  return LookupSymbolInMap(pProcName, sProcAddressMap, ppProcAddress);")
-		wImpl.Writeln("}")
-	}
-	w.Writeln("")
-	w.Writeln("private:")
-	if (bIsBaseClass) {
-		w.Writeln("  %s_uint64 m_refcount;", NameSpace)
-		w.Writeln("")
-	}
-
-	w.Writeln("  // ABI-methods")
-	wImpl.Writeln("/*************************************************************************************************************************")
-	wImpl.Writeln(" ABI-methods")
-	wImpl.Writeln("**************************************************************************************************************************/")
-	wImpl.Writeln("")
-	for j := 0; j < len(class.Methods); j++ {
-		method := class.Methods[j]
-		sComments, _, sParameters, err := WriteCCPPAbiMethod(method, NameSpace, class.ClassName, false, false, true)
-		if (err != nil) {
-			return err
-		}
-		w.Writeln("  ")
-		w.Writelns("  ", sComments)
-		w.Writeln("  static %sResult %s_ABI(%s);", NameSpace, method.MethodName, sParameters)
-
-		wImpl.Writeln("%sResult %s::%s_ABI(%s)", NameSpace, clientImplClassName, method.MethodName, sParameters)
-		wImpl.Writeln("{")
-		wImpl.Writeln("  %s_BEGIN_WRAP_CALL {", NameSpaceUpper)
-		if (bIsBaseClass) {
-			wImpl.Writeln("    // map parameters")
-			wImpl.Writeln("    // forward call to C++-function")
-			wImpl.Writeln("    // ((%s*)p%s.m_hHandle)->%s();", clientImplClassName, theClassName, method.MethodName)
-			wImpl.Writeln("    // post-process parameters")
-		} else {
-			wImpl.Writeln("    // map parameters")
-			wImpl.Writeln("    // forward call to C++-function")
-			wImpl.Writeln("    // FromExtendedHandle(p%s)->%s();", theClassName, method.MethodName)
-			wImpl.Writeln("    // post-process parameters")
-		}
-		wImpl.Writeln("  } %s_END_WRAP_CALL", NameSpaceUpper)
-		wImpl.Writeln("}")
-		wImpl.Writeln("")
-	}
-	w.Writeln("")
-	
-	w.Writeln("};")
-	w.Writeln("")
-	w.Writeln("} // namespace %s", NameSpace)
-	w.Writeln("} // namespace ClientImpl")
-	w.Writeln("")
-
-	wImpl.Writeln("")
-
-	w.Writeln("#endif // %s", sIncludeGuard)
-	w.Writeln("")
-
 	return nil
 }
