@@ -227,6 +227,8 @@ namespace {{.NameSpace}} {
 namespace Binding {
 namespace ClientImpl {
 
+
+
 // Create a wrapped instance of a client implementation class. This means
 // constructing a client implementation class instance, forwarding arguments
 // passed to the function, which is then wrapped in a new binding instance of
@@ -242,13 +244,12 @@ static typename tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
   );
 }
 
-// Given a pointer to a binding object, cast the wrapped handle to a client
-// implementation instance. The caller is responsible for ensuring that the
-// binding object really does wrap a client implementation.
+// Cast a handle to a client implementation instance. The caller is responsible for
+// ensuring that the binding object really does wrap a client implementation.
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr)
+static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}Handle handle)
 {
-  return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetHandle());
+  return (tCLASS*) handle;
 }
 
 // Cast a handle to a client implementation instance. The caller is responsible for
@@ -259,12 +260,13 @@ static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}ExtendedHandle extendedHan
   return UnsafeGetWrappedInstance<tCLASS>(extendedHandle.m_hHandle);
 }
 
-// Cast a handle to a client implementation instance. The caller is responsible for
-// ensuring that the binding object really does wrap a client implementation.
+// Given a pointer to a binding object, cast the wrapped handle to a client
+// implementation instance. The caller is responsible for ensuring that the
+// binding object really does wrap a client implementation.
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}Handle handle)
+static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr)
 {
-  return (tCLASS*) handle;
+  return UnsafeGetWrappedInstance<tCLASS>(pBindingPtr->GetHandle());
 }
 
 // Static handler for E{{.NameSpace}}Exception from client impl abi wrapper function.
