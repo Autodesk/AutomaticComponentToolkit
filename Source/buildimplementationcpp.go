@@ -35,10 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"crypto/md5"
+	"errors"
 	"fmt"
 	"log"
-	"errors"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -560,13 +562,13 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		// Omit Journal Method
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
 		}
 		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
-			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			(isSpecialFunction == eSpecialMethodSymbolLookup) || (isSpecialFunction == eSpecialMethodImplementsInterface ) {
 			continue
 		}
 
@@ -618,13 +620,13 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 
 		thisMethodDefaultImpl := defaultImplementation
 		
-		// Treat special functions
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
 		if err != nil {
 			return err
 		}
 		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
-			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			(isSpecialFunction == eSpecialMethodSymbolLookup) || (isSpecialFunction == eSpecialMethodImplementsInterface) {
 			continue
 		}
 		if (isSpecialFunction == eSpecialMethodVersion) {
@@ -691,6 +693,80 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 	return nil
 }
 
+func writeCImplementsInterfaceMethod(component ComponentDefinition, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, IBaseClassName string) error {
+	cParams, err := GenerateCParameters(method, "", NameSpace)
+	if err != nil {
+		return err
+	}
+
+	cparameters := ""
+	for _, cParam := range cParams {
+		if cparameters != "" {
+			cparameters = cparameters + ", "
+		}
+		cparameters = cparameters + cParam.ParamType + " " + cParam.ParamName
+	}
+
+	CMethodName := fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+
+	classHashMap := make(map[string][]ComponentDefinitionClass)
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		key := fmt.Sprintf("%02X", class.classHash()[0])
+		classHashMap[key] = append(classHashMap[key], class)
+	}
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln("  %s", method.MethodDescription)
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+
+	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
+	w.Writeln("{")
+	w.Writeln("  if (nClassHashBufferSize != %d) // Hash length must be as expected", md5.Size)
+	w.Writeln("    return RTTI_ERROR_INVALIDPARAM;")
+	w.Writeln("")
+	w.Writeln("  %s* pIBaseClassInstance = (%s *)pObject;", IBaseClassName, IBaseClassName)
+	w.Writeln("")
+	w.Writeln("  switch(pClassHashBuffer[0]) {")
+
+	keys := make([]string, 0, len(classHashMap))
+	for key := range classHashMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for i := range keys {
+		w.Writeln("    case 0x%s:", keys[i])
+		classes := classHashMap[keys[i]]
+		for j := range classes {
+			class := classes[j]
+			hash := class.classHash()
+			w.BeginLine()
+			w.Printf("      static const RTTI_uint8 s_%sHash[] = {", class.ClassName)
+			for j := 0; j < len(hash); j++ {
+				w.Printf(" 0x%02X,", hash[j])
+			}
+			w.Printf(" };")
+			w.EndLine()
+
+			w.Writeln("      if (memcmp(pClassHashBuffer, s_%sHash, 16) == 0) {", class.ClassName)
+			w.Writeln("        *pImplementsInterface = dynamic_cast<I%s *>(pIBaseClassInstance) != nullptr;", class.ClassName)
+			w.Writeln("        return RTTI_SUCCESS;")
+			w.Writeln("      }")
+		}
+		w.Writeln("      break;")
+	}
+	w.Writeln("  }")
+	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
+	w.Writeln("}")
+	w.Writeln("")
+
+	return nil
+}
+
 func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string) error {
 
 	w.Writeln("")
@@ -719,8 +795,9 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));		
+		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));
 	}
+	
 
 	w.Writeln("if (pProcName == nullptr)")		
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
@@ -850,7 +927,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		method := global.Methods[j]
 				
 		// Check for special functions
-		isSpecialFunction, err := CheckHeaderSpecialFunction (method, global);
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
 		}
@@ -860,6 +937,15 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		if (isSpecialFunction == eSpecialMethodJournal) {
 			doMethodJournal = false;
 		}
+
+		if (isSpecialFunction == eSpecialMethodImplementsInterface) {
+			err = writeCImplementsInterfaceMethod(component, method, w, NameSpace, IBaseClassName)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		
 
 		// Write Static function implementation
 		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, NameSpaceImplementation, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction, false)
