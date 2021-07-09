@@ -153,6 +153,7 @@ type ComponentDefinitionEnumOption struct {
 	XMLName xml.Name `xml:"option"`
 	Name string `xml:"name,attr"`
 	Value int `xml:"value,attr"`
+	Description string `xml:"description,attr"`
 }
 
 // ComponentDefinitionEnum definition of all enums used in the component's API
@@ -160,6 +161,7 @@ type ComponentDefinitionEnum struct {
 	ComponentDiffableElement
 	XMLName xml.Name `xml:"enum"`
 	Name string `xml:"name,attr"`
+	Description string `xml:"description,attr"`
 	Options []ComponentDefinitionEnumOption `xml:"option"`
 }
 

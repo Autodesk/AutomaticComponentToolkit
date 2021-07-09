@@ -140,7 +140,11 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 	w.Writeln("#define %s_SUCCESS 0", strings.ToUpper (NameSpace));
 	for i := 0; i < len(component.Errors.Errors); i++ {
 		errorcode := component.Errors.Errors[i];
-		w.Writeln("#define %s_ERROR_%s %d", strings.ToUpper (NameSpace), errorcode.Name, errorcode.Code);
+		if (errorcode.Description != "") {
+			w.Writeln("#define %s_ERROR_%s %d /** %s */", strings.ToUpper (NameSpace), errorcode.Name, errorcode.Code, errorcode.Description);
+		} else {
+			w.Writeln("#define %s_ERROR_%s %d", strings.ToUpper (NameSpace), errorcode.Name, errorcode.Code);
+		}
 	}
 
 	w.Writeln("");
@@ -491,11 +495,20 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 	for i := 0; i < len(component.Enums); i++ {
 		enum := component.Enums[i];
 		if (useCPPTypes) {
+			if (enum.Description != "") {
+				w.Writeln("/**");
+				w.Writeln("* enum class e%s - %s", enum.Name, enum.Description);
+				w.Writeln("*/");
+			}
 			w.Writeln("enum class e%s : %s_int32 {", enum.Name, NameSpace);
 		} else {
+			if (enum.Description != "") {
+				w.Writeln("/**");
+				w.Writeln("* enum e%s%s - %s", NameSpace, enum.Name, enum.Description);
+				w.Writeln("*/");
+			}
 			w.Writeln("typedef enum e%s%s {", NameSpace, enum.Name);
 		}
-		
 		for j := 0; j < len(enum.Options); j++ {
 			comma := "";
 			if (j < len(enum.Options) - 1) {
@@ -503,9 +516,17 @@ func buildCCPPEnums(component ComponentDefinition, w LanguageWriter, NameSpace s
 			}
 			option := enum.Options[j];
 			if (useCPPTypes) {
-				w.Writeln("  %s = %d%s", option.Name, option.Value, comma);
+				if (option.Description != "") {
+					w.Writeln("  %s = %d%s /** %s */", option.Name, option.Value, comma, option.Description);
+				} else {
+					w.Writeln("  %s = %d%s", option.Name, option.Value, comma);
+				}
 			} else {
-				w.Writeln("  e%s%s = %d%s", enum.Name, option.Name, option.Value, comma);
+				if (option.Description != "") {
+					w.Writeln("  e%s%s = %d%s /** %s */", enum.Name, option.Name, option.Value, comma, option.Description);
+				} else {
+					w.Writeln("  e%s%s = %d%s", enum.Name, option.Name, option.Value, comma);
+				}
 			}
 		}
 		if (useCPPTypes) {
