@@ -411,7 +411,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 	w.Writeln("#ifdef _WIN32")
 	w.Writeln("// Convert filename to UTF16-string")
-	w.Writeln("int nLength = (int)strlen(pLibraryFileName);")
+	w.Writeln("int nLength = static_cast<int>(strnlen_s(pLibraryFileName, MAX_PATH));")
 	w.Writeln("int nBufferSize = nLength * 2 + 2;")
 	if (!useStrictC) {
 		w.Writeln("std::vector<wchar_t> wsLibraryFileName(nBufferSize);")
@@ -965,7 +965,7 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string, ClassIdentifier str
 	w.Writeln("  ")
 	w.Writeln("public:")
 	w.Writeln("  ")
-	w.Writeln("  C%sInputVector( const std::vector<T>& vec)", ClassIdentifier)
+	w.Writeln("  explicit C%sInputVector( const std::vector<T>& vec)", ClassIdentifier)
 	w.Writeln("    : m_data( vec.data() ), m_size( vec.size() )")
 	w.Writeln("  {")
 	w.Writeln("  }")
@@ -1271,7 +1271,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  ")
 	
 	if ExplicitLinking {
-		w.Writeln("  %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
+		w.Writeln("  explicit %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
 		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
 		w.Writeln("    CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
@@ -1280,7 +1280,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  }")
 		w.Writeln("  ")
 
-		w.Writeln("  %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
+		w.Writeln("  explicit %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
 		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
 		w.Writeln("    CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
