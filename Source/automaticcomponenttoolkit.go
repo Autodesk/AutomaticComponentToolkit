@@ -167,12 +167,6 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					CPPABIHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_abi.hpp")
-					err = CreateCPPAbiHeader(component, CPPABIHeaderName)
-					if err != nil {
-						return err
-					}
-
 					err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic,
 						indentString, binding.ClassIdentifier)
 					if err != nil {
