@@ -400,7 +400,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				resultCommands = append(resultCommands, fmt.Sprintf("  data%s.Free ();", param.ParamName))
 
 			case "functiontype":
-				callFunctionParameter = "IntPtr.Zero"
+				callFunctionParameter = "A" + param.ParamName
 				initCallParameter = callFunctionParameter
 
 			case "class", "optionalclass":
