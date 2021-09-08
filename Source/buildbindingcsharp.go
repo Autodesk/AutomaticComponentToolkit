@@ -979,7 +979,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			}
 		}
 
-		w.Writeln("  class C%s %s", class.ClassName, CSharpParentClassName)
+		w.Writeln("  public class C%s %s", class.ClassName, CSharpParentClassName)
 		w.Writeln("  {")
 
 		if component.isBaseClass(class) {
