@@ -1355,7 +1355,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
 	w.Writeln("    %s(nMajor, nMinor, nMicro);", global.VersionMethod)
-	w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	if minorVersion(component.Version) > 0 {
+		w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	} else {
+		w.Writeln("    if (nMajor != %s_VERSION_MAJOR) {", strings.ToUpper(NameSpace))
+	}
 	w.Writeln("      return %s_ERROR_INCOMPATIBLEBINARYVERSION;", strings.ToUpper(NameSpace))
 	w.Writeln("    }")
 	w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))
