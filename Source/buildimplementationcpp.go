@@ -726,7 +726,7 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 	w.Writeln("%sResult %s(%s)", NameSpace, CMethodName, cparameters)
 	w.Writeln("{")
 	w.Writeln("  if (nClassHashBufferSize != %d) // Hash length must be as expected", md5.Size)
-	w.Writeln("    return RTTI_ERROR_INVALIDPARAM;")
+	w.Writeln("    return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("")
 	w.Writeln("  %s* pIBaseClassInstance = (%s *)pObject;", IBaseClassName, IBaseClassName)
 	w.Writeln("")
@@ -745,7 +745,7 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 			class := classes[j]
 			hash := class.classHash()
 			w.BeginLine()
-			w.Printf("      static const RTTI_uint8 s_%sHash[] = {", class.ClassName)
+			w.Printf("      static const %s_uint8 s_%sHash[] = {", NameSpace, class.ClassName)
 			for j := 0; j < len(hash); j++ {
 				w.Printf(" 0x%02X,", hash[j])
 			}
@@ -754,7 +754,7 @@ func writeCImplementsInterfaceMethod(component ComponentDefinition, method Compo
 
 			w.Writeln("      if (memcmp(pClassHashBuffer, s_%sHash, 16) == 0) {", class.ClassName)
 			w.Writeln("        *pImplementsInterface = dynamic_cast<I%s *>(pIBaseClassInstance) != nullptr;", class.ClassName)
-			w.Writeln("        return RTTI_SUCCESS;")
+			w.Writeln("        return %s_SUCCESS;", strings.ToUpper(NameSpace))
 			w.Writeln("      }")
 		}
 		w.Writeln("      break;")
