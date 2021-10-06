@@ -960,7 +960,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 }
 
 
-func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpace string) (string, error) {
+func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpace string, BaseClassName string, ClassIdentifier string) (string, error) {
 	result := "";
 	
 	for i := 0; i < len (method.Params); i++ {
@@ -972,6 +972,9 @@ func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpac
 			}
 		
 			cppParamType := getCppParamType(param, NameSpace, true);
+			if param.ParamType == "class" || param.ParamType == "optionalclass" {
+				cppParamType = fmt.Sprintf("I%s%s*", ClassIdentifier, BaseClassName)
+			}
 			result += cppParamType;
 		}
 		
@@ -1061,7 +1064,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 				return errors.New ("String out parameter without being the string out base class.");			
 			}
 		
-			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace);
+			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace, BaseClassName, ClassIdentifier);
 			if err != nil {
 				return err
 			}
