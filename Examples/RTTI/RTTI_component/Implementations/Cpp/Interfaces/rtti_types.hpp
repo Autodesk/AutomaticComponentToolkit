@@ -73,14 +73,14 @@ typedef void * RTTI_pvoid;
 **************************************************************************************************************************/
 
 #define RTTI_SUCCESS 0
-#define RTTI_ERROR_NOTIMPLEMENTED 1
-#define RTTI_ERROR_INVALIDPARAM 2
-#define RTTI_ERROR_INVALIDCAST 3
-#define RTTI_ERROR_BUFFERTOOSMALL 4
-#define RTTI_ERROR_GENERICEXCEPTION 5
-#define RTTI_ERROR_COULDNOTLOADLIBRARY 6
-#define RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT 7
-#define RTTI_ERROR_INCOMPATIBLEBINARYVERSION 8
+#define RTTI_ERROR_NOTIMPLEMENTED 1 /** functionality not implemented */
+#define RTTI_ERROR_INVALIDPARAM 2 /** an invalid parameter was passed */
+#define RTTI_ERROR_INVALIDCAST 3 /** a type cast failed */
+#define RTTI_ERROR_BUFFERTOOSMALL 4 /** a provided buffer is too small */
+#define RTTI_ERROR_GENERICEXCEPTION 5 /** a generic exception occurred */
+#define RTTI_ERROR_COULDNOTLOADLIBRARY 6 /** the library could not be loaded */
+#define RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT 7 /** a required exported symbol could not be found in the library */
+#define RTTI_ERROR_INCOMPATIBLEBINARYVERSION 8 /** the version of the binary interface does not match the bindings interface */
 
 /*************************************************************************************************************************
  Error strings for RTTI

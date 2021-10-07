@@ -21,13 +21,20 @@ int main()
 {
 	try
 	{
-		std::string libpath = (""); // TODO: put the location of the RTTI-library file here.
-		auto wrapper = RTTI::CWrapper::loadLibrary(libpath + "/rtti."); // TODO: add correct suffix of the library
+		std::string libpath = ("."); // TODO: put the location of the RTTI-library file here.
+		auto wrapper = RTTI::CWrapper::loadLibrary(libpath + "/rtti."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		); // TODO: add correct suffix of the library
 		RTTI_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "RTTI.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;
-
 
 		auto zoo = wrapper->CreateZoo();
 		auto iter = zoo->Iterator();

@@ -141,15 +141,16 @@ protected:
 	* Error message for the Exception.
 	*/
 	std::string m_errorMessage;
+	std::string m_originalErrorMessage;
 
 public:
 	/**
 	* Exception Constructor.
 	*/
 	ERTTIException(RTTIResult errorCode, const std::string & sErrorMessage)
-		: m_errorMessage("RTTI Error " + std::to_string(errorCode) + " (" + sErrorMessage + ")")
+		: m_errorCode(errorCode), m_originalErrorMessage(sErrorMessage)
 	{
-		m_errorCode = errorCode;
+		m_errorMessage = buildErrorMessage();
 	}
 
 	/**
@@ -168,6 +169,53 @@ public:
 		return m_errorMessage.c_str();
 	}
 
+	const char* getErrorMessage() const noexcept
+	{
+		return m_originalErrorMessage.c_str();
+	}
+
+	const char* getErrorName() const noexcept
+	{
+		switch(getErrorCode()) {
+			case RTTI_SUCCESS: return "SUCCESS";
+			case RTTI_ERROR_NOTIMPLEMENTED: return "NOTIMPLEMENTED";
+			case RTTI_ERROR_INVALIDPARAM: return "INVALIDPARAM";
+			case RTTI_ERROR_INVALIDCAST: return "INVALIDCAST";
+			case RTTI_ERROR_BUFFERTOOSMALL: return "BUFFERTOOSMALL";
+			case RTTI_ERROR_GENERICEXCEPTION: return "GENERICEXCEPTION";
+			case RTTI_ERROR_COULDNOTLOADLIBRARY: return "COULDNOTLOADLIBRARY";
+			case RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT: return "COULDNOTFINDLIBRARYEXPORT";
+			case RTTI_ERROR_INCOMPATIBLEBINARYVERSION: return "INCOMPATIBLEBINARYVERSION";
+		}
+		return "UNKNOWN";
+	}
+
+	const char* getErrorDescription() const noexcept
+	{
+		switch(getErrorCode()) {
+			case RTTI_SUCCESS: return "success";
+			case RTTI_ERROR_NOTIMPLEMENTED: return "functionality not implemented";
+			case RTTI_ERROR_INVALIDPARAM: return "an invalid parameter was passed";
+			case RTTI_ERROR_INVALIDCAST: return "a type cast failed";
+			case RTTI_ERROR_BUFFERTOOSMALL: return "a provided buffer is too small";
+			case RTTI_ERROR_GENERICEXCEPTION: return "a generic exception occurred";
+			case RTTI_ERROR_COULDNOTLOADLIBRARY: return "the library could not be loaded";
+			case RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT: return "a required exported symbol could not be found in the library";
+			case RTTI_ERROR_INCOMPATIBLEBINARYVERSION: return "the version of the binary interface does not match the bindings interface";
+		}
+		return "unknown error";
+	}
+
+private:
+
+	std::string buildErrorMessage() const noexcept
+	{
+		std::string msg = m_originalErrorMessage;
+		if (msg.empty()) {
+			msg = getErrorDescription();
+		}
+		return std::string("Error: ") + getErrorName() + ": " + msg;
+	}
 };
 
 /*************************************************************************************************************************
@@ -182,7 +230,7 @@ private:
 	
 public:
 	
-	CInputVector( const std::vector<T>& vec)
+	explicit CInputVector( const std::vector<T>& vec)
 		: m_data( vec.data() ), m_size( vec.size() )
 	{
 	}
@@ -214,7 +262,7 @@ using CRTTIInputVector = CInputVector<T>;
 class CWrapper {
 public:
 	
-	CWrapper(void* pSymbolLookupMethod)
+	explicit CWrapper(void* pSymbolLookupMethod)
 	{
 		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
 		CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));
@@ -222,7 +270,7 @@ public:
 		CheckError(nullptr, checkBinaryVersion());
 	}
 	
-	CWrapper(const std::string &sFileName)
+	explicit CWrapper(const std::string &sFileName)
 	{
 		CheckError(nullptr, initWrapperTable(&m_WrapperTable));
 		CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));
@@ -263,7 +311,7 @@ private:
 	{
 		RTTI_uint32 nMajor, nMinor, nMicro;
 		GetVersion(nMajor, nMinor, nMicro);
-		if ( (nMajor != RTTI_VERSION_MAJOR) || (nMinor < RTTI_VERSION_MINOR) ) {
+		if (nMajor != RTTI_VERSION_MAJOR) {
 			return RTTI_ERROR_INCOMPATIBLEBINARYVERSION;
 		}
 		return RTTI_SUCCESS;
@@ -836,7 +884,7 @@ public:
 		
 		#ifdef _WIN32
 		// Convert filename to UTF16-string
-		int nLength = (int)strlen(pLibraryFileName);
+		int nLength = static_cast<int>(strnlen_s(pLibraryFileName, MAX_PATH));
 		int nBufferSize = nLength * 2 + 2;
 		std::vector<wchar_t> wsLibraryFileName(nBufferSize);
 		int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, &wsLibraryFileName[0], nBufferSize);
