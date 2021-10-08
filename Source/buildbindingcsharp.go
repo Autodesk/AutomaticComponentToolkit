@@ -800,7 +800,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		}
 
 		w.Writeln("    [StructLayout(LayoutKind.Explicit, Size=%d)]", fieldOffset)
-		w.Writeln("    public unsafe struct Internal%s", structinfo.Name)
+		w.Writeln("    public struct Internal%s", structinfo.Name)
 		w.Writeln("    {")
 		w.Writelns("      ", memberLines)
 		w.Writeln("    }")
@@ -831,7 +831,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				parameters = "IntPtr Handle, " + parameters
 			}
 
-			w.Writeln("      public unsafe extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters)
+			w.Writeln("      public extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters)
 			w.Writeln("")
 
 		}
@@ -854,7 +854,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i]
 
-		w.Writeln("      public unsafe static s%s convertInternalToStruct_%s (Internal%s int%s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
+		w.Writeln("      public static s%s convertInternalToStruct_%s (Internal%s int%s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
 		w.Writeln("      {")
 		w.Writeln("        s%s %s;", structinfo.Name, structinfo.Name)
 
@@ -901,7 +901,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("      }")
 		w.Writeln("")
 
-		w.Writeln("      public unsafe static Internal%s convertStructToInternal_%s (s%s %s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
+		w.Writeln("      public static Internal%s convertStructToInternal_%s (s%s %s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
 		w.Writeln("      {")
 		w.Writeln("        Internal%s int%s;", structinfo.Name, structinfo.Name)
 
@@ -1257,12 +1257,6 @@ func buildCSharpExampleProject(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("    <StartupObject>%s.%s</StartupObject>", exampleName, exampleName)
 	w.Writeln("    <ApplicationIcon />")
 	w.Writeln("    <Platforms>x64</Platforms>")
-	w.Writeln("  </PropertyGroup>")
-	w.Writeln("  <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">")
-	w.Writeln("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>")
-	w.Writeln("  </PropertyGroup>")
-	w.Writeln("  <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">")
-	w.Writeln("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>")
 	w.Writeln("  </PropertyGroup>")
 	w.Writeln("  <ItemGroup>")
 	w.Writeln("    <Compile Include=\"..\\..\\Bindings\\CSharp\\%s.cs\" Link=\"%s.cs\" />", NameSpace, NameSpace)
