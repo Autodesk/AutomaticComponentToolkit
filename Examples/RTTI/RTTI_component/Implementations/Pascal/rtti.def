@@ -1,0 +1,13 @@
+EXPORTS
+rtti_getversion
+rtti_getlasterror
+rtti_releaseinstance
+rtti_acquireinstance
+rtti_injectcomponent
+rtti_getsymbollookupmethod
+rtti_createzoo
+rtti_base_classtypeid
+rtti_animal_name
+rtti_tiger_roar
+rtti_animaliterator_getnextanimal
+rtti_zoo_iterator
