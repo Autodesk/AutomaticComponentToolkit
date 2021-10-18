@@ -24,6 +24,15 @@ Interface version: 1.0.0
  Class definition for Base
 **************************************************************************************************************************/
 
+/**
+* Get Class Type Id
+*
+* @param[in] pBase - Base instance.
+* @param[out] pClassTypeId - Class type as a 64 bits integer
+* @return error code or 0 (success)
+*/
+typedef RTTIResult (*PRTTIBase_ClassTypeIdPtr) (RTTI_Base pBase, RTTI_uint64 * pClassTypeId);
+
 /*************************************************************************************************************************
  Class definition for Animal
 **************************************************************************************************************************/
@@ -157,17 +166,6 @@ typedef RTTIResult (*PRTTIInjectComponentPtr) (const char * pNameSpace, RTTI_pvo
 typedef RTTIResult (*PRTTIGetSymbolLookupMethodPtr) (RTTI_pvoid * pSymbolLookupMethod);
 
 /**
-* Test whether an object implements a given interface
-*
-* @param[in] pObject - Instance Handle
-* @param[in] nClassHashBufferSize - Number of elements in buffer
-* @param[in] pClassHashBuffer - uint8 buffer of Hashed class name of the interface to test
-* @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
-* @return error code or 0 (success)
-*/
-typedef RTTIResult (*PRTTIImplementsInterfacePtr) (RTTI_Base pObject, RTTI_uint64 nClassHashBufferSize, const RTTI_uint8 * pClassHashBuffer, bool * pImplementsInterface);
-
-/**
 * Create a new zoo with animals
 *
 * @param[out] pInstance - 
@@ -181,6 +179,7 @@ typedef RTTIResult (*PRTTICreateZooPtr) (RTTI_Zoo * pInstance);
 
 typedef struct {
 	void * m_LibraryHandle;
+	PRTTIBase_ClassTypeIdPtr m_Base_ClassTypeId;
 	PRTTIAnimal_NamePtr m_Animal_Name;
 	PRTTITiger_RoarPtr m_Tiger_Roar;
 	PRTTIAnimalIterator_GetNextAnimalPtr m_AnimalIterator_GetNextAnimal;
@@ -191,7 +190,6 @@ typedef struct {
 	PRTTIAcquireInstancePtr m_AcquireInstance;
 	PRTTIInjectComponentPtr m_InjectComponent;
 	PRTTIGetSymbolLookupMethodPtr m_GetSymbolLookupMethod;
-	PRTTIImplementsInterfacePtr m_ImplementsInterface;
 	PRTTICreateZooPtr m_CreateZoo;
 } sRTTIDynamicWrapperTable;
 

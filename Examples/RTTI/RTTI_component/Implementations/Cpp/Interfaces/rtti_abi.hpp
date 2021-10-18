@@ -37,6 +37,15 @@ extern "C" {
  Class definition for Base
 **************************************************************************************************************************/
 
+/**
+* Get Class Type Id
+*
+* @param[in] pBase - Base instance.
+* @param[out] pClassTypeId - Class type as a 64 bits integer
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_base_classtypeid(RTTI_Base pBase, RTTI_uint64 * pClassTypeId);
+
 /*************************************************************************************************************************
  Class definition for Animal
 **************************************************************************************************************************/
@@ -168,17 +177,6 @@ RTTI_DECLSPEC RTTIResult rtti_injectcomponent(const char * pNameSpace, RTTI_pvoi
 * @return error code or 0 (success)
 */
 RTTI_DECLSPEC RTTIResult rtti_getsymbollookupmethod(RTTI_pvoid * pSymbolLookupMethod);
-
-/**
-* Test whether an object implements a given interface
-*
-* @param[in] pObject - Instance Handle
-* @param[in] nClassHashBufferSize - Number of elements in buffer
-* @param[in] pClassHashBuffer - uint8 buffer of Hashed class name of the interface to test
-* @param[out] pImplementsInterface - Will be set to true if pInstance implements the interface, false otherwise
-* @return error code or 0 (success)
-*/
-RTTI_DECLSPEC RTTIResult rtti_implementsinterface(RTTI_Base pObject, RTTI_uint64 nClassHashBufferSize, const RTTI_uint8 * pClassHashBuffer, bool * pImplementsInterface);
 
 /**
 * Create a new zoo with animals

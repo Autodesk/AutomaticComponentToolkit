@@ -186,6 +186,11 @@ public:
 		return m_ParameterCache.get();
 	}
 
+	/**
+	* IBase::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	virtual RTTI_uint64 ClassTypeId() = 0;
 };
 
 
@@ -228,6 +233,17 @@ typedef IBaseSharedPtr<IBase> PIBase;
 class IAnimal : public virtual IBase {
 public:
 	/**
+	* IAnimal::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Animal"
+		static const RTTI_uint64 s_AnimalTypeId = 0x8B40467DA6D327AFUL;
+		return s_AnimalTypeId;
+	}
+
+	/**
 	* IAnimal::Name - Get the name of the animal
 	* @return 
 	*/
@@ -244,6 +260,17 @@ typedef IBaseSharedPtr<IAnimal> PIAnimal;
 
 class IMammal : public virtual IAnimal {
 public:
+	/**
+	* IMammal::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Mammal"
+		static const RTTI_uint64 s_MammalTypeId = 0xBC9D5FA7750C1020UL;
+		return s_MammalTypeId;
+	}
+
 };
 
 typedef IBaseSharedPtr<IMammal> PIMammal;
@@ -255,6 +282,17 @@ typedef IBaseSharedPtr<IMammal> PIMammal;
 
 class IReptile : public virtual IAnimal {
 public:
+	/**
+	* IReptile::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Reptile"
+		static const RTTI_uint64 s_ReptileTypeId = 0x6756AA8EA5802EC3UL;
+		return s_ReptileTypeId;
+	}
+
 };
 
 typedef IBaseSharedPtr<IReptile> PIReptile;
@@ -266,6 +304,17 @@ typedef IBaseSharedPtr<IReptile> PIReptile;
 
 class IGiraffe : public virtual IMammal {
 public:
+	/**
+	* IGiraffe::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+		static const RTTI_uint64 s_GiraffeTypeId = 0x9751971BD2C2D958UL;
+		return s_GiraffeTypeId;
+	}
+
 };
 
 typedef IBaseSharedPtr<IGiraffe> PIGiraffe;
@@ -277,6 +326,17 @@ typedef IBaseSharedPtr<IGiraffe> PIGiraffe;
 
 class ITiger : public virtual IMammal {
 public:
+	/**
+	* ITiger::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Tiger"
+		static const RTTI_uint64 s_TigerTypeId = 0x8D007E7B5F7BAF4UL;
+		return s_TigerTypeId;
+	}
+
 	/**
 	* ITiger::Roar - Roar like a tiger
 	*/
@@ -293,6 +353,17 @@ typedef IBaseSharedPtr<ITiger> PITiger;
 
 class ISnake : public virtual IReptile {
 public:
+	/**
+	* ISnake::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Snake"
+		static const RTTI_uint64 s_SnakeTypeId = 0x5F6826EF909803B2UL;
+		return s_SnakeTypeId;
+	}
+
 };
 
 typedef IBaseSharedPtr<ISnake> PISnake;
@@ -304,6 +375,17 @@ typedef IBaseSharedPtr<ISnake> PISnake;
 
 class ITurtle : public virtual IReptile {
 public:
+	/**
+	* ITurtle::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Turtle"
+		static const RTTI_uint64 s_TurtleTypeId = 0x8E551B208A2E8321UL;
+		return s_TurtleTypeId;
+	}
+
 };
 
 typedef IBaseSharedPtr<ITurtle> PITurtle;
@@ -315,6 +397,17 @@ typedef IBaseSharedPtr<ITurtle> PITurtle;
 
 class IAnimalIterator : public virtual IBase {
 public:
+	/**
+	* IAnimalIterator::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+		static const RTTI_uint64 s_AnimalIteratorTypeId = 0xF1917FE6BBE77831UL;
+		return s_AnimalIteratorTypeId;
+	}
+
 	/**
 	* IAnimalIterator::GetNextAnimal - Return next animal
 	* @return 
@@ -332,6 +425,17 @@ typedef IBaseSharedPtr<IAnimalIterator> PIAnimalIterator;
 
 class IZoo : public virtual IBase {
 public:
+	/**
+	* IZoo::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 ClassTypeId() override
+	{
+		// First 64 bits of SHA1 of a string: "RTTI::Zoo"
+		static const RTTI_uint64 s_ZooTypeId = 0x2262ABE80A5E7878UL;
+		return s_ZooTypeId;
+	}
+
 	/**
 	* IZoo::Iterator - Return an iterator over all zoo animals
 	* @return 

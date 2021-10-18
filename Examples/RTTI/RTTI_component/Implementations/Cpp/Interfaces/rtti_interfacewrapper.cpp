@@ -56,6 +56,32 @@ RTTIResult handleUnhandledException(IBase * pIBaseClass)
 /*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************/
+RTTIResult rtti_base_classtypeid(RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
+{
+	IBase* pIBaseClass = (IBase *)pBase;
+
+	try {
+		if (pClassTypeId == nullptr)
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		IBase* pIBase = dynamic_cast<IBase*>(pIBaseClass);
+		if (!pIBase)
+			throw ERTTIInterfaceException(RTTI_ERROR_INVALIDCAST);
+		
+		*pClassTypeId = pIBase->ClassTypeId();
+
+		return RTTI_SUCCESS;
+	}
+	catch (ERTTIInterfaceException & Exception) {
+		return handleRTTIException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for Animal
@@ -235,6 +261,8 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 	*ppProcAddress = nullptr;
 	std::string sProcName (pProcName);
 	
+	if (sProcName == "rtti_base_classtypeid") 
+		*ppProcAddress = (void*) &rtti_base_classtypeid;
 	if (sProcName == "rtti_animal_name") 
 		*ppProcAddress = (void*) &rtti_animal_name;
 	if (sProcName == "rtti_tiger_roar") 
@@ -255,8 +283,6 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 		*ppProcAddress = (void*) &rtti_injectcomponent;
 	if (sProcName == "rtti_getsymbollookupmethod") 
 		*ppProcAddress = (void*) &rtti_getsymbollookupmethod;
-	if (sProcName == "rtti_implementsinterface") 
-		*ppProcAddress = (void*) &rtti_implementsinterface;
 	if (sProcName == "rtti_createzoo") 
 		*ppProcAddress = (void*) &rtti_createzoo;
 	
@@ -430,93 +456,6 @@ RTTIResult rtti_getsymbollookupmethod(RTTI_pvoid * pSymbolLookupMethod)
 	catch (...) {
 		return handleUnhandledException(pIBaseClass);
 	}
-}
-
-
-/*************************************************************************************************************************
-	Test whether an object implements a given interface
-**************************************************************************************************************************/
-
-RTTIResult rtti_implementsinterface(RTTI_Base pObject, RTTI_uint64 nClassHashBufferSize, const RTTI_uint8 * pClassHashBuffer, bool * pImplementsInterface)
-{
-	if (nClassHashBufferSize != 16) // Hash length must be as expected
-		return RTTI_ERROR_INVALIDPARAM;
-
-	IBase* pIBaseClassInstance = (IBase *)pObject;
-
-	switch(pClassHashBuffer[0]) {
-		case 0x06:
-			static const RTTI_uint8 s_TurtleHash[] = { 0x06, 0xDE, 0xBA, 0x59, 0x08, 0xB0, 0x07, 0xEB, 0x6F, 0x32, 0xD8, 0xD9, 0x5F, 0x3F, 0x61, 0xB5, };
-			if (memcmp(pClassHashBuffer, s_TurtleHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<ITurtle *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0x09:
-			static const RTTI_uint8 s_BaseHash[] = { 0x09, 0x5A, 0x1B, 0x43, 0xEF, 0xFE, 0xC7, 0x39, 0x55, 0xE3, 0x1E, 0x79, 0x04, 0x38, 0xDE, 0x49, };
-			if (memcmp(pClassHashBuffer, s_BaseHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IBase *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0x16:
-			static const RTTI_uint8 s_AnimalHash[] = { 0x16, 0x1E, 0x7C, 0xE7, 0xBF, 0xDC, 0x89, 0xAB, 0x4B, 0x9F, 0x52, 0xC1, 0xD4, 0xC9, 0x42, 0x12, };
-			if (memcmp(pClassHashBuffer, s_AnimalHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IAnimal *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0x37:
-			static const RTTI_uint8 s_MammalHash[] = { 0x37, 0x42, 0x61, 0x13, 0xD1, 0x29, 0xE7, 0x9F, 0x54, 0x8F, 0x4C, 0x90, 0x93, 0x0F, 0xA6, 0x97, };
-			if (memcmp(pClassHashBuffer, s_MammalHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IMammal *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0x42:
-			static const RTTI_uint8 s_GiraffeHash[] = { 0x42, 0x7D, 0xEB, 0xB8, 0x1D, 0x26, 0x5A, 0x0E, 0xDD, 0x87, 0x89, 0xF3, 0x0B, 0x11, 0xBE, 0xB6, };
-			if (memcmp(pClassHashBuffer, s_GiraffeHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IGiraffe *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0x45:
-			static const RTTI_uint8 s_TigerHash[] = { 0x45, 0x4C, 0x98, 0x43, 0x11, 0x06, 0x86, 0xBF, 0x6F, 0x67, 0xCE, 0x51, 0x15, 0xB6, 0x66, 0x17, };
-			if (memcmp(pClassHashBuffer, s_TigerHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<ITiger *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0xAA:
-			static const RTTI_uint8 s_ReptileHash[] = { 0xAA, 0x64, 0x51, 0x86, 0xA4, 0xB5, 0xF3, 0xF2, 0x79, 0x52, 0xC2, 0xFA, 0x54, 0x85, 0xFA, 0xB2, };
-			if (memcmp(pClassHashBuffer, s_ReptileHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IReptile *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0xBF:
-			static const RTTI_uint8 s_ZooHash[] = { 0xBF, 0xA8, 0x88, 0xA3, 0x54, 0xDB, 0x97, 0xC7, 0xCB, 0xEF, 0xB9, 0xD0, 0x50, 0xB9, 0x4C, 0xA3, };
-			if (memcmp(pClassHashBuffer, s_ZooHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IZoo *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0xC2:
-			static const RTTI_uint8 s_AnimalIteratorHash[] = { 0xC2, 0xB3, 0x6A, 0x84, 0xC6, 0xC0, 0x32, 0x20, 0x4E, 0x5C, 0x92, 0x3C, 0x58, 0x10, 0x71, 0xE7, };
-			if (memcmp(pClassHashBuffer, s_AnimalIteratorHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<IAnimalIterator *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-		case 0xDF:
-			static const RTTI_uint8 s_SnakeHash[] = { 0xDF, 0xA9, 0x0F, 0x1B, 0x4E, 0xB3, 0xAF, 0xFB, 0xD3, 0xB4, 0x6A, 0xF3, 0x4E, 0xD2, 0x47, 0x7C, };
-			if (memcmp(pClassHashBuffer, s_SnakeHash, 16) == 0) {
-				*pImplementsInterface = dynamic_cast<ISnake *>(pIBaseClassInstance) != nullptr;
-				return RTTI_SUCCESS;
-			}
-			break;
-	}
-	return RTTI_ERROR_INVALIDPARAM;
 }
 
 RTTIResult rtti_createzoo(RTTI_Zoo * pInstance)

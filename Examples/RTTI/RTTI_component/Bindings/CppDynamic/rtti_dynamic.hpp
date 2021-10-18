@@ -93,13 +93,6 @@ typedef PTurtle PRTTITurtle;
 typedef PAnimalIterator PRTTIAnimalIterator;
 typedef PZoo PRTTIZoo;
 
-/*************************************************************************************************************************
- rtti_cast Definition
-**************************************************************************************************************************/
-template <class T>
-inline std::shared_ptr<T> rtti_cast(PBase obj);
-
-using RTTI_ClassHash = std::array<RTTI_uint8, 16>;
 
 /*************************************************************************************************************************
  classParam Definition
@@ -301,7 +294,6 @@ public:
 	inline void AcquireInstance(classParam<CBase> pInstance);
 	inline void InjectComponent(const std::string & sNameSpace, const RTTI_pvoid pSymbolAddressMethod);
 	inline RTTI_pvoid GetSymbolLookupMethod();
-	inline bool ImplementsInterface(classParam<CBase> pObject, const CInputVector<RTTI_uint8> & ClassHashBuffer);
 	inline PZoo CreateZoo();
 
 private:
@@ -320,6 +312,9 @@ private:
 	RTTIResult releaseWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable);
 	RTTIResult loadWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
 	RTTIResult loadWrapperTableFromSymbolLookupMethod(sRTTIDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);
+
+	template<class U>
+	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
 
 	friend class CBase;
 	friend class CAnimal;
@@ -340,8 +335,6 @@ private:
 **************************************************************************************************************************/
 class CBase {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 protected:
 	/* Wrapper Object that created the class. */
@@ -391,6 +384,7 @@ public:
 	}
 
 	friend class CWrapper;
+	inline RTTI_uint64 ClassTypeId();
 };
 	
 /*************************************************************************************************************************
@@ -398,8 +392,6 @@ public:
 **************************************************************************************************************************/
 class CAnimal : public CBase {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CAnimal::CAnimal - Constructor for Animal class.
@@ -417,8 +409,6 @@ public:
 **************************************************************************************************************************/
 class CMammal : public CAnimal {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CMammal::CMammal - Constructor for Mammal class.
@@ -435,8 +425,6 @@ public:
 **************************************************************************************************************************/
 class CReptile : public CAnimal {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CReptile::CReptile - Constructor for Reptile class.
@@ -453,8 +441,6 @@ public:
 **************************************************************************************************************************/
 class CGiraffe : public CMammal {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CGiraffe::CGiraffe - Constructor for Giraffe class.
@@ -471,8 +457,6 @@ public:
 **************************************************************************************************************************/
 class CTiger : public CMammal {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CTiger::CTiger - Constructor for Tiger class.
@@ -490,8 +474,6 @@ public:
 **************************************************************************************************************************/
 class CSnake : public CReptile {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CSnake::CSnake - Constructor for Snake class.
@@ -508,8 +490,6 @@ public:
 **************************************************************************************************************************/
 class CTurtle : public CReptile {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CTurtle::CTurtle - Constructor for Turtle class.
@@ -526,8 +506,6 @@ public:
 **************************************************************************************************************************/
 class CAnimalIterator : public CBase {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CAnimalIterator::CAnimalIterator - Constructor for AnimalIterator class.
@@ -545,8 +523,6 @@ public:
 **************************************************************************************************************************/
 class CZoo : public CBase {
 public:
-	static inline const std::string &getClassName();
-	static inline const RTTI_ClassHash &getClassHash();
 	
 	/**
 	* CZoo::CZoo - Constructor for Zoo class.
@@ -560,161 +536,28 @@ public:
 };
 
 /*************************************************************************************************************************
- RTTI static getClassName implementations
+ RTTI: Polymorphic Factory implementation
 **************************************************************************************************************************/
 
-	const std::string &CBase::getClassName()
-	{
-	static const std::string s_sClassName = "Base";
-	return s_sClassName;
+template <class T>
+std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
+{
+	RTTI_uint64 resultClassTypeId = 0;
+	CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));
+	switch(resultClassTypeId) {
+		case 0x1549AD28813DAE05UL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
+		case 0x8B40467DA6D327AFUL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+		case 0xBC9D5FA7750C1020UL: return std::dynamic_pointer_cast<T>(std::make_shared<CMammal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+		case 0x6756AA8EA5802EC3UL: return std::dynamic_pointer_cast<T>(std::make_shared<CReptile>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
+		case 0x9751971BD2C2D958UL: return std::dynamic_pointer_cast<T>(std::make_shared<CGiraffe>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+		case 0x08D007E7B5F7BAF4UL: return std::dynamic_pointer_cast<T>(std::make_shared<CTiger>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+		case 0x5F6826EF909803B2UL: return std::dynamic_pointer_cast<T>(std::make_shared<CSnake>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+		case 0x8E551B208A2E8321UL: return std::dynamic_pointer_cast<T>(std::make_shared<CTurtle>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+		case 0xF1917FE6BBE77831UL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimalIterator>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+		case 0x2262ABE80A5E7878UL: return std::dynamic_pointer_cast<T>(std::make_shared<CZoo>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
 	}
-
-	const RTTI_ClassHash &CBase::getClassHash()
-	{
-		// MD5(Base): 095A1B43EFFEC73955E31E790438DE49
-		static const RTTI_ClassHash s_sClassHash = { 0x09, 0x5A, 0x1B, 0x43, 0xEF, 0xFE, 0xC7, 0x39, 0x55, 0xE3, 0x1E, 0x79, 0x04, 0x38, 0xDE, 0x49, };
-		return s_sClassHash;
-	}
-
-	const std::string &CAnimal::getClassName()
-	{
-	static const std::string s_sClassName = "Animal";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CAnimal::getClassHash()
-	{
-		// MD5(Animal): 161E7CE7BFDC89AB4B9F52C1D4C94212
-		static const RTTI_ClassHash s_sClassHash = { 0x16, 0x1E, 0x7C, 0xE7, 0xBF, 0xDC, 0x89, 0xAB, 0x4B, 0x9F, 0x52, 0xC1, 0xD4, 0xC9, 0x42, 0x12, };
-		return s_sClassHash;
-	}
-
-	const std::string &CMammal::getClassName()
-	{
-	static const std::string s_sClassName = "Mammal";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CMammal::getClassHash()
-	{
-		// MD5(Mammal): 37426113D129E79F548F4C90930FA697
-		static const RTTI_ClassHash s_sClassHash = { 0x37, 0x42, 0x61, 0x13, 0xD1, 0x29, 0xE7, 0x9F, 0x54, 0x8F, 0x4C, 0x90, 0x93, 0x0F, 0xA6, 0x97, };
-		return s_sClassHash;
-	}
-
-	const std::string &CReptile::getClassName()
-	{
-	static const std::string s_sClassName = "Reptile";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CReptile::getClassHash()
-	{
-		// MD5(Reptile): AA645186A4B5F3F27952C2FA5485FAB2
-		static const RTTI_ClassHash s_sClassHash = { 0xAA, 0x64, 0x51, 0x86, 0xA4, 0xB5, 0xF3, 0xF2, 0x79, 0x52, 0xC2, 0xFA, 0x54, 0x85, 0xFA, 0xB2, };
-		return s_sClassHash;
-	}
-
-	const std::string &CGiraffe::getClassName()
-	{
-	static const std::string s_sClassName = "Giraffe";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CGiraffe::getClassHash()
-	{
-		// MD5(Giraffe): 427DEBB81D265A0EDD8789F30B11BEB6
-		static const RTTI_ClassHash s_sClassHash = { 0x42, 0x7D, 0xEB, 0xB8, 0x1D, 0x26, 0x5A, 0x0E, 0xDD, 0x87, 0x89, 0xF3, 0x0B, 0x11, 0xBE, 0xB6, };
-		return s_sClassHash;
-	}
-
-	const std::string &CTiger::getClassName()
-	{
-	static const std::string s_sClassName = "Tiger";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CTiger::getClassHash()
-	{
-		// MD5(Tiger): 454C9843110686BF6F67CE5115B66617
-		static const RTTI_ClassHash s_sClassHash = { 0x45, 0x4C, 0x98, 0x43, 0x11, 0x06, 0x86, 0xBF, 0x6F, 0x67, 0xCE, 0x51, 0x15, 0xB6, 0x66, 0x17, };
-		return s_sClassHash;
-	}
-
-	const std::string &CSnake::getClassName()
-	{
-	static const std::string s_sClassName = "Snake";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CSnake::getClassHash()
-	{
-		// MD5(Snake): DFA90F1B4EB3AFFBD3B46AF34ED2477C
-		static const RTTI_ClassHash s_sClassHash = { 0xDF, 0xA9, 0x0F, 0x1B, 0x4E, 0xB3, 0xAF, 0xFB, 0xD3, 0xB4, 0x6A, 0xF3, 0x4E, 0xD2, 0x47, 0x7C, };
-		return s_sClassHash;
-	}
-
-	const std::string &CTurtle::getClassName()
-	{
-	static const std::string s_sClassName = "Turtle";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CTurtle::getClassHash()
-	{
-		// MD5(Turtle): 06DEBA5908B007EB6F32D8D95F3F61B5
-		static const RTTI_ClassHash s_sClassHash = { 0x06, 0xDE, 0xBA, 0x59, 0x08, 0xB0, 0x07, 0xEB, 0x6F, 0x32, 0xD8, 0xD9, 0x5F, 0x3F, 0x61, 0xB5, };
-		return s_sClassHash;
-	}
-
-	const std::string &CAnimalIterator::getClassName()
-	{
-	static const std::string s_sClassName = "AnimalIterator";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CAnimalIterator::getClassHash()
-	{
-		// MD5(AnimalIterator): C2B36A84C6C032204E5C923C581071E7
-		static const RTTI_ClassHash s_sClassHash = { 0xC2, 0xB3, 0x6A, 0x84, 0xC6, 0xC0, 0x32, 0x20, 0x4E, 0x5C, 0x92, 0x3C, 0x58, 0x10, 0x71, 0xE7, };
-		return s_sClassHash;
-	}
-
-	const std::string &CZoo::getClassName()
-	{
-	static const std::string s_sClassName = "Zoo";
-	return s_sClassName;
-	}
-
-	const RTTI_ClassHash &CZoo::getClassHash()
-	{
-		// MD5(Zoo): BFA888A354DB97C7CBEFB9D050B94CA3
-		static const RTTI_ClassHash s_sClassHash = { 0xBF, 0xA8, 0x88, 0xA3, 0x54, 0xDB, 0x97, 0xC7, 0xCB, 0xEF, 0xB9, 0xD0, 0x50, 0xB9, 0x4C, 0xA3, };
-		return s_sClassHash;
-	}
-
-
-/*************************************************************************************************************************
- RTTI cast implementation
-**************************************************************************************************************************/
-
-	template <class T>
-	std::shared_ptr<T> rtti_cast(PBase pObj)
-	{
-		static_assert(std::is_convertible<T, CBase>::value, "T must be convertible to RTTI::CBase");
-
-		if (pObj) {
-			CWrapper *pWrapper = pObj->wrapper();
-			const RTTI_ClassHash & ClassHash = T::getClassHash();
-			CInputVector<RTTI_uint8> ClassHashBuffer(ClassHash.data(), ClassHash.size());
-			if (pWrapper->ImplementsInterface(pObj.get(), ClassHashBuffer)) {
-				pWrapper->AcquireInstance(pObj);
-				return std::make_shared<T>(pWrapper, pObj->handle());
-			}
-		}
-
-		return nullptr;
-	}
+	return std::make_shared<T>(this, pHandle);
+}
 	
 	/**
 	* CWrapper::GetVersion - retrieves the binary version of this library.
@@ -794,21 +637,6 @@ public:
 	}
 	
 	/**
-	* CWrapper::ImplementsInterface - Test whether an object implements a given interface
-	* @param[in] pObject - Instance Handle
-	* @param[in] ClassHashBuffer - Hashed class name of the interface to test
-	* @return Will be set to true if pInstance implements the interface, false otherwise
-	*/
-	inline bool CWrapper::ImplementsInterface(classParam<CBase> pObject, const CInputVector<RTTI_uint8> & ClassHashBuffer)
-	{
-		RTTIHandle hObject = pObject.GetHandle();
-		bool resultImplementsInterface = 0;
-		CheckError(nullptr,m_WrapperTable.m_ImplementsInterface(hObject, (RTTI_uint64)ClassHashBuffer.size(), ClassHashBuffer.data(), &resultImplementsInterface));
-		
-		return resultImplementsInterface;
-	}
-	
-	/**
 	* CWrapper::CreateZoo - Create a new zoo with animals
 	* @return 
 	*/
@@ -820,7 +648,7 @@ public:
 		if (!hInstance) {
 			CheckError(nullptr,RTTI_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<CZoo>(this, hInstance);
+		return this->polymorphicFactory<CZoo>(hInstance);
 	}
 	
 	inline void CWrapper::CheckError(CBase * pBaseClass, RTTIResult nResult)
@@ -841,6 +669,7 @@ public:
 			return RTTI_ERROR_INVALIDPARAM;
 		
 		pWrapperTable->m_LibraryHandle = nullptr;
+		pWrapperTable->m_Base_ClassTypeId = nullptr;
 		pWrapperTable->m_Animal_Name = nullptr;
 		pWrapperTable->m_Tiger_Roar = nullptr;
 		pWrapperTable->m_AnimalIterator_GetNextAnimal = nullptr;
@@ -851,7 +680,6 @@ public:
 		pWrapperTable->m_AcquireInstance = nullptr;
 		pWrapperTable->m_InjectComponent = nullptr;
 		pWrapperTable->m_GetSymbolLookupMethod = nullptr;
-		pWrapperTable->m_ImplementsInterface = nullptr;
 		pWrapperTable->m_CreateZoo = nullptr;
 		
 		return RTTI_SUCCESS;
@@ -900,6 +728,15 @@ public:
 			return RTTI_ERROR_COULDNOTLOADLIBRARY;
 		dlerror();
 		#endif // _WIN32
+		
+		#ifdef _WIN32
+		pWrapperTable->m_Base_ClassTypeId = (PRTTIBase_ClassTypeIdPtr) GetProcAddress(hLibrary, "rtti_base_classtypeid");
+		#else // _WIN32
+		pWrapperTable->m_Base_ClassTypeId = (PRTTIBase_ClassTypeIdPtr) dlsym(hLibrary, "rtti_base_classtypeid");
+		dlerror();
+		#endif // _WIN32
+		if (pWrapperTable->m_Base_ClassTypeId == nullptr)
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
 		pWrapperTable->m_Animal_Name = (PRTTIAnimal_NamePtr) GetProcAddress(hLibrary, "rtti_animal_name");
@@ -992,15 +829,6 @@ public:
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
 		#ifdef _WIN32
-		pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) GetProcAddress(hLibrary, "rtti_implementsinterface");
-		#else // _WIN32
-		pWrapperTable->m_ImplementsInterface = (PRTTIImplementsInterfacePtr) dlsym(hLibrary, "rtti_implementsinterface");
-		dlerror();
-		#endif // _WIN32
-		if (pWrapperTable->m_ImplementsInterface == nullptr)
-			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
-		#ifdef _WIN32
 		pWrapperTable->m_CreateZoo = (PRTTICreateZooPtr) GetProcAddress(hLibrary, "rtti_createzoo");
 		#else // _WIN32
 		pWrapperTable->m_CreateZoo = (PRTTICreateZooPtr) dlsym(hLibrary, "rtti_createzoo");
@@ -1025,6 +853,10 @@ public:
 		SymbolLookupType pLookup = (SymbolLookupType)pSymbolLookupMethod;
 		
 		RTTIResult eLookupError = RTTI_SUCCESS;
+		eLookupError = (*pLookup)("rtti_base_classtypeid", (void**)&(pWrapperTable->m_Base_ClassTypeId));
+		if ( (eLookupError != 0) || (pWrapperTable->m_Base_ClassTypeId == nullptr) )
+			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+		
 		eLookupError = (*pLookup)("rtti_animal_name", (void**)&(pWrapperTable->m_Animal_Name));
 		if ( (eLookupError != 0) || (pWrapperTable->m_Animal_Name == nullptr) )
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
@@ -1065,10 +897,6 @@ public:
 		if ( (eLookupError != 0) || (pWrapperTable->m_GetSymbolLookupMethod == nullptr) )
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 		
-		eLookupError = (*pLookup)("rtti_implementsinterface", (void**)&(pWrapperTable->m_ImplementsInterface));
-		if ( (eLookupError != 0) || (pWrapperTable->m_ImplementsInterface == nullptr) )
-			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
-		
 		eLookupError = (*pLookup)("rtti_createzoo", (void**)&(pWrapperTable->m_CreateZoo));
 		if ( (eLookupError != 0) || (pWrapperTable->m_CreateZoo == nullptr) )
 			return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
@@ -1081,6 +909,18 @@ public:
 	/**
 	 * Method definitions for class CBase
 	 */
+	
+	/**
+	* CBase::ClassTypeId - Get Class Type Id
+	* @return Class type as a 64 bits integer
+	*/
+	RTTI_uint64 CBase::ClassTypeId()
+	{
+		RTTI_uint64 resultClassTypeId = 0;
+		CheckError(m_pWrapper->m_WrapperTable.m_Base_ClassTypeId(m_pHandle, &resultClassTypeId));
+		
+		return resultClassTypeId;
+	}
 	
 	/**
 	 * Method definitions for class CAnimal
@@ -1147,7 +987,7 @@ public:
 		CheckError(m_pWrapper->m_WrapperTable.m_AnimalIterator_GetNextAnimal(m_pHandle, &hAnimal));
 		
 		if (hAnimal) {
-			return std::make_shared<CAnimal>(m_pWrapper, hAnimal);
+			return m_pWrapper->polymorphicFactory<CAnimal>(hAnimal);
 		} else {
 			return nullptr;
 		}
@@ -1169,7 +1009,7 @@ public:
 		if (!hIterator) {
 			CheckError(RTTI_ERROR_INVALIDPARAM);
 		}
-		return std::make_shared<CAnimalIterator>(m_pWrapper, hIterator);
+		return m_pWrapper->polymorphicFactory<CAnimalIterator>(hIterator);
 	}
 
 } // namespace RTTI
