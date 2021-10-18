@@ -32,8 +32,9 @@ def main():
 	iter = zoo.Iterator()
 
 	while animal := iter.GetNextAnimal():
-		if tiger := RTTI.Tiger.cast(animal):
-			tiger.Roar()
+		if isinstance(animal, RTTI.Tiger):
+			print("  ^ is a real tiger!!!")
+			animal.Roar()
 		print("Animal name: " + animal.Name())
 
 if __name__ == "__main__":

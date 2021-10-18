@@ -10,9 +10,11 @@
 	<bindings>
 		<binding language="CppDynamic" indentation="tabs"/>
 		<binding language="Python" indentation="tabs"/>
+		<binding language="Pascal" indentation="tabs"/>
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
+		<implementation language="Pascal" indentation="tabs" stubidentifier="impl"/>
 	</implementations>
 
 	<errors>
@@ -30,6 +32,9 @@
 
 
 	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
 	</class>
 
 	<class name="Animal" parent="Base" description="">
@@ -69,10 +74,12 @@
 		</method>
 	</class>
 	
-	<global baseclassname="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
-			versionmethod="GetVersion" errormethod="GetLastError" injectionmethod="InjectComponent"
-			symbollookupmethod="GetSymbolLookupMethod" implementsinterfacemethod="ImplementsInterface"
-			stringoutclassname="Base">
+	<global baseclassname="Base" stringoutclassname="Base" 
+			releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
+			versionmethod="GetVersion" errormethod="GetLastError" 
+			injectionmethod="InjectComponent" symbollookupmethod="GetSymbolLookupMethod" 
+			classtypeidmethod="ClassTypeId"
+			>
 		<method name="GetVersion" description="retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library"/>
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library"/>
@@ -95,11 +102,6 @@
 		</method>
 		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
 			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
-		</method>
-		<method name="ImplementsInterface" description="Test whether an object implements a given interface">
-			<param name="Object" type="class" class="Base" pass="in" description="Instance Handle" />
-			<param name="ClassHash" type="basicarray" class="uint8" pass="in" description="Hashed class name of the interface to test" />
-			<param name="ImplementsInterface" type="bool" pass="return" description="Will be set to true if pInstance implements the interface, false otherwise" />
 		</method>
 		<method name="CreateZoo" description="Create a new zoo with animals">
 			<param name="Instance" pass="return" type="class" class="Zoo"/>

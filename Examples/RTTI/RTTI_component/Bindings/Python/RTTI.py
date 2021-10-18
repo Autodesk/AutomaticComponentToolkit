@@ -62,8 +62,8 @@ class FunctionTable:
 	rtti_acquireinstance = None
 	rtti_injectcomponent = None
 	rtti_getsymbollookupmethod = None
-	rtti_implementsinterface = None
 	rtti_createzoo = None
+	rtti_base_classtypeid = None
 	rtti_animal_name = None
 	rtti_tiger_roar = None
 	rtti_animaliterator_getnextanimal = None
@@ -147,17 +147,17 @@ class Wrapper:
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_void_p))
 			self.lib.rtti_getsymbollookupmethod = methodType(int(methodAddress.value))
 			
-			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_implementsinterface")), methodAddress)
-			if err != 0:
-				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_bool))
-			self.lib.rtti_implementsinterface = methodType(int(methodAddress.value))
-			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_createzoo")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_void_p))
 			self.lib.rtti_createzoo = methodType(int(methodAddress.value))
+			
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_base_classtypeid")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64))
+			self.lib.rtti_base_classtypeid = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animal_name")), methodAddress)
 			if err != 0:
@@ -206,11 +206,11 @@ class Wrapper:
 			self.lib.rtti_getsymbollookupmethod.restype = ctypes.c_int32
 			self.lib.rtti_getsymbollookupmethod.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
 			
-			self.lib.rtti_implementsinterface.restype = ctypes.c_int32
-			self.lib.rtti_implementsinterface.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_bool)]
-			
 			self.lib.rtti_createzoo.restype = ctypes.c_int32
 			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+			
+			self.lib.rtti_base_classtypeid.restype = ctypes.c_int32
+			self.lib.rtti_base_classtypeid.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64)]
 			
 			self.lib.rtti_animal_name.restype = ctypes.c_int32
 			self.lib.rtti_animal_name.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p]
@@ -299,49 +299,53 @@ class Wrapper:
 		
 		return pSymbolLookupMethod.value
 	
-	def ImplementsInterface(self, ObjectObject, ClassHash):
-		ObjectHandle = None
-		if ObjectObject:
-			ObjectHandle = ObjectObject._handle
-		else:
-			raise ERTTIException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')
-		nClassHashCount = ctypes.c_uint64(len(ClassHash))
-		pClassHashBuffer = (ctypes.c_uint8*len(ClassHash))(*ClassHash)
-		pImplementsInterface = ctypes.c_bool()
-		self.checkError(None, self.lib.rtti_implementsinterface(ObjectHandle, nClassHashCount, pClassHashBuffer, pImplementsInterface))
-		
-		return pImplementsInterface.value
-	
 	def CreateZoo(self):
 		InstanceHandle = ctypes.c_void_p()
 		self.checkError(None, self.lib.rtti_createzoo(InstanceHandle))
 		if InstanceHandle:
-			InstanceObject = Zoo(InstanceHandle, self)
+			InstanceObject = self._polymorphicFactory(InstanceHandle)
 		else:
 			raise ERTTIException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')
 		
 		return InstanceObject
+	
+	def _polymorphicFactory(self, handle):
+		class PolymorphicFactory():
+			def getObjectById(self, classtypeid, handle, wrapper):
+				methodName = 'getObjectById_' + format(classtypeid.value, '016X')
+				method = getattr(self, methodName, lambda: 'Invalid class type id')
+				return method(handle, wrapper)
+			def getObjectById_1549AD28813DAE05(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Base"
+				return Base(handle, wrapper)
+			def getObjectById_8B40467DA6D327AF(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Animal"
+				return Animal(handle, wrapper)
+			def getObjectById_BC9D5FA7750C1020(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Mammal"
+				return Mammal(handle, wrapper)
+			def getObjectById_6756AA8EA5802EC3(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Reptile"
+				return Reptile(handle, wrapper)
+			def getObjectById_9751971BD2C2D958(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+				return Giraffe(handle, wrapper)
+			def getObjectById_08D007E7B5F7BAF4(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Tiger"
+				return Tiger(handle, wrapper)
+			def getObjectById_5F6826EF909803B2(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Snake"
+				return Snake(handle, wrapper)
+			def getObjectById_8E551B208A2E8321(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Turtle"
+				return Turtle(handle, wrapper)
+			def getObjectById_F1917FE6BBE77831(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+				return AnimalIterator(handle, wrapper)
+			def getObjectById_2262ABE80A5E7878(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Zoo"
+				return Zoo(handle, wrapper)
+		
+		pClassTypeId = ctypes.c_uint64()
+		self.checkError(None, self.lib.rtti_base_classtypeid(handle, pClassTypeId))
+		factory = PolymorphicFactory()
+		return factory.getObjectById(pClassTypeId, handle, self)
 	
 
 
 ''' Class Implementation for Base
 '''
 class Base:
-	@staticmethod
-	def ClassName():
-		return "Base"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x09\x5A\x1B\x43\xEF\xFE\xC7\x39\x55\xE3\x1E\x79\x04\x38\xDE\x49')
-	
-	@classmethod
-	def cast(cls, instance):
-		if instance and instance._wrapper.ImplementsInterface(instance, cls.ClassHash()):
-			instance._wrapper.AcquireInstance(instance)
-			return cls(instance._handle, instance._wrapper)
-		return None
-	
 	def __init__(self, handle, wrapper):
 		if not handle or not wrapper:
 			raise ERTTIException(ErrorCodes.INVALIDPARAM)
@@ -350,19 +354,17 @@ class Base:
 	
 	def __del__(self):
 		self._wrapper.ReleaseInstance(self)
+	def ClassTypeId(self):
+		pClassTypeId = ctypes.c_uint64()
+		self._wrapper.checkError(self, self._wrapper.lib.rtti_base_classtypeid(self._handle, pClassTypeId))
+		
+		return pClassTypeId.value
+	
 
 
 ''' Class Implementation for Animal
 '''
 class Animal(Base):
-	@staticmethod
-	def ClassName():
-		return "Animal"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x16\x1E\x7C\xE7\xBF\xDC\x89\xAB\x4B\x9F\x52\xC1\xD4\xC9\x42\x12')
-	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def Name(self):
@@ -381,14 +383,6 @@ class Animal(Base):
 ''' Class Implementation for Mammal
 '''
 class Mammal(Animal):
-	@staticmethod
-	def ClassName():
-		return "Mammal"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x37\x42\x61\x13\xD1\x29\xE7\x9F\x54\x8F\x4C\x90\x93\x0F\xA6\x97')
-	
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
 
@@ -396,14 +390,6 @@ class Mammal(Animal):
 ''' Class Implementation for Reptile
 '''
 class Reptile(Animal):
-	@staticmethod
-	def ClassName():
-		return "Reptile"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\xAA\x64\x51\x86\xA4\xB5\xF3\xF2\x79\x52\xC2\xFA\x54\x85\xFA\xB2')
-	
 	def __init__(self, handle, wrapper):
 		Animal.__init__(self, handle, wrapper)
 
@@ -411,14 +397,6 @@ class Reptile(Animal):
 ''' Class Implementation for Giraffe
 '''
 class Giraffe(Mammal):
-	@staticmethod
-	def ClassName():
-		return "Giraffe"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x42\x7D\xEB\xB8\x1D\x26\x5A\x0E\xDD\x87\x89\xF3\x0B\x11\xBE\xB6')
-	
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
 
@@ -426,14 +404,6 @@ class Giraffe(Mammal):
 ''' Class Implementation for Tiger
 '''
 class Tiger(Mammal):
-	@staticmethod
-	def ClassName():
-		return "Tiger"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x45\x4C\x98\x43\x11\x06\x86\xBF\x6F\x67\xCE\x51\x15\xB6\x66\x17')
-	
 	def __init__(self, handle, wrapper):
 		Mammal.__init__(self, handle, wrapper)
 	def Roar(self):
@@ -445,14 +415,6 @@ class Tiger(Mammal):
 ''' Class Implementation for Snake
 '''
 class Snake(Reptile):
-	@staticmethod
-	def ClassName():
-		return "Snake"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\xDF\xA9\x0F\x1B\x4E\xB3\xAF\xFB\xD3\xB4\x6A\xF3\x4E\xD2\x47\x7C')
-	
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -460,14 +422,6 @@ class Snake(Reptile):
 ''' Class Implementation for Turtle
 '''
 class Turtle(Reptile):
-	@staticmethod
-	def ClassName():
-		return "Turtle"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\x06\xDE\xBA\x59\x08\xB0\x07\xEB\x6F\x32\xD8\xD9\x5F\x3F\x61\xB5')
-	
 	def __init__(self, handle, wrapper):
 		Reptile.__init__(self, handle, wrapper)
 
@@ -475,21 +429,13 @@ class Turtle(Reptile):
 ''' Class Implementation for AnimalIterator
 '''
 class AnimalIterator(Base):
-	@staticmethod
-	def ClassName():
-		return "AnimalIterator"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\xC2\xB3\x6A\x84\xC6\xC0\x32\x20\x4E\x5C\x92\x3C\x58\x10\x71\xE7')
-	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def GetNextAnimal(self):
 		AnimalHandle = ctypes.c_void_p()
 		self._wrapper.checkError(self, self._wrapper.lib.rtti_animaliterator_getnextanimal(self._handle, AnimalHandle))
 		if AnimalHandle:
-			AnimalObject = Animal(AnimalHandle, self._wrapper)
+			AnimalObject = self._wrapper._polymorphicFactory(AnimalHandle)
 		else:
 			AnimalObject = None
 		
@@ -500,21 +446,13 @@ class AnimalIterator(Base):
 ''' Class Implementation for Zoo
 '''
 class Zoo(Base):
-	@staticmethod
-	def ClassName():
-		return "Zoo"
-	
-	@staticmethod
-	def ClassHash():
-		return bytearray(b'\xBF\xA8\x88\xA3\x54\xDB\x97\xC7\xCB\xEF\xB9\xD0\x50\xB9\x4C\xA3')
-	
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def Iterator(self):
 		IteratorHandle = ctypes.c_void_p()
 		self._wrapper.checkError(self, self._wrapper.lib.rtti_zoo_iterator(self._handle, IteratorHandle))
 		if IteratorHandle:
-			IteratorObject = AnimalIterator(IteratorHandle, self._wrapper)
+			IteratorObject = self._wrapper._polymorphicFactory(IteratorHandle)
 		else:
 			raise ERTTIException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')
 		

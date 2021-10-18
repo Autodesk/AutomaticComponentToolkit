@@ -41,10 +41,11 @@ int main()
 
 		using namespace RTTI;
 		while (auto animal = iter->GetNextAnimal()) {
-			if (auto tiger = rtti_cast<CTiger>(animal)) {
-				tiger->Roar();
-                        }
 			std::cout << "Animal name: " << animal->Name() << std::endl;
+			if (auto tiger = std::dynamic_pointer_cast<CTiger>(animal)) {
+				std::cout << "  ^ is a real tiger!!!" << std::endl;
+				tiger->Roar();
+			}
 		}
 	}
 	catch (std::exception &e)
