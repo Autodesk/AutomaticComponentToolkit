@@ -439,6 +439,9 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
+		if method.MethodName == component.Global.ClassTypeIdMethod {
+			continue
+		}
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 		if err != nil {
 			return err
