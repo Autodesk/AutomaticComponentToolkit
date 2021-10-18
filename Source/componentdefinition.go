@@ -34,7 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"crypto/md5"
+	"crypto/sha1"
+	"encoding/binary"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -59,7 +60,6 @@ const (
 	eSpecialMethodJournal = 7
 	eSpecialMethodPrerelease = 8
 	eSpecialMethodBuildinfo = 9
-	eSpecialMethodImplementsInterface = 10
 )
 
 // ComponentDefinitionParam definition of a method parameter used in the component's API
@@ -120,7 +120,7 @@ type ComponentDefinitionGlobal struct {
 	BaseClassName string `xml:"baseclassname,attr"`
 	StringOutBaseClassName string `xml:"stringoutclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
-	ImplementsInterfaceMethod string `xml:"implementsinterfacemethod,attr"`
+	ClassTypeIdMethod string `xml:"classtypeidmethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
 	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
@@ -516,10 +516,10 @@ func (component *ComponentDefinition) checkClasses() (error) {
 
 	classLowerNameList := make(map[string]bool, 0)
 	classNameIndex := make(map[string]int, 0)
-	classHashIndex := make(map[string]int, 0)
+	classTypeIdIndex := make(map[uint64]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
-		hashString := fmt.Sprintf("%X", class.classHash());
+		classTypeHash, _ := class.classTypeId(component.NameSpace);
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
@@ -529,15 +529,15 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
 			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
-		collision, hashExists := classHashIndex[hashString]
+		collision, hashExists := classTypeIdIndex[classTypeHash]
 		if hashExists {
-			return fmt.Errorf ("hash collision for classes \"%s\" and \"%s\"", classes[collision].ClassName, class.ClassName);
+			return fmt.Errorf ("Classes \"%s\" and \"%s\" have a collision in their Class Type Id. Change class name.", classes[collision].ClassName, class.ClassName);
 		}
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
-		classHashIndex[hashString] = i
+		classTypeIdIndex[classTypeHash] = i
 	}
 
 	// Check parent class definitions
@@ -714,6 +714,21 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 }
 
 
+func (component *ComponentDefinition) checkBaseClassMethods() (error) {
+
+	method := component.classTypeIdMethod()
+	if method.MethodName == "" {
+		return fmt.Errorf ("ClassTypeId method is not defined in Base class");
+	}
+
+	if (method.MethodName == component.Global.ClassTypeIdMethod) {
+		if (len (method.Params) != 1) || (method.Params[0].ParamType != "uint64") || (method.Params[0].ParamPass != "return") {
+			return fmt.Errorf ("ClassTypeId method does not match the expected function template");
+		}
+	}
+	return nil
+}
+
 func (component *ComponentDefinition) checkClassMethods() (error) {
 	classes := component.Classes
 
@@ -723,7 +738,9 @@ func (component *ComponentDefinition) checkClassMethods() (error) {
 		methodNameList := make(map[string]bool, 0)
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-
+			if (!component.isBaseClass(class) && (method.MethodName == component.Global.ClassTypeIdMethod)) {
+				return fmt.Errorf ("class type id method \"%s\" is redefined in \"%s\".%s\"", method.MethodName, class.ClassName)
+			}
 			if (methodNameList[strings.ToLower(method.MethodName)]) {
 				return fmt.Errorf ("duplicate name for method \"%s.%s\"", class.ClassName, method.MethodName)
 			}
@@ -966,6 +983,11 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 		return err
 	}
 
+	err = component.checkBaseClassMethods()
+	if err != nil {
+		return err
+	}
+
 	err = component.checkClassMethods()
 	if err != nil {
 		return err
@@ -1028,8 +1050,8 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		return eSpecialMethodNone, errors.New ("No error method specified");
 	}
 
-	if (global.ImplementsInterfaceMethod == "") {
-		return eSpecialMethodNone, errors.New ("No implements inteface method specified");
+	if (global.ClassTypeIdMethod == "") {
+		return eSpecialMethodNone, errors.New ("No ClassTypeId method specified");
 	}
 
 	if (global.ReleaseMethod == global.JournalMethod) {
@@ -1138,21 +1160,6 @@ func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global Compon
 		}
 		
 		return eSpecialMethodError, nil;
-	}
-
-	if (method.MethodName == global.ImplementsInterfaceMethod) {
-		if (len (method.Params) != 3) {
-			return eSpecialMethodNone, errors.New ("Implements Interface method does not match the expected function template");
-		}
-		
-		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamPass != "in") || 
-			(method.Params[1].ParamType != "basicarray") || (method.Params[1].ParamClass != "uint8") || (method.Params[1].ParamPass != "in") ||
-			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
-			(method.Params[0].ParamClass != global.BaseClassName) {
-			return eSpecialMethodNone, errors.New ("Implements Interface method does not match the expected function template");
-		}
-		
-		return eSpecialMethodImplementsInterface, nil;
 	}
 
 	if len(global.PrereleaseMethod)>0 && (global.PrereleaseMethod == global.BuildinfoMethod) {
@@ -1396,8 +1403,23 @@ func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
 	return maxOutParameters;
 }
 
-func (class *ComponentDefinitionClass) classHash() []byte {
-	hash := md5.New()
-	hash.Write([]byte(class.ClassName))
-	return hash.Sum(nil)
+func (component *ComponentDefinition) classTypeIdMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	baseClass := component.baseClass()
+
+	for j := 0; j < len(baseClass.Methods); j++ {
+		if (baseClass.Methods[j].MethodName == component.Global.ClassTypeIdMethod) {
+			return baseClass.Methods[j]
+			break
+		}
+	}
+
+	return method
+}
+
+func (class *ComponentDefinitionClass) classTypeId(namespace string) (uint64, string) {
+	hash := sha1.New()
+	plainString := namespace + "::" + class.ClassName
+	hash.Write([]byte(plainString))
+	return binary.LittleEndian.Uint64(hash.Sum(nil)), plainString
 }

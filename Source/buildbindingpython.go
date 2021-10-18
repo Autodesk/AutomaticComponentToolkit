@@ -365,6 +365,24 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 
+	w.Writeln("  def _polymorphicFactory(self, handle):")
+	w.Writeln("    class PolymorphicFactory():")
+	w.Writeln("      def getObjectById(self, classtypeid, handle, wrapper):")
+	w.Writeln("        methodName = 'getObjectById_' + format(classtypeid.value, '016X')")
+	w.Writeln("        method = getattr(self, methodName, lambda: 'Invalid class type id')")
+	w.Writeln("        return method(handle, wrapper)")
+	for i:=0; i<len(componentdefinition.Classes); i++ {
+		classTypeId, chashHashString := componentdefinition.Classes[i].classTypeId(NameSpace)
+		w.Writeln("      def getObjectById_%016X(self, handle, wrapper): # First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString)
+		w.Writeln("        return %s(handle, wrapper)", componentdefinition.Classes[i].ClassName)
+	}
+	w.Writeln("    ")
+	w.Writeln("    pClassTypeId = ctypes.c_uint64()")
+	w.Writeln("    self.checkError(None, self.lib.%s_%s_%s(handle, pClassTypeId))", strings.ToLower(NameSpace), strings.ToLower(componentdefinition.Global.BaseClassName), strings.ToLower(componentdefinition.Global.ClassTypeIdMethod))
+	w.Writeln("    factory = PolymorphicFactory()")
+	w.Writeln("    return factory.getObjectById(pClassTypeId, handle, self)")
+	w.Writeln("  ")
+
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		w.Writeln("")
 		w.Writeln("")
@@ -724,17 +742,11 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
 	
-	global := component.Global
 
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
 	parentClass := ""
-	hash := class.classHash()
-	hashString := ""
-	for i := range hash {
-		hashString = hashString + fmt.Sprintf("\\x%02X", hash[i])
-	}
 
 	if (!component.isBaseClass(class)) {
 		if (class.ParentClass != "") {
@@ -743,35 +755,11 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 			parentClass = pythonBaseClassName
 		}
 		w.Writeln("class %s(%s):", class.ClassName, parentClass)
-		w.Writeln("  @staticmethod")
-		w.Writeln("  def ClassName():")
-		w.Writeln("    return \"%s\"", class.ClassName)
-		w.Writeln("  ")
-		w.Writeln("  @staticmethod")
-		w.Writeln("  def ClassHash():")
-		w.Writeln("    return bytearray(b'%s')", hashString)
-		w.Writeln("  ")
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
 
 	} else {
 		w.Writeln("class %s:", class.ClassName)
-		w.Writeln("  @staticmethod")
-		w.Writeln("  def ClassName():")
-		w.Writeln("    return \"%s\"", class.ClassName)
-		w.Writeln("  ")
-		w.Writeln("  @staticmethod")
-		w.Writeln("  def ClassHash():")
-		w.Writeln("    return bytearray(b'%s')", hashString)
-		w.Writeln("  ")
-
-		w.Writeln("  @classmethod")
-		w.Writeln("  def cast(cls, instance):")
-		w.Writeln("    if instance and instance._wrapper.%s(instance, cls.ClassHash()):", global.ImplementsInterfaceMethod)
-		w.Writeln("      instance._wrapper.%s(instance)", global.AcquireMethod)
-		w.Writeln("      return cls(instance._handle, instance._wrapper)")
-		w.Writeln("    return None")
-		w.Writeln("  ")
 
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    if not handle or not wrapper:")
@@ -842,15 +830,15 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cCheckArguments = cCheckArguments + newArgument
 
 				theWrapperReference := wrapperReference
-				subNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				subNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				if len(subNameSpace) > 0 {
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
 					subNameSpace = subNameSpace + "."
 				}
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("  %sObject = %s%s(%sHandle, %s)",
-					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
+					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle)",
+					param.ParamName, wrapperReference, param.ParamName))
 				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
 				if (param.ParamType == "optionalclass") {
 					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))

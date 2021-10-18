@@ -410,7 +410,7 @@ func buildPascalInterfaceDefinition(component ComponentDefinition, w LanguageWri
 			methods[4] = DecRefCountMethod()
 
 			for _, method := range methods {
-				err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false)
+				err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false, false, false, false)
 				if err != nil {
 					return err
 				}
@@ -419,7 +419,7 @@ func buildPascalInterfaceDefinition(component ComponentDefinition, w LanguageWri
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false)
+			err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false, false, false, false)
 			if err != nil {
 				return err
 			}
@@ -1410,16 +1410,22 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 		w.AddIndentationLevel(3)
 		if component.isBaseClass(class) {
 			for _, method := range baseClassMethods {
-				err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false)
+				err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false, false, false, false)
 				if err != nil {
 					return err
 				}
+			}
+		} else {
+			err := writePascalImplClassMethodDefinition(component.classTypeIdMethod(), w, NameSpace, class.ClassName, false, true, false, false)
+			if err != nil {
+				return err
 			}
 		}
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false)
+			isClassTypeIdMethod := method.MethodName == component.Global.ClassTypeIdMethod
+			err := writePascalImplClassMethodDefinition(method, w, NameSpace, class.ClassName, false, false, isClassTypeIdMethod, isClassTypeIdMethod && component.isBaseClass(class))
 			if err != nil {
 				return err
 			}
@@ -1455,10 +1461,25 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 					return err
 				}
 			}
+		} else {
+			outClassName := fmt.Sprintf("T%s%s", NameSpace, class.ClassName)
+			classTypeId, chashHashString := class.classTypeId(NameSpace)
+
+			var methodImplementation []string
+			methodImplementation = append(methodImplementation, fmt.Sprintf("Result := $%016X; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString))
+		
+			err := writePascalClassMethodDummyStub(component.classTypeIdMethod(), w, NameSpace, class.ClassName, outClassName, false, methodImplementation)
+			if err != nil {
+				return err
+			}
 		}
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
+			if method.MethodName == component.Global.ClassTypeIdMethod {
+				// Skip. This method was implemented above.
+				continue
+			}
 			err := writePascalClassMethodDummyStub(method, w, NameSpace, class.ClassName, outClassName, false, defaultImplementation)
 			if err != nil {
 				return err
@@ -1471,7 +1492,7 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 	return nil
 }
 
-func writePascalImplClassMethodDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
+func writePascalImplClassMethodDefinition(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassName string, isGlobal bool, isOverride bool, isVirtual bool, isAbstract bool) error {
 
 	parameters, returnType, err := getPascalImplClassParameters(method, NameSpace, ClassName, isGlobal, true)
 	if err != nil {
@@ -1482,12 +1503,24 @@ func writePascalImplClassMethodDefinition(method ComponentDefinitionMethod, w La
 	if isGlobal {
 		classPrefix = "class "
 	}
-
+	str := "";
 	if returnType == "" {
-		w.Writeln("%sprocedure %s(%s);", classPrefix, method.MethodName, parameters)
+		str = fmt.Sprintf("%sprocedure %s(%s);", classPrefix, method.MethodName, parameters)
 	} else {
-		w.Writeln("%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType)
+		str = fmt.Sprintf("%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType)
 	}
+	if isOverride {
+		str = str + " Override;";
+	} else {
+		if isVirtual {
+			str = str + " Virtual;";
+		}
+		if isAbstract {
+			str = str + " Abstract;";
+		}	
+	}
+
+	w.Writeln(str);
 
 	return nil
 }
@@ -1546,7 +1579,7 @@ func buildStubImplementation(component ComponentDefinition, w LanguageWriter, Na
 			(isSpecialFunction == eSpecialMethodSymbolLookup) {
 			continue
 		}
-		err = writePascalImplClassMethodDefinition(method, w, NameSpace, "Wrapper", true)
+		err = writePascalImplClassMethodDefinition(method, w, NameSpace, "Wrapper", true, false, false, false)
 		if err != nil {
 			return err
 		}

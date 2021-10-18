@@ -36,7 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
 	"log"
 	"path"
@@ -698,7 +697,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 				if (param.ParamType == "optionalclass") {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = %s->polymorphicFactory<%s%s%s>(h%s);", param.ParamName, makeSharedParameter, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
@@ -706,7 +705,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::make_shared<%s%s%s>(%s, h%s);", param.ParamName, cppClassPrefix, ClassIdentifier, param.ParamClass, makeSharedParameter, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = %s->polymorphicFactory<%s%s%s>(h%s);", param.ParamName, makeSharedParameter, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				}
 
@@ -776,7 +775,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				
 				if (param.ParamType == "optionalclass") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
@@ -784,7 +783,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::make_shared<%s>(%s, h%s);", CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
 				}
 
 			case "basicarray":
@@ -1143,15 +1142,6 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix, ClassIdentifier)
 
-
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" %s_cast Definition", strings.ToLower(NameSpace))
-	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("template <class T>")
-	w.Writeln("inline std::shared_ptr<T> %s_cast(PBase obj);", strings.ToLower(NameSpace))
-	w.Writeln("")
-	w.Writeln("using %s_ClassHash = std::array<%s_uint8, %d>;", NameSpace, NameSpace, md5.Size)
-
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" classParam Definition")
@@ -1382,6 +1372,10 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  %sResult loadWrapperTableFromSymbolLookupMethod(s%sDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);", NameSpace, NameSpace)
 	}
 	w.Writeln("")
+	w.Writeln("  template<class U>")
+	w.Writeln("  std::shared_ptr<U> polymorphicFactory(%sHandle);", NameSpace)
+
+	w.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -1414,8 +1408,6 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("**************************************************************************************************************************/")
 		w.Writeln("class %s %s{", cppClassName, inheritanceSpecifier)
 		w.Writeln("public:")
-		w.Writeln("  static inline const std::string &getClassName();")
-		w.Writeln("  static inline const %s_ClassHash &getClassHash();", NameSpace)
 		w.Writeln("  ")
 		if !component.isBaseClass(class) {
 			w.Writeln("  /**")
@@ -1447,61 +1439,25 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" RTTI static getClassName implementations")
+	w.Writeln(" RTTI: Polymorphic Factory implementation")
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 
+	w.Writeln("template <class T>")
+	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, strings.ToUpper(NameSpace))
+	w.Writeln("{")
+	w.Writeln("  %s_uint64 resultClassTypeId = 0;", strings.ToUpper(NameSpace))
+	w.Writeln("  CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));")
+	w.Writeln("  switch(resultClassTypeId) {")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		w.Writeln("  const std::string &C%s::getClassName()", class.ClassName)
-		w.Writeln("  {")
-		w.Writeln("  static const std::string s_sClassName = \"%s\";", class.ClassName)
-		w.Writeln("  return s_sClassName;")
-		w.Writeln("  }")
-		w.Writeln("")
-
-		classHash := class.classHash()
-
-		w.Writeln("  const %s_ClassHash &C%s::getClassHash()", NameSpace, class.ClassName)
-		w.Writeln("  {")
-		w.Writeln("    // MD5(%s): %X", class.ClassName, classHash)
-
-		w.BeginLine()
-		w.Printf("    static const %s_ClassHash s_sClassHash = {", NameSpace)
-		for j := 0; j < len(classHash); j++ {
-			w.Printf(" 0x%02X,", classHash[j])
-		}
-		w.Printf(" };")
-		w.EndLine()
-		w.Writeln("    return s_sClassHash;")
-		w.Writeln("  }")
-		w.Writeln("")
+		classTypeId, chashHashString := class.classTypeId(NameSpace)
+		w.Writeln("    case 0x%016XUL: return std::dynamic_pointer_cast<T>(std::make_shared<C%s>(this, pHandle)); break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, class.ClassName, chashHashString)
 	}
-
-	w.Writeln("")
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" RTTI cast implementation")
-	w.Writeln("**************************************************************************************************************************/")
-	w.Writeln("")
-
-	w.Writeln("  template <class T>")
-	w.Writeln("  std::shared_ptr<T> %s_cast(PBase pObj)", strings.ToLower(NameSpace))
-	w.Writeln("  {")
-	w.Writeln("    static_assert(std::is_convertible<T, CBase>::value, \"T must be convertible to %s::CBase\");", NameSpace)
-	w.Writeln("")
-	w.Writeln("    if (pObj) {")
-	w.Writeln("      CWrapper *pWrapper = pObj->wrapper();")
-	w.Writeln("      const %s_ClassHash & ClassHash = T::getClassHash();", NameSpace)
-	w.Writeln("      CInputVector<%s_uint8> ClassHashBuffer(ClassHash.data(), ClassHash.size());", NameSpace)
-	w.Writeln("      if (pWrapper->%s(pObj.get(), ClassHashBuffer)) {", global.ImplementsInterfaceMethod)
-	w.Writeln("        pWrapper->%s(pObj);", global.AcquireMethod)
-	w.Writeln("        return std::make_shared<T>(pWrapper, pObj->handle());")
-	w.Writeln("      }")
-	w.Writeln("    }")
-	w.Writeln("")
-	w.Writeln("    return nullptr;")
 	w.Writeln("  }")
 
+	w.Writeln("  return std::make_shared<T>(this, pHandle);")
+	w.Writeln("}")
 
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
