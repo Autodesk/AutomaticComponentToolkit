@@ -47,11 +47,8 @@ var
 	ALibPath: string;
 begin
 	writeln('loading DLL');
-	ALibPath := '/Users/anpiloa/git/AutomaticComponentToolkit/Examples/RTTI/RTTI_component/Implementations/Pascal/bin/x86_64-darwin/Release'; // TODO add the location of the shared library binary here
-	ARTTIWrapper := TRTTIWrapper.Create(ALibPath + '/' + 'libprojectrtti.dylib'); // TODO add the extension of the shared library file here
-
-        //ALibPath := '/Users/anpiloa/git/AutomaticComponentToolkit/Examples/RTTI/build-lib/'; // TODO add the location of the shared library binary here
-	//ARTTIWrapper := TRTTIWrapper.Create(ALibPath + '/' + 'rtti.dylib'); // TODO add the extension of the shared library file here
+	ALibPath := '.'; // TODO add the location of the shared library binary here
+	ARTTIWrapper := TRTTIWrapper.Create(ALibPath + '/' + 'rtti.'); // TODO add the extension of the shared library file here
 
 	try
 		writeln('loading DLL Done');
