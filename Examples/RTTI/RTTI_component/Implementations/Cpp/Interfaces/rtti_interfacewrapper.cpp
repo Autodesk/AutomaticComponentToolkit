@@ -58,7 +58,7 @@ RTTIResult handleUnhandledException(IBase * pIBaseClass)
 **************************************************************************************************************************/
 RTTIResult rtti_base_classtypeid(RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
 {
-	IBase* pIBaseClass = (IBase *)pBase;
+	IBase* pIBaseClass = (IBase *)pBase.Handle;
 
 	try {
 		if (pClassTypeId == nullptr)
@@ -88,7 +88,7 @@ RTTIResult rtti_base_classtypeid(RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
 **************************************************************************************************************************/
 RTTIResult rtti_animal_name(RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer)
 {
-	IBase* pIBaseClass = (IBase *)pAnimal;
+	IBase* pIBaseClass = (IBase *)pAnimal.Handle;
 
 	try {
 		if ( (!pResultBuffer) && !(pResultNeededChars) )
@@ -152,7 +152,7 @@ RTTIResult rtti_animal_name(RTTI_Animal pAnimal, const RTTI_uint32 nResultBuffer
 **************************************************************************************************************************/
 RTTIResult rtti_tiger_roar(RTTI_Tiger pTiger)
 {
-	IBase* pIBaseClass = (IBase *)pTiger;
+	IBase* pIBaseClass = (IBase *)pTiger.Handle;
 
 	try {
 		ITiger* pITiger = dynamic_cast<ITiger*>(pIBaseClass);
@@ -188,7 +188,7 @@ RTTIResult rtti_tiger_roar(RTTI_Tiger pTiger)
 **************************************************************************************************************************/
 RTTIResult rtti_animaliterator_getnextanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal)
 {
-	IBase* pIBaseClass = (IBase *)pAnimalIterator;
+	IBase* pIBaseClass = (IBase *)pAnimalIterator.Handle;
 
 	try {
 		if (pAnimal == nullptr)
@@ -200,7 +200,8 @@ RTTIResult rtti_animaliterator_getnextanimal(RTTI_AnimalIterator pAnimalIterator
 		
 		pBaseAnimal = pIAnimalIterator->GetNextAnimal();
 
-		*pAnimal = (IBase*)(pBaseAnimal);
+		pAnimal->Handle = (IBase*)(pBaseAnimal);
+		pAnimal->ClassTypeId = pBaseAnimal == nullptr ? 0 : pBaseAnimal->ClassTypeId();
 		return RTTI_SUCCESS;
 	}
 	catch (ERTTIInterfaceException & Exception) {
@@ -220,7 +221,7 @@ RTTIResult rtti_animaliterator_getnextanimal(RTTI_AnimalIterator pAnimalIterator
 **************************************************************************************************************************/
 RTTIResult rtti_zoo_iterator(RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
 {
-	IBase* pIBaseClass = (IBase *)pZoo;
+	IBase* pIBaseClass = (IBase *)pZoo.Handle;
 
 	try {
 		if (pIterator == nullptr)
@@ -232,7 +233,8 @@ RTTIResult rtti_zoo_iterator(RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
 		
 		pBaseIterator = pIZoo->Iterator();
 
-		*pIterator = (IBase*)(pBaseIterator);
+		pIterator->Handle = (IBase*)(pBaseIterator);
+		pIterator->ClassTypeId = pBaseIterator == nullptr ? 0 : pBaseIterator->ClassTypeId();
 		return RTTI_SUCCESS;
 	}
 	catch (ERTTIInterfaceException & Exception) {
@@ -329,7 +331,7 @@ RTTIResult rtti_getlasterror(RTTI_Base pInstance, const RTTI_uint32 nErrorMessag
 			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
 		if (pHasError == nullptr)
 			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
-		IBase* pIBaseClassInstance = (IBase *)pInstance;
+		IBase* pIBaseClassInstance = (IBase *)pInstance.Handle;
 		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
 		if (!pIInstance)
 			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDCAST);
@@ -364,7 +366,7 @@ RTTIResult rtti_releaseinstance(RTTI_Base pInstance)
 	IBase* pIBaseClass = nullptr;
 
 	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance;
+		IBase* pIBaseClassInstance = (IBase *)pInstance.Handle;
 		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
 		if (!pIInstance)
 			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDCAST);
@@ -389,7 +391,7 @@ RTTIResult rtti_acquireinstance(RTTI_Base pInstance)
 	IBase* pIBaseClass = nullptr;
 
 	try {
-		IBase* pIBaseClassInstance = (IBase *)pInstance;
+		IBase* pIBaseClassInstance = (IBase *)pInstance.Handle;
 		IBase* pIInstance = dynamic_cast<IBase*>(pIBaseClassInstance);
 		if (!pIInstance)
 			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDCAST);
@@ -468,7 +470,8 @@ RTTIResult rtti_createzoo(RTTI_Zoo * pInstance)
 		IBase* pBaseInstance(nullptr);
 		pBaseInstance = CWrapper::CreateZoo();
 
-		*pInstance = (IBase*)(pBaseInstance);
+		pInstance->Handle = (IBase*)(pBaseInstance);
+		pInstance->ClassTypeId = pBaseInstance == nullptr ? 0 : pBaseInstance->ClassTypeId();
 		return RTTI_SUCCESS;
 	}
 	catch (ERTTIInterfaceException & Exception) {

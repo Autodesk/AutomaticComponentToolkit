@@ -117,7 +117,7 @@ public:
 	{
 		if (m_ptr != nullptr)
 			return m_ptr->handle();
-		return nullptr;
+		return RTTIHandleNull;
 	}
 };
 
@@ -542,9 +542,7 @@ public:
 template <class T>
 std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 {
-	RTTI_uint64 resultClassTypeId = 0;
-	CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));
-	switch(resultClassTypeId) {
+	switch(pHandle.ClassTypeId) {
 		case 0x1549AD28813DAE05UL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 		case 0x8B40467DA6D327AFUL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
 		case 0xBC9D5FA7750C1020UL: return std::dynamic_pointer_cast<T>(std::make_shared<CMammal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
@@ -642,10 +640,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	inline PZoo CWrapper::CreateZoo()
 	{
-		RTTIHandle hInstance = nullptr;
+		RTTIHandle hInstance = RTTIHandleNull;
 		CheckError(nullptr,m_WrapperTable.m_CreateZoo(&hInstance));
 		
-		if (!hInstance) {
+		if (!hInstance.Handle) {
 			CheckError(nullptr,RTTI_ERROR_INVALIDPARAM);
 		}
 		return this->polymorphicFactory<CZoo>(hInstance);
@@ -983,10 +981,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	PAnimal CAnimalIterator::GetNextAnimal()
 	{
-		RTTIHandle hAnimal = nullptr;
+		RTTIHandle hAnimal = RTTIHandleNull;
 		CheckError(m_pWrapper->m_WrapperTable.m_AnimalIterator_GetNextAnimal(m_pHandle, &hAnimal));
 		
-		if (hAnimal) {
+		if (hAnimal.Handle) {
 			return m_pWrapper->polymorphicFactory<CAnimal>(hAnimal);
 		} else {
 			return nullptr;
@@ -1003,10 +1001,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	PAnimalIterator CZoo::Iterator()
 	{
-		RTTIHandle hIterator = nullptr;
+		RTTIHandle hIterator = RTTIHandleNull;
 		CheckError(m_pWrapper->m_WrapperTable.m_Zoo_Iterator(m_pHandle, &hIterator));
 		
-		if (!hIterator) {
+		if (!hIterator.Handle) {
 			CheckError(RTTI_ERROR_INVALIDPARAM);
 		}
 		return m_pWrapper->polymorphicFactory<CAnimalIterator>(hIterator);
