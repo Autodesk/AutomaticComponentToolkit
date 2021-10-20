@@ -21,6 +21,12 @@ import os
 
 name = "rtti"
 
+class RTTIHandle(ctypes.Structure):
+	''' creates a struct to match RTTIHandle C type '''
+	
+	_fields_ = [('Handle', ctypes.c_void_p),
+		('ClassTypeId', ctypes.c_uint64)]
+
 '''Definition of domain specific exception
 '''
 class ERTTIException(Exception):
@@ -68,6 +74,17 @@ class FunctionTable:
 	rtti_tiger_roar = None
 	rtti_animaliterator_getnextanimal = None
 	rtti_zoo_iterator = None
+
+'''Definition of Structs
+'''
+'''Definition of TestStruct
+'''
+class TestStruct(ctypes.Structure):
+	_pack_ = 1
+	_fields_ = [
+		("X", ctypes.c_int32), 
+		("Y", ctypes.c_int32)
+	]
 
 
 '''Wrapper Class Implementation
@@ -120,19 +137,19 @@ class Wrapper:
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_getlasterror")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool))
 			self.lib.rtti_getlasterror = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_releaseinstance")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p)
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle)
 			self.lib.rtti_releaseinstance = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_acquireinstance")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p)
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle)
 			self.lib.rtti_acquireinstance = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_injectcomponent")), methodAddress)
@@ -150,37 +167,37 @@ class Wrapper:
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_createzoo")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(ctypes.c_void_p))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(RTTIHandle))
 			self.lib.rtti_createzoo = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_base_classtypeid")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle, ctypes.POINTER(ctypes.c_uint64))
 			self.lib.rtti_base_classtypeid = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animal_name")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p)
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p)
 			self.lib.rtti_animal_name = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_tiger_roar")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p)
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle)
 			self.lib.rtti_tiger_roar = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animaliterator_getnextanimal")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle, ctypes.POINTER(RTTIHandle))
 			self.lib.rtti_animaliterator_getnextanimal = methodType(int(methodAddress.value))
 			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_zoo_iterator")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
-			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, RTTIHandle, ctypes.POINTER(RTTIHandle))
 			self.lib.rtti_zoo_iterator = methodType(int(methodAddress.value))
 			
 		except AttributeError as ae:
@@ -192,13 +209,13 @@ class Wrapper:
 			self.lib.rtti_getversion.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32)]
 			
 			self.lib.rtti_getlasterror.restype = ctypes.c_int32
-			self.lib.rtti_getlasterror.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
+			self.lib.rtti_getlasterror.argtypes = [RTTIHandle, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p, ctypes.POINTER(ctypes.c_bool)]
 			
 			self.lib.rtti_releaseinstance.restype = ctypes.c_int32
-			self.lib.rtti_releaseinstance.argtypes = [ctypes.c_void_p]
+			self.lib.rtti_releaseinstance.argtypes = [RTTIHandle]
 			
 			self.lib.rtti_acquireinstance.restype = ctypes.c_int32
-			self.lib.rtti_acquireinstance.argtypes = [ctypes.c_void_p]
+			self.lib.rtti_acquireinstance.argtypes = [RTTIHandle]
 			
 			self.lib.rtti_injectcomponent.restype = ctypes.c_int32
 			self.lib.rtti_injectcomponent.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
@@ -207,22 +224,22 @@ class Wrapper:
 			self.lib.rtti_getsymbollookupmethod.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
 			
 			self.lib.rtti_createzoo.restype = ctypes.c_int32
-			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+			self.lib.rtti_createzoo.argtypes = [ctypes.POINTER(RTTIHandle)]
 			
 			self.lib.rtti_base_classtypeid.restype = ctypes.c_int32
-			self.lib.rtti_base_classtypeid.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64)]
+			self.lib.rtti_base_classtypeid.argtypes = [RTTIHandle, ctypes.POINTER(ctypes.c_uint64)]
 			
 			self.lib.rtti_animal_name.restype = ctypes.c_int32
-			self.lib.rtti_animal_name.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p]
+			self.lib.rtti_animal_name.argtypes = [RTTIHandle, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_char_p]
 			
 			self.lib.rtti_tiger_roar.restype = ctypes.c_int32
-			self.lib.rtti_tiger_roar.argtypes = [ctypes.c_void_p]
+			self.lib.rtti_tiger_roar.argtypes = [RTTIHandle]
 			
 			self.lib.rtti_animaliterator_getnextanimal.restype = ctypes.c_int32
-			self.lib.rtti_animaliterator_getnextanimal.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+			self.lib.rtti_animaliterator_getnextanimal.argtypes = [RTTIHandle, ctypes.POINTER(RTTIHandle)]
 			
 			self.lib.rtti_zoo_iterator.restype = ctypes.c_int32
-			self.lib.rtti_zoo_iterator.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+			self.lib.rtti_zoo_iterator.argtypes = [RTTIHandle, ctypes.POINTER(RTTIHandle)]
 			
 		except AttributeError as ae:
 			raise ERTTIException(ErrorCodes.COULDNOTFINDLIBRARYEXPORT, ae.args[0])
@@ -300,9 +317,9 @@ class Wrapper:
 		return pSymbolLookupMethod.value
 	
 	def CreateZoo(self):
-		InstanceHandle = ctypes.c_void_p()
+		InstanceHandle = RTTIHandle()
 		self.checkError(None, self.lib.rtti_createzoo(InstanceHandle))
-		if InstanceHandle:
+		if InstanceHandle.Handle:
 			InstanceObject = self._polymorphicFactory(InstanceHandle)
 		else:
 			raise ERTTIException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')
@@ -311,8 +328,8 @@ class Wrapper:
 	
 	def _polymorphicFactory(self, handle):
 		class PolymorphicFactory():
-			def getObjectById(self, classtypeid, handle, wrapper):
-				methodName = 'getObjectById_' + format(classtypeid.value, '016X')
+			def getObjectById(self, handle, wrapper):
+				methodName = 'getObjectById_' + format(handle.ClassTypeId, '016X')
 				method = getattr(self, methodName, lambda: 'Invalid class type id')
 				return method(handle, wrapper)
 			def getObjectById_1549AD28813DAE05(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Base"
@@ -336,10 +353,8 @@ class Wrapper:
 			def getObjectById_2262ABE80A5E7878(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Zoo"
 				return Zoo(handle, wrapper)
 		
-		pClassTypeId = ctypes.c_uint64()
-		self.checkError(None, self.lib.rtti_base_classtypeid(handle, pClassTypeId))
 		factory = PolymorphicFactory()
-		return factory.getObjectById(pClassTypeId, handle, self)
+		return factory.getObjectById(handle, self)
 	
 
 
@@ -432,9 +447,9 @@ class AnimalIterator(Base):
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def GetNextAnimal(self):
-		AnimalHandle = ctypes.c_void_p()
+		AnimalHandle = RTTIHandle()
 		self._wrapper.checkError(self, self._wrapper.lib.rtti_animaliterator_getnextanimal(self._handle, AnimalHandle))
-		if AnimalHandle:
+		if AnimalHandle.Handle:
 			AnimalObject = self._wrapper._polymorphicFactory(AnimalHandle)
 		else:
 			AnimalObject = None
@@ -449,9 +464,9 @@ class Zoo(Base):
 	def __init__(self, handle, wrapper):
 		Base.__init__(self, handle, wrapper)
 	def Iterator(self):
-		IteratorHandle = ctypes.c_void_p()
+		IteratorHandle = RTTIHandle()
 		self._wrapper.checkError(self, self._wrapper.lib.rtti_zoo_iterator(self._handle, IteratorHandle))
-		if IteratorHandle:
+		if IteratorHandle.Handle:
 			IteratorObject = self._wrapper._polymorphicFactory(IteratorHandle)
 		else:
 			raise ERTTIException(ErrorCodes.INVALIDCAST, 'Invalid return/output value')
