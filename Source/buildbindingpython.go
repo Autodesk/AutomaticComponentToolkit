@@ -113,6 +113,13 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("name = \"%s\"", BaseName)
 	w.Writeln("")
 
+	w.Writeln("class %sHandle(ctypes.Structure):", NameSpace)
+    w.Writeln("  ''' creates a struct to match %sHandle C type '''", NameSpace)
+    w.Writeln("  ")
+    w.Writeln("  _fields_ = [('Handle', ctypes.c_void_p),")
+    w.Writeln("    ('ClassTypeId', ctypes.c_uint64)]")
+	w.Writeln("")
+
 	w.Writeln("'''Definition of domain specific exception")
 	w.Writeln("'''")
 	w.Writeln("class E%sException(Exception):", NameSpace)
@@ -367,8 +374,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 	w.Writeln("  def _polymorphicFactory(self, handle):")
 	w.Writeln("    class PolymorphicFactory():")
-	w.Writeln("      def getObjectById(self, classtypeid, handle, wrapper):")
-	w.Writeln("        methodName = 'getObjectById_' + format(classtypeid.value, '016X')")
+	w.Writeln("      def getObjectById(self, handle, wrapper):")
+	w.Writeln("        methodName = 'getObjectById_' + format(handle.ClassTypeId, '016X')")
 	w.Writeln("        method = getattr(self, methodName, lambda: 'Invalid class type id')")
 	w.Writeln("        return method(handle, wrapper)")
 	for i:=0; i<len(componentdefinition.Classes); i++ {
@@ -377,10 +384,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("        return %s(handle, wrapper)", componentdefinition.Classes[i].ClassName)
 	}
 	w.Writeln("    ")
-	w.Writeln("    pClassTypeId = ctypes.c_uint64()")
-	w.Writeln("    self.checkError(None, self.lib.%s_%s_%s(handle, pClassTypeId))", strings.ToLower(NameSpace), strings.ToLower(componentdefinition.Global.BaseClassName), strings.ToLower(componentdefinition.Global.ClassTypeIdMethod))
 	w.Writeln("    factory = PolymorphicFactory()")
-	w.Writeln("    return factory.getObjectById(pClassTypeId, handle, self)")
+	w.Writeln("    return factory.getObjectById(handle, self)")
 	w.Writeln("  ")
 
 	for i:=0; i<len(componentdefinition.Classes); i++ {
@@ -454,7 +459,7 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 func getMethodCParams(method ComponentDefinitionMethod, NameSpace string, ClassName string, isGlobal bool) (string, error) {
 	parameters := ""
 	if (!isGlobal) {
-		parameters = "ctypes.c_void_p"
+		parameters = fmt.Sprintf("%sHandle", NameSpace)
 	}
 	for k:=0; k<len(method.Params); k++ {
 		param := method.Params[k]
@@ -565,7 +570,7 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 		case "functiontype":
 			return fmt.Sprintf("%s", ParamClass), nil
 		case "class", "optionalclass":
-			CTypesParamTypeName = "ctypes.c_void_p";
+			CTypesParamTypeName = fmt.Sprintf("%sHandle", NameSpace);
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for Python parameter", ParamTypeName);
 	}
@@ -835,7 +840,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
 					subNameSpace = subNameSpace + "."
 				}
-				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
+				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle.Handle:", param.ParamName))
 				postCallLines = append(postCallLines,
 					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle)",
 					param.ParamName, wrapperReference, param.ParamName))
@@ -979,7 +984,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					preCallLines = append(preCallLines, fmt.Sprintf("else:"))
 					preCallLines = append(preCallLines, fmt.Sprintf("  raise E%sException(ErrorCodes.INVALIDPARAM, 'Invalid return/output value')", NameSpace))
 				}
-				cArguments = cArguments + param.ParamName + "Handle"
+				cArguments = cArguments + fmt.Sprintf("%sHandle", param.ParamName)
 				cCheckArguments = cCheckArguments  + param.ParamName + "Handle"
 			}
 			case "functiontype": {
