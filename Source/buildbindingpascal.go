@@ -489,7 +489,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("  begin")
 			w.Writeln("    if not Assigned(AWrapper) then")
 			w.Writeln("      raise E%sException.Create(%s_ERROR_INVALIDPARAM, '');", NameSpace, strings.ToUpper(NameSpace))
-			w.Writeln("    if not Assigned(AHandle) then")
+			w.Writeln("    if not Assigned(AHandle.Handle) then")
 			w.Writeln("      raise E%sException.Create(%s_ERROR_INVALIDPARAM, '');", NameSpace, strings.ToUpper(NameSpace))
 			w.Writeln("")
 			w.Writeln("    inherited Create();")
@@ -981,7 +981,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				initCallParameters = initCallParameters + "nil"
 
-				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s) then", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s.Handle) then", param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("    A%s := T%s%s.Create(%s, H%s);", param.ParamName, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
 
 			default:
@@ -1054,9 +1054,10 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				}
 				defineCommands = append(defineCommands, "H"+param.ParamName+": "+PlainParamTypeName+";")
 				initCommands = append(initCommands, "Result := nil;")
-				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
+				initCommands = append(initCommands, "H"+param.ParamName+".Handle := nil;")
+				initCommands = append(initCommands, "H"+param.ParamName+".ClassTypeId := 0;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
-				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s) then", param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s.Handle) then", param.ParamName))
 				resultCommands = append(resultCommands, fmt.Sprintf("    Result := TPolymorphicFactory<T%s%s, T%s%s>.Make(%s, H%s);", theNameSpace, theParamClass, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
 
 			default:

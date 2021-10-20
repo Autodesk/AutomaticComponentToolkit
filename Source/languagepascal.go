@@ -61,7 +61,10 @@ func writePascalBaseTypeDefinitions(componentdefinition ComponentDefinition, w L
 
 	w.Writeln("type")
 	w.Writeln("  T%sResult = Cardinal;", NameSpace)
-	w.Writeln("  T%sHandle = Pointer;", NameSpace)
+	w.Writeln("  T%sHandle = packed record", NameSpace)
+	w.Writeln("  	Handle: Pointer;")
+	w.Writeln("  	ClassTypeId: QWord;")
+	w.Writeln("  end;")
 	w.Writeln("")
 
 	w.Writeln("  P%sResult = ^T%sResult;", NameSpace, NameSpace)
