@@ -30,6 +30,10 @@
 			   description="the version of the binary interface does not match the bindings interface"/>
 	</errors>
 
+	<struct name="TestStruct">
+		<member name="X" type="int32"/>
+		<member name="Y" type="int32"/>
+	</struct>
 
 	<class name="Base">
 		<method name="ClassTypeId" description="Get Class Type Id">
