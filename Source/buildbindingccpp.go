@@ -702,7 +702,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				} else {
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s.Handle) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = %s->polymorphicFactory<%s%s%s>(h%s);", param.ParamName, makeSharedParameter, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
@@ -769,18 +769,18 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					makeSharedParameter = makeSharedParameter + "->m_p" + paramNameSpace + "Wrapper.get()"
 				}
 				
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = %sHandleNull;", NameSpace, param.ParamName, NameSpace))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				
 				if (param.ParamType == "optionalclass") {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s.Handle) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 				} else {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s.Handle) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
@@ -1166,7 +1166,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    if (m_ptr != nullptr)")
 	w.Writeln("      return m_ptr->handle();")
-	w.Writeln("    return nullptr;")
+	w.Writeln("    return %sHandleNull;", NameSpace)
 	w.Writeln("  }")
 	w.Writeln("};")
 
@@ -1446,9 +1446,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("template <class T>")
 	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, strings.ToUpper(NameSpace))
 	w.Writeln("{")
-	w.Writeln("  %s_uint64 resultClassTypeId = 0;", strings.ToUpper(NameSpace))
-	w.Writeln("  CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));")
-	w.Writeln("  switch(resultClassTypeId) {")
+	w.Writeln("  switch(pHandle.ClassTypeId) {")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		classTypeId, chashHashString := class.classTypeId(NameSpace)

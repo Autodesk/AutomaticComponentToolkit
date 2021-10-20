@@ -117,7 +117,14 @@ func buildSharedCCPPTypesHeader(component ComponentDefinition, w LanguageWriter,
 
 	w.Writeln("");
 	w.Writeln("typedef %s_int32 %sResult;", NameSpace, NameSpace);
-	w.Writeln("typedef void * %sHandle;", NameSpace);
+	w.Writeln("#pragma pack (1)")
+	w.Writeln("typedef struct {")
+	w.Writeln("  void * Handle;")
+	w.Writeln("  %s_uint64 ClassTypeId;", NameSpace)
+	w.Writeln("} %sHandle;", NameSpace);
+	w.Writeln("#pragma pack ()")
+	w.Writeln("#define %sHandleNull { nullptr, 0 }", NameSpace);
+
 	w.Writeln("typedef void * %s_pvoid;", NameSpace);
 	
 	w.Writeln("");

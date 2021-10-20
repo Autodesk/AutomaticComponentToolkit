@@ -1066,7 +1066,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 
 	IBaseClassName := fmt.Sprintf("I%s%s", ClassIdentifier, BaseClassName)
 	if !isGlobal {
-		w.Writeln ("  %s* pIBaseClass = (%s *)p%s;\n", IBaseClassName, IBaseClassName, ClassName);
+		w.Writeln ("  %s* pIBaseClass = (%s *)p%s.Handle;\n", IBaseClassName, IBaseClassName, ClassName);
 	} else {
 		w.Writeln ("  %s* pIBaseClass = nullptr;\n", IBaseClassName);
 	}
@@ -1648,7 +1648,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					preCallCode = append(preCallCode, fmt.Sprintf("%s->%s(pI%s.get());", theWrapper, acqurireMethod, param.ParamName))
 				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
+					preCallCode = append(preCallCode, fmt.Sprintf("%s* pIBaseClass%s = (%s *)p%s.Handle;", IBaseClassName, param.ParamName, IBaseClassName, param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
 				}
 				
@@ -1728,7 +1728,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					outCallParameters = outCallParameters + outVarName
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s* pBase%s(nullptr);", paramClassName, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s->Handle = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->ClassTypeId = pBase%s == nullptr ? 0 : pBase%s->%s();", variableName, param.ParamName, param.ParamName, component.Global.ClassTypeIdMethod));
 					callParameters = callParameters + "pBase" + param.ParamName
 					outCallParameters = outCallParameters + "pBase" + param.ParamName
 				}
@@ -1793,7 +1794,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->Handle = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("%s->ClassTypeId = pBase%s == nullptr ? 0 : pBase%s->%s();", variableName, param.ParamName, param.ParamName, component.Global.ClassTypeIdMethod));
 				}
 				outCallParameters = outCallParameters + returnVariable;
 				
