@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" libraryname="RTTI" namespace="RTTI" copyright="ADSK" year="2020" basename="rtti" version="1.0.0">
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" libraryname="RTTI" namespace="RTTI" copyright="ADSK" year="2021" basename="rtti" version="1.0.0">
 
 	<!-- class="Namespace:*" becomes aware of this.-->
 
