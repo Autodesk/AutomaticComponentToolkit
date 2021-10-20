@@ -438,7 +438,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("    case (ClassTypeId) of")
 	for i := 0; i < len(component.Classes); i++ {
 		classTypeId, chashHashString := component.Classes[i].classTypeId(NameSpace)
-		w.Writeln("      $%016X: begin Obj := T%s%s.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, strings.ToUpper(NameSpace), component.Classes[i].ClassName, chashHashString)
+		w.Writeln("      QWord($%016X): begin Obj := T%s%s.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, strings.ToUpper(NameSpace), component.Classes[i].ClassName, chashHashString)
 	}
 	w.Writeln("    end;")
 	w.Writeln("    if Result = nil then Result := _B.Create(Wrapper, Handle);")
