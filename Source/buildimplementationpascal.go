@@ -1466,7 +1466,7 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 			classTypeId, chashHashString := class.classTypeId(NameSpace)
 
 			var methodImplementation []string
-			methodImplementation = append(methodImplementation, fmt.Sprintf("Result := $%016X; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString))
+			methodImplementation = append(methodImplementation, fmt.Sprintf("Result := QWord($%016X); // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString))
 		
 			err := writePascalClassMethodDummyStub(component.classTypeIdMethod(), w, NameSpace, class.ClassName, outClassName, false, methodImplementation)
 			if err != nil {
