@@ -46,7 +46,10 @@ const
 
 type
 	TRTTIResult = Cardinal;
-	TRTTIHandle = Pointer;
+	TRTTIHandle = packed record
+		Handle: Pointer;
+		ClassTypeId: QWord;
+	end;
 
 	PRTTIResult = ^TRTTIResult;
 	PRTTIHandle = ^TRTTIHandle;
@@ -65,6 +68,25 @@ const
 	RTTI_ERROR_COULDNOTLOADLIBRARY = 6;
 	RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
 	RTTI_ERROR_INCOMPATIBLEBINARYVERSION = 8;
+
+(*************************************************************************************************************************
+ Declaration of structs
+**************************************************************************************************************************)
+
+type
+
+	PRTTITestStruct = ^TRTTITestStruct;
+	TRTTITestStruct = packed record
+		FX: Integer;
+		FY: Integer;
+	end;
+
+
+(*************************************************************************************************************************
+ Declaration of struct arrays
+**************************************************************************************************************************)
+
+	ArrayOfRTTITestStruct = array of TRTTITestStruct;
 
 
 (*************************************************************************************************************************
@@ -461,16 +483,16 @@ implementation
 		Result := nil;
 		Wrapper.CheckError(nil, Wrapper.RTTIBase_ClassTypeIdFunc(handle, ClassTypeId));
 		case (ClassTypeId) of
-			$1549AD28813DAE05: begin Obj := TRTTIBase.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Base"
-			$8B40467DA6D327AF: begin Obj := TRTTIAnimal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Animal"
-			$BC9D5FA7750C1020: begin Obj := TRTTIMammal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
-			$6756AA8EA5802EC3: begin Obj := TRTTIReptile.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
-			$9751971BD2C2D958: begin Obj := TRTTIGiraffe.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
-			$08D007E7B5F7BAF4: begin Obj := TRTTITiger.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
-			$5F6826EF909803B2: begin Obj := TRTTISnake.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Snake"
-			$8E551B208A2E8321: begin Obj := TRTTITurtle.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
-			$F1917FE6BBE77831: begin Obj := TRTTIAnimalIterator.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
-			$2262ABE80A5E7878: begin Obj := TRTTIZoo.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
+			QWord($1549AD28813DAE05): begin Obj := TRTTIBase.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Base"
+			QWord($8B40467DA6D327AF): begin Obj := TRTTIAnimal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+			QWord($BC9D5FA7750C1020): begin Obj := TRTTIMammal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+			QWord($6756AA8EA5802EC3): begin Obj := TRTTIReptile.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
+			QWord($9751971BD2C2D958): begin Obj := TRTTIGiraffe.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+			QWord($08D007E7B5F7BAF4): begin Obj := TRTTITiger.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+			QWord($5F6826EF909803B2): begin Obj := TRTTISnake.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+			QWord($8E551B208A2E8321): begin Obj := TRTTITurtle.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+			QWord($F1917FE6BBE77831): begin Obj := TRTTIAnimalIterator.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+			QWord($2262ABE80A5E7878): begin Obj := TRTTIZoo.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
 		end;
 		if Result = nil then Result := _B.Create(Wrapper, Handle);
 	end;
@@ -515,7 +537,7 @@ implementation
 	begin
 		if not Assigned(AWrapper) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
-		if not Assigned(AHandle) then
+		if not Assigned(AHandle.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
 
 		inherited Create();
@@ -670,9 +692,10 @@ implementation
 		HAnimal: TRTTIHandle;
 	begin
 		Result := nil;
-		HAnimal := nil;
+		HAnimal.Handle := nil;
+		HAnimal.ClassTypeId := 0;
 		FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextAnimalFunc(FHandle, HAnimal));
-		if Assigned(HAnimal) then
+		if Assigned(HAnimal.Handle) then
 			Result := TPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
 	end;
 
@@ -695,9 +718,10 @@ implementation
 		HIterator: TRTTIHandle;
 	begin
 		Result := nil;
-		HIterator := nil;
+		HIterator.Handle := nil;
+		HIterator.ClassTypeId := 0;
 		FWrapper.CheckError(Self, FWrapper.RTTIZoo_IteratorFunc(FHandle, HIterator));
-		if Assigned(HIterator) then
+		if Assigned(HIterator.Handle) then
 			Result := TPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(FWrapper, HIterator);
 	end;
 
@@ -903,9 +927,10 @@ implementation
 		HInstance: TRTTIHandle;
 	begin
 		Result := nil;
-		HInstance := nil;
+		HInstance.Handle := nil;
+		HInstance.ClassTypeId := 0;
 		CheckError(nil, RTTICreateZooFunc(HInstance));
-		if Assigned(HInstance) then
+		if Assigned(HInstance.Handle) then
 			Result := TPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Self, HInstance);
 	end;
 

@@ -40,7 +40,10 @@ const
 
 type
 	TRTTIResult = Cardinal;
-	TRTTIHandle = Pointer;
+	TRTTIHandle = packed record
+		Handle: Pointer;
+		ClassTypeId: QWord;
+	end;
 
 	PRTTIResult = ^TRTTIResult;
 	PRTTIHandle = ^TRTTIHandle;
@@ -59,6 +62,25 @@ const
 	RTTI_ERROR_COULDNOTLOADLIBRARY = 6;
 	RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
 	RTTI_ERROR_INCOMPATIBLEBINARYVERSION = 8;
+
+(*************************************************************************************************************************
+ Declaration of structs
+**************************************************************************************************************************)
+
+type
+
+	PRTTITestStruct = ^TRTTITestStruct;
+	TRTTITestStruct = packed record
+		FX: Integer;
+		FY: Integer;
+	end;
+
+
+(*************************************************************************************************************************
+ Declaration of struct arrays
+**************************************************************************************************************************)
+
+	ArrayOfRTTITestStruct = array of TRTTITestStruct;
 
 
 implementation
