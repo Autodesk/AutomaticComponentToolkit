@@ -200,11 +200,11 @@ func getCSharpParameterType(ParamTypeName string, NameSpace string, ParamClass s
 
 	case "class", "optionalclass":
 		if isPlain {
-			CSharpParamTypeName = "IntPtr"
+			CSharpParamTypeName = fmt.Sprintf("%sHandle", NameSpace)
 		} else {
 			paramNameSpace, _, _ := decomposeParamClassName(ParamClass)
 			if len(paramNameSpace) > 0 {
-				CSharpParamTypeName = "IntPtr"
+				CSharpParamTypeName = fmt.Sprintf("%sHandle", NameSpace)
 			} else {
 				CSharpParamTypeName = "C" + ParamClass
 			}
@@ -518,10 +518,10 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				doInitCall = true
 
 			case "class", "optionalclass":
-				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.%sHandle new%s = Internal.%sHandle{ Handle = 0, ClassTypeId = 0};", NameSpace, NameSpace, param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = new C%s (new%s );", param.ParamName, param.ParamClass, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = Internal.RTTIWrapper.PolymorphicFactory<C%s>(new%s);", param.ParamName, param.ParamClass, param.ParamName))
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -574,13 +574,13 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.convertInternalToStruct_%s (intresult%s);", NameSpace, param.ParamClass, param.ParamName))
 
 			case "class", "optionalclass":
-				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
+				defineCommands = append(defineCommands, fmt.Sprintf("  Internal.%sHandle new%s = new Internal.%sHandle{ Handle = 0, ClassTypeId = 0};", NameSpace, param.ParamName, NameSpace))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
 				if (ParamTypeName == "IntPtr") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
 				} else {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new %s (new%s );", ParamTypeName, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.RTTIWrapper.PolymorphicFactory<%s>(new%s);", ParamTypeName, param.ParamName))
 				}
 
 			default:
@@ -719,6 +719,14 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 
 	w.Writeln("  namespace Internal {")
 	w.Writeln("")
+	
+	w.Writeln("    [StructLayout(LayoutKind.Explicit, Size=16)]")
+	w.Writeln("    public unsafe struct %sHandle", NameSpace)
+	w.Writeln("    {")
+	w.Writeln("      [FieldOffset(0)] public UInt64 Handle;")
+	w.Writeln("      [FieldOffset(8)] public UInt64 ClassTypeId;")
+	w.Writeln("    }")
+	w.Writeln("")
 
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i]
@@ -816,9 +824,9 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("      [DllImport(\"%s.dll\", EntryPoint = \"%s_%s_%s\", CallingConvention=CallingConvention.Cdecl)]", baseName, strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 
 			if parameters == "" {
-				parameters = "IntPtr Handle"
+				parameters = "RTTIHandle Handle"
 			} else {
-				parameters = "IntPtr Handle, " + parameters
+				parameters = "RTTIHandle Handle, " + parameters
 			}
 
 			w.Writeln("      public unsafe extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters)
@@ -932,12 +940,12 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("")
 	}
 
-	w.Writeln("      public static void ThrowError(IntPtr Handle, Int32 errorCode)")
+	w.Writeln("      public static void ThrowError(%sHandle Handle, Int32 errorCode)", NameSpace)
 	w.Writeln("      {")
 	w.Writeln("        String sMessage = \"%s Error\";", NameSpace)
 
 	if len(component.Global.ErrorMethod) > 0 {
-		w.Writeln("        if (Handle != IntPtr.Zero) {")
+		w.Writeln("        if (Handle.Handle != 0) {")
 		w.Writeln("          UInt32 sizeMessage = 0;")
 		w.Writeln("          UInt32 neededMessage = 0;")
 		w.Writeln("          Byte hasLastError = 0;")
@@ -959,6 +967,22 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	}
 	w.Writeln("        throw new Exception(sMessage + \"(# \" + errorCode + \")\");")
 	w.Writeln("      }")
+
+	w.Writeln("")
+	w.Writeln("      public static T PolymorphicFactory<T>(%sHandle Handle) where T : class", NameSpace)
+	w.Writeln("      {")
+	w.Writeln("        T Object;")
+	w.Writeln("        switch (Handle.ClassTypeId) {")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classTypeId, chashHashString := class.classTypeId(NameSpace)
+		w.Writeln("          case 0x%016X: Object = new C%s(Handle) as T; break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, class.ClassName, chashHashString)
+	}
+	w.Writeln("          default: Object = System.Activator.CreateInstance(typeof(T), Handle) as T; break;")
+	w.Writeln("        }")
+	w.Writeln("        return Object;")
+	w.Writeln("      }")
+
 	w.Writeln("")
 
 	w.Writeln("    }")
@@ -983,18 +1007,18 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("  {")
 
 		if component.isBaseClass(class) {
-			w.Writeln("    protected IntPtr Handle;")
+			w.Writeln("    protected Internal.%sHandle Handle;", NameSpace)
 			w.Writeln("")
-			w.Writeln("    public C%s (IntPtr NewHandle)", class.ClassName)
+			w.Writeln("    public C%s (Internal.%sHandle NewHandle)", class.ClassName, NameSpace)
 			w.Writeln("    {")
 			w.Writeln("      Handle = NewHandle;")
 			w.Writeln("    }")
 			w.Writeln("")
 			w.Writeln("    ~C%s ()", class.ClassName)
 			w.Writeln("    {")
-			w.Writeln("      if (Handle != IntPtr.Zero) {")
+			w.Writeln("      if (Handle.Handle != 0) {")
 			w.Writeln("        Internal.%sWrapper.%s (Handle);", NameSpace, component.Global.ReleaseMethod)
-			w.Writeln("        Handle = IntPtr.Zero;")
+			w.Writeln("        Handle.Handle = 0;")
 			w.Writeln("      }")
 			w.Writeln("    }")
 			w.Writeln("")
@@ -1007,14 +1031,14 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("    }")
 			w.Writeln("")
 
-			w.Writeln("    public IntPtr GetHandle ()")
+			w.Writeln("    public Internal.%sHandle GetHandle ()", NameSpace)
 			w.Writeln("    {")
 			w.Writeln("      return Handle;")
 			w.Writeln("    }")
 			w.Writeln("")
 
 		} else {
-			w.Writeln("    public C%s (IntPtr NewHandle) : base (NewHandle)", class.ClassName)
+			w.Writeln("    public C%s (Internal.%sHandle NewHandle) : base (NewHandle)", class.ClassName, NameSpace)
 			w.Writeln("    {")
 			w.Writeln("    }")
 			w.Writeln("")
@@ -1047,7 +1071,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("    private static void CheckError (Int32 errorCode)")
 	w.Writeln("    {")
 	w.Writeln("      if (errorCode != 0) {")
-	w.Writeln("        Internal.%sWrapper.ThrowError (IntPtr.Zero, errorCode);", NameSpace)
+	w.Writeln("        Internal.%sWrapper.ThrowError (new Internal.%sHandle{ Handle = 0, ClassTypeId = 0 }, errorCode);", NameSpace, NameSpace)
 	w.Writeln("      }")
 	w.Writeln("    }")
 	w.Writeln("")

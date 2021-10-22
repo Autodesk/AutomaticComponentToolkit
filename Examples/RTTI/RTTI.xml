@@ -10,6 +10,7 @@
 	<bindings>
 		<binding language="CDynamic" indentation="tabs" />
 		<binding language="Go" indentation="tabs" />
+		<binding language="CSharp" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
