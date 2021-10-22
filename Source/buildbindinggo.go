@@ -423,7 +423,7 @@ func buildGoClass(component ComponentDefinition, class ComponentDefinitionClass,
 		w.Writeln("// Release releases the C pointer.")
 		w.Writeln("func (inst %s) Release() error {", class.ClassName)
 		w.Writeln("  err := inst.wrapperRef.%s(inst)", component.Global.ReleaseMethod)
-		w.Writeln("  *inst.gcPtr = nil")
+		w.Writeln("  (*inst.gcPtr).Handle = nil")
 		w.Writeln("  return err")
 		w.Writeln("}")
 		w.Writeln("")
@@ -478,7 +478,7 @@ func WriteCGoAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameS
 	}
 
 	w.Writeln("")
-	w.Writeln("%sResult CCall_%s(%sHandle libraryHandle, %s)", NameSpace, CMethodName, NameSpace, strings.Join(parameters, ", "))
+	w.Writeln("%sResult CCall_%s(%s_pvoid libraryHandle, %s)", NameSpace, CMethodName, NameSpace, strings.Join(parameters, ", "))
 	w.Writeln("{")
 	w.Writeln("  if (libraryHandle == 0) ")
 	w.Writeln("    return %s_ERROR_INVALIDCAST;", strings.ToUpper(NameSpace))
@@ -535,7 +535,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("/*")
 	w.Writeln("#include \"%s_dynamic.cc\"", packageName)
 	w.Writeln("")
-	w.Writeln("%sHandle load%sLibrary (const char * pFileName)", component.NameSpace, component.NameSpace)
+	w.Writeln("%s_pvoid load%sLibrary (const char * pFileName)", component.NameSpace, component.NameSpace)
 	w.Writeln("{")
 	w.Writeln("  %sResult nResult;", component.NameSpace)
 	w.Writeln("  s%sDynamicWrapperTable * pWrapperTable = (s%sDynamicWrapperTable *) malloc (sizeof (s%sDynamicWrapperTable));", component.NameSpace, component.NameSpace, component.NameSpace)
@@ -552,11 +552,12 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("      return 0;")
 	w.Writeln("    }")
 	w.Writeln("")
-	w.Writeln("    return (%sHandle) pWrapperTable;", component.NameSpace)
+	w.Writeln("    return (%s_pvoid) pWrapperTable;", component.NameSpace)
 	w.Writeln("  }")
+	w.Writeln("  return 0;")
 	w.Writeln("}")
 	w.Writeln("")
-	w.Writeln("void unload%sLibrary (%sHandle nLibraryHandle)", component.NameSpace, component.NameSpace)
+	w.Writeln("void unload%sLibrary (%s_pvoid nLibraryHandle)", component.NameSpace, component.NameSpace)
 	w.Writeln("{")
 	w.Writeln("  s%sDynamicWrapperTable * pWrapperTable = (s%sDynamicWrapperTable *) malloc (sizeof (s%sDynamicWrapperTable));", component.NameSpace, component.NameSpace, component.NameSpace)
 	w.Writeln("  if (pWrapperTable != NULL) {")
@@ -589,6 +590,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln(")")
 	w.Writeln("")
 	w.Writeln("type ref = C.%sHandle", component.NameSpace)
+	w.Writeln("type refVoid = C.%s_pvoid", component.NameSpace)
 	w.Writeln("")
 
 	buildGoEnums(component, w)
@@ -608,7 +610,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("// Wrapper represents the number wrapper")
 	w.Writeln("type Wrapper struct {")
 	w.Writeln("  _ [0]func() // uncomparable; to make == not compile")
-	w.Writeln("  LibraryHandle ref")
+	w.Writeln("  LibraryHandle refVoid")
 	w.Writeln("}")
 
 	for _, class := range component.Classes {
@@ -628,7 +630,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	}
 
 	w.Writeln("func (wrapper Wrapper) releaseC(r *ref) error {")
-	w.Writeln("  if r == nil || *r == nil {")
+	w.Writeln("  if r == nil || (*r).Handle == nil {")
 	w.Writeln("    return nil")
 	w.Writeln("  }")
 	w.Writeln("  return wrapper.%s(%s{Ref: *r})", component.Global.ReleaseMethod, component.Global.BaseClassName)
@@ -903,7 +905,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 				initCallParameters = append(initCallParameters, callParam)
 				if param.ParamType == "optionalclass" {
 					preOKReturn = append(preOKReturn, fmt.Sprintf("var _%sPtr %s", param.ParamName, tp.Type))
-					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s == nil {", param.ParamName))
+					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s.Handle != nil {", param.ParamName))
 
 					if isGlobal {
 						preOKReturn = append(preOKReturn, fmt.Sprintf("  _%sPtrVal := wrapper.New%s(%s)", param.ParamName, param.ParamClass, param.ParamName))
