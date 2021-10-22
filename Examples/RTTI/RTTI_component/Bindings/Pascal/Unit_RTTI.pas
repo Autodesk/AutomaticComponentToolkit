@@ -19,25 +19,25 @@ unit Unit_RTTI;
 interface
 
 uses
-	{$IFDEF WINDOWS}
-		Windows,
-	{$ELSE}
-		dynlibs,
-	{$ENDIF}
-	Types,
-	Classes,
-	SysUtils;
+  {$IFDEF WINDOWS}
+    Windows,
+  {$ELSE}
+    dynlibs,
+  {$ENDIF}
+  Types,
+  Classes,
+  SysUtils;
 
 (*************************************************************************************************************************
  Version definition for RTTI
 **************************************************************************************************************************)
 
 const
-	RTTI_VERSION_MAJOR = 1;
-	RTTI_VERSION_MINOR = 0;
-	RTTI_VERSION_MICRO = 0;
-	RTTI_VERSION_PRERELEASEINFO = '';
-	RTTI_VERSION_BUILDINFO = '';
+  RTTI_VERSION_MAJOR = 1;
+  RTTI_VERSION_MINOR = 0;
+  RTTI_VERSION_MICRO = 0;
+  RTTI_VERSION_PRERELEASEINFO = '';
+  RTTI_VERSION_BUILDINFO = '';
 
 
 (*************************************************************************************************************************
@@ -45,29 +45,29 @@ const
 **************************************************************************************************************************)
 
 type
-	TRTTIResult = Cardinal;
-	TRTTIHandle = packed record
-		Handle: Pointer;
-		ClassTypeId: QWord;
-	end;
+  TRTTIResult = Cardinal;
+  TRTTIHandle = packed record
+  	Handle: Pointer;
+  	ClassTypeId: QWord;
+  end;
 
-	PRTTIResult = ^TRTTIResult;
-	PRTTIHandle = ^TRTTIHandle;
+  PRTTIResult = ^TRTTIResult;
+  PRTTIHandle = ^TRTTIHandle;
 
 (*************************************************************************************************************************
  Error Constants for RTTI
 **************************************************************************************************************************)
 
 const
-	RTTI_SUCCESS = 0;
-	RTTI_ERROR_NOTIMPLEMENTED = 1;
-	RTTI_ERROR_INVALIDPARAM = 2;
-	RTTI_ERROR_INVALIDCAST = 3;
-	RTTI_ERROR_BUFFERTOOSMALL = 4;
-	RTTI_ERROR_GENERICEXCEPTION = 5;
-	RTTI_ERROR_COULDNOTLOADLIBRARY = 6;
-	RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
-	RTTI_ERROR_INCOMPATIBLEBINARYVERSION = 8;
+  RTTI_SUCCESS = 0;
+  RTTI_ERROR_NOTIMPLEMENTED = 1;
+  RTTI_ERROR_INVALIDPARAM = 2;
+  RTTI_ERROR_INVALIDCAST = 3;
+  RTTI_ERROR_BUFFERTOOSMALL = 4;
+  RTTI_ERROR_GENERICEXCEPTION = 5;
+  RTTI_ERROR_COULDNOTLOADLIBRARY = 6;
+  RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT = 7;
+  RTTI_ERROR_INCOMPATIBLEBINARYVERSION = 8;
 
 (*************************************************************************************************************************
  Declaration of structs
@@ -75,18 +75,18 @@ const
 
 type
 
-	PRTTITestStruct = ^TRTTITestStruct;
-	TRTTITestStruct = packed record
-		FX: Integer;
-		FY: Integer;
-	end;
+  PRTTITestStruct = ^TRTTITestStruct;
+  TRTTITestStruct = packed record
+    FX: Integer;
+    FY: Integer;
+  end;
 
 
 (*************************************************************************************************************************
  Declaration of struct arrays
 **************************************************************************************************************************)
 
-	ArrayOfRTTITestStruct = array of TRTTITestStruct;
+  ArrayOfRTTITestStruct = array of TRTTITestStruct;
 
 
 (*************************************************************************************************************************
@@ -94,48 +94,48 @@ type
 **************************************************************************************************************************)
 
 type
-	TRTTIWrapper = class;
-	TRTTIBase = class;
-	TRTTIAnimal = class;
-	TRTTIMammal = class;
-	TRTTIReptile = class;
-	TRTTIGiraffe = class;
-	TRTTITiger = class;
-	TRTTISnake = class;
-	TRTTITurtle = class;
-	TRTTIAnimalIterator = class;
-	TRTTIZoo = class;
+  TRTTIWrapper = class;
+  TRTTIBase = class;
+  TRTTIAnimal = class;
+  TRTTIMammal = class;
+  TRTTIReptile = class;
+  TRTTIGiraffe = class;
+  TRTTITiger = class;
+  TRTTISnake = class;
+  TRTTITurtle = class;
+  TRTTIAnimalIterator = class;
+  TRTTIZoo = class;
 
 
 (*************************************************************************************************************************
  Function type definitions for Base
 **************************************************************************************************************************)
 
-	(**
-	* Get Class Type Id
-	*
-	* @param[in] pBase - Base instance.
-	* @param[out] pClassTypeId - Class type as a 64 bits integer
-	* @return error code or 0 (success)
-	*)
-	TRTTIBase_ClassTypeIdFunc = function(pBase: TRTTIHandle; out pClassTypeId: QWord): TRTTIResult; cdecl;
-	
+  (**
+  * Get Class Type Id
+  *
+  * @param[in] pBase - Base instance.
+  * @param[out] pClassTypeId - Class type as a 64 bits integer
+  * @return error code or 0 (success)
+  *)
+  TRTTIBase_ClassTypeIdFunc = function(pBase: TRTTIHandle; out pClassTypeId: QWord): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Function type definitions for Animal
 **************************************************************************************************************************)
 
-	(**
-	* Get the name of the animal
-	*
-	* @param[in] pAnimal - Animal instance.
-	* @param[in] nResultBufferSize - size of the buffer (including trailing 0)
-	* @param[out] pResultNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-	* @param[out] pResultBuffer -  buffer of , may be NULL
-	* @return error code or 0 (success)
-	*)
-	TRTTIAnimal_NameFunc = function(pAnimal: TRTTIHandle; const nResultBufferSize: Cardinal; out pResultNeededChars: Cardinal; pResultBuffer: PAnsiChar): TRTTIResult; cdecl;
-	
+  (**
+  * Get the name of the animal
+  *
+  * @param[in] pAnimal - Animal instance.
+  * @param[in] nResultBufferSize - size of the buffer (including trailing 0)
+  * @param[out] pResultNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+  * @param[out] pResultBuffer -  buffer of , may be NULL
+  * @return error code or 0 (success)
+  *)
+  TRTTIAnimal_NameFunc = function(pAnimal: TRTTIHandle; const nResultBufferSize: Cardinal; out pResultNeededChars: Cardinal; pResultBuffer: PAnsiChar): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Function type definitions for Mammal
@@ -156,14 +156,14 @@ type
  Function type definitions for Tiger
 **************************************************************************************************************************)
 
-	(**
-	* Roar like a tiger
-	*
-	* @param[in] pTiger - Tiger instance.
-	* @return error code or 0 (success)
-	*)
-	TRTTITiger_RoarFunc = function(pTiger: TRTTIHandle): TRTTIResult; cdecl;
-	
+  (**
+  * Roar like a tiger
+  *
+  * @param[in] pTiger - Tiger instance.
+  * @return error code or 0 (success)
+  *)
+  TRTTITiger_RoarFunc = function(pTiger: TRTTIHandle): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Function type definitions for Snake
@@ -179,96 +179,96 @@ type
  Function type definitions for AnimalIterator
 **************************************************************************************************************************)
 
-	(**
-	* Return next animal
-	*
-	* @param[in] pAnimalIterator - AnimalIterator instance.
-	* @param[out] pAnimal - 
-	* @return error code or 0 (success)
-	*)
-	TRTTIAnimalIterator_GetNextAnimalFunc = function(pAnimalIterator: TRTTIHandle; out pAnimal: TRTTIHandle): TRTTIResult; cdecl;
-	
+  (**
+  * Return next animal
+  *
+  * @param[in] pAnimalIterator - AnimalIterator instance.
+  * @param[out] pAnimal - 
+  * @return error code or 0 (success)
+  *)
+  TRTTIAnimalIterator_GetNextAnimalFunc = function(pAnimalIterator: TRTTIHandle; out pAnimal: TRTTIHandle): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Function type definitions for Zoo
 **************************************************************************************************************************)
 
-	(**
-	* Return an iterator over all zoo animals
-	*
-	* @param[in] pZoo - Zoo instance.
-	* @param[out] pIterator - 
-	* @return error code or 0 (success)
-	*)
-	TRTTIZoo_IteratorFunc = function(pZoo: TRTTIHandle; out pIterator: TRTTIHandle): TRTTIResult; cdecl;
-	
+  (**
+  * Return an iterator over all zoo animals
+  *
+  * @param[in] pZoo - Zoo instance.
+  * @param[out] pIterator - 
+  * @return error code or 0 (success)
+  *)
+  TRTTIZoo_IteratorFunc = function(pZoo: TRTTIHandle; out pIterator: TRTTIHandle): TRTTIResult; cdecl;
+  
 (*************************************************************************************************************************
  Global function definitions 
 **************************************************************************************************************************)
 
-	(**
-	* retrieves the binary version of this library.
-	*
-	* @param[out] pMajor - returns the major version of this library
-	* @param[out] pMinor - returns the minor version of this library
-	* @param[out] pMicro - returns the micro version of this library
-	* @return error code or 0 (success)
-	*)
-	TRTTIGetVersionFunc = function(out pMajor: Cardinal; out pMinor: Cardinal; out pMicro: Cardinal): TRTTIResult; cdecl;
-	
-	(**
-	* Returns the last error recorded on this object
-	*
-	* @param[in] pInstance - Instance Handle
-	* @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
-	* @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
-	* @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
-	* @param[out] pHasError - Is there a last error to query
-	* @return error code or 0 (success)
-	*)
-	TRTTIGetLastErrorFunc = function(const pInstance: TRTTIHandle; const nErrorMessageBufferSize: Cardinal; out pErrorMessageNeededChars: Cardinal; pErrorMessageBuffer: PAnsiChar; out pHasError: Byte): TRTTIResult; cdecl;
-	
-	(**
-	* Releases shared ownership of an Instance
-	*
-	* @param[in] pInstance - Instance Handle
-	* @return error code or 0 (success)
-	*)
-	TRTTIReleaseInstanceFunc = function(const pInstance: TRTTIHandle): TRTTIResult; cdecl;
-	
-	(**
-	* Acquires shared ownership of an Instance
-	*
-	* @param[in] pInstance - Instance Handle
-	* @return error code or 0 (success)
-	*)
-	TRTTIAcquireInstanceFunc = function(const pInstance: TRTTIHandle): TRTTIResult; cdecl;
-	
-	(**
-	* Injects an imported component for usage within this component
-	*
-	* @param[in] pNameSpace - NameSpace of the injected component
-	* @param[in] pSymbolAddressMethod - Address of the SymbolAddressMethod of the injected component
-	* @return error code or 0 (success)
-	*)
-	TRTTIInjectComponentFunc = function(const pNameSpace: PAnsiChar; const pSymbolAddressMethod: Pointer): TRTTIResult; cdecl;
-	
-	(**
-	* Returns the address of the SymbolLookupMethod
-	*
-	* @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
-	* @return error code or 0 (success)
-	*)
-	TRTTIGetSymbolLookupMethodFunc = function(out pSymbolLookupMethod: Pointer): TRTTIResult; cdecl;
-	
-	(**
-	* Create a new zoo with animals
-	*
-	* @param[out] pInstance - 
-	* @return error code or 0 (success)
-	*)
-	TRTTICreateZooFunc = function(out pInstance: TRTTIHandle): TRTTIResult; cdecl;
-	
+  (**
+  * retrieves the binary version of this library.
+  *
+  * @param[out] pMajor - returns the major version of this library
+  * @param[out] pMinor - returns the minor version of this library
+  * @param[out] pMicro - returns the micro version of this library
+  * @return error code or 0 (success)
+  *)
+  TRTTIGetVersionFunc = function(out pMajor: Cardinal; out pMinor: Cardinal; out pMicro: Cardinal): TRTTIResult; cdecl;
+  
+  (**
+  * Returns the last error recorded on this object
+  *
+  * @param[in] pInstance - Instance Handle
+  * @param[in] nErrorMessageBufferSize - size of the buffer (including trailing 0)
+  * @param[out] pErrorMessageNeededChars - will be filled with the count of the written bytes, or needed buffer size.
+  * @param[out] pErrorMessageBuffer -  buffer of Message of the last error, may be NULL
+  * @param[out] pHasError - Is there a last error to query
+  * @return error code or 0 (success)
+  *)
+  TRTTIGetLastErrorFunc = function(const pInstance: TRTTIHandle; const nErrorMessageBufferSize: Cardinal; out pErrorMessageNeededChars: Cardinal; pErrorMessageBuffer: PAnsiChar; out pHasError: Byte): TRTTIResult; cdecl;
+  
+  (**
+  * Releases shared ownership of an Instance
+  *
+  * @param[in] pInstance - Instance Handle
+  * @return error code or 0 (success)
+  *)
+  TRTTIReleaseInstanceFunc = function(const pInstance: TRTTIHandle): TRTTIResult; cdecl;
+  
+  (**
+  * Acquires shared ownership of an Instance
+  *
+  * @param[in] pInstance - Instance Handle
+  * @return error code or 0 (success)
+  *)
+  TRTTIAcquireInstanceFunc = function(const pInstance: TRTTIHandle): TRTTIResult; cdecl;
+  
+  (**
+  * Injects an imported component for usage within this component
+  *
+  * @param[in] pNameSpace - NameSpace of the injected component
+  * @param[in] pSymbolAddressMethod - Address of the SymbolAddressMethod of the injected component
+  * @return error code or 0 (success)
+  *)
+  TRTTIInjectComponentFunc = function(const pNameSpace: PAnsiChar; const pSymbolAddressMethod: Pointer): TRTTIResult; cdecl;
+  
+  (**
+  * Returns the address of the SymbolLookupMethod
+  *
+  * @param[out] pSymbolLookupMethod - Address of the SymbolAddressMethod
+  * @return error code or 0 (success)
+  *)
+  TRTTIGetSymbolLookupMethodFunc = function(out pSymbolLookupMethod: Pointer): TRTTIResult; cdecl;
+  
+  (**
+  * Create a new zoo with animals
+  *
+  * @param[out] pInstance - 
+  * @return error code or 0 (success)
+  *)
+  TRTTICreateZooFunc = function(out pInstance: TRTTIHandle): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Helper function pointer definitions 
@@ -279,16 +279,16 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
  Exception definition
 **************************************************************************************************************************)
 
-	ERTTIException = class(Exception)
-	private
-		FErrorCode: TRTTIResult;
-		FCustomMessage: String;
-	public
-		property ErrorCode: TRTTIResult read FErrorCode;
-		property CustomMessage: String read FCustomMessage;
-		constructor Create(AErrorCode: TRTTIResult; AMessage: String);
-		constructor CreateCustomMessage(AErrorCode: TRTTIResult; AMessage: String);
-	end;
+  ERTTIException = class(Exception)
+  private
+    FErrorCode: TRTTIResult;
+    FCustomMessage: String;
+  public
+    property ErrorCode: TRTTIResult read FErrorCode;
+    property CustomMessage: String read FCustomMessage;
+    constructor Create(AErrorCode: TRTTIResult; AMessage: String);
+    constructor CreateCustomMessage(AErrorCode: TRTTIResult; AMessage: String);
+  end;
 
 
 (*************************************************************************************************************************
@@ -296,177 +296,177 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
 **************************************************************************************************************************)
 
  TRTTIBase = class(TObject)
-	private
-		FWrapper: TRTTIWrapper;
-		FHandle: TRTTIHandle;
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-		property TheHandle: TRTTIHandle read FHandle;
-		function ClassTypeId(): QWord;
-	end;
+  private
+    FWrapper: TRTTIWrapper;
+    FHandle: TRTTIHandle;
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+    property TheHandle: TRTTIHandle read FHandle;
+    function ClassTypeId(): QWord;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Animal
 **************************************************************************************************************************)
 
-	TRTTIAnimal = class(TRTTIBase)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-		function Name(): String;
-	end;
+  TRTTIAnimal = class(TRTTIBase)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+    function Name(): String;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Mammal
 **************************************************************************************************************************)
 
-	TRTTIMammal = class(TRTTIAnimal)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-	end;
+  TRTTIMammal = class(TRTTIAnimal)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Reptile
 **************************************************************************************************************************)
 
-	TRTTIReptile = class(TRTTIAnimal)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-	end;
+  TRTTIReptile = class(TRTTIAnimal)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Giraffe
 **************************************************************************************************************************)
 
-	TRTTIGiraffe = class(TRTTIMammal)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-	end;
+  TRTTIGiraffe = class(TRTTIMammal)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Tiger
 **************************************************************************************************************************)
 
-	TRTTITiger = class(TRTTIMammal)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-		procedure Roar();
-	end;
+  TRTTITiger = class(TRTTIMammal)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+    procedure Roar();
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Snake
 **************************************************************************************************************************)
 
-	TRTTISnake = class(TRTTIReptile)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-	end;
+  TRTTISnake = class(TRTTIReptile)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Turtle
 **************************************************************************************************************************)
 
-	TRTTITurtle = class(TRTTIReptile)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-	end;
+  TRTTITurtle = class(TRTTIReptile)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for AnimalIterator
 **************************************************************************************************************************)
 
-	TRTTIAnimalIterator = class(TRTTIBase)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-		function GetNextAnimal(): TRTTIAnimal;
-	end;
+  TRTTIAnimalIterator = class(TRTTIBase)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+    function GetNextAnimal(): TRTTIAnimal;
+  end;
 
 
 (*************************************************************************************************************************
  Class definition for Zoo
 **************************************************************************************************************************)
 
-	TRTTIZoo = class(TRTTIBase)
-	public
-		constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-		destructor Destroy; override;
-		function Iterator(): TRTTIAnimalIterator;
-	end;
+  TRTTIZoo = class(TRTTIBase)
+  public
+    constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+    destructor Destroy; override;
+    function Iterator(): TRTTIAnimalIterator;
+  end;
 
 (*************************************************************************************************************************
  Wrapper definition
 **************************************************************************************************************************)
 
-	TRTTIWrapper = class(TObject)
-	private
-		FModule: HMODULE;
-		FRTTIBase_ClassTypeIdFunc: TRTTIBase_ClassTypeIdFunc;
-		FRTTIAnimal_NameFunc: TRTTIAnimal_NameFunc;
-		FRTTITiger_RoarFunc: TRTTITiger_RoarFunc;
-		FRTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc;
-		FRTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc;
-		FRTTIGetVersionFunc: TRTTIGetVersionFunc;
-		FRTTIGetLastErrorFunc: TRTTIGetLastErrorFunc;
-		FRTTIReleaseInstanceFunc: TRTTIReleaseInstanceFunc;
-		FRTTIAcquireInstanceFunc: TRTTIAcquireInstanceFunc;
-		FRTTIInjectComponentFunc: TRTTIInjectComponentFunc;
-		FRTTIGetSymbolLookupMethodFunc: TRTTIGetSymbolLookupMethodFunc;
-		FRTTICreateZooFunc: TRTTICreateZooFunc;
+  TRTTIWrapper = class(TObject)
+  private
+    FModule: HMODULE;
+    FRTTIBase_ClassTypeIdFunc: TRTTIBase_ClassTypeIdFunc;
+    FRTTIAnimal_NameFunc: TRTTIAnimal_NameFunc;
+    FRTTITiger_RoarFunc: TRTTITiger_RoarFunc;
+    FRTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc;
+    FRTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc;
+    FRTTIGetVersionFunc: TRTTIGetVersionFunc;
+    FRTTIGetLastErrorFunc: TRTTIGetLastErrorFunc;
+    FRTTIReleaseInstanceFunc: TRTTIReleaseInstanceFunc;
+    FRTTIAcquireInstanceFunc: TRTTIAcquireInstanceFunc;
+    FRTTIInjectComponentFunc: TRTTIInjectComponentFunc;
+    FRTTIGetSymbolLookupMethodFunc: TRTTIGetSymbolLookupMethodFunc;
+    FRTTICreateZooFunc: TRTTICreateZooFunc;
 
-		{$IFDEF MSWINDOWS}
-		function LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean = True): FARPROC;
-		{$ELSE}
-		function LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean = True): Pointer;
-		{$ENDIF MSWINDOWS}
+    {$IFDEF MSWINDOWS}
+    function LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean = True): FARPROC;
+    {$ELSE}
+    function LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean = True): Pointer;
+    {$ENDIF MSWINDOWS}
 
-		procedure checkBinaryVersion();
+    procedure checkBinaryVersion();
 
-	protected
-		property RTTIBase_ClassTypeIdFunc: TRTTIBase_ClassTypeIdFunc read FRTTIBase_ClassTypeIdFunc;
-		property RTTIAnimal_NameFunc: TRTTIAnimal_NameFunc read FRTTIAnimal_NameFunc;
-		property RTTITiger_RoarFunc: TRTTITiger_RoarFunc read FRTTITiger_RoarFunc;
-		property RTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc read FRTTIAnimalIterator_GetNextAnimalFunc;
-		property RTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc read FRTTIZoo_IteratorFunc;
-		property RTTIGetVersionFunc: TRTTIGetVersionFunc read FRTTIGetVersionFunc;
-		property RTTIGetLastErrorFunc: TRTTIGetLastErrorFunc read FRTTIGetLastErrorFunc;
-		property RTTIReleaseInstanceFunc: TRTTIReleaseInstanceFunc read FRTTIReleaseInstanceFunc;
-		property RTTIAcquireInstanceFunc: TRTTIAcquireInstanceFunc read FRTTIAcquireInstanceFunc;
-		property RTTIInjectComponentFunc: TRTTIInjectComponentFunc read FRTTIInjectComponentFunc;
-		property RTTIGetSymbolLookupMethodFunc: TRTTIGetSymbolLookupMethodFunc read FRTTIGetSymbolLookupMethodFunc;
-		property RTTICreateZooFunc: TRTTICreateZooFunc read FRTTICreateZooFunc;
-		procedure CheckError(AInstance: TRTTIBase; AErrorCode: TRTTIResult);
-	public
-		constructor Create(ADLLName: String);
-		constructor CreateFromSymbolLookupMethod(ALookupMethod: TRTTISymbolLookupMethod);
-		destructor Destroy; override;
-		procedure GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
-		function GetLastError(const AInstance: TRTTIBase; out AErrorMessage: String): Boolean;
-		procedure ReleaseInstance(const AInstance: TRTTIBase);
-		procedure AcquireInstance(const AInstance: TRTTIBase);
-		procedure InjectComponent(const ANameSpace: String; const ASymbolAddressMethod: Pointer);
-		function GetSymbolLookupMethod(): Pointer;
-		function CreateZoo(): TRTTIZoo;
-	end;
+  protected
+    property RTTIBase_ClassTypeIdFunc: TRTTIBase_ClassTypeIdFunc read FRTTIBase_ClassTypeIdFunc;
+    property RTTIAnimal_NameFunc: TRTTIAnimal_NameFunc read FRTTIAnimal_NameFunc;
+    property RTTITiger_RoarFunc: TRTTITiger_RoarFunc read FRTTITiger_RoarFunc;
+    property RTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc read FRTTIAnimalIterator_GetNextAnimalFunc;
+    property RTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc read FRTTIZoo_IteratorFunc;
+    property RTTIGetVersionFunc: TRTTIGetVersionFunc read FRTTIGetVersionFunc;
+    property RTTIGetLastErrorFunc: TRTTIGetLastErrorFunc read FRTTIGetLastErrorFunc;
+    property RTTIReleaseInstanceFunc: TRTTIReleaseInstanceFunc read FRTTIReleaseInstanceFunc;
+    property RTTIAcquireInstanceFunc: TRTTIAcquireInstanceFunc read FRTTIAcquireInstanceFunc;
+    property RTTIInjectComponentFunc: TRTTIInjectComponentFunc read FRTTIInjectComponentFunc;
+    property RTTIGetSymbolLookupMethodFunc: TRTTIGetSymbolLookupMethodFunc read FRTTIGetSymbolLookupMethodFunc;
+    property RTTICreateZooFunc: TRTTICreateZooFunc read FRTTICreateZooFunc;
+    procedure CheckError(AInstance: TRTTIBase; AErrorCode: TRTTIResult);
+  public
+    constructor Create(ADLLName: String);
+    constructor CreateFromSymbolLookupMethod(ALookupMethod: TRTTISymbolLookupMethod);
+    destructor Destroy; override;
+    procedure GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
+    function GetLastError(const AInstance: TRTTIBase; out AErrorMessage: String): Boolean;
+    procedure ReleaseInstance(const AInstance: TRTTIBase);
+    procedure AcquireInstance(const AInstance: TRTTIBase);
+    procedure InjectComponent(const ANameSpace: String; const ASymbolAddressMethod: Pointer);
+    function GetSymbolLookupMethod(): Pointer;
+    function CreateZoo(): TRTTIZoo;
+  end;
 
-	TPolymorphicFactory<_T:class; _B> = record
-		class function Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T; static;
-	end;
+  TPolymorphicFactory<_T:class; _B> = record
+    class function Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T; static;
+  end;
 
 implementation
 
@@ -475,464 +475,464 @@ implementation
  PolymorficFactory implementation
 **************************************************************************************************************************)
 
-	class function TPolymorphicFactory<_T, _B>.Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T;
-	var
-		ClassTypeId: QWord;
-		Obj: TRTTIBase;
-	begin
-		Result := nil;
-		Wrapper.CheckError(nil, Wrapper.RTTIBase_ClassTypeIdFunc(handle, ClassTypeId));
-		case (ClassTypeId) of
-			QWord($1549AD28813DAE05): begin Obj := TRTTIBase.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Base"
-			QWord($8B40467DA6D327AF): begin Obj := TRTTIAnimal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Animal"
-			QWord($BC9D5FA7750C1020): begin Obj := TRTTIMammal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
-			QWord($6756AA8EA5802EC3): begin Obj := TRTTIReptile.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
-			QWord($9751971BD2C2D958): begin Obj := TRTTIGiraffe.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
-			QWord($08D007E7B5F7BAF4): begin Obj := TRTTITiger.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
-			QWord($5F6826EF909803B2): begin Obj := TRTTISnake.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Snake"
-			QWord($8E551B208A2E8321): begin Obj := TRTTITurtle.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
-			QWord($F1917FE6BBE77831): begin Obj := TRTTIAnimalIterator.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
-			QWord($2262ABE80A5E7878): begin Obj := TRTTIZoo.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
-		end;
-		if Result = nil then Result := _B.Create(Wrapper, Handle);
-	end;
+  class function TPolymorphicFactory<_T, _B>.Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T;
+  var
+    ClassTypeId: QWord;
+    Obj: TRTTIBase;
+  begin
+    Result := nil;
+    Wrapper.CheckError(nil, Wrapper.RTTIBase_ClassTypeIdFunc(handle, ClassTypeId));
+    case (ClassTypeId) of
+      QWord($1549AD28813DAE05): begin Obj := TRTTIBase.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Base"
+      QWord($8B40467DA6D327AF): begin Obj := TRTTIAnimal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+      QWord($BC9D5FA7750C1020): begin Obj := TRTTIMammal.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+      QWord($6756AA8EA5802EC3): begin Obj := TRTTIReptile.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
+      QWord($9751971BD2C2D958): begin Obj := TRTTIGiraffe.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+      QWord($08D007E7B5F7BAF4): begin Obj := TRTTITiger.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+      QWord($5F6826EF909803B2): begin Obj := TRTTISnake.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+      QWord($8E551B208A2E8321): begin Obj := TRTTITurtle.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+      QWord($F1917FE6BBE77831): begin Obj := TRTTIAnimalIterator.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+      QWord($2262ABE80A5E7878): begin Obj := TRTTIZoo.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
+    end;
+    if Result = nil then Result := _B.Create(Wrapper, Handle);
+  end;
 
 (*************************************************************************************************************************
  Exception implementation
 **************************************************************************************************************************)
 
-	constructor ERTTIException.Create(AErrorCode: TRTTIResult; AMessage: String);
-	var
-		ADescription: String;
-	begin
-		FErrorCode := AErrorCode;
-		case FErrorCode of
-			RTTI_ERROR_NOTIMPLEMENTED: ADescription := 'functionality not implemented';
-			RTTI_ERROR_INVALIDPARAM: ADescription := 'an invalid parameter was passed';
-			RTTI_ERROR_INVALIDCAST: ADescription := 'a type cast failed';
-			RTTI_ERROR_BUFFERTOOSMALL: ADescription := 'a provided buffer is too small';
-			RTTI_ERROR_GENERICEXCEPTION: ADescription := 'a generic exception occurred';
-			RTTI_ERROR_COULDNOTLOADLIBRARY: ADescription := 'the library could not be loaded';
-			RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT: ADescription := 'a required exported symbol could not be found in the library';
-			RTTI_ERROR_INCOMPATIBLEBINARYVERSION: ADescription := 'the version of the binary interface does not match the bindings interface';
-			else
-				ADescription := 'unknown';
-		end;
+  constructor ERTTIException.Create(AErrorCode: TRTTIResult; AMessage: String);
+  var
+    ADescription: String;
+  begin
+    FErrorCode := AErrorCode;
+    case FErrorCode of
+      RTTI_ERROR_NOTIMPLEMENTED: ADescription := 'functionality not implemented';
+      RTTI_ERROR_INVALIDPARAM: ADescription := 'an invalid parameter was passed';
+      RTTI_ERROR_INVALIDCAST: ADescription := 'a type cast failed';
+      RTTI_ERROR_BUFFERTOOSMALL: ADescription := 'a provided buffer is too small';
+      RTTI_ERROR_GENERICEXCEPTION: ADescription := 'a generic exception occurred';
+      RTTI_ERROR_COULDNOTLOADLIBRARY: ADescription := 'the library could not be loaded';
+      RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT: ADescription := 'a required exported symbol could not be found in the library';
+      RTTI_ERROR_INCOMPATIBLEBINARYVERSION: ADescription := 'the version of the binary interface does not match the bindings interface';
+      else
+        ADescription := 'unknown';
+    end;
 
-		inherited Create(Format('RTTI Error - %s (#%d, %s)', [ ADescription, AErrorCode, AMessage ]));
-	end;
+    inherited Create(Format('RTTI Error - %s (#%d, %s)', [ ADescription, AErrorCode, AMessage ]));
+  end;
 
-	constructor ERTTIException.CreateCustomMessage(AErrorCode: TRTTIResult; AMessage: String);
-	begin
-		FCustomMessage := AMessage;
-		FErrorCode := AErrorCode;
-		inherited Create(Format('%s (%d)', [FCustomMessage, AErrorCode]));
-	end;
+  constructor ERTTIException.CreateCustomMessage(AErrorCode: TRTTIResult; AMessage: String);
+  begin
+    FCustomMessage := AMessage;
+    FErrorCode := AErrorCode;
+    inherited Create(Format('%s (%d)', [FCustomMessage, AErrorCode]));
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Base
 **************************************************************************************************************************)
 
-	constructor TRTTIBase.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		if not Assigned(AWrapper) then
-			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
-		if not Assigned(AHandle.Handle) then
-			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
+  constructor TRTTIBase.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    if not Assigned(AWrapper) then
+      raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
+    if not Assigned(AHandle.Handle) then
+      raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM, '');
 
-		inherited Create();
-		FWrapper := AWrapper;
-		FHandle := AHandle;
-	end;
+    inherited Create();
+    FWrapper := AWrapper;
+    FHandle := AHandle;
+  end;
 
-	destructor TRTTIBase.Destroy;
-	begin
-		FWrapper.ReleaseInstance(self);
-		inherited;
-	end;
+  destructor TRTTIBase.Destroy;
+  begin
+    FWrapper.ReleaseInstance(self);
+    inherited;
+  end;
 
-	function TRTTIBase.ClassTypeId(): QWord;
-	begin
-		FWrapper.CheckError(Self, FWrapper.RTTIBase_ClassTypeIdFunc(FHandle, Result));
-	end;
+  function TRTTIBase.ClassTypeId(): QWord;
+  begin
+    FWrapper.CheckError(Self, FWrapper.RTTIBase_ClassTypeIdFunc(FHandle, Result));
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Animal
 **************************************************************************************************************************)
 
-	constructor TRTTIAnimal.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIAnimal.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIAnimal.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIAnimal.Destroy;
+  begin
+    inherited;
+  end;
 
-	function TRTTIAnimal.Name(): String;
-	var
-		bytesNeededResult: Cardinal;
-		bytesWrittenResult: Cardinal;
-		bufferResult: array of Char;
-	begin
-		bytesNeededResult:= 0;
-		bytesWrittenResult:= 0;
-		FWrapper.CheckError(Self, FWrapper.RTTIAnimal_NameFunc(FHandle, 0, bytesNeededResult, nil));
-		SetLength(bufferResult, bytesNeededResult);
-		FWrapper.CheckError(Self, FWrapper.RTTIAnimal_NameFunc(FHandle, bytesNeededResult, bytesWrittenResult, @bufferResult[0]));
-		Result := StrPas(@bufferResult[0]);
-	end;
+  function TRTTIAnimal.Name(): String;
+  var
+    bytesNeededResult: Cardinal;
+    bytesWrittenResult: Cardinal;
+    bufferResult: array of Char;
+  begin
+    bytesNeededResult:= 0;
+    bytesWrittenResult:= 0;
+    FWrapper.CheckError(Self, FWrapper.RTTIAnimal_NameFunc(FHandle, 0, bytesNeededResult, nil));
+    SetLength(bufferResult, bytesNeededResult);
+    FWrapper.CheckError(Self, FWrapper.RTTIAnimal_NameFunc(FHandle, bytesNeededResult, bytesWrittenResult, @bufferResult[0]));
+    Result := StrPas(@bufferResult[0]);
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Mammal
 **************************************************************************************************************************)
 
-	constructor TRTTIMammal.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIMammal.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIMammal.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIMammal.Destroy;
+  begin
+    inherited;
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Reptile
 **************************************************************************************************************************)
 
-	constructor TRTTIReptile.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIReptile.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIReptile.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIReptile.Destroy;
+  begin
+    inherited;
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Giraffe
 **************************************************************************************************************************)
 
-	constructor TRTTIGiraffe.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIGiraffe.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIGiraffe.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIGiraffe.Destroy;
+  begin
+    inherited;
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Tiger
 **************************************************************************************************************************)
 
-	constructor TRTTITiger.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTITiger.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTITiger.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTITiger.Destroy;
+  begin
+    inherited;
+  end;
 
-	procedure TRTTITiger.Roar();
-	begin
-		FWrapper.CheckError(Self, FWrapper.RTTITiger_RoarFunc(FHandle));
-	end;
+  procedure TRTTITiger.Roar();
+  begin
+    FWrapper.CheckError(Self, FWrapper.RTTITiger_RoarFunc(FHandle));
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Snake
 **************************************************************************************************************************)
 
-	constructor TRTTISnake.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTISnake.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTISnake.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTISnake.Destroy;
+  begin
+    inherited;
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Turtle
 **************************************************************************************************************************)
 
-	constructor TRTTITurtle.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTITurtle.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTITurtle.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTITurtle.Destroy;
+  begin
+    inherited;
+  end;
 
 (*************************************************************************************************************************
  Class implementation for AnimalIterator
 **************************************************************************************************************************)
 
-	constructor TRTTIAnimalIterator.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIAnimalIterator.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIAnimalIterator.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIAnimalIterator.Destroy;
+  begin
+    inherited;
+  end;
 
-	function TRTTIAnimalIterator.GetNextAnimal(): TRTTIAnimal;
-	var
-		HAnimal: TRTTIHandle;
-	begin
-		Result := nil;
-		HAnimal.Handle := nil;
-		HAnimal.ClassTypeId := 0;
-		FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextAnimalFunc(FHandle, HAnimal));
-		if Assigned(HAnimal.Handle) then
-			Result := TPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
-	end;
+  function TRTTIAnimalIterator.GetNextAnimal(): TRTTIAnimal;
+  var
+    HAnimal: TRTTIHandle;
+  begin
+    Result := nil;
+    HAnimal.Handle := nil;
+    HAnimal.ClassTypeId := 0;
+    FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextAnimalFunc(FHandle, HAnimal));
+    if Assigned(HAnimal.Handle) then
+      Result := TPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
+  end;
 
 (*************************************************************************************************************************
  Class implementation for Zoo
 **************************************************************************************************************************)
 
-	constructor TRTTIZoo.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
-	begin
-		inherited Create(AWrapper, AHandle);
-	end;
+  constructor TRTTIZoo.Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
+  begin
+    inherited Create(AWrapper, AHandle);
+  end;
 
-	destructor TRTTIZoo.Destroy;
-	begin
-		inherited;
-	end;
+  destructor TRTTIZoo.Destroy;
+  begin
+    inherited;
+  end;
 
-	function TRTTIZoo.Iterator(): TRTTIAnimalIterator;
-	var
-		HIterator: TRTTIHandle;
-	begin
-		Result := nil;
-		HIterator.Handle := nil;
-		HIterator.ClassTypeId := 0;
-		FWrapper.CheckError(Self, FWrapper.RTTIZoo_IteratorFunc(FHandle, HIterator));
-		if Assigned(HIterator.Handle) then
-			Result := TPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(FWrapper, HIterator);
-	end;
+  function TRTTIZoo.Iterator(): TRTTIAnimalIterator;
+  var
+    HIterator: TRTTIHandle;
+  begin
+    Result := nil;
+    HIterator.Handle := nil;
+    HIterator.ClassTypeId := 0;
+    FWrapper.CheckError(Self, FWrapper.RTTIZoo_IteratorFunc(FHandle, HIterator));
+    if Assigned(HIterator.Handle) then
+      Result := TPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(FWrapper, HIterator);
+  end;
 
 (*************************************************************************************************************************
  Wrapper class implementation
 **************************************************************************************************************************)
 
-	constructor TRTTIWrapper.Create(ADLLName: String);
-	{$IFDEF MSWINDOWS}
-	var
-		AWideString: WideString;
-	{$ENDIF MSWINDOWS}
-	begin
-		inherited Create;
-		
-		
-		{$IFDEF MSWINDOWS}
-			AWideString := UTF8Decode(ADLLName + #0);
-			FModule := LoadLibraryW(PWideChar(AWideString));
-		{$ELSE}
-			FModule := dynlibs.LoadLibrary(ADLLName);
-		{$ENDIF MSWINDOWS}
-		if FModule = 0 then
-			raise ERTTIException.Create(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+  constructor TRTTIWrapper.Create(ADLLName: String);
+  {$IFDEF MSWINDOWS}
+  var
+    AWideString: WideString;
+  {$ENDIF MSWINDOWS}
+  begin
+    inherited Create;
+    
+    
+    {$IFDEF MSWINDOWS}
+      AWideString := UTF8Decode(ADLLName + #0);
+      FModule := LoadLibraryW(PWideChar(AWideString));
+    {$ELSE}
+      FModule := dynlibs.LoadLibrary(ADLLName);
+    {$ENDIF MSWINDOWS}
+    if FModule = 0 then
+      raise ERTTIException.Create(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
 
-		FRTTIBase_ClassTypeIdFunc := LoadFunction('rtti_base_classtypeid');
-		FRTTIAnimal_NameFunc := LoadFunction('rtti_animal_name');
-		FRTTITiger_RoarFunc := LoadFunction('rtti_tiger_roar');
-		FRTTIAnimalIterator_GetNextAnimalFunc := LoadFunction('rtti_animaliterator_getnextanimal');
-		FRTTIZoo_IteratorFunc := LoadFunction('rtti_zoo_iterator');
-		FRTTIGetVersionFunc := LoadFunction('rtti_getversion');
-		FRTTIGetLastErrorFunc := LoadFunction('rtti_getlasterror');
-		FRTTIReleaseInstanceFunc := LoadFunction('rtti_releaseinstance');
-		FRTTIAcquireInstanceFunc := LoadFunction('rtti_acquireinstance');
-		FRTTIInjectComponentFunc := LoadFunction('rtti_injectcomponent');
-		FRTTIGetSymbolLookupMethodFunc := LoadFunction('rtti_getsymbollookupmethod');
-		FRTTICreateZooFunc := LoadFunction('rtti_createzoo');
-		
-		checkBinaryVersion();
-	end;
+    FRTTIBase_ClassTypeIdFunc := LoadFunction('rtti_base_classtypeid');
+    FRTTIAnimal_NameFunc := LoadFunction('rtti_animal_name');
+    FRTTITiger_RoarFunc := LoadFunction('rtti_tiger_roar');
+    FRTTIAnimalIterator_GetNextAnimalFunc := LoadFunction('rtti_animaliterator_getnextanimal');
+    FRTTIZoo_IteratorFunc := LoadFunction('rtti_zoo_iterator');
+    FRTTIGetVersionFunc := LoadFunction('rtti_getversion');
+    FRTTIGetLastErrorFunc := LoadFunction('rtti_getlasterror');
+    FRTTIReleaseInstanceFunc := LoadFunction('rtti_releaseinstance');
+    FRTTIAcquireInstanceFunc := LoadFunction('rtti_acquireinstance');
+    FRTTIInjectComponentFunc := LoadFunction('rtti_injectcomponent');
+    FRTTIGetSymbolLookupMethodFunc := LoadFunction('rtti_getsymbollookupmethod');
+    FRTTICreateZooFunc := LoadFunction('rtti_createzoo');
+    
+    checkBinaryVersion();
+  end;
 
-	constructor TRTTIWrapper.CreateFromSymbolLookupMethod(ALookupMethod: TRTTISymbolLookupMethod);
-	var
-		AResult : TRTTIResult;
-	begin
-		inherited Create;
-		
-		
-		AResult := ALookupMethod(PAnsiChar('rtti_base_classtypeid'), @FRTTIBase_ClassTypeIdFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_animal_name'), @FRTTIAnimal_NameFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_tiger_roar'), @FRTTITiger_RoarFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_animaliterator_getnextanimal'), @FRTTIAnimalIterator_GetNextAnimalFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_zoo_iterator'), @FRTTIZoo_IteratorFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_getversion'), @FRTTIGetVersionFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_getlasterror'), @FRTTIGetLastErrorFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_releaseinstance'), @FRTTIReleaseInstanceFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_acquireinstance'), @FRTTIAcquireInstanceFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_injectcomponent'), @FRTTIInjectComponentFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_getsymbollookupmethod'), @FRTTIGetSymbolLookupMethodFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		AResult := ALookupMethod(PAnsiChar('rtti_createzoo'), @FRTTICreateZooFunc);
-		if AResult <> RTTI_SUCCESS then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
-		
-		checkBinaryVersion();
-	end;
+  constructor TRTTIWrapper.CreateFromSymbolLookupMethod(ALookupMethod: TRTTISymbolLookupMethod);
+  var
+    AResult : TRTTIResult;
+  begin
+    inherited Create;
+    
+    
+    AResult := ALookupMethod(PAnsiChar('rtti_base_classtypeid'), @FRTTIBase_ClassTypeIdFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_animal_name'), @FRTTIAnimal_NameFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_tiger_roar'), @FRTTITiger_RoarFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_animaliterator_getnextanimal'), @FRTTIAnimalIterator_GetNextAnimalFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_zoo_iterator'), @FRTTIZoo_IteratorFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_getversion'), @FRTTIGetVersionFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_getlasterror'), @FRTTIGetLastErrorFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_releaseinstance'), @FRTTIReleaseInstanceFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_acquireinstance'), @FRTTIAcquireInstanceFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_injectcomponent'), @FRTTIInjectComponentFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_getsymbollookupmethod'), @FRTTIGetSymbolLookupMethodFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_createzoo'), @FRTTICreateZooFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    
+    checkBinaryVersion();
+  end;
 
-	destructor TRTTIWrapper.Destroy;
-	begin
-		{$IFDEF MSWINDOWS}
-			if FModule <> 0 then
-				FreeLibrary(FModule);
-		{$ELSE}
-			if FModule <> 0 then
-				UnloadLibrary(FModule);
-		{$ENDIF MSWINDOWS}
-		inherited;
-	end;
+  destructor TRTTIWrapper.Destroy;
+  begin
+    {$IFDEF MSWINDOWS}
+      if FModule <> 0 then
+        FreeLibrary(FModule);
+    {$ELSE}
+      if FModule <> 0 then
+        UnloadLibrary(FModule);
+    {$ENDIF MSWINDOWS}
+    inherited;
+  end;
 
-	procedure TRTTIWrapper.CheckError(AInstance: TRTTIBase; AErrorCode: TRTTIResult);
-	var
-		AErrorMessage: String;
-	begin
-		if AInstance <> nil then begin
-			if AInstance.FWrapper <> Self then
-				raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDCAST, 'invalid wrapper call');
-		end;
-		if AErrorCode <> RTTI_SUCCESS then begin
-			AErrorMessage := '';
-			if Assigned(AInstance) then
-				GetLastError(AInstance, AErrorMessage);
-			raise ERTTIException.Create(AErrorCode, AErrorMessage);
-		end;
-	end;
+  procedure TRTTIWrapper.CheckError(AInstance: TRTTIBase; AErrorCode: TRTTIResult);
+  var
+    AErrorMessage: String;
+  begin
+    if AInstance <> nil then begin
+      if AInstance.FWrapper <> Self then
+        raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDCAST, 'invalid wrapper call');
+    end;
+    if AErrorCode <> RTTI_SUCCESS then begin
+      AErrorMessage := '';
+      if Assigned(AInstance) then
+        GetLastError(AInstance, AErrorMessage);
+      raise ERTTIException.Create(AErrorCode, AErrorMessage);
+    end;
+  end;
 
-	{$IFDEF MSWINDOWS}
-	function TRTTIWrapper.LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean): FARPROC;
-	begin
-		Result := GetProcAddress(FModule, PAnsiChar(AFunctionName));
-		if FailIfNotExistent and not Assigned(Result) then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT, 'could not find function ' + AFunctionName);
-	end;
-	{$ELSE}
-	function TRTTIWrapper.LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean): Pointer;
-	begin
-		Result := dynlibs.GetProcAddress(FModule, AFunctionName);
-		if FailIfNotExistent and not Assigned(Result) then
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT, 'could not find function ' + AFunctionName);
-	end;
-	{$ENDIF MSWINDOWS}
+  {$IFDEF MSWINDOWS}
+  function TRTTIWrapper.LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean): FARPROC;
+  begin
+    Result := GetProcAddress(FModule, PAnsiChar(AFunctionName));
+    if FailIfNotExistent and not Assigned(Result) then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT, 'could not find function ' + AFunctionName);
+  end;
+  {$ELSE}
+  function TRTTIWrapper.LoadFunction(AFunctionName: AnsiString; FailIfNotExistent: Boolean): Pointer;
+  begin
+    Result := dynlibs.GetProcAddress(FModule, AFunctionName);
+    if FailIfNotExistent and not Assigned(Result) then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT, 'could not find function ' + AFunctionName);
+  end;
+  {$ENDIF MSWINDOWS}
 
-	procedure TRTTIWrapper.checkBinaryVersion();
-	var
-		AMajor, AMinor, AMicro: Cardinal;
-	begin
-		GetVersion(AMajor, AMinor, AMicro);
-		if (AMajor <> RTTI_VERSION_MAJOR) then
-			raise ERTTIException.Create(RTTI_ERROR_INCOMPATIBLEBINARYVERSION, '');
-	end;
-	
-	procedure TRTTIWrapper.GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
-	begin
-		CheckError(nil, RTTIGetVersionFunc(AMajor, AMinor, AMicro));
-	end;
+  procedure TRTTIWrapper.checkBinaryVersion();
+  var
+    AMajor, AMinor, AMicro: Cardinal;
+  begin
+    GetVersion(AMajor, AMinor, AMicro);
+    if (AMajor <> RTTI_VERSION_MAJOR) then
+      raise ERTTIException.Create(RTTI_ERROR_INCOMPATIBLEBINARYVERSION, '');
+  end;
+  
+  procedure TRTTIWrapper.GetVersion(out AMajor: Cardinal; out AMinor: Cardinal; out AMicro: Cardinal);
+  begin
+    CheckError(nil, RTTIGetVersionFunc(AMajor, AMinor, AMicro));
+  end;
 
-	function TRTTIWrapper.GetLastError(const AInstance: TRTTIBase; out AErrorMessage: String): Boolean;
-	var
-		AInstanceHandle: TRTTIHandle;
-		bytesNeededErrorMessage: Cardinal;
-		bytesWrittenErrorMessage: Cardinal;
-		bufferErrorMessage: array of Char;
-		ResultHasError: Byte;
-	begin
-		if Assigned(AInstance) then
-		AInstanceHandle := AInstance.TheHandle
-		else
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
-		bytesNeededErrorMessage:= 0;
-		bytesWrittenErrorMessage:= 0;
-		ResultHasError := 0;
-		CheckError(nil, RTTIGetLastErrorFunc(AInstanceHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
-		SetLength(bufferErrorMessage, bytesNeededErrorMessage);
-		CheckError(nil, RTTIGetLastErrorFunc(AInstanceHandle, bytesNeededErrorMessage, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
-		AErrorMessage := StrPas(@bufferErrorMessage[0]);
-		Result := (ResultHasError <> 0);
-	end;
+  function TRTTIWrapper.GetLastError(const AInstance: TRTTIBase; out AErrorMessage: String): Boolean;
+  var
+    AInstanceHandle: TRTTIHandle;
+    bytesNeededErrorMessage: Cardinal;
+    bytesWrittenErrorMessage: Cardinal;
+    bufferErrorMessage: array of Char;
+    ResultHasError: Byte;
+  begin
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
+    bytesNeededErrorMessage:= 0;
+    bytesWrittenErrorMessage:= 0;
+    ResultHasError := 0;
+    CheckError(nil, RTTIGetLastErrorFunc(AInstanceHandle, 0, bytesNeededErrorMessage, nil, ResultHasError));
+    SetLength(bufferErrorMessage, bytesNeededErrorMessage);
+    CheckError(nil, RTTIGetLastErrorFunc(AInstanceHandle, bytesNeededErrorMessage, bytesWrittenErrorMessage, @bufferErrorMessage[0], ResultHasError));
+    AErrorMessage := StrPas(@bufferErrorMessage[0]);
+    Result := (ResultHasError <> 0);
+  end;
 
-	procedure TRTTIWrapper.ReleaseInstance(const AInstance: TRTTIBase);
-	var
-		AInstanceHandle: TRTTIHandle;
-	begin
-		if Assigned(AInstance) then
-		AInstanceHandle := AInstance.TheHandle
-		else
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
-		CheckError(nil, RTTIReleaseInstanceFunc(AInstanceHandle));
-	end;
+  procedure TRTTIWrapper.ReleaseInstance(const AInstance: TRTTIBase);
+  var
+    AInstanceHandle: TRTTIHandle;
+  begin
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
+    CheckError(nil, RTTIReleaseInstanceFunc(AInstanceHandle));
+  end;
 
-	procedure TRTTIWrapper.AcquireInstance(const AInstance: TRTTIBase);
-	var
-		AInstanceHandle: TRTTIHandle;
-	begin
-		if Assigned(AInstance) then
-		AInstanceHandle := AInstance.TheHandle
-		else
-			raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
-		CheckError(nil, RTTIAcquireInstanceFunc(AInstanceHandle));
-	end;
+  procedure TRTTIWrapper.AcquireInstance(const AInstance: TRTTIBase);
+  var
+    AInstanceHandle: TRTTIHandle;
+  begin
+    if Assigned(AInstance) then
+    AInstanceHandle := AInstance.TheHandle
+    else
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_INVALIDPARAM, 'AInstance is a nil value.');
+    CheckError(nil, RTTIAcquireInstanceFunc(AInstanceHandle));
+  end;
 
-	procedure TRTTIWrapper.InjectComponent(const ANameSpace: String; const ASymbolAddressMethod: Pointer);
-	begin
-		CheckError(nil, RTTIInjectComponentFunc(PAnsiChar(ANameSpace), ASymbolAddressMethod));
-	end;
+  procedure TRTTIWrapper.InjectComponent(const ANameSpace: String; const ASymbolAddressMethod: Pointer);
+  begin
+    CheckError(nil, RTTIInjectComponentFunc(PAnsiChar(ANameSpace), ASymbolAddressMethod));
+  end;
 
-	function TRTTIWrapper.GetSymbolLookupMethod(): Pointer;
-	begin
-		CheckError(nil, RTTIGetSymbolLookupMethodFunc(Result));
-	end;
+  function TRTTIWrapper.GetSymbolLookupMethod(): Pointer;
+  begin
+    CheckError(nil, RTTIGetSymbolLookupMethodFunc(Result));
+  end;
 
-	function TRTTIWrapper.CreateZoo(): TRTTIZoo;
-	var
-		HInstance: TRTTIHandle;
-	begin
-		Result := nil;
-		HInstance.Handle := nil;
-		HInstance.ClassTypeId := 0;
-		CheckError(nil, RTTICreateZooFunc(HInstance));
-		if Assigned(HInstance.Handle) then
-			Result := TPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Self, HInstance);
-	end;
+  function TRTTIWrapper.CreateZoo(): TRTTIZoo;
+  var
+    HInstance: TRTTIHandle;
+  begin
+    Result := nil;
+    HInstance.Handle := nil;
+    HInstance.ClassTypeId := 0;
+    CheckError(nil, RTTICreateZooFunc(HInstance));
+    if Assigned(HInstance.Handle) then
+      Result := TPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Self, HInstance);
+  end;
 
 
 end.
