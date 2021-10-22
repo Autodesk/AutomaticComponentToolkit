@@ -8,9 +8,7 @@
 	</license>
 
 	<bindings>
-		<binding language="CppDynamic" indentation="tabs"/>
-		<binding language="Python" indentation="tabs"/>
-		<binding language="Pascal" indentation="tabs"/>
+		<binding language="CDynamic" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
