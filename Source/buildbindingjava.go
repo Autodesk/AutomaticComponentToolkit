@@ -190,15 +190,7 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 
 		JavaBuildName := "build.sh";
 		JavaBuildPath := path.Join(outputFolderExample, JavaBuildName);
-		log.Printf("Creating \"%s\"", JavaBuildPath)
-		JavaWrapperFile, err2 := CreateLanguageFile (JavaBuildPath, indent)
-		if err2 != nil {
-			return err2;
-		}
-		err = buildJavaBuildExampleScript(component, JavaWrapperFile, version)
-		if err != nil {
-			return err;
-		}
+			}
 	}
 
 	return nil;
