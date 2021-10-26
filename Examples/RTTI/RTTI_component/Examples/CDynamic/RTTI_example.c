@@ -15,88 +15,141 @@ Interface version: 1.0.0
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include "rtti_dynamic.h"
-
-#define printf_s printf
 
 void releaseWrapper(sRTTIDynamicWrapperTable* pWrapperTable) {
 	RTTIResult eResult = ReleaseRTTIWrapperTable(pWrapperTable);
 	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to release wrapper table\n");
+		printf("Failed to release wrapper table\n");
 	}
 }
 
 int main()
 {
 	// TODO: put a path to RTTI binary file here:
-	const char* libpath = "./rtti.dylib";
+	const char* libpath = "rtti."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+	;
+
 	sRTTIDynamicWrapperTable sWrapperTable;
 	RTTIResult eResult = RTTI_SUCCESS;
 	 
 	eResult = InitRTTIWrapperTable(&sWrapperTable);
 	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to initialize wrapper table\n");
+		printf("Failed to initialize wrapper table\n");
 		return eResult;
 	}
 	
 	eResult = LoadRTTIWrapperTable(&sWrapperTable, libpath);
 	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to load rtti-binary\n");
+		printf("Failed to load rtti-binary\n");
 		return eResult;
 	}
 	RTTI_uint32 nMajor, nMinor, nMicro;
 	eResult = sWrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro);
 	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to get version\n");
+		printf("Failed to get version\n");
 		releaseWrapper(&sWrapperTable);
 		return eResult;
 	}
-	printf_s("RTTI.Version = %d.%d.%d", nMajor, nMinor, nMicro);
+	printf("RTTI.Version = %d.%d.%d", nMajor, nMinor, nMicro);
 	
-	printf_s("\n");
+	printf("\n");
 	
 	RTTI_Zoo Zoo;
-	eResult = sWrapperTable.m_CreateZoo(&Zoo);
-	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to get Zoo\n");
-		releaseWrapper(&sWrapperTable);
-		return eResult;
-	}
+	assert(RTTI_SUCCESS == sWrapperTable.m_CreateZoo(&Zoo));
 
 	RTTI_AnimalIterator Iterator;
-	eResult = sWrapperTable.m_Zoo_Iterator(Zoo, &Iterator);
-	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to get Iterator\n");
-		releaseWrapper(&sWrapperTable);
-		return eResult;
-	}
+	assert(RTTI_SUCCESS == sWrapperTable.m_Zoo_Iterator(Zoo, &Iterator));
 
-	while (1) {
-		RTTI_Animal Animal;
-		eResult = sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal);
-		if (RTTI_SUCCESS != eResult) {
-			printf_s("Failed to get Iterator\n");
-			releaseWrapper(&sWrapperTable);
-			return eResult;
-		}
+	RTTI_uint32 CharsRead = 0;
+	char Name[256] = { 0 };
+	RTTI_Animal Animal;
 
-		if (!Animal.Handle)
-			break;
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Gerald Giraffe"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
-		RTTI_uint32 CharsRead = 0;
-		char Name[255];
-		if (RTTI_SUCCESS != sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
-		|| RTTI_SUCCESS != sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0])) {
-			printf_s("Failed to call Animal name\n");
-			releaseWrapper(&sWrapperTable);
-			return eResult;
-		}
-		printf_s("Animal name: %s\n", Name);
-	}
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Timmy Tiger"));
+	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Tony Tiger"));
+	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Sebastian Snake"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Tobias Turtle"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Theo Turtle"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Tomás Turtle"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Slytherin Snake"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Travis Tiger"));
+	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle != NULL);
+	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
+	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
+	assert(!strcmp(Name, "Gary Giraffe"));
+	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
+
+	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
+	assert(Animal.Handle == NULL);
 
 	eResult = ReleaseRTTIWrapperTable(&sWrapperTable);
 	if (RTTI_SUCCESS != eResult) {
-		printf_s("Failed to release wrapper table\n");
+		printf("Failed to release wrapper table\n");
 		return eResult;
 	}
 	
