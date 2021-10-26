@@ -310,12 +310,12 @@ func buildJavaBuildExampleScript(component ComponentDefinition, w LanguageWriter
 	w.Writeln("[ -f jna-5.5.0.jar ] || wget https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
 	w.Writeln("")
 	w.Writeln("echo \"Compile Java bindings\"")
-	w.Writeln("javac -classpath \"${JnaJar}\" %s", imports)
+	w.Writeln("javac -encoding UTF8 -classpath \"${JnaJar}\" %s", imports)
 	w.Writeln("echo \"Compile Java example\"")
-	w.Writeln("javac -classpath $Classpath %s_Example.java", component.NameSpace)
+	w.Writeln("javac -encoding UTF8 -classpath $Classpath %s_Example.java", component.NameSpace)
 	w.Writeln("")
 	w.Writeln("echo \"Execute example\"")
-	w.Writeln("java -classpath $Classpath %s_Example", component.NameSpace)
+	w.Writeln("java -ea -classpath $Classpath %s_Example", component.NameSpace)
 	return nil;
 }
 
