@@ -16,6 +16,8 @@ __pycache__
 
 Examples/**/build
 Examples/**/build-*
+Examples/**/bin
+Examples/**/obj
 
 # Visual Studio Code
 debug
