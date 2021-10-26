@@ -28,14 +28,72 @@ def main():
 	print("RTTI version: {:d}.{:d}.{:d}".format(major, minor, micro), end="")
 	print("")
 
-	zoo = wrapper.CreateZoo()
-	iter = zoo.Iterator()
+	zoo = wrapper.CreateZoo(); assert zoo
+	iter = zoo.Iterator(); assert iter
 
-	while animal := iter.GetNextAnimal():
-		if isinstance(animal, RTTI.Tiger):
-			print("  ^ is a real tiger!!!")
-			animal.Roar()
-		print("Animal name: " + animal.Name())
+	# Animal name: Gerald Giraffe
+	animal = iter.GetNextAnimal(); assert animal
+	assert animal.Name() == "Gerald Giraffe"
+	assert isinstance(animal, RTTI.Giraffe)
+
+	# Animal name: Timmy Tiger
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Timmy Tiger"
+	assert isinstance(animal, RTTI.Tiger)
+	animal.Roar()
+
+	# Animal name: Tony Tiger
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Tony Tiger"
+	assert isinstance(animal, RTTI.Tiger)
+	animal.Roar()
+
+	# Animal name: Sebastian Snake
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Sebastian Snake"
+	assert isinstance(animal, RTTI.Snake)
+
+	# Animal name: Tobias Turtle
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Tobias Turtle"
+	assert isinstance(animal, RTTI.Turtle)
+
+	# Animal name: Theo Turtle
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Theo Turtle"
+	assert isinstance(animal, RTTI.Turtle)
+
+	# Animal name: Tomás Turtle
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Tomás Turtle"
+	assert isinstance(animal, RTTI.Turtle)
+
+	# Animal name: Slytherin Snake
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Slytherin Snake"
+	assert isinstance(animal, RTTI.Snake)
+
+	# Animal name: Travis Tiger
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Travis Tiger"
+	assert isinstance(animal, RTTI.Tiger)
+	animal.Roar()
+
+	# Animal name: Gary Giraffe
+	animal = iter.GetNextAnimal(); assert animal
+	
+	assert animal.Name() == "Gary Giraffe"
+	assert isinstance(animal, RTTI.Giraffe)
+	
+	animal = iter.GetNextAnimal(); assert not animal
 
 if __name__ == "__main__":
 	try:
