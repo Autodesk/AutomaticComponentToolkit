@@ -17,6 +17,7 @@ Interface version: 1.0.0
 package main
 
 import (
+	"os"
 	"fmt"
 	"log"
 	"../../Bindings/Go"
@@ -24,7 +25,7 @@ import (
 
 func main() {
 	fmt.Println("Start")
-	wrapper, err := rtti.LoadLibrary("rtti.dylib")
+	wrapper, err := rtti.LoadLibrary(os.Args[1:][0])
 	if err != nil {
 		fmt.Println(err)
 	}
