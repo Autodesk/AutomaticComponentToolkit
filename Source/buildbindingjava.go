@@ -41,6 +41,7 @@ import (
 	"bytes"
 	"os"
 	"strconv"
+	"sort"
 )
 
 type JavaParameter struct {
@@ -1249,8 +1250,26 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		msb := uint32((classTypeId >> 32) & 0xFFFFFFFF)
 		msbIds[msb] = append(msbIds[msb], class)
 	}
+
+    // Sork Ids so change to binding file is always human readable
+    msbKeys := make([]uint32, len(msbIds))
+    i := 0
+    for k := range msbIds {
+        msbKeys[i] = k
+        i++
+    }
+	sort.Slice(msbKeys, func(i, j int) bool { return msbKeys[i] < msbKeys[j] })
+
 	w.Writeln("      switch(msbId) {")
-	for id, classes := range msbIds {
+	// for id, classes := range msbIds {
+	for _, id := range msbKeys {
+		classes := msbIds[id]
+		// Sork Ids so change to binding file is always human readable
+		sort.Slice(classes, func(i, j int) bool { 
+			iId, _ := classes[i].classTypeId(NameSpace)
+			jId, _ := classes[j].classTypeId(NameSpace)
+			return uint32(iId & 0xFFFFFFFF) < uint32(jId & 0xFFFFFFFF)
+		})	
 		w.Writeln("        case 0x%08X: ", id)
 		w.Writeln("          switch(lsbId) {")
 		for i := 0; i < len(classes); i++ {
