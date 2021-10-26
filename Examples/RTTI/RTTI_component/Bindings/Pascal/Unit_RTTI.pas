@@ -475,6 +475,13 @@ implementation
  PolymorficFactory implementation
 **************************************************************************************************************************)
 
+  (**
+   * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+   *            It's designed to be used on RTTIHandle object only once.
+   *            If it's used on any existing object as a form of dynamic cast then
+   *            TRTTIWrapper::AcquireInstance(object: TRTTIBase) must be called after instantiating new object.
+   *            This is important to keep reference count matching between application and library sides.
+  *)
   class function TRTTIPolymorphicFactory<_T, _B>.Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T;
   var
     ClassTypeId: QWord;

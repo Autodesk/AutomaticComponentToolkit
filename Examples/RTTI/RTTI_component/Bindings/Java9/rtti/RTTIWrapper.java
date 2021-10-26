@@ -251,6 +251,13 @@ public class RTTIWrapper {
 		return instance;
 	}
 
+	/**
+	 * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+	 *            It's designed to be used on RTTIHandle object only once.
+	 *            If it's used on any existing object as a form of dynamic cast then
+	 *            RTTIWrapper::acquireInstance(Base object) must be called after instantiating new object.
+	 *            This is important to keep reference count matching between application and library sides.
+	*/
 	public <T> T PolymorphicFactory(RTTIHandle handle, Class<T> cls) {
 		Class[] cArg = new Class[2];
 		cArg[0] = RTTIWrapper.class;
