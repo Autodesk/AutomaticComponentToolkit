@@ -32,6 +32,7 @@ type
     public
       constructor Create();
       destructor Destroy(); override;
+      function ClassTypeId(): QWord; Override;
       procedure EnlistVariable(AVariable: TNumbersVariable);
       function GetEnlistedVariable(const AIndex: Cardinal): TNumbersVariable;
       procedure ClearVariables();
@@ -42,6 +43,10 @@ type
 implementation
 
 uses calculation_impl;
+function TCalculationCalculator.ClassTypeId(): QWord;
+begin
+  Result := QWord($B23F514353D0C606); // First 64 bits of SHA1 of a string: "Calculation::Calculator"
+end;
 
 constructor TCalculationCalculator.Create();
 begin
