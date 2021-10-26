@@ -20,12 +20,12 @@ set(CMAKE_CURRENT_BINDING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CDynami
 
 project(RTTIExample_CDynamic C)
 
-file(COPY "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" DESTINATION "${CMAKE_CURRENT_BINDING_DIR}")
-file(RENAME "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.c")
+file(COPY "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/rtti_dynamic.cc" "${CMAKE_CURRENT_BINARY_DIR}/rtti_dynamic.c")
 
 add_executable(RTTIExample_CDynamic
   "${CMAKE_CURRENT_SOURCE_DIR}/RTTI_example.c"
-  "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.c"
+  "${CMAKE_CURRENT_BINARY_DIR}/rtti_dynamic.c"
 )
 
 set_property(TARGET RTTIExample_CDynamic PROPERTY C_STANDARD 99)
