@@ -431,7 +431,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("%s", methodstring)
 		w.Writeln("  {")
 		w.Writeln("    // First 64 bits of SHA1 of a string: \"%s\"", chashHashString)
-		w.Writeln("    static const %s_uint64 s_%sTypeId = 0x%XUL;", strings.ToUpper(NameSpace), class.ClassName, classTypeId)
+		w.Writeln("    static const %s_uint64 s_%sTypeId = 0x%XUL;", NameSpace, class.ClassName, classTypeId)
 		w.Writeln("    return s_%sTypeId;", class.ClassName)
 		w.Writeln("  }")	
 		w.Writeln("")	
@@ -1723,7 +1723,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(%s.get());", theWrapper, acqurireMethod, outVarName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->handle();", variableName, outVarName));
 					callParameters = callParameters + outVarName
 					outCallParameters = outCallParameters + outVarName
 				} else {
@@ -1789,7 +1789,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->GetHandle();", variableName, paramNameSpace, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->handle();", variableName, paramNameSpace, param.ParamName));
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)

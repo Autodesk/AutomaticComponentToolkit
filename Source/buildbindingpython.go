@@ -838,7 +838,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
 					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle)",
-					param.ParamName, wrapperReference, param.ParamName))
+					param.ParamName, theWrapperReference, param.ParamName))
 				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
 				if (param.ParamType == "optionalclass") {
 					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))

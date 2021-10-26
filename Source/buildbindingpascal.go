@@ -413,8 +413,8 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 
 	writeEnumConversionInterface(component, w, NameSpace)
 
-	w.Writeln("  TPolymorphicFactory<_T:class; _B> = record")
-	w.Writeln("    class function Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T; static;", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	w.Writeln("  T%sPolymorphicFactory<_T:class; _B> = record", NameSpace)
+	w.Writeln("    class function Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T; static;", NameSpace, NameSpace)
 	w.Writeln("  end;")
 
 	w.Writeln("")
@@ -428,13 +428,13 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("**************************************************************************************************************************)")
 	w.Writeln("")
 
-	w.Writeln("  class function TPolymorphicFactory<_T, _B>.Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T;", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	w.Writeln("  class function T%sPolymorphicFactory<_T, _B>.Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T;", NameSpace, NameSpace, NameSpace)
 	w.Writeln("  var")
 	w.Writeln("    ClassTypeId: QWord;")
-    w.Writeln("    Obj: TRTTIBase;")
+    w.Writeln("    Obj: T%sBase;", strings.ToUpper(NameSpace))
 	w.Writeln("  begin")
 	w.Writeln("    Result := nil;")
-	w.Writeln("    Wrapper.CheckError(nil, Wrapper.%sBase_ClassTypeIdFunc(handle, ClassTypeId));", strings.ToUpper(NameSpace))
+	w.Writeln("    Wrapper.CheckError(nil, Wrapper.%sBase_ClassTypeIdFunc(handle, ClassTypeId));", NameSpace)
 	w.Writeln("    case (ClassTypeId) of")
 	for i := 0; i < len(component.Classes); i++ {
 		classTypeId, chashHashString := component.Classes[i].classTypeId(NameSpace)
@@ -891,7 +891,11 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
 			case "class", "optionalclass":
-				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+NameSpace+"Handle;")
+				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) == 0 {
+					paramNameSpace = NameSpace
+				}
+				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+paramNameSpace+"Handle;")
 				initCommands = append(initCommands, fmt.Sprintf("if Assigned(A%s) then", param.ParamName))
 				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A" + param.ParamName + ".TheHandle")
 				initCommands = append(initCommands, fmt.Sprintf("else"))
@@ -1057,7 +1061,7 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s) then", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("    Result := TPolymorphicFactory<T%s%s, T%s%s>.Make(%s, H%s);", theNameSpace, theParamClass, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
+				resultCommands = append(resultCommands, fmt.Sprintf("    Result := T%sPolymorphicFactory<T%s%s, T%s%s>.Make(%s, H%s);", theNameSpace, theNameSpace, theParamClass, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)

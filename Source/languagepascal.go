@@ -314,10 +314,14 @@ func getPascalParameterType(ParamTypeName string, NameSpace string, ParamClass s
 		}
 
 	case "class", "optionalclass":
+		SubNameSpace, SubClassName, _ := decomposeParamClassName(ParamClass)
 		if isPlain {
-			PascalParamTypeName = fmt.Sprintf("T%sHandle", NameSpace)
+			if len(SubNameSpace) > 0 && SubNameSpace != NameSpace {
+				PascalParamTypeName = fmt.Sprintf("T%sHandle", SubNameSpace)
+			} else {
+				PascalParamTypeName = fmt.Sprintf("T%sHandle", NameSpace)
+			}
 		} else {
-			SubNameSpace, SubClassName, _ := decomposeParamClassName(ParamClass)
 			if isImplementation {
 				if len(SubNameSpace) > 0 {
 					PascalParamTypeName = fmt.Sprintf("T%s%s", SubNameSpace, SubClassName)
