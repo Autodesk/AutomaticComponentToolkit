@@ -38,7 +38,7 @@ implementation
 
 function TRTTIAnimal.ClassTypeId(): QWord;
 begin
-	Result := $8B40467DA6D327AF; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+	Result := QWord($8B40467DA6D327AF); // First 64 bits of SHA1 of a string: "RTTI::Animal"
 end;
 
 function TRTTIAnimal.Name(): String;

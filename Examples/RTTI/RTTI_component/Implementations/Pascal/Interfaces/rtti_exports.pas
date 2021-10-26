@@ -197,10 +197,10 @@ begin
 	try
 		if not Assigned(pClassTypeId) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
-		if not Assigned(pBase) then
+		if not Assigned(pBase.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
 
-		ObjectBase := TObject(pBase);
+		ObjectBase := TObject(pBase.Handle);
 		if Supports(ObjectBase, IRTTIBase) then begin
 			IntfBase := ObjectBase as IRTTIBase;
 			ResultClassTypeId := IntfBase.ClassTypeId();
@@ -233,10 +233,10 @@ begin
 	try
 		if ((not Assigned(pResultBuffer)) and (not Assigned(pResultNeededChars))) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
-		if not Assigned(pAnimal) then
+		if not Assigned(pAnimal.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
 
-		ObjectAnimal := TObject(pAnimal);
+		ObjectAnimal := TObject(pAnimal.Handle);
 		if Supports(ObjectAnimal, IRTTIAnimal) then begin
 			IntfAnimal := ObjectAnimal as IRTTIAnimal;
 			ResultResult := IntfAnimal.Name();
@@ -273,10 +273,10 @@ var
 	IntfTiger: IRTTITiger;
 begin
 	try
-		if not Assigned(pTiger) then
+		if not Assigned(pTiger.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
 
-		ObjectTiger := TObject(pTiger);
+		ObjectTiger := TObject(pTiger.Handle);
 		if Supports(ObjectTiger, IRTTITiger) then begin
 			IntfTiger := ObjectTiger as IRTTITiger;
 			IntfTiger.Roar();
@@ -307,15 +307,19 @@ begin
 	try
 		if not Assigned(pAnimal) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
-		if not Assigned(pAnimalIterator) then
+		if not Assigned(pAnimalIterator.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
 
-		ObjectAnimalIterator := TObject(pAnimalIterator);
+		ObjectAnimalIterator := TObject(pAnimalIterator.Handle);
 		if Supports(ObjectAnimalIterator, IRTTIAnimalIterator) then begin
 			IntfAnimalIterator := ObjectAnimalIterator as IRTTIAnimalIterator;
 			ResultAnimal := IntfAnimalIterator.GetNextAnimal();
 
-			pAnimal^ := ResultAnimal;
+			pAnimal^.Handle := ResultAnimal;
+			if Assigned(ResultAnimal) then
+				pAnimal^.ClassTypeId := (ResultAnimal as IRTTIBase).ClassTypeId()
+			else
+				pAnimal^.ClassTypeId := 0;
 		end else
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 
@@ -342,15 +346,19 @@ begin
 	try
 		if not Assigned(pIterator) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
-		if not Assigned(pZoo) then
+		if not Assigned(pZoo.Handle) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
 
-		ObjectZoo := TObject(pZoo);
+		ObjectZoo := TObject(pZoo.Handle);
 		if Supports(ObjectZoo, IRTTIZoo) then begin
 			IntfZoo := ObjectZoo as IRTTIZoo;
 			ResultIterator := IntfZoo.Iterator();
 
-			pIterator^ := ResultIterator;
+			pIterator^.Handle := ResultIterator;
+			if Assigned(ResultIterator) then
+				pIterator^.ClassTypeId := (ResultIterator as IRTTIBase).ClassTypeId()
+			else
+				pIterator^.ClassTypeId := 0;
 		end else
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 
@@ -402,7 +410,7 @@ var
 	ResultHasError: Boolean;
 begin
 	try
-		ObjectInstance := TObject(pInstance);
+		ObjectInstance := TObject(pInstance.Handle);
 		if (not Supports(ObjectInstance, IRTTIBase)) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 		
@@ -439,7 +447,7 @@ var
 	ObjectInstance: TObject;
 begin
 	try
-		ObjectInstance := TObject(pInstance);
+		ObjectInstance := TObject(pInstance.Handle);
 		if (not Supports(ObjectInstance, IRTTIBase)) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 		
@@ -462,7 +470,7 @@ var
 	ObjectInstance: TObject;
 begin
 	try
-		ObjectInstance := TObject(pInstance);
+		ObjectInstance := TObject(pInstance.Handle);
 		if (not Supports(ObjectInstance, IRTTIBase)) then
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 		
@@ -529,7 +537,11 @@ begin
 
 		ResultInstance := TRTTIWrapper.CreateZoo();
 
-		pInstance^ := ResultInstance;
+		pInstance^.Handle := ResultInstance;
+		if Assigned(ResultInstance) then
+			pInstance^.ClassTypeId := (ResultInstance as IRTTIBase).ClassTypeId()
+		else
+			pInstance^.ClassTypeId := 0;
 		Result := RTTI_SUCCESS;
 	except
 		On E: ERTTIException do begin

@@ -464,7 +464,7 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
     function CreateZoo(): TRTTIZoo;
   end;
 
-  TPolymorphicFactory<_T:class; _B> = record
+  TRTTIPolymorphicFactory<_T:class; _B> = record
     class function Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T; static;
   end;
 
@@ -475,7 +475,7 @@ implementation
  PolymorficFactory implementation
 **************************************************************************************************************************)
 
-  class function TPolymorphicFactory<_T, _B>.Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T;
+  class function TRTTIPolymorphicFactory<_T, _B>.Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T;
   var
     ClassTypeId: QWord;
     Obj: TRTTIBase;
@@ -696,7 +696,7 @@ implementation
     HAnimal.ClassTypeId := 0;
     FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextAnimalFunc(FHandle, HAnimal));
     if Assigned(HAnimal.Handle) then
-      Result := TPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
+      Result := TRTTIPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
   end;
 
 (*************************************************************************************************************************
@@ -722,7 +722,7 @@ implementation
     HIterator.ClassTypeId := 0;
     FWrapper.CheckError(Self, FWrapper.RTTIZoo_IteratorFunc(FHandle, HIterator));
     if Assigned(HIterator.Handle) then
-      Result := TPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(FWrapper, HIterator);
+      Result := TRTTIPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(FWrapper, HIterator);
   end;
 
 (*************************************************************************************************************************
@@ -931,7 +931,7 @@ implementation
     HInstance.ClassTypeId := 0;
     CheckError(nil, RTTICreateZooFunc(HInstance));
     if Assigned(HInstance.Handle) then
-      Result := TPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Self, HInstance);
+      Result := TRTTIPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Self, HInstance);
   end;
 
 

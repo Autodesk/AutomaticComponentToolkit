@@ -40,7 +40,7 @@ implementation
 
 function TRTTIAnimalIterator.ClassTypeId(): QWord;
 begin
-	Result := $F1917FE6BBE77831; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+	Result := QWord($F1917FE6BBE77831); // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
 end;
 
 constructor TRTTIAnimalIterator.Create(Animals: TList);
