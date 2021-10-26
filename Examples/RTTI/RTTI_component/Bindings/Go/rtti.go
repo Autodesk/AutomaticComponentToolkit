@@ -18,6 +18,7 @@ Interface version: 1.0.0
 package rtti
 
 /*
+#cgo linux LDFLAGS: -ldl
 #include "rtti_dynamic.cc"
 
 RTTI_pvoid loadRTTILibrary (const char * pFileName)
@@ -460,8 +461,8 @@ func (wrapper Wrapper) AcquireInstance(instance Base) error {
 }
 
 // InjectComponent injects an imported component for usage within this component.
-func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uint64) error {
-	ret := C.CCall_rtti_injectcomponent(wrapper.LibraryHandle, (*C.char)(unsafe.Pointer(&[]byte(nameSpace)[0])), (C.uint64_t)(symbolAddressMethod))
+func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uintptr) error {
+	ret := C.CCall_rtti_injectcomponent(wrapper.LibraryHandle, (*C.char)(unsafe.Pointer(&[]byte(nameSpace)[0])), (C.RTTI_pvoid)(symbolAddressMethod))
 	if ret != 0 {
 		return makeError(uint32(ret))
 	}
@@ -469,13 +470,13 @@ func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uin
 }
 
 // GetSymbolLookupMethod returns the address of the SymbolLookupMethod.
-func (wrapper Wrapper) GetSymbolLookupMethod() (uint64, error) {
-	var symbolLookupMethod C.uint64_t
+func (wrapper Wrapper) GetSymbolLookupMethod() (uintptr, error) {
+	var symbolLookupMethod C.RTTI_pvoid
 	ret := C.CCall_rtti_getsymbollookupmethod(wrapper.LibraryHandle, &symbolLookupMethod)
 	if ret != 0 {
 		return 0, makeError(uint32(ret))
 	}
-	return uint64(symbolLookupMethod), nil
+	return uintptr(symbolLookupMethod), nil
 }
 
 // CreateZoo create a new zoo with animals.

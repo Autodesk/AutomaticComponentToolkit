@@ -277,6 +277,9 @@ public:
 	inline RTTI_pvoid GetSymbolLookupMethod();
 	inline PZoo CreateZoo();
 
+	template<class U>
+	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
+
 private:
 	
 	RTTIResult checkBinaryVersion()
@@ -288,9 +291,6 @@ private:
 		}
 		return RTTI_SUCCESS;
 	}
-
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
 
 	friend class CBase;
 	friend class CAnimal;

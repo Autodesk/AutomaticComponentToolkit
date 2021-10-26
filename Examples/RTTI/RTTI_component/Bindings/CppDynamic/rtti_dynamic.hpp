@@ -296,6 +296,9 @@ public:
 	inline RTTI_pvoid GetSymbolLookupMethod();
 	inline PZoo CreateZoo();
 
+	template<class U>
+	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
+
 private:
 	sRTTIDynamicWrapperTable m_WrapperTable;
 	
@@ -312,9 +315,6 @@ private:
 	RTTIResult releaseWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable);
 	RTTIResult loadWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
 	RTTIResult loadWrapperTableFromSymbolLookupMethod(sRTTIDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);
-
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
 
 	friend class CBase;
 	friend class CAnimal;

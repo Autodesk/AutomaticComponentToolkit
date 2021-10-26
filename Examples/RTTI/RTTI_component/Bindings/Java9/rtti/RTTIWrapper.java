@@ -257,48 +257,18 @@ public class RTTIWrapper {
 		cArg[1] = RTTIHandle.class;
 	
 		try {
+			T obj = null;
 			int msbId = (int)(handle.ClassTypeId >> 32); 
 			int lsbId = (int)handle.ClassTypeId; 
-			T obj = null;
 			switch(msbId) {
-				case 0xBC9D5FA7: 
-					switch(lsbId) {
-						case 0x750C1020: obj = (T)(new Mammal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
-					}
-				break;
-				case 0x6756AA8E: 
-					switch(lsbId) {
-						case 0xA5802EC3: obj = (T)(new Reptile(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
-					}
-				break;
-				case 0x08D007E7: 
-					switch(lsbId) {
-						case 0xB5F7BAF4: obj = (T)(new Tiger(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
-					}
-				break;
-				case 0x8E551B20: 
-					switch(lsbId) {
-						case 0x8A2E8321: obj = (T)(new Turtle(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
-					}
-				break;
-				case 0xF1917FE6: 
-					switch(lsbId) {
-						case 0xBBE77831: obj = (T)(new AnimalIterator(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
-					}
-				break;
 				case 0x1549AD28: 
 					switch(lsbId) {
 						case 0x813DAE05: obj = (T)(new Base(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 					}
 				break;
-				case 0x9751971B: 
+				case 0xF1917FE6: 
 					switch(lsbId) {
-						case 0xD2C2D958: obj = (T)(new Giraffe(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
-					}
-				break;
-				case 0x5F6826EF: 
-					switch(lsbId) {
-						case 0x909803B2: obj = (T)(new Snake(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+						case 0xBBE77831: obj = (T)(new AnimalIterator(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
 					}
 				break;
 				case 0x2262ABE8: 
@@ -309,6 +279,36 @@ public class RTTIWrapper {
 				case 0x8B40467D: 
 					switch(lsbId) {
 						case 0xA6D327AF: obj = (T)(new Animal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+					}
+				break;
+				case 0xBC9D5FA7: 
+					switch(lsbId) {
+						case 0x750C1020: obj = (T)(new Mammal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+					}
+				break;
+				case 0x6756AA8E: 
+					switch(lsbId) {
+						case 0xA5802EC3: obj = (T)(new Reptile(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
+					}
+				break;
+				case 0x9751971B: 
+					switch(lsbId) {
+						case 0xD2C2D958: obj = (T)(new Giraffe(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+					}
+				break;
+				case 0x08D007E7: 
+					switch(lsbId) {
+						case 0xB5F7BAF4: obj = (T)(new Tiger(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+					}
+				break;
+				case 0x5F6826EF: 
+					switch(lsbId) {
+						case 0x909803B2: obj = (T)(new Snake(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+					}
+				break;
+				case 0x8E551B20: 
+					switch(lsbId) {
+						case 0x8A2E8321: obj = (T)(new Turtle(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
 					}
 				break;
 			}
