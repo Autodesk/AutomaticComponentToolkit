@@ -28,7 +28,15 @@ int main()
 		std::cout << std::endl;
 		
 		std::string libpath = "";
-		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/numbers.");
+		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "numbers."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		);
 		numbers->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "Numbers.Version = " << nMajor << "." << nMinor << "." << nMicro;
 		std::cout << std::endl;

@@ -22,10 +22,26 @@ int main()
 	try
 	{
 		std::string libpath = ""; // TODO: put the location of the Calculation-library file here.
-		auto wrapper = Calculation::CWrapper::loadLibrary(libpath + "/calculation."); // TODO: add correct suffix of the library
+		auto wrapper = Calculation::CWrapper::loadLibrary(libpath + "calculation."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		); // TODO: add correct suffix of the library
 
 		libpath = "";
-		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "/numbers.");
+		auto numbers = Numbers::CWrapper::loadLibrary(libpath + "numbers."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		);
 
 		Calculation_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
