@@ -41,7 +41,7 @@ case $OS in
         OSEXEEXT='.exe'
     ;;
     Darwin*)
-        OSEXT='.mac'
+        OSEXT='.darwin'
         OSLIBEXT='.dylib'
         OSEXEEXT=
     ;;
