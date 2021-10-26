@@ -570,7 +570,14 @@ func getCTypesParameterTypeName(ParamTypeName string, NameSpace string, ParamCla
 		case "functiontype":
 			return fmt.Sprintf("%s", ParamClass), nil
 		case "class", "optionalclass":
-			CTypesParamTypeName = fmt.Sprintf("%sHandle", NameSpace);
+			paramNameSpace, _, _ := decomposeParamClassName(ParamClass)
+			if len(paramNameSpace) == 0 {
+				paramNameSpace = NameSpace
+			}
+			if NameSpace != paramNameSpace {
+				paramNameSpace = paramNameSpace + "." + paramNameSpace
+			}
+			CTypesParamTypeName = fmt.Sprintf("%sHandle", paramNameSpace);
 		default:
 			return "", fmt.Errorf ("invalid parameter type \"%s\" for Python parameter", ParamTypeName);
 	}
@@ -843,7 +850,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle.Handle:", param.ParamName))
 				postCallLines = append(postCallLines,
 					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle)",
-					param.ParamName, wrapperReference, param.ParamName))
+					param.ParamName, theWrapperReference, param.ParamName))
 				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
 				if (param.ParamType == "optionalclass") {
 					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))

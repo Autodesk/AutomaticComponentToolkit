@@ -550,7 +550,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 				} else {
 					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", param.ParamName))
 
-					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
+					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s.Handle);", param.ParamName, pascalParams[0].ParamName))
 					if (param.ParamType == "class") {
 						checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
 						checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
@@ -733,7 +733,11 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s.TheHandle;", pascalParams[0].ParamName, param.ParamName))
 				} else {
 					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Result%s: TObject;", param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("%s^ := Result%s;", pascalParams[0].ParamName, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("%s^.Handle := Result%s;", pascalParams[0].ParamName, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("if Assigned(Result%s) then", param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("  %s^.ClassTypeId := (Result%s as I%sBase).ClassTypeId()", pascalParams[0].ParamName, param.ParamName, NameSpace))
+					postCallCode = append(postCallCode, fmt.Sprintf("else"))
+					postCallCode = append(postCallCode, fmt.Sprintf("  %s^.ClassTypeId := 0;", pascalParams[0].ParamName))
 				}
 
 				resultVariable = fmt.Sprintf("Result%s", param.ParamName)
@@ -761,7 +765,7 @@ func writePascalClassExportImplementation(component ComponentDefinition, method 
 		variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", ClassName))
 		variableDefinitions = append(variableDefinitions, fmt.Sprintf("Intf%s: I%s%s;", ClassName, NameSpace, ClassName))
 
-		parameterChecks = append(parameterChecks, fmt.Sprintf("if not Assigned(p%s) then", ClassName))
+		parameterChecks = append(parameterChecks, fmt.Sprintf("if not Assigned(p%s.Handle) then", ClassName))
 		parameterChecks = append(parameterChecks, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
 	}
 
@@ -783,7 +787,7 @@ func writePascalClassExportImplementation(component ComponentDefinition, method 
 
 	w.Writeln("")
 	if !isGlobal {
-		w.Writeln("    Object%s := TObject(p%s);", ClassName, ClassName)
+		w.Writeln("    Object%s := TObject(p%s.Handle);", ClassName, ClassName)
 		w.Writeln("    if Supports(Object%s, I%s%s) then begin", ClassName, NameSpace, ClassName)
 		w.Writeln("      Intf%s := Object%s as I%s%s;", ClassName, ClassName, NameSpace, ClassName)
 	}

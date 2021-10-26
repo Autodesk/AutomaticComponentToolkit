@@ -769,7 +769,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					makeSharedParameter = makeSharedParameter + "->m_p" + paramNameSpace + "Wrapper.get()"
 				}
 				
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = %sHandleNull;", NameSpace, param.ParamName, NameSpace))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = %sHandleNull;", paramNameSpace, param.ParamName, paramNameSpace))
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 				
@@ -1045,7 +1045,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class", "optionalclass":
 		if isInput {
-			return fmt.Sprintf("classParam<%s%s%s%s>", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
+			return fmt.Sprintf("%sclassParam<%s%s%s%s>", paramNameSpace, paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
 		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
 	case "functiontype":
@@ -1333,6 +1333,9 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			return err
 		}
 	}
+	w.Writeln("")
+	w.Writeln("  template<class U>")
+	w.Writeln("  std::shared_ptr<U> polymorphicFactory(%sHandle);", NameSpace)
 
 	w.Writeln("")
 	w.Writeln("private:")
@@ -1371,9 +1374,6 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  %sResult loadWrapperTable(s%sDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);", NameSpace, NameSpace)
 		w.Writeln("  %sResult loadWrapperTableFromSymbolLookupMethod(s%sDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);", NameSpace, NameSpace)
 	}
-	w.Writeln("")
-	w.Writeln("  template<class U>")
-	w.Writeln("  std::shared_ptr<U> polymorphicFactory(%sHandle);", NameSpace)
 
 	w.Writeln("")
 
@@ -1444,7 +1444,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	w.Writeln("template <class T>")
-	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, strings.ToUpper(NameSpace))
+	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("{")
 	w.Writeln("  switch(pHandle.ClassTypeId) {")
 	for i := 0; i < len(component.Classes); i++ {
