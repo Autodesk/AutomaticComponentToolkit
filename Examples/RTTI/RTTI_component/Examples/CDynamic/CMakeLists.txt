@@ -19,9 +19,10 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CURRENT_BINDING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CDynamic)
 
 project(RTTIExample_CDynamic C)
-if (EXISTS ${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc)
-  file(RENAME "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.c")
-endif()
+
+file(COPY "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" DESTINATION "${CMAKE_CURRENT_BINDING_DIR}")
+file(RENAME "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.cc" "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.c")
+
 add_executable(RTTIExample_CDynamic
   "${CMAKE_CURRENT_SOURCE_DIR}/RTTI_example.c"
   "${CMAKE_CURRENT_BINDING_DIR}/rtti_dynamic.c"
