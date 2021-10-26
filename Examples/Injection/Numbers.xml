@@ -28,6 +28,9 @@
 	</errors>
 	
 	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
 	</class>
 	
 	<class name="Variable" parent="Base" description="A variable number">
@@ -42,7 +45,8 @@
 	<global baseclassname="Base"
 		releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
 		versionmethod="GetVersion" errormethod="GetLastError"
-		symbollookupmethod="GetSymbolLookupMethod">
+		symbollookupmethod="GetSymbolLookupMethod"
+		classtypeidmethod="ClassTypeId">
 		
 		<method name="CreateVariable" description="Creates a new Variable instance">
 			<param name="InitialValue" type="double" pass="in" description="Initial value of the new Variable" />
