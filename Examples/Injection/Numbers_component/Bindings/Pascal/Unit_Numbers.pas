@@ -284,6 +284,13 @@ implementation
  PolymorficFactory implementation
 **************************************************************************************************************************)
 
+  (**
+   * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+   *            It's designed to be used on NumbersHandle object only once.
+   *            If it's used on any existing object as a form of dynamic cast then
+   *            TNUMBERSWrapper::AcquireInstance(object: TNUMBERSBase) must be called after instantiating new object.
+   *            This is important to keep reference count matching between application and library sides.
+  *)
   class function TNumbersPolymorphicFactory<_T, _B>.Make(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): _T;
   var
     ClassTypeId: QWord;

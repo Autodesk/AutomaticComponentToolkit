@@ -341,6 +341,13 @@ implementation
  PolymorficFactory implementation
 **************************************************************************************************************************)
 
+  (**
+   * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+   *            It's designed to be used on CalculationHandle object only once.
+   *            If it's used on any existing object as a form of dynamic cast then
+   *            TCALCULATIONWrapper::AcquireInstance(object: TCALCULATIONBase) must be called after instantiating new object.
+   *            This is important to keep reference count matching between application and library sides.
+  *)
   class function TCalculationPolymorphicFactory<_T, _B>.Make(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): _T;
   var
     ClassTypeId: QWord;
