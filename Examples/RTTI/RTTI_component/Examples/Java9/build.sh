@@ -2,6 +2,7 @@
 set -euxo pipefail
 
 cd "$(dirname "$0")"
+source ../../../../../Build/build.inc
 
 JnaJar="jna-5.5.0.jar"
 Classpath=".:${JnaJar}:../../Bindings/Java9/"
@@ -24,9 +25,12 @@ echo "Download JNA"
 [ -f jna-5.5.0.jar ] || wget https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar
 
 echo "Compile Java bindings"
-javac -classpath "${JnaJar}" ../../Bindings/Java9/rtti/*.java
+javac -encoding UTF8 -classpath "${JnaJar}" ../../Bindings/Java9/rtti/*.java
 echo "Compile Java example"
-javac -classpath $Classpath RTTI_Example.java
+javac -encoding UTF8 -classpath $Classpath RTTI_Example.java
 
-echo "Execute example"
-java -classpath $Classpath RTTI_Example
+echo "Test C++ library"
+java -ea -classpath $Classpath RTTI_Example $PWD/../../Implementations/Cpp/build/rtti$OSLIBEXT
+
+echo "Test Pascal library"
+java -ea -classpath $Classpath RTTI_Example $PWD/../../Implementations/Pascal/build/rtti$OSLIBEXT
