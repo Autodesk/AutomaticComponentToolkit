@@ -18,9 +18,8 @@ import rtti.*;
 
 public class RTTI_Example {
 
-	public static String libpath = "/Users/anpiloa/git/AutomaticComponentToolkit/Examples/RTTI/build-lib/rtti.dylib"; // TODO add the location of the shared library binary here
-
 	public static void main(String[] args) throws RTTIException {
+		String libpath = args[0];
 		RTTIWrapper wrapper = new RTTIWrapper(libpath);
 		
 		RTTIWrapper.GetVersionResult version = wrapper.getVersion();
@@ -30,16 +29,74 @@ public class RTTI_Example {
 		Zoo zoo = wrapper.createZoo();
 
 		AnimalIterator iterator = zoo.iterator();
-		while (true) {
-			Animal animal = iterator.getNextAnimal();
-			if (animal == null) break;
-			System.out.print("Animal name: " + animal.name());
-			System.out.println();
-			if (animal instanceof Tiger) {
-				System.out.println("  ^ is a real tiger!!!");
-				((Tiger)animal).roar();
-			}
-		}
+
+		Animal animal;
+		// Animal name: Gerald Giraffe
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Gerald Giraffe"));
+		assert(animal instanceof Giraffe);
+
+		// Animal name: Timmy Tiger
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Timmy Tiger"));
+		assert(animal instanceof Tiger);
+		((Tiger)animal).roar();
+
+		// Animal name: Tony Tiger
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Tony Tiger"));
+		assert(animal instanceof Tiger);
+		((Tiger)animal).roar();
+
+		// Animal name: Sebastian Snake
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Sebastian Snake"));
+		assert(animal instanceof Snake);
+
+		// Animal name: Tobias Turtle
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Tobias Turtle"));
+		assert(animal instanceof Turtle);
+
+		// Animal name: Theo Turtle
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Theo Turtle"));
+		assert(animal instanceof Turtle);
+
+		// Animal name: Tomás Turtle
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Tomás Turtle"));
+		assert(animal instanceof Turtle);
+
+		// Animal name: Slytherin Snake
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Slytherin Snake"));
+		assert(animal instanceof Snake);
+
+		// Animal name: Travis Tiger
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Travis Tiger"));
+		assert(animal instanceof Tiger);
+		((Tiger)animal).roar();
+
+		// Animal name: Gary Giraffe
+		animal = iterator.getNextAnimal();
+		assert(animal != null);
+		assert(animal.name().equals("Gary Giraffe"));
+		assert(animal instanceof Giraffe);
+		
+		animal = iterator.getNextAnimal();
+		assert(animal == null);
+
 	}
 }
 
