@@ -48,7 +48,7 @@ var
 begin
 	writeln('loading DLL');
 	ALibPath := '.'; // TODO add the location of the shared library binary here
-	ARTTIWrapper := TRTTIWrapper.Create(ALibPath + '/' + 'rtti.'); // TODO add the extension of the shared library file here
+	ARTTIWrapper := TRTTIWrapper.Create(ALibPath + '/' + 'rtti.dll'); // TODO add the extension of the shared library file here
 
 	try
 		writeln('loading DLL Done');
