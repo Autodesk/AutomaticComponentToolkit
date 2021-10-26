@@ -969,6 +969,13 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("      }")
 
 	w.Writeln("")
+	w.Writeln("      /**")
+	w.Writeln("       * IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("       *            It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("       *            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("       *            %sWrapper::AcquireInstance(C%s object) must be called after instantiating new object.", NameSpace, component.Global.BaseClassName)
+	w.Writeln("       *            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("      */")
 	w.Writeln("      public static T PolymorphicFactory<T>(%sHandle Handle) where T : class", NameSpace)
 	w.Writeln("      {")
 	w.Writeln("        T Object;")

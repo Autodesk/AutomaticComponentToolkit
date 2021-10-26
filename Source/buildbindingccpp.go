@@ -1443,6 +1443,13 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 
+	w.Writeln("/**")
+	w.Writeln("* IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("*            It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("*            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("*            %s%sWrapper::AcquireInstance(C%s object) must be called after instantiating new object.", cppClassPrefix, ClassIdentifier, component.Global.BaseClassName)
+	w.Writeln("*            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("*/")
 	w.Writeln("template <class T>")
 	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("{")
