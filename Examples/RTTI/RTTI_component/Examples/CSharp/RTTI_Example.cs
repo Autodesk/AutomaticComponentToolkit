@@ -30,25 +30,80 @@ namespace RTTI_Example
 
 				RTTI.CZoo Zoo = RTTI.Wrapper.CreateZoo();
 				RTTI.CAnimalIterator Iterator = Zoo.Iterator();
-				
-				while (true) {
-					RTTI.CAnimal Animal = Iterator.GetNextAnimal();
-					if (Animal.GetHandle().Handle == 0)
-						break;
-					Console.WriteLine("Animal name: " + Animal.Name());
-					if (Animal is RTTI.CTiger) {
-						Console.WriteLine("  ^ is a real tiger!!!");
-						(Animal as RTTI.CTiger).Roar();
-					}
-				}
 
+				RTTI.CAnimal Animal;
+
+				// Animal name: Gerald Giraffe
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Gerald Giraffe"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CGiraffe)) throw new Exception("Wrong data");
+
+				// Animal name: Timmy Tiger
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Timmy Tiger"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTiger)) throw new Exception("Wrong data");
+				(Animal as RTTI.CTiger).Roar();
+
+				// Animal name: Tony Tiger
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Tony Tiger"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTiger)) throw new Exception("Wrong data");
+				(Animal as RTTI.CTiger).Roar();
+
+				// Animal name: Sebastian Snake
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Sebastian Snake"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CSnake)) throw new Exception("Wrong data");
+
+				// Animal name: Tobias Turtle
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Tobias Turtle"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTurtle)) throw new Exception("Wrong data");
+
+				// Animal name: Theo Turtle
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Theo Turtle"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTurtle)) throw new Exception("Wrong data");
+
+				// Animal name: Tomás Turtle
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Tomás Turtle"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTurtle)) throw new Exception("Wrong data");
+
+				// Animal name: Slytherin Snake
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Slytherin Snake"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CSnake)) throw new Exception("Wrong data");
+
+				// Animal name: Travis Tiger
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Travis Tiger"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CTiger)) throw new Exception("Wrong data");
+				(Animal as RTTI.CTiger).Roar();
+
+				// Animal name: Gary Giraffe
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle != 0)) throw new Exception("Wrong data");
+				if (!(Animal.Name().Equals("Gary Giraffe"))) throw new Exception("Wrong data");
+				if (!(Animal is RTTI.CGiraffe)) throw new Exception("Wrong data");
+				
+				Animal = Iterator.GetNextAnimal();
+				if (!(Animal.GetHandle().Handle == 0)) throw new Exception("Wrong data");
 			}
 			catch (Exception e)
 			{
 				Console.WriteLine("Exception: \"" + e.Message + "\"");
+				System.Environment.Exit(1);
 			}
-			Console.WriteLine("Press any key to exit.");
-			Console.ReadKey();
 		}
 	}
 }
