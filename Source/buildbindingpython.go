@@ -365,6 +365,13 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 
+	w.Writeln("  '''IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("                It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("                If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("                Wrapper.AcquireInstance(object) must be called after instantiating new object.")
+	w.Writeln("                This is important to keep reference count matching between application and library sides.")
+	w.Writeln("  '''")
+
 	w.Writeln("  def _polymorphicFactory(self, handle):")
 	w.Writeln("    class PolymorphicFactory():")
 	w.Writeln("      def getObjectById(self, classtypeid, handle, wrapper):")

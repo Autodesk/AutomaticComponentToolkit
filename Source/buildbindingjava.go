@@ -1233,6 +1233,13 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	}
 
 	// Write PolymorphicFactory
+	w.Writeln("  /**")
+	w.Writeln("   * IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("   *            It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("   *            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("   *            %sWrapper::acquireInstance(%s object) must be called after instantiating new object.", NameSpace, component.Global.BaseClassName)
+	w.Writeln("   *            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("  */")
 	w.Writeln("  public <T> T PolymorphicFactory(%sHandle handle, Class<T> cls) {", NameSpace)
 	w.Writeln("  	Class[] cArg = new Class[2];")
 	w.Writeln("  	cArg[0] = %sWrapper.class;", NameSpace)
