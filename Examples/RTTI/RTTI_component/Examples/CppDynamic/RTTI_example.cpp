@@ -14,6 +14,7 @@ Interface version: 1.0.0
 */
 
 #include <iostream>
+#include <cassert>
 #include "rtti_dynamic.hpp"
 
 
@@ -21,8 +22,8 @@ int main()
 {
 	try
 	{
-		std::string libpath = ("."); // TODO: put the location of the RTTI-library file here.
-		auto wrapper = RTTI::CWrapper::loadLibrary(libpath + "/rtti."
+		std::string libpath = (""); // TODO: put the location of the RTTI-library file here.
+		auto wrapper = RTTI::CWrapper::loadLibrary(libpath + "rtti."
 #if defined _WIN32
 		"dll"
 #elif defined __APPLE__
@@ -40,13 +41,77 @@ int main()
 		auto iter = zoo->Iterator();
 
 		using namespace RTTI;
-		while (auto animal = iter->GetNextAnimal()) {
-			std::cout << "Animal name: " << animal->Name() << std::endl;
-			if (auto tiger = std::dynamic_pointer_cast<CTiger>(animal)) {
-				std::cout << "  ^ is a real tiger!!!" << std::endl;
-				tiger->Roar();
-			}
-		}
+
+		PAnimal animal;
+		// Animal name: Gerald Giraffe
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Gerald Giraffe");
+		assert(std::dynamic_pointer_cast<CGiraffe>(animal) != nullptr);
+
+		// Animal name: Timmy Tiger
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Timmy Tiger");
+		assert(std::dynamic_pointer_cast<CTiger>(animal) != nullptr);
+		std::dynamic_pointer_cast<CTiger>(animal)->Roar();
+
+		// Animal name: Tony Tiger
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Tony Tiger");
+		assert(std::dynamic_pointer_cast<CTiger>(animal) != nullptr);
+		std::dynamic_pointer_cast<CTiger>(animal)->Roar();
+
+		// Animal name: Sebastian Snake
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Sebastian Snake");
+		assert(std::dynamic_pointer_cast<CSnake>(animal) != nullptr);
+
+		// Animal name: Tobias Turtle
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Tobias Turtle");
+		assert(std::dynamic_pointer_cast<CTurtle>(animal) != nullptr);
+
+		// Animal name: Theo Turtle
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Theo Turtle");
+		assert(std::dynamic_pointer_cast<CTurtle>(animal) != nullptr);
+
+		// Animal name: Tomás Turtle
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Tomás Turtle");
+		assert(std::dynamic_pointer_cast<CTurtle>(animal) != nullptr);
+
+		// Animal name: Slytherin Snake
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Slytherin Snake");
+		assert(std::dynamic_pointer_cast<CSnake>(animal) != nullptr);
+
+		// Animal name: Travis Tiger
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Travis Tiger");
+		assert(std::dynamic_pointer_cast<CTiger>(animal) != nullptr);
+		std::dynamic_pointer_cast<CTiger>(animal)->Roar();
+
+		// Animal name: Gary Giraffe
+		animal = iter->GetNextAnimal();
+		assert(animal != nullptr);
+		assert(animal->Name() == "Gary Giraffe");
+		assert(std::dynamic_pointer_cast<CGiraffe>(animal) != nullptr);
+		
+		std::cout << "Trace 0" << std::endl;
+
+		animal = iter->GetNextAnimal();
+		assert(animal == nullptr);
+
+		std::cout << "Trace 1" << std::endl;
 	}
 	catch (std::exception &e)
 	{
