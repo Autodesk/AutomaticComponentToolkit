@@ -904,7 +904,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 				initCallParameters = append(initCallParameters, callParam)
 				if param.ParamType == "optionalclass" {
 					preOKReturn = append(preOKReturn, fmt.Sprintf("var _%sPtr %s", param.ParamName, tp.Type))
-					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s == nil {", param.ParamName))
+					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s != nil {", param.ParamName))
 
 					if isGlobal {
 						preOKReturn = append(preOKReturn, fmt.Sprintf("  _%sPtrVal := wrapper.New%s(%s)", param.ParamName, param.ParamClass, param.ParamName))
