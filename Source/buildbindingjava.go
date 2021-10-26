@@ -1262,6 +1262,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		w.Writeln("          }")
 		w.Writeln("        break;")
 	}
+	w.Writeln("        default: obj = cls.getDeclaredConstructor(cArg).newInstance(this, handle); break;")
 	w.Writeln("      }")
 
 	w.Writeln("  		return obj;")
