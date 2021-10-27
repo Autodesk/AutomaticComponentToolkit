@@ -1231,7 +1231,7 @@ func buildCSharpExampleProject(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("<Project Sdk=\"Microsoft.NET.Sdk\">")
 	w.Writeln("  <PropertyGroup>")
 	w.Writeln("    <OutputType>Exe</OutputType>")
-	w.Writeln("    <TargetFramework>netcoreapp2.0</TargetFramework>")
+	w.Writeln("    <TargetFramework>netstandard2.0</TargetFramework>")
 	w.Writeln("    <StartupObject>%s.%s</StartupObject>", exampleName, exampleName)
 	w.Writeln("    <ApplicationIcon />")
 	w.Writeln("    <Platforms>x64</Platforms>")
