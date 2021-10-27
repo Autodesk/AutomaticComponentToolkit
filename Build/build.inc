@@ -34,18 +34,21 @@ case $OS in
         OSEXT='.linux'
         OSLIBEXT='.so'
         OSEXEEXT=
+        FPC_TARGET='linux'
     ;;
     Windows*)
         OSEXT='.exe' 
         OSLIBEXT='.dll'
         OSEXEEXT='.exe'
+        FPC_TARGET='win64'
     ;;
     Darwin*)
         OSEXT='.darwin'
         OSLIBEXT='.dylib'
         OSEXEEXT=
+        FPC_TARGET='darwin'
     ;;
-    *) ;;
+    *) echo "[Failed] Can't detect OS. Only Windows, Linux and MacOS are supported."; exit 1; ;;
 esac
 
 export ACT=act$OSEXT

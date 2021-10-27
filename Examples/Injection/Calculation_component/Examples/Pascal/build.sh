@@ -8,7 +8,7 @@ source ../../../../../Build/build.inc
 echo "Build Pascal example"
 rm -rf build
 mkdir build
-fpc -Fu../../../Calculation_component/Bindings/Pascal -Fu../../../Numbers_component/Bindings/Pascal -FU./build -o./build/Calculation_Example$OSEXEEXT Calculation_Example.lpr
+fpc -Fu../../../Calculation_component/Bindings/Pascal -Fu../../../Numbers_component/Bindings/Pascal -fPIC -T$FPC_TARGET -FU./build -o./build/Calculation_Example$OSEXEEXT Calculation_Example.lpr
 
 pushd build
 
