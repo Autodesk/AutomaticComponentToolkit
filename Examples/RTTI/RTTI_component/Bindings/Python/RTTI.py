@@ -359,6 +359,8 @@ class Wrapper:
 			def getObjectById_2262ABE80A5E7878(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Zoo"
 				return Zoo(handle, wrapper)
 		
+		if not handle:
+			return None
 		factory = PolymorphicFactory()
 		return factory.getObjectById(handle, self)
 	

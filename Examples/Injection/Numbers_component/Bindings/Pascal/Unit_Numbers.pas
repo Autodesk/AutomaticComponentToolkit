@@ -276,6 +276,8 @@ TNumbersSymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: 
   TNumbersPolymorphicFactory<_T:class; _B> = record
     class function Make(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): _T; static;
   end;
+  function TNumbersPolymorphicFactoryMakeBase(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): TNUMBERSBase;
+  function TNumbersPolymorphicFactoryMakeVariable(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): TNUMBERSVariable;
 
 implementation
 
@@ -303,6 +305,14 @@ implementation
       QWord($23934EDF762423EA): begin Obj := TNUMBERSVariable.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "Numbers::Variable"
     end;
     if Result = nil then Result := _B.Create(Wrapper, Handle);
+  end;
+  function TNumbersPolymorphicFactoryMakeBase(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): TNUMBERSBase;
+  begin
+    Result := TNumbersPolymorphicFactory<TNUMBERSBase, TNUMBERSBase>.Make(Wrapper, Handle);
+  end;
+  function TNumbersPolymorphicFactoryMakeVariable(Wrapper: TNumbersWrapper; Handle: TNumbersHandle): TNUMBERSVariable;
+  begin
+    Result := TNumbersPolymorphicFactory<TNUMBERSVariable, TNUMBERSVariable>.Make(Wrapper, Handle);
   end;
 
 (*************************************************************************************************************************

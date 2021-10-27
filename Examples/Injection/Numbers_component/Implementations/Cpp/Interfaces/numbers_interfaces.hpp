@@ -211,9 +211,7 @@ public:
 	*/
 	Numbers_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "Numbers::Variable"
-		static const Numbers_uint64 s_VariableTypeId = 0x23934EDF762423EAUL;
-		return s_VariableTypeId;
+		return 0x23934EDF762423EAUL; // First 64 bits of SHA1 of a string: "Numbers::Variable"
 	}
 
 	/**

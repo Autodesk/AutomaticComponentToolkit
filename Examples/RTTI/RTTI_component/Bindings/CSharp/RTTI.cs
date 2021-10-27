@@ -16,7 +16,7 @@ namespace RTTI {
 		[StructLayout(LayoutKind.Explicit, Size=16)]
 		public unsafe struct RTTIHandle
 		{
-			[FieldOffset(0)] public UInt64 Handle;
+			[FieldOffset(0)] public IntPtr Handle;
 			[FieldOffset(8)] public UInt64 ClassTypeId;
 		}
 
@@ -85,7 +85,7 @@ namespace RTTI {
 			public static void ThrowError(RTTIHandle Handle, Int32 errorCode)
 			{
 				String sMessage = "RTTI Error";
-				if (Handle.Handle != 0) {
+				if (Handle.Handle != IntPtr.Zero) {
 					UInt32 sizeMessage = 0;
 					UInt32 neededMessage = 0;
 					Byte hasLastError = 0;
@@ -117,6 +117,9 @@ namespace RTTI {
 			public static T PolymorphicFactory<T>(RTTIHandle Handle) where T : class
 			{
 				T Object;
+				if (Handle.Handle == IntPtr.Zero)
+					return System.Activator.CreateInstance(typeof(T), Handle) as T;
+				
 				switch (Handle.ClassTypeId) {
 					case 0x1549AD28813DAE05: Object = new CBase(Handle) as T; break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 					case 0x8B40467DA6D327AF: Object = new CAnimal(Handle) as T; break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
@@ -148,9 +151,9 @@ namespace RTTI {
 
 		~CBase ()
 		{
-			if (Handle.Handle != 0) {
+			if (Handle.Handle != IntPtr.Zero) {
 				Internal.RTTIWrapper.ReleaseInstance (Handle);
-				Handle.Handle = 0;
+				Handle.Handle = IntPtr.Zero;
 			}
 		}
 
@@ -260,7 +263,7 @@ namespace RTTI {
 
 		public CAnimal GetNextAnimal ()
 		{
-			Internal.RTTIHandle newAnimal = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			Internal.RTTIHandle newAnimal = new Internal.RTTIHandle{ Handle = IntPtr.Zero, ClassTypeId = 0};
 
 			CheckError(Internal.RTTIWrapper.AnimalIterator_GetNextAnimal (Handle, out newAnimal));
 			return Internal.RTTIWrapper.PolymorphicFactory<CAnimal>(newAnimal);
@@ -276,7 +279,7 @@ namespace RTTI {
 
 		public CAnimalIterator Iterator ()
 		{
-			Internal.RTTIHandle newIterator = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			Internal.RTTIHandle newIterator = new Internal.RTTIHandle{ Handle = IntPtr.Zero, ClassTypeId = 0};
 
 			CheckError(Internal.RTTIWrapper.Zoo_Iterator (Handle, out newIterator));
 			return Internal.RTTIWrapper.PolymorphicFactory<CAnimalIterator>(newIterator);
@@ -289,7 +292,7 @@ namespace RTTI {
 		private static void CheckError (Int32 errorCode)
 		{
 			if (errorCode != 0) {
-				Internal.RTTIWrapper.ThrowError (new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0 }, errorCode);
+				Internal.RTTIWrapper.ThrowError (new Internal.RTTIHandle{ Handle = IntPtr.Zero, ClassTypeId = 0 }, errorCode);
 			}
 		}
 
@@ -342,7 +345,7 @@ namespace RTTI {
 
 		public static CZoo CreateZoo ()
 		{
-			Internal.RTTIHandle newInstance = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			Internal.RTTIHandle newInstance = new Internal.RTTIHandle{ Handle = IntPtr.Zero, ClassTypeId = 0};
 
 			CheckError(Internal.RTTIWrapper.CreateZoo (out newInstance));
 			return Internal.RTTIWrapper.PolymorphicFactory<CZoo>(newInstance);

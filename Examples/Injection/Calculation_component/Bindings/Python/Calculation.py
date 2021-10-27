@@ -355,6 +355,8 @@ class Wrapper:
 			def getObjectById_B23F514353D0C606(self, handle, wrapper): # First 64 bits of SHA1 of a string: "Calculation::Calculator"
 				return Calculator(handle, wrapper)
 		
+		if not handle:
+			return None
 		factory = PolymorphicFactory()
 		return factory.getObjectById(handle, self)
 	

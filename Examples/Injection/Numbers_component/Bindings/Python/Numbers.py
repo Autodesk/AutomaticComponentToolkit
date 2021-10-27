@@ -293,6 +293,8 @@ class Wrapper:
 			def getObjectById_23934EDF762423EA(self, handle, wrapper): # First 64 bits of SHA1 of a string: "Numbers::Variable"
 				return Variable(handle, wrapper)
 		
+		if not handle:
+			return None
 		factory = PolymorphicFactory()
 		return factory.getObjectById(handle, self)
 	

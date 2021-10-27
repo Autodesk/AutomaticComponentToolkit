@@ -333,6 +333,8 @@ TCalculationSymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pVal
   TCalculationPolymorphicFactory<_T:class; _B> = record
     class function Make(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): _T; static;
   end;
+  function TCalculationPolymorphicFactoryMakeBase(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): TCALCULATIONBase;
+  function TCalculationPolymorphicFactoryMakeCalculator(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): TCALCULATIONCalculator;
 
 implementation
 
@@ -360,6 +362,14 @@ implementation
       QWord($B23F514353D0C606): begin Obj := TCALCULATIONCalculator.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "Calculation::Calculator"
     end;
     if Result = nil then Result := _B.Create(Wrapper, Handle);
+  end;
+  function TCalculationPolymorphicFactoryMakeBase(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): TCALCULATIONBase;
+  begin
+    Result := TCalculationPolymorphicFactory<TCALCULATIONBase, TCALCULATIONBase>.Make(Wrapper, Handle);
+  end;
+  function TCalculationPolymorphicFactoryMakeCalculator(Wrapper: TCalculationWrapper; Handle: TCalculationHandle): TCALCULATIONCalculator;
+  begin
+    Result := TCalculationPolymorphicFactory<TCALCULATIONCalculator, TCALCULATIONCalculator>.Make(Wrapper, Handle);
   end;
 
 (*************************************************************************************************************************
@@ -455,7 +465,7 @@ implementation
     HVariable.ClassTypeId := 0;
     FWrapper.CheckError(Self, FWrapper.CalculationCalculator_GetEnlistedVariableFunc(FHandle, AIndex, HVariable));
     if Assigned(HVariable.Handle) then
-      Result := TNumbersPolymorphicFactory<TNumbersVariable, TNumbersVariable>.Make(FWrapper.NumbersWrapper, HVariable);
+      Result := TNumbersPolymorphicFactoryMakeVariable(FWrapper.NumbersWrapper, HVariable);
   end;
 
   procedure TCalculationCalculator.ClearVariables();
@@ -472,7 +482,7 @@ implementation
     HInstance.ClassTypeId := 0;
     FWrapper.CheckError(Self, FWrapper.CalculationCalculator_MultiplyFunc(FHandle, HInstance));
     if Assigned(HInstance.Handle) then
-      Result := TNumbersPolymorphicFactory<TNumbersVariable, TNumbersVariable>.Make(FWrapper.NumbersWrapper, HInstance);
+      Result := TNumbersPolymorphicFactoryMakeVariable(FWrapper.NumbersWrapper, HInstance);
   end;
 
   function TCalculationCalculator.Add(): TNumbersVariable;
@@ -484,7 +494,7 @@ implementation
     HInstance.ClassTypeId := 0;
     FWrapper.CheckError(Self, FWrapper.CalculationCalculator_AddFunc(FHandle, HInstance));
     if Assigned(HInstance.Handle) then
-      Result := TNumbersPolymorphicFactory<TNumbersVariable, TNumbersVariable>.Make(FWrapper.NumbersWrapper, HInstance);
+      Result := TNumbersPolymorphicFactoryMakeVariable(FWrapper.NumbersWrapper, HInstance);
   end;
 
 (*************************************************************************************************************************
