@@ -384,6 +384,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("        return %s(handle, wrapper)", componentdefinition.Classes[i].ClassName)
 	}
 	w.Writeln("    ")
+	w.Writeln("    if not handle:")
+	w.Writeln("      return None")
 	w.Writeln("    pClassTypeId = ctypes.c_uint64()")
 	w.Writeln("    self.checkError(None, self.lib.%s_%s_%s(handle, pClassTypeId))", strings.ToLower(NameSpace), strings.ToLower(componentdefinition.Global.BaseClassName), strings.ToLower(componentdefinition.Global.ClassTypeIdMethod))
 	w.Writeln("    factory = PolymorphicFactory()")
