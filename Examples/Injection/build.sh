@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 source ../../Build/build.inc
 
 echo "Generate IDL"
-../../$ACT Numbers.xml
+../../$ACT Numbers.xml -suppressexamples
 ../../$ACT Calculation.xml
 
 echo "Build C++ libraries"
