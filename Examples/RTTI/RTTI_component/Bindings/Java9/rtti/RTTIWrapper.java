@@ -140,9 +140,9 @@ public class RTTIWrapper {
 	 * @throws RTTIException
 	 */
 	public GetLastErrorResult getLastError(Base instance) throws RTTIException {
-		RTTIHandle.ByValue instanceHandle;
+		Pointer instanceHandle = null;
 		if (instance != null) {
-			instanceHandle = instance.getHandle().Value();
+			instanceHandle = instance.getHandle();
 		} else {
 			throw new RTTIException(RTTIException.RTTI_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -177,9 +177,9 @@ public class RTTIWrapper {
 	 * @throws RTTIException
 	 */
 	public void releaseInstance(Base instance) throws RTTIException {
-		RTTIHandle.ByValue instanceHandle;
+		Pointer instanceHandle = null;
 		if (instance != null) {
-			instanceHandle = instance.getHandle().Value();
+			instanceHandle = instance.getHandle();
 		} else {
 			throw new RTTIException(RTTIException.RTTI_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -193,9 +193,9 @@ public class RTTIWrapper {
 	 * @throws RTTIException
 	 */
 	public void acquireInstance(Base instance) throws RTTIException {
-		RTTIHandle.ByValue instanceHandle;
+		Pointer instanceHandle = null;
 		if (instance != null) {
-			instanceHandle = instance.getHandle().Value();
+			instanceHandle = instance.getHandle();
 		} else {
 			throw new RTTIException(RTTIException.RTTI_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -241,49 +241,43 @@ public class RTTIWrapper {
 	 * @throws RTTIException
 	 */
 	public Zoo createZoo() throws RTTIException {
-		RTTIHandle handleInstance = new RTTIHandle();
-		checkError(null, rtti_createzoo.invokeInt(new java.lang.Object[]{handleInstance}));
+		Pointer bufferInstance = new Memory(8);
+		checkError(null, rtti_createzoo.invokeInt(new java.lang.Object[]{bufferInstance}));
+		Pointer valueInstance = bufferInstance.getPointer(0);
 		Zoo instance = null;
-		if (handleInstance.Handle == Pointer.NULL) {
+		if (valueInstance == Pointer.NULL) {
 		  throw new RTTIException(RTTIException.RTTI_ERROR_INVALIDPARAM, "Instance was a null pointer");
 		}
-		instance = this.PolymorphicFactory(handleInstance, Zoo.class);
+		instance = this.PolymorphicFactory(valueInstance, Zoo.class);
 		return instance;
 	}
 
-	public <T> T PolymorphicFactory(RTTIHandle handle, Class<T> cls) {
-		Class[] cArg = new Class[2];
-		cArg[0] = RTTIWrapper.class;
-		cArg[1] = RTTIHandle.class;
-	
-		try {
-			int msbId = (int)(handle.ClassTypeId >> 32); 
-			int lsbId = (int)handle.ClassTypeId; 
-			T obj = null;
+	/**
+	 * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+	 *            It's designed to be used on RTTIHandle object only once.
+	 *            If it's used on any existing object as a form of dynamic cast then
+	 *            RTTIWrapper::acquireInstance(Base object) must be called after instantiating new object.
+	 *            This is important to keep reference count matching between application and library sides.
+	*/
+	public <T> T PolymorphicFactory(Pointer handle, Class<T> cls) {
+		if (handle == Pointer.NULL)
+		 return null;
+		 Class[] cArg = new Class[2];
+		 cArg[0] = RTTIWrapper.class;
+		 cArg[1] = Pointer.class;
+			
+			try {
+		   T obj = null;
+		   Pointer bufferClassTypeId = new Memory(8);
+		   checkError(null, rtti_base_classtypeid.invokeInt(new java.lang.Object[]{handle, bufferClassTypeId}));
+		   long classTypeId = bufferClassTypeId.getLong(0);
+		   
+		   int msbId = (int)(classTypeId >> 32); 
+		   int lsbId = (int)classTypeId; 
 			switch(msbId) {
-				case 0xBC9D5FA7: 
-					switch(lsbId) {
-						case 0x750C1020: obj = (T)(new Mammal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
-					}
-				break;
-				case 0x6756AA8E: 
-					switch(lsbId) {
-						case 0xA5802EC3: obj = (T)(new Reptile(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
-					}
-				break;
 				case 0x08D007E7: 
 					switch(lsbId) {
 						case 0xB5F7BAF4: obj = (T)(new Tiger(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
-					}
-				break;
-				case 0x8E551B20: 
-					switch(lsbId) {
-						case 0x8A2E8321: obj = (T)(new Turtle(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
-					}
-				break;
-				case 0xF1917FE6: 
-					switch(lsbId) {
-						case 0xBBE77831: obj = (T)(new AnimalIterator(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
 					}
 				break;
 				case 0x1549AD28: 
@@ -291,9 +285,9 @@ public class RTTIWrapper {
 						case 0x813DAE05: obj = (T)(new Base(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 					}
 				break;
-				case 0x9751971B: 
+				case 0x2262ABE8: 
 					switch(lsbId) {
-						case 0xD2C2D958: obj = (T)(new Giraffe(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+						case 0x0A5E7878: obj = (T)(new Zoo(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
 					}
 				break;
 				case 0x5F6826EF: 
@@ -301,9 +295,9 @@ public class RTTIWrapper {
 						case 0x909803B2: obj = (T)(new Snake(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
 					}
 				break;
-				case 0x2262ABE8: 
+				case 0x6756AA8E: 
 					switch(lsbId) {
-						case 0x0A5E7878: obj = (T)(new Zoo(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
+						case 0xA5802EC3: obj = (T)(new Reptile(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
 					}
 				break;
 				case 0x8B40467D: 
@@ -311,6 +305,27 @@ public class RTTIWrapper {
 						case 0xA6D327AF: obj = (T)(new Animal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
 					}
 				break;
+				case 0x8E551B20: 
+					switch(lsbId) {
+						case 0x8A2E8321: obj = (T)(new Turtle(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+					}
+				break;
+				case 0x9751971B: 
+					switch(lsbId) {
+						case 0xD2C2D958: obj = (T)(new Giraffe(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+					}
+				break;
+				case 0xBC9D5FA7: 
+					switch(lsbId) {
+						case 0x750C1020: obj = (T)(new Mammal(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+					}
+				break;
+				case 0xF1917FE6: 
+					switch(lsbId) {
+						case 0xBBE77831: obj = (T)(new AnimalIterator(this, handle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+					}
+				break;
+				default: obj = cls.getDeclaredConstructor(cArg).newInstance(this, handle); break;
 			}
 			return obj;
 		}

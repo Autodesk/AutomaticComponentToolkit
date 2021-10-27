@@ -30,23 +30,23 @@ public class Base {
 
 	protected static final Cleaner mCleaner = Cleaner.create();
 
-	protected RTTIHandle mHandle;
+	protected Pointer mHandle;
 
 	protected RTTIWrapper mWrapper;
 
-	public Base(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Base(RTTIWrapper wrapper, Pointer handle) {
 		mHandle = handle;
 		mWrapper = wrapper;
 		mCleaner.register(this, new InstanceReleaser(this));
 	}
 
-	public RTTIHandle getHandle() {
+	public Pointer getHandle() {
 		return mHandle;
 	}
 	
 	protected static class InstanceReleaser implements Runnable{
 	
-		protected RTTIHandle mHandle;
+		protected Pointer mHandle;
 		
 		protected RTTIWrapper mWrapper;
 		
@@ -58,7 +58,7 @@ public class Base {
 		@Override
 		public void run() {
 			try {
-				mWrapper.checkError(null, mWrapper.rtti_releaseinstance.invokeInt(new java.lang.Object[]{mHandle.Value()}));
+				mWrapper.checkError(null, mWrapper.rtti_releaseinstance.invokeInt(new java.lang.Object[]{mHandle}));
 			} catch (RTTIException e) {
 				e.printStackTrace();
 			}
@@ -72,7 +72,7 @@ public class Base {
 	 */
 	public long classTypeId() throws RTTIException {
 		Pointer bufferClassTypeId = new Memory(8);
-		mWrapper.checkError(this, mWrapper.rtti_base_classtypeid.invokeInt(new java.lang.Object[]{mHandle.Value(), bufferClassTypeId}));
+		mWrapper.checkError(this, mWrapper.rtti_base_classtypeid.invokeInt(new java.lang.Object[]{mHandle, bufferClassTypeId}));
 		return bufferClassTypeId.getLong(0);
 	}
 

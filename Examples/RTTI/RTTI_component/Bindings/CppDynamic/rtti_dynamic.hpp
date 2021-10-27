@@ -296,6 +296,9 @@ public:
 	inline RTTI_pvoid GetSymbolLookupMethod();
 	inline PZoo CreateZoo();
 
+	template<class U>
+	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
+
 private:
 	sRTTIDynamicWrapperTable m_WrapperTable;
 	
@@ -312,9 +315,6 @@ private:
 	RTTIResult releaseWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable);
 	RTTIResult loadWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable, const char * pLibraryFileName);
 	RTTIResult loadWrapperTableFromSymbolLookupMethod(sRTTIDynamicWrapperTable * pWrapperTable, void* pSymbolLookupMethod);
-
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
 
 	friend class CBase;
 	friend class CAnimal;
@@ -539,6 +539,13 @@ public:
  RTTI: Polymorphic Factory implementation
 **************************************************************************************************************************/
 
+/**
+* IMPORTANT: PolymorphicFactory method should not be used by application directly.
+*            It's designed to be used on RTTIHandle object only once.
+*            If it's used on any existing object as a form of dynamic cast then
+*            CWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
+*            This is important to keep reference count matching between application and library sides.
+*/
 template <class T>
 std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 {

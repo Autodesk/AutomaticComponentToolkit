@@ -56,13 +56,7 @@ typedef double RTTI_double;
 **************************************************************************************************************************/
 
 typedef RTTI_int32 RTTIResult;
-#pragma pack (1)
-typedef struct {
-  void * Handle;
-  RTTI_uint64 ClassTypeId;
-} RTTIHandle;
-#pragma pack ()
-#define RTTIHandleNull { nullptr, 0 }
+typedef void * RTTIHandle;
 typedef void * RTTI_pvoid;
 
 /*************************************************************************************************************************
@@ -122,19 +116,6 @@ typedef RTTIHandle RTTI_Snake;
 typedef RTTIHandle RTTI_Turtle;
 typedef RTTIHandle RTTI_AnimalIterator;
 typedef RTTIHandle RTTI_Zoo;
-
-/*************************************************************************************************************************
- Declaration of structs
-**************************************************************************************************************************/
-
-#pragma pack (1)
-
-typedef struct {
-    RTTI_int32 m_X;
-    RTTI_int32 m_Y;
-} sRTTITestStruct;
-
-#pragma pack ()
 
 
 #endif // __RTTI_TYPES_HEADER

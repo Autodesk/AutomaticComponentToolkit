@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Snake extends Reptile {
 
-	public Snake(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Snake(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 

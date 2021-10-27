@@ -117,7 +117,7 @@ public:
 	{
 		if (m_ptr != nullptr)
 			return m_ptr->handle();
-		return RTTIHandleNull;
+		return nullptr;
 	}
 };
 
@@ -277,6 +277,9 @@ public:
 	inline RTTI_pvoid GetSymbolLookupMethod();
 	inline PZoo CreateZoo();
 
+	template<class U>
+	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
+
 private:
 	
 	RTTIResult checkBinaryVersion()
@@ -288,9 +291,6 @@ private:
 		}
 		return RTTI_SUCCESS;
 	}
-
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
 
 	friend class CBase;
 	friend class CAnimal;
@@ -515,10 +515,19 @@ public:
  RTTI: Polymorphic Factory implementation
 **************************************************************************************************************************/
 
+/**
+* IMPORTANT: PolymorphicFactory method should not be used by application directly.
+*            It's designed to be used on RTTIHandle object only once.
+*            If it's used on any existing object as a form of dynamic cast then
+*            CWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
+*            This is important to keep reference count matching between application and library sides.
+*/
 template <class T>
 std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 {
-	switch(pHandle.ClassTypeId) {
+	RTTI_uint64 resultClassTypeId = 0;
+	CheckError(nullptr, rtti_base_classtypeid(pHandle, &resultClassTypeId));
+	switch(resultClassTypeId) {
 		case 0x1549AD28813DAE05UL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 		case 0x8B40467DA6D327AFUL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
 		case 0xBC9D5FA7750C1020UL: return std::dynamic_pointer_cast<T>(std::make_shared<CMammal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
@@ -616,10 +625,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	inline PZoo CWrapper::CreateZoo()
 	{
-		RTTIHandle hInstance = RTTIHandleNull;
+		RTTIHandle hInstance = nullptr;
 		CheckError(nullptr,rtti_createzoo(&hInstance));
 		
-		if (!hInstance.Handle) {
+		if (!hInstance) {
 			CheckError(nullptr,RTTI_ERROR_INVALIDPARAM);
 		}
 		return this->polymorphicFactory<CZoo>(hInstance);
@@ -715,10 +724,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	PAnimal CAnimalIterator::GetNextAnimal()
 	{
-		RTTIHandle hAnimal = RTTIHandleNull;
+		RTTIHandle hAnimal = nullptr;
 		CheckError(rtti_animaliterator_getnextanimal(m_pHandle, &hAnimal));
 		
-		if (hAnimal.Handle) {
+		if (hAnimal) {
 			return m_pWrapper->polymorphicFactory<CAnimal>(hAnimal);
 		} else {
 			return nullptr;
@@ -735,10 +744,10 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 	*/
 	PAnimalIterator CZoo::Iterator()
 	{
-		RTTIHandle hIterator = RTTIHandleNull;
+		RTTIHandle hIterator = nullptr;
 		CheckError(rtti_zoo_iterator(m_pHandle, &hIterator));
 		
-		if (!hIterator.Handle) {
+		if (!hIterator) {
 			CheckError(RTTI_ERROR_INVALIDPARAM);
 		}
 		return m_pWrapper->polymorphicFactory<CAnimalIterator>(hIterator);

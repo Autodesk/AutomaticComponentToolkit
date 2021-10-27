@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Giraffe extends Mammal {
 
-	public Giraffe(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Giraffe(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 

@@ -18,9 +18,10 @@ Interface version: 1.0.0
 package rtti
 
 /*
+#cgo linux LDFLAGS: -ldl
 #include "rtti_dynamic.cc"
 
-RTTI_pvoid loadRTTILibrary (const char * pFileName)
+RTTIHandle loadRTTILibrary (const char * pFileName)
 {
 	RTTIResult nResult;
 	sRTTIDynamicWrapperTable * pWrapperTable = (sRTTIDynamicWrapperTable *) malloc (sizeof (sRTTIDynamicWrapperTable));
@@ -37,12 +38,11 @@ RTTI_pvoid loadRTTILibrary (const char * pFileName)
 			return 0;
 		}
 
-		return (RTTI_pvoid) pWrapperTable;
+		return (RTTIHandle) pWrapperTable;
 	}
-	return 0;
 }
 
-void unloadRTTILibrary (RTTI_pvoid nLibraryHandle)
+void unloadRTTILibrary (RTTIHandle nLibraryHandle)
 {
 	sRTTIDynamicWrapperTable * pWrapperTable = (sRTTIDynamicWrapperTable *) malloc (sizeof (sRTTIDynamicWrapperTable));
 	if (pWrapperTable != NULL) {
@@ -52,7 +52,7 @@ void unloadRTTILibrary (RTTI_pvoid nLibraryHandle)
 }
 
 
-RTTIResult CCall_rtti_base_classtypeid(RTTI_pvoid libraryHandle, RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
+RTTIResult CCall_rtti_base_classtypeid(RTTIHandle libraryHandle, RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -61,7 +61,7 @@ RTTIResult CCall_rtti_base_classtypeid(RTTI_pvoid libraryHandle, RTTI_Base pBase
 }
 
 
-RTTIResult CCall_rtti_animal_name(RTTI_pvoid libraryHandle, RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer)
+RTTIResult CCall_rtti_animal_name(RTTIHandle libraryHandle, RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -70,7 +70,7 @@ RTTIResult CCall_rtti_animal_name(RTTI_pvoid libraryHandle, RTTI_Animal pAnimal,
 }
 
 
-RTTIResult CCall_rtti_tiger_roar(RTTI_pvoid libraryHandle, RTTI_Tiger pTiger)
+RTTIResult CCall_rtti_tiger_roar(RTTIHandle libraryHandle, RTTI_Tiger pTiger)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -79,7 +79,7 @@ RTTIResult CCall_rtti_tiger_roar(RTTI_pvoid libraryHandle, RTTI_Tiger pTiger)
 }
 
 
-RTTIResult CCall_rtti_animaliterator_getnextanimal(RTTI_pvoid libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal)
+RTTIResult CCall_rtti_animaliterator_getnextanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -88,7 +88,7 @@ RTTIResult CCall_rtti_animaliterator_getnextanimal(RTTI_pvoid libraryHandle, RTT
 }
 
 
-RTTIResult CCall_rtti_zoo_iterator(RTTI_pvoid libraryHandle, RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
+RTTIResult CCall_rtti_zoo_iterator(RTTIHandle libraryHandle, RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -97,7 +97,7 @@ RTTIResult CCall_rtti_zoo_iterator(RTTI_pvoid libraryHandle, RTTI_Zoo pZoo, RTTI
 }
 
 
-RTTIResult CCall_rtti_getversion(RTTI_pvoid libraryHandle, RTTI_uint32 * pMajor, RTTI_uint32 * pMinor, RTTI_uint32 * pMicro)
+RTTIResult CCall_rtti_getversion(RTTIHandle libraryHandle, RTTI_uint32 * pMajor, RTTI_uint32 * pMinor, RTTI_uint32 * pMicro)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -106,7 +106,7 @@ RTTIResult CCall_rtti_getversion(RTTI_pvoid libraryHandle, RTTI_uint32 * pMajor,
 }
 
 
-RTTIResult CCall_rtti_getlasterror(RTTI_pvoid libraryHandle, RTTI_Base pInstance, const RTTI_uint32 nErrorMessageBufferSize, RTTI_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+RTTIResult CCall_rtti_getlasterror(RTTIHandle libraryHandle, RTTI_Base pInstance, const RTTI_uint32 nErrorMessageBufferSize, RTTI_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -115,7 +115,7 @@ RTTIResult CCall_rtti_getlasterror(RTTI_pvoid libraryHandle, RTTI_Base pInstance
 }
 
 
-RTTIResult CCall_rtti_releaseinstance(RTTI_pvoid libraryHandle, RTTI_Base pInstance)
+RTTIResult CCall_rtti_releaseinstance(RTTIHandle libraryHandle, RTTI_Base pInstance)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -124,7 +124,7 @@ RTTIResult CCall_rtti_releaseinstance(RTTI_pvoid libraryHandle, RTTI_Base pInsta
 }
 
 
-RTTIResult CCall_rtti_acquireinstance(RTTI_pvoid libraryHandle, RTTI_Base pInstance)
+RTTIResult CCall_rtti_acquireinstance(RTTIHandle libraryHandle, RTTI_Base pInstance)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -133,7 +133,7 @@ RTTIResult CCall_rtti_acquireinstance(RTTI_pvoid libraryHandle, RTTI_Base pInsta
 }
 
 
-RTTIResult CCall_rtti_injectcomponent(RTTI_pvoid libraryHandle, const char * pNameSpace, RTTI_pvoid pSymbolAddressMethod)
+RTTIResult CCall_rtti_injectcomponent(RTTIHandle libraryHandle, const char * pNameSpace, RTTI_pvoid pSymbolAddressMethod)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -142,7 +142,7 @@ RTTIResult CCall_rtti_injectcomponent(RTTI_pvoid libraryHandle, const char * pNa
 }
 
 
-RTTIResult CCall_rtti_getsymbollookupmethod(RTTI_pvoid libraryHandle, RTTI_pvoid * pSymbolLookupMethod)
+RTTIResult CCall_rtti_getsymbollookupmethod(RTTIHandle libraryHandle, RTTI_pvoid * pSymbolLookupMethod)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -151,7 +151,7 @@ RTTIResult CCall_rtti_getsymbollookupmethod(RTTI_pvoid libraryHandle, RTTI_pvoid
 }
 
 
-RTTIResult CCall_rtti_createzoo(RTTI_pvoid libraryHandle, RTTI_Zoo * pInstance)
+RTTIResult CCall_rtti_createzoo(RTTIHandle libraryHandle, RTTI_Zoo * pInstance)
 {
 	if (libraryHandle == 0) 
 		return RTTI_ERROR_INVALIDCAST;
@@ -169,13 +169,6 @@ import (
 )
 
 type ref = C.RTTIHandle
-type refVoid = C.RTTI_pvoid
-
-// TestStruct represents a RTTI struct.
-type TestStruct struct {
-	X int32
-	Y int32
-}
 
 // Error constants for RTTI.
 const RTTI_ERROR_NOTIMPLEMENTED = 1;
@@ -227,7 +220,7 @@ func makeError(errorcode uint32) error {
 // Wrapper represents the number wrapper
 type Wrapper struct {
 	_ [0]func() // uncomparable; to make == not compile
-	LibraryHandle refVoid
+	LibraryHandle ref
 }
 
 // Base represents a RTTI class.
@@ -251,7 +244,7 @@ func (wrapper Wrapper) NewBase(r ref) Base {
 // Release releases the C pointer.
 func (inst Base) Release() error {
 	err := inst.wrapperRef.ReleaseInstance(inst)
-	(*inst.gcPtr).Handle = nil
+	*inst.gcPtr = nil
 	return err
 }
 
@@ -383,7 +376,7 @@ func (inst AnimalIterator) GetNextAnimal() (*Animal, error) {
 		return nil, makeError(uint32(ret))
 	}
 	var _animalPtr *Animal
-	if animal.Handle != nil {
+	if animal != nil {
 		_animalPtrVal := inst.wrapperRef.NewAnimal(animal)
 		_animalPtr = &_animalPtrVal
 	}
@@ -460,8 +453,8 @@ func (wrapper Wrapper) AcquireInstance(instance Base) error {
 }
 
 // InjectComponent injects an imported component for usage within this component.
-func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uint64) error {
-	ret := C.CCall_rtti_injectcomponent(wrapper.LibraryHandle, (*C.char)(unsafe.Pointer(&[]byte(nameSpace)[0])), (C.uint64_t)(symbolAddressMethod))
+func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uintptr) error {
+	ret := C.CCall_rtti_injectcomponent(wrapper.LibraryHandle, (*C.char)(unsafe.Pointer(&[]byte(nameSpace)[0])), (C.RTTI_pvoid)(symbolAddressMethod))
 	if ret != 0 {
 		return makeError(uint32(ret))
 	}
@@ -469,13 +462,13 @@ func (wrapper Wrapper) InjectComponent(nameSpace string, symbolAddressMethod uin
 }
 
 // GetSymbolLookupMethod returns the address of the SymbolLookupMethod.
-func (wrapper Wrapper) GetSymbolLookupMethod() (uint64, error) {
-	var symbolLookupMethod C.uint64_t
+func (wrapper Wrapper) GetSymbolLookupMethod() (uintptr, error) {
+	var symbolLookupMethod C.RTTI_pvoid
 	ret := C.CCall_rtti_getsymbollookupmethod(wrapper.LibraryHandle, &symbolLookupMethod)
 	if ret != 0 {
 		return 0, makeError(uint32(ret))
 	}
-	return uint64(symbolLookupMethod), nil
+	return uintptr(symbolLookupMethod), nil
 }
 
 // CreateZoo create a new zoo with animals.
@@ -489,7 +482,7 @@ func (wrapper Wrapper) CreateZoo() (Zoo, error) {
 }
 
 func (wrapper Wrapper) releaseC(r *ref) error {
-	if r == nil || (*r).Handle == nil {
+	if r == nil || *r == nil {
 		return nil
 	}
 	return wrapper.ReleaseInstance(Base{Ref: *r})

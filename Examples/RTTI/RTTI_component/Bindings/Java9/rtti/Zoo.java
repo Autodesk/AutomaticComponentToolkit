@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Zoo extends Base {
 
-	public Zoo(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Zoo(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 
@@ -39,13 +39,14 @@ public class Zoo extends Base {
 	 * @throws RTTIException
 	 */
 	public AnimalIterator iterator() throws RTTIException {
-		RTTIHandle handleIterator = new RTTIHandle();
-		mWrapper.checkError(this, mWrapper.rtti_zoo_iterator.invokeInt(new java.lang.Object[]{mHandle.Value(), handleIterator}));
+		Pointer bufferIterator = new Memory(8);
+		mWrapper.checkError(this, mWrapper.rtti_zoo_iterator.invokeInt(new java.lang.Object[]{mHandle, bufferIterator}));
+		Pointer valueIterator = bufferIterator.getPointer(0);
 		AnimalIterator iterator = null;
-		if (handleIterator.Handle == Pointer.NULL) {
+		if (valueIterator == Pointer.NULL) {
 		  throw new RTTIException(RTTIException.RTTI_ERROR_INVALIDPARAM, "Iterator was a null pointer");
 		}
-		iterator = mWrapper.PolymorphicFactory(handleIterator, AnimalIterator.class);
+		iterator = mWrapper.PolymorphicFactory(valueIterator, AnimalIterator.class);
 		return iterator;
 	}
 

@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Tiger extends Mammal {
 
-	public Tiger(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Tiger(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 
@@ -38,7 +38,7 @@ public class Tiger extends Mammal {
 	 * @throws RTTIException
 	 */
 	public void roar() throws RTTIException {
-		mWrapper.checkError(this, mWrapper.rtti_tiger_roar.invokeInt(new java.lang.Object[]{mHandle.Value()}));
+		mWrapper.checkError(this, mWrapper.rtti_tiger_roar.invokeInt(new java.lang.Object[]{mHandle}));
 	}
 
 

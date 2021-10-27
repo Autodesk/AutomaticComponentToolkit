@@ -4,58 +4,38 @@ using System.Runtime.InteropServices;
 
 namespace RTTI {
 
-	public struct sTestStruct
-	{
-		public Int32 X;
-		public Int32 Y;
-	}
-
 
 	namespace Internal {
-
-		[StructLayout(LayoutKind.Explicit, Size=16)]
-		public unsafe struct RTTIHandle
-		{
-			[FieldOffset(0)] public UInt64 Handle;
-			[FieldOffset(8)] public UInt64 ClassTypeId;
-		}
-
-		[StructLayout(LayoutKind.Explicit, Size=8)]
-		public unsafe struct InternalTestStruct
-		{
-			[FieldOffset(0)] public Int32 X;
-			[FieldOffset(4)] public Int32 Y;
-		}
 
 
 		public class RTTIWrapper
 		{
 			[DllImport("rtti.dll", EntryPoint = "rtti_base_classtypeid", CallingConvention=CallingConvention.Cdecl)]
-			public unsafe extern static Int32 Base_ClassTypeId (RTTIHandle Handle, out UInt64 AClassTypeId);
+			public unsafe extern static Int32 Base_ClassTypeId (IntPtr Handle, out UInt64 AClassTypeId);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_animal_name", CallingConvention=CallingConvention.Cdecl)]
-			public unsafe extern static Int32 Animal_Name (RTTIHandle Handle, UInt32 sizeResult, out UInt32 neededResult, IntPtr dataResult);
+			public unsafe extern static Int32 Animal_Name (IntPtr Handle, UInt32 sizeResult, out UInt32 neededResult, IntPtr dataResult);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_tiger_roar", CallingConvention=CallingConvention.Cdecl)]
-			public unsafe extern static Int32 Tiger_Roar (RTTIHandle Handle);
+			public unsafe extern static Int32 Tiger_Roar (IntPtr Handle);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_animaliterator_getnextanimal", CallingConvention=CallingConvention.Cdecl)]
-			public unsafe extern static Int32 AnimalIterator_GetNextAnimal (RTTIHandle Handle, out RTTIHandle AAnimal);
+			public unsafe extern static Int32 AnimalIterator_GetNextAnimal (IntPtr Handle, out IntPtr AAnimal);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_zoo_iterator", CallingConvention=CallingConvention.Cdecl)]
-			public unsafe extern static Int32 Zoo_Iterator (RTTIHandle Handle, out RTTIHandle AIterator);
+			public unsafe extern static Int32 Zoo_Iterator (IntPtr Handle, out IntPtr AIterator);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_getversion", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
 			public extern static Int32 GetVersion (out UInt32 AMajor, out UInt32 AMinor, out UInt32 AMicro);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_getlasterror", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-			public extern static Int32 GetLastError (RTTIHandle AInstance, UInt32 sizeErrorMessage, out UInt32 neededErrorMessage, IntPtr dataErrorMessage, out Byte AHasError);
+			public extern static Int32 GetLastError (IntPtr AInstance, UInt32 sizeErrorMessage, out UInt32 neededErrorMessage, IntPtr dataErrorMessage, out Byte AHasError);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_releaseinstance", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-			public extern static Int32 ReleaseInstance (RTTIHandle AInstance);
+			public extern static Int32 ReleaseInstance (IntPtr AInstance);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_acquireinstance", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-			public extern static Int32 AcquireInstance (RTTIHandle AInstance);
+			public extern static Int32 AcquireInstance (IntPtr AInstance);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_injectcomponent", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
 			public extern static Int32 InjectComponent (byte[] ANameSpace, UInt64 ASymbolAddressMethod);
@@ -64,28 +44,12 @@ namespace RTTI {
 			public extern static Int32 GetSymbolLookupMethod (out UInt64 ASymbolLookupMethod);
 
 			[DllImport("rtti.dll", EntryPoint = "rtti_createzoo", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-			public extern static Int32 CreateZoo (out RTTIHandle AInstance);
+			public extern static Int32 CreateZoo (out IntPtr AInstance);
 
-			public unsafe static sTestStruct convertInternalToStruct_TestStruct (InternalTestStruct intTestStruct)
-			{
-				sTestStruct TestStruct;
-				TestStruct.X = intTestStruct.X;
-				TestStruct.Y = intTestStruct.Y;
-				return TestStruct;
-			}
-
-			public unsafe static InternalTestStruct convertStructToInternal_TestStruct (sTestStruct TestStruct)
-			{
-				InternalTestStruct intTestStruct;
-				intTestStruct.X = TestStruct.X;
-				intTestStruct.Y = TestStruct.Y;
-				return intTestStruct;
-			}
-
-			public static void ThrowError(RTTIHandle Handle, Int32 errorCode)
+			public static void ThrowError(IntPtr Handle, Int32 errorCode)
 			{
 				String sMessage = "RTTI Error";
-				if (Handle.Handle != 0) {
+				if (Handle != IntPtr.Zero) {
 					UInt32 sizeMessage = 0;
 					UInt32 neededMessage = 0;
 					Byte hasLastError = 0;
@@ -107,10 +71,24 @@ namespace RTTI {
 				throw new Exception(sMessage + "(# " + errorCode + ")");
 			}
 
-			public static T PolymorphicFactory<T>(RTTIHandle Handle) where T : class
+			/**
+			 * IMPORTANT: PolymorphicFactory method should not be used by application directly.
+			 *            It's designed to be used on Handle object only once.
+			 *            If it's used on any existing object as a form of dynamic cast then
+			 *            RTTIWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
+			 *            This is important to keep reference count matching between application and library sides.
+			*/
+			public static T PolymorphicFactory<T>(IntPtr Handle) where T : class
 			{
 				T Object;
-				switch (Handle.ClassTypeId) {
+				if (Handle == IntPtr.Zero)
+					return System.Activator.CreateInstance(typeof(T), Handle) as T;
+				
+				UInt64 resultClassTypeId = 0;
+				Int32 errorCode = Base_ClassTypeId (Handle, out resultClassTypeId);
+				if (errorCode != 0)
+					ThrowError (IntPtr.Zero, errorCode);
+				switch (resultClassTypeId) {
 					case 0x1549AD28813DAE05: Object = new CBase(Handle) as T; break; // First 64 bits of SHA1 of a string: "RTTI::Base"
 					case 0x8B40467DA6D327AF: Object = new CAnimal(Handle) as T; break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
 					case 0xBC9D5FA7750C1020: Object = new CMammal(Handle) as T; break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
@@ -132,18 +110,18 @@ namespace RTTI {
 
 	public class CBase 
 	{
-		protected Internal.RTTIHandle Handle;
+		protected IntPtr Handle;
 
-		public CBase (Internal.RTTIHandle NewHandle)
+		public CBase (IntPtr NewHandle)
 		{
 			Handle = NewHandle;
 		}
 
 		~CBase ()
 		{
-			if (Handle.Handle != 0) {
+			if (Handle != IntPtr.Zero) {
 				Internal.RTTIWrapper.ReleaseInstance (Handle);
-				Handle.Handle = 0;
+				Handle = IntPtr.Zero;
 			}
 		}
 
@@ -154,7 +132,7 @@ namespace RTTI {
 			}
 		}
 
-		public Internal.RTTIHandle GetHandle ()
+		public IntPtr GetHandle ()
 		{
 			return Handle;
 		}
@@ -171,7 +149,7 @@ namespace RTTI {
 
 	public class CAnimal : CBase
 	{
-		public CAnimal (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CAnimal (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -193,7 +171,7 @@ namespace RTTI {
 
 	public class CMammal : CAnimal
 	{
-		public CMammal (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CMammal (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -201,7 +179,7 @@ namespace RTTI {
 
 	public class CReptile : CAnimal
 	{
-		public CReptile (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CReptile (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -209,7 +187,7 @@ namespace RTTI {
 
 	public class CGiraffe : CMammal
 	{
-		public CGiraffe (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CGiraffe (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -217,7 +195,7 @@ namespace RTTI {
 
 	public class CTiger : CMammal
 	{
-		public CTiger (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CTiger (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -231,7 +209,7 @@ namespace RTTI {
 
 	public class CSnake : CReptile
 	{
-		public CSnake (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CSnake (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -239,7 +217,7 @@ namespace RTTI {
 
 	public class CTurtle : CReptile
 	{
-		public CTurtle (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CTurtle (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
@@ -247,13 +225,13 @@ namespace RTTI {
 
 	public class CAnimalIterator : CBase
 	{
-		public CAnimalIterator (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CAnimalIterator (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
 		public CAnimal GetNextAnimal ()
 		{
-			Internal.RTTIHandle newAnimal = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			IntPtr newAnimal = IntPtr.Zero;
 
 			CheckError(Internal.RTTIWrapper.AnimalIterator_GetNextAnimal (Handle, out newAnimal));
 			return Internal.RTTIWrapper.PolymorphicFactory<CAnimal>(newAnimal);
@@ -263,13 +241,13 @@ namespace RTTI {
 
 	public class CZoo : CBase
 	{
-		public CZoo (Internal.RTTIHandle NewHandle) : base (NewHandle)
+		public CZoo (IntPtr NewHandle) : base (NewHandle)
 		{
 		}
 
 		public CAnimalIterator Iterator ()
 		{
-			Internal.RTTIHandle newIterator = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			IntPtr newIterator = IntPtr.Zero;
 
 			CheckError(Internal.RTTIWrapper.Zoo_Iterator (Handle, out newIterator));
 			return Internal.RTTIWrapper.PolymorphicFactory<CAnimalIterator>(newIterator);
@@ -282,7 +260,7 @@ namespace RTTI {
 		private static void CheckError (Int32 errorCode)
 		{
 			if (errorCode != 0) {
-				Internal.RTTIWrapper.ThrowError (new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0 }, errorCode);
+				Internal.RTTIWrapper.ThrowError (IntPtr.Zero, errorCode);
 			}
 		}
 
@@ -335,7 +313,7 @@ namespace RTTI {
 
 		public static CZoo CreateZoo ()
 		{
-			Internal.RTTIHandle newInstance = new Internal.RTTIHandle{ Handle = 0, ClassTypeId = 0};
+			IntPtr newInstance = IntPtr.Zero;
 
 			CheckError(Internal.RTTIWrapper.CreateZoo (out newInstance));
 			return Internal.RTTIWrapper.PolymorphicFactory<CZoo>(newInstance);

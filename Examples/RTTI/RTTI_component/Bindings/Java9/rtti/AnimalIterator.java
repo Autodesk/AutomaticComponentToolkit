@@ -28,7 +28,7 @@ import java.util.List;
 
 public class AnimalIterator extends Base {
 
-	public AnimalIterator(RTTIWrapper wrapper, RTTIHandle handle) {
+	public AnimalIterator(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 
@@ -39,11 +39,12 @@ public class AnimalIterator extends Base {
 	 * @throws RTTIException
 	 */
 	public Animal getNextAnimal() throws RTTIException {
-		RTTIHandle handleAnimal = new RTTIHandle();
-		mWrapper.checkError(this, mWrapper.rtti_animaliterator_getnextanimal.invokeInt(new java.lang.Object[]{mHandle.Value(), handleAnimal}));
+		Pointer bufferAnimal = new Memory(8);
+		mWrapper.checkError(this, mWrapper.rtti_animaliterator_getnextanimal.invokeInt(new java.lang.Object[]{mHandle, bufferAnimal}));
+		Pointer valueAnimal = bufferAnimal.getPointer(0);
 		Animal animal = null;
-		if (handleAnimal.Handle != Pointer.NULL) {
-		  animal = mWrapper.PolymorphicFactory(handleAnimal, Animal.class);
+		if (valueAnimal != Pointer.NULL) {
+		  animal = mWrapper.PolymorphicFactory(valueAnimal, Animal.class);
 		}
 		return animal;
 	}

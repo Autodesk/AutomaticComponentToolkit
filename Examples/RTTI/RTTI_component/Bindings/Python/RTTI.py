@@ -309,6 +309,12 @@ class Wrapper:
 		
 		return InstanceObject
 	
+	'''IMPORTANT: PolymorphicFactory method should not be used by application directly.
+								It's designed to be used on RTTIHandle object only once.
+								If it's used on any existing object as a form of dynamic cast then
+								Wrapper.AcquireInstance(object) must be called after instantiating new object.
+								This is important to keep reference count matching between application and library sides.
+	'''
 	def _polymorphicFactory(self, handle):
 		class PolymorphicFactory():
 			def getObjectById(self, classtypeid, handle, wrapper):
@@ -336,6 +342,8 @@ class Wrapper:
 			def getObjectById_2262ABE80A5E7878(self, handle, wrapper): # First 64 bits of SHA1 of a string: "RTTI::Zoo"
 				return Zoo(handle, wrapper)
 		
+		if not handle:
+			return None
 		pClassTypeId = ctypes.c_uint64()
 		self.checkError(None, self.lib.rtti_base_classtypeid(handle, pClassTypeId))
 		factory = PolymorphicFactory()

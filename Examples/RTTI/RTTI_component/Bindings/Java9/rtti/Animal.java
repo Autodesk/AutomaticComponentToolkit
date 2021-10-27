@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Animal extends Base {
 
-	public Animal(RTTIWrapper wrapper, RTTIHandle handle) {
+	public Animal(RTTIWrapper wrapper, Pointer handle) {
 		super(wrapper, handle);
 	}
 
@@ -40,10 +40,10 @@ public class Animal extends Base {
 	 */
 	public String name() throws RTTIException {
 		Pointer bytesNeededResult = new Memory(4);
-		mWrapper.checkError(this, mWrapper.rtti_animal_name.invokeInt(new java.lang.Object[]{mHandle.Value(), 0, bytesNeededResult, null}));
+		mWrapper.checkError(this, mWrapper.rtti_animal_name.invokeInt(new java.lang.Object[]{mHandle, 0, bytesNeededResult, null}));
 		int sizeResult = bytesNeededResult.getInt(0);
 		Pointer bufferResult = new Memory(sizeResult);
-		mWrapper.checkError(this, mWrapper.rtti_animal_name.invokeInt(new java.lang.Object[]{mHandle.Value(), sizeResult, bytesNeededResult, bufferResult}));
+		mWrapper.checkError(this, mWrapper.rtti_animal_name.invokeInt(new java.lang.Object[]{mHandle, sizeResult, bytesNeededResult, bufferResult}));
 		return new String(bufferResult.getByteArray(0, sizeResult - 1), StandardCharsets.UTF_8);
 	}
 
