@@ -8,7 +8,7 @@ source ../../../../../Build/build.inc
 echo "Build Go example"
 
 [ -d bin ] && rm -rf bin
-[ -d obj ] && rm -rf ob
+[ -d obj ] && rm -rf obj
 msbuild /p:Configuration=Debug /t:Restore RTTI_Example.csproj
 msbuild /p:Configuration=Debug /p:AllowUnsafeBlocks=true RTTI_Example.csproj
 
