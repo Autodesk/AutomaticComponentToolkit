@@ -183,6 +183,7 @@ Element **\<global>** of type **CT\_Global**
 | errormethod | **ST\_Name** | required | | Specifies the name of the method used to query the last error that occured during the call of class's method. |
 | versionmethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the major, minor and micro version of the component. |
 | prereleasemethod | **ST\_Name** | required | | Specifies the name of the method used to obtain the prerelease information of the component. |
+| classtypeidmethod | **ST\_Name** | required | | Specifies the name of the method in base class used to get class type id of an object. |
 | buildinfomethod | **ST\_Name** | optional | | Specifies the name of the method used to obtain the build information of the component. |
 | injectionmethod | **ST\_Name** | optional | | Specifies the name of the method used to inject the symbollookupmethod another ACT component into this component at runtime. |
 | symbollookupmethod | **ST\_Name** | optional | | Specifies the name of the method that returns the address of a given symbol exported by this component. |
@@ -198,6 +199,7 @@ The `acquiremethod`- and `releasemethod`-attributes must each be the name of a \
 The `versionmethod`-attribute must be the name of a \<method> within the \<global> element of a component that has exactly three parameters. The three parameters MUST be of type `type="uint32"` and `pass="out"`.
 The `prereleasemethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
 The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
+The `classtypeidmethod`- must be the name of a \<method> within baseclassname \<class> element of a component that has exactly one parameter with `type="uint64"` and `pass="return"`.
 The `buildinfomethod`-attribute is optional an can be the name of a \<method> within the \<global> element of a component that has two parameters.
 The first parameter MUST be of type `type="bool"` and `pass="return"`, the second parameter MUST be of type `type="string"` and `pass="out"`.
 
