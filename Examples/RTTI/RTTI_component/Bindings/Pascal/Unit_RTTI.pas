@@ -445,6 +445,16 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
   TRTTIPolymorphicFactory<_T:class; _B> = record
     class function Make(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): _T; static;
   end;
+  function TRTTIPolymorphicFactoryMakeBase(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIBase;
+  function TRTTIPolymorphicFactoryMakeAnimal(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIAnimal;
+  function TRTTIPolymorphicFactoryMakeMammal(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIMammal;
+  function TRTTIPolymorphicFactoryMakeReptile(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIReptile;
+  function TRTTIPolymorphicFactoryMakeGiraffe(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIGiraffe;
+  function TRTTIPolymorphicFactoryMakeTiger(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTITiger;
+  function TRTTIPolymorphicFactoryMakeSnake(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTISnake;
+  function TRTTIPolymorphicFactoryMakeTurtle(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTITurtle;
+  function TRTTIPolymorphicFactoryMakeAnimalIterator(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIAnimalIterator;
+  function TRTTIPolymorphicFactoryMakeZoo(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIZoo;
 
 implementation
 
@@ -480,6 +490,46 @@ implementation
       QWord($2262ABE80A5E7878): begin Obj := TRTTIZoo.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
     end;
     if Result = nil then Result := _B.Create(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeBase(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIBase;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIBase, TRTTIBase>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeAnimal(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIAnimal;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeMammal(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIMammal;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIMammal, TRTTIMammal>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeReptile(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIReptile;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIReptile, TRTTIReptile>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeGiraffe(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIGiraffe;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIGiraffe, TRTTIGiraffe>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeTiger(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTITiger;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTITiger, TRTTITiger>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeSnake(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTISnake;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTISnake, TRTTISnake>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeTurtle(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTITurtle;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTITurtle, TRTTITurtle>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeAnimalIterator(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIAnimalIterator;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIAnimalIterator, TRTTIAnimalIterator>.Make(Wrapper, Handle);
+  end;
+  function TRTTIPolymorphicFactoryMakeZoo(Wrapper: TRTTIWrapper; Handle: TRTTIHandle): TRTTIZoo;
+  begin
+    Result := TRTTIPolymorphicFactory<TRTTIZoo, TRTTIZoo>.Make(Wrapper, Handle);
   end;
 
 (*************************************************************************************************************************
