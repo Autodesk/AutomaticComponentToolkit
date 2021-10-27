@@ -750,13 +750,11 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
-	
 
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
 	parentClass := ""
-
 	if (!component.isBaseClass(class)) {
 		if (class.ParentClass != "") {
 			parentClass = fmt.Sprintf("%s", class.ParentClass)
