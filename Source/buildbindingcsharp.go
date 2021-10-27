@@ -521,7 +521,9 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = Internal.RTTIWrapper.PolymorphicFactory<C%s>(new%s);", param.ParamName, param.ParamClass, param.ParamName))
+				// TODO: Using plain NameSpace here for calling PolymorphicFactory is most likely incorrect.
+				//       It should be extracted from param.ClassName.
+				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = Internal.%sWrapper.PolymorphicFactory<C%s>(new%s);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -580,7 +582,9 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				if (ParamTypeName == "IntPtr") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
 				} else {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.RTTIWrapper.PolymorphicFactory<%s>(new%s);", ParamTypeName, param.ParamName))
+					// TODO: Using plain NameSpace here for calling PolymorphicFactory is most likely incorrect.
+					//       It should be extracted from param.ClassName.
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.PolymorphicFactory<%s>(new%s);", NameSpace, ParamTypeName, param.ParamName))
 				}
 
 			default:
