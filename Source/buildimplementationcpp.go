@@ -430,9 +430,7 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		classTypeId, chashHashString := class.classTypeId(NameSpace)
 		w.Writeln("%s", methodstring)
 		w.Writeln("  {")
-		w.Writeln("    // First 64 bits of SHA1 of a string: \"%s\"", chashHashString)
-		w.Writeln("    static const %s_uint64 s_%sTypeId = 0x%XUL;", NameSpace, class.ClassName, classTypeId)
-		w.Writeln("    return s_%sTypeId;", class.ClassName)
+		w.Writeln("    return 0x%XUL; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString)
 		w.Writeln("  }")	
 		w.Writeln("")	
 	}
