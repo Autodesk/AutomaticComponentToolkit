@@ -1453,8 +1453,12 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("template <class T>")
 	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("{")
-	w.Writeln("  %s_uint64 resultClassTypeId = 0;", strings.ToUpper(NameSpace))
-	w.Writeln("  CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));")
+	w.Writeln("  %s_uint64 resultClassTypeId = 0;", NameSpace)
+	if ExplicitLinking {
+		w.Writeln("  CheckError(nullptr, m_WrapperTable.m_%s_%s(pHandle, &resultClassTypeId));", component.Global.BaseClassName, component.Global.ClassTypeIdMethod)
+	} else {
+		w.Writeln("  CheckError(nullptr, %s_%s_%s(pHandle, &resultClassTypeId));", strings.ToLower(NameSpace), strings.ToLower(component.Global.BaseClassName), strings.ToLower(component.Global.ClassTypeIdMethod))
+	}
 	w.Writeln("  switch(resultClassTypeId) {")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
