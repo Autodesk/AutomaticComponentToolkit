@@ -238,9 +238,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Animal"
-		static const RTTI_uint64 s_AnimalTypeId = 0x8B40467DA6D327AFUL;
-		return s_AnimalTypeId;
+		return 0x8B40467DA6D327AFUL; // First 64 bits of SHA1 of a string: "RTTI::Animal"
 	}
 
 	/**
@@ -266,9 +264,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Mammal"
-		static const RTTI_uint64 s_MammalTypeId = 0xBC9D5FA7750C1020UL;
-		return s_MammalTypeId;
+		return 0xBC9D5FA7750C1020UL; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
 	}
 
 };
@@ -288,9 +284,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Reptile"
-		static const RTTI_uint64 s_ReptileTypeId = 0x6756AA8EA5802EC3UL;
-		return s_ReptileTypeId;
+		return 0x6756AA8EA5802EC3UL; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
 	}
 
 };
@@ -310,9 +304,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Giraffe"
-		static const RTTI_uint64 s_GiraffeTypeId = 0x9751971BD2C2D958UL;
-		return s_GiraffeTypeId;
+		return 0x9751971BD2C2D958UL; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
 	}
 
 };
@@ -332,9 +324,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Tiger"
-		static const RTTI_uint64 s_TigerTypeId = 0x8D007E7B5F7BAF4UL;
-		return s_TigerTypeId;
+		return 0x8D007E7B5F7BAF4UL; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
 	}
 
 	/**
@@ -359,9 +349,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Snake"
-		static const RTTI_uint64 s_SnakeTypeId = 0x5F6826EF909803B2UL;
-		return s_SnakeTypeId;
+		return 0x5F6826EF909803B2UL; // First 64 bits of SHA1 of a string: "RTTI::Snake"
 	}
 
 };
@@ -381,9 +369,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Turtle"
-		static const RTTI_uint64 s_TurtleTypeId = 0x8E551B208A2E8321UL;
-		return s_TurtleTypeId;
+		return 0x8E551B208A2E8321UL; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
 	}
 
 };
@@ -403,9 +389,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
-		static const RTTI_uint64 s_AnimalIteratorTypeId = 0xF1917FE6BBE77831UL;
-		return s_AnimalIteratorTypeId;
+		return 0xF1917FE6BBE77831UL; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
 	}
 
 	/**
@@ -431,9 +415,7 @@ public:
 	*/
 	RTTI_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "RTTI::Zoo"
-		static const RTTI_uint64 s_ZooTypeId = 0x2262ABE80A5E7878UL;
-		return s_ZooTypeId;
+		return 0x2262ABE80A5E7878UL; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
 	}
 
 	/**

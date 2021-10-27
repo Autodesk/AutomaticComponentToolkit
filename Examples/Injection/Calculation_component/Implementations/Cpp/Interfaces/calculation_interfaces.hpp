@@ -212,9 +212,7 @@ public:
 	*/
 	Calculation_uint64 ClassTypeId() override
 	{
-		// First 64 bits of SHA1 of a string: "Calculation::Calculator"
-		static const Calculation_uint64 s_CalculatorTypeId = 0xB23F514353D0C606UL;
-		return s_CalculatorTypeId;
+		return 0xB23F514353D0C606UL; // First 64 bits of SHA1 of a string: "Calculation::Calculator"
 	}
 
 	/**
