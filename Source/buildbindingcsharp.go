@@ -979,6 +979,9 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("      public static T PolymorphicFactory<T>(%sHandle Handle) where T : class", NameSpace)
 	w.Writeln("      {")
 	w.Writeln("        T Object;")
+	w.Writeln("        if (Handle.Handle == IntPtr.Zero)")
+	w.Writeln("          return System.Activator.CreateInstance(typeof(T), Handle) as T;")
+	w.Writeln("        ")
 	w.Writeln("        switch (Handle.ClassTypeId) {")
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]

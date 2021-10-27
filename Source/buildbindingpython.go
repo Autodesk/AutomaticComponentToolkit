@@ -391,6 +391,8 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("        return %s(handle, wrapper)", componentdefinition.Classes[i].ClassName)
 	}
 	w.Writeln("    ")
+	w.Writeln("    if not handle:")
+	w.Writeln("      return None")
 	w.Writeln("    factory = PolymorphicFactory()")
 	w.Writeln("    return factory.getObjectById(handle, self)")
 	w.Writeln("  ")
@@ -760,13 +762,11 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
-	
 
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
 	parentClass := ""
-
 	if (!component.isBaseClass(class)) {
 		if (class.ParentClass != "") {
 			parentClass = fmt.Sprintf("%s", class.ParentClass)

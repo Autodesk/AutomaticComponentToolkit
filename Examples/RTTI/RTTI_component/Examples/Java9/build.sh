@@ -22,7 +22,7 @@ else
 fi
 
 echo "Download JNA"
-[ -f jna-5.5.0.jar ] || wget https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar
+[ -f jna-5.5.0.jar ] || curl -O https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar
 
 echo "Compile Java bindings"
 javac -encoding UTF8 -classpath "${JnaJar}" ../../Bindings/Java9/rtti/*.java

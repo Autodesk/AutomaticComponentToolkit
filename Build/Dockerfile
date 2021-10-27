@@ -28,8 +28,12 @@ RUN dnf -y install cmake
 RUN dnf -y install ninja-build
 
 # Free Pascal
-RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.2.2/fpc-3.2.2-1.x86_64.rpm' \
-    && rpm -i fpc-3.2.2-1.x86_64.rpm)
+# 3.0.4 should be used for validating compiler base compatibility.
+RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm' \
+    && rpm -i fpc-3.0.4-1.x86_64.rpm)
+# Using 3.2.2 until PolymorphicFactory is reworked to not using generics that are not full functional in 3.0.4.
+# RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.2.2/fpc-3.2.2-1.x86_64.rpm' \
+#     && rpm -i fpc-3.2.2-1.x86_64.rpm)
 
 # Golang
 RUN (cd /opt && curl -O -L https://golang.org/dl/go1.17.2.linux-amd64.tar.gz \
