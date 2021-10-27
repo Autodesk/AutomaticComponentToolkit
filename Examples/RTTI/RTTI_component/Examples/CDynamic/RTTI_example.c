@@ -75,77 +75,77 @@ int main()
 	RTTI_Animal Animal;
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Gerald Giraffe"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Timmy Tiger"));
 	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Tony Tiger"));
 	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Sebastian Snake"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Tobias Turtle"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Theo Turtle"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Tomás Turtle"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Slytherin Snake"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Travis Tiger"));
 	assert(RTTI_SUCCESS == sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle != NULL);
+	assert(Animal != NULL);
 	assert(RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, 0, &CharsRead, 0)
 	&& RTTI_SUCCESS == sWrapperTable.m_Animal_Name(Animal, CharsRead, &CharsRead, &Name[0]));
 	assert(!strcmp(Name, "Gary Giraffe"));
 	// assert(RTTI_SUCCESS != sWrapperTable.m_Tiger_Roar(Animal));
 
 	assert(RTTI_SUCCESS == sWrapperTable.m_AnimalIterator_GetNextAnimal(Iterator, &Animal));
-	assert(Animal.Handle == NULL);
+	assert(Animal == NULL);
 
 	eResult = ReleaseRTTIWrapperTable(&sWrapperTable);
 	if (RTTI_SUCCESS != eResult) {
