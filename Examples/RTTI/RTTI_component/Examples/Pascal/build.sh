@@ -14,12 +14,12 @@ pushd build
 
 echo "Test C++ library"
 rm -f rtti.dll
-ln -s ../../Implementations/Cpp/build/rtti$OSLIBEXT rtti.dll
+ln -s ../../../Implementations/Cpp/build/rtti$OSLIBEXT rtti.dll
 RUN ./RTTI_Example .
 
 echo "Test Pascal library"
 rm -f rtti.dll
-ln -s ../../Implementations/Pascal/build/rtti$OSLIBEXT rtti.dll
+ln -s ../../../Implementations/Pascal/build/rtti$OSLIBEXT rtti.dll
 RUN ./RTTI_Example .
 
 popd
