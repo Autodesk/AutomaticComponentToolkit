@@ -729,7 +729,7 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.Empty = "\"\""
 	case "pointer":
 		tp.Type = "uintptr"
-		tp.CType = fmt.Sprintf("C.RTTI_pvoid")
+		tp.CType = fmt.Sprintf("C.%s_pvoid", namespace)
 		tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
 		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
 		tp.Empty = "0"
