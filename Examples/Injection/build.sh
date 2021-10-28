@@ -24,4 +24,6 @@ echo "Build and test bindings examples with C++ library"
 ./Calculation_component/Examples/Python/build.sh
 ./Calculation_component/Examples/Pascal/build.sh
 ./Calculation_component/Examples/CSharp/build.sh
+./Calculation_component/Examples/Java9/build.sh
+
 echo "Build and test are done and successful"
