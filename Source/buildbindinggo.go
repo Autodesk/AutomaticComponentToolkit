@@ -839,6 +839,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 
 	for _, param := range method.Params {
 		param.ParamName = toGoParam(param.ParamName)
+		param.ParamClass = strings.ReplaceAll(param.ParamClass, ":", "_")
 		tp, err := getGoType(param.ParamType, NameSpace, param.ParamClass, param.ParamName, false)
 		if err != nil {
 			return err
