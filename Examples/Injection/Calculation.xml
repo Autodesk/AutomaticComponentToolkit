@@ -15,6 +15,7 @@
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
+		<binding language="Java" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
