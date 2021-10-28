@@ -189,7 +189,11 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 	}
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
-		w.Writeln("#include \"%s_types.hpp\"", subComponent.BaseName)
+		if useCPPTypes {
+			w.Writeln("#include \"%s_types.hpp\"", subComponent.BaseName)
+		} else {
+			w.Writeln("#include \"%s_types.h\"", subComponent.BaseName)
+		}
 	}
 	w.Writeln("")
 

@@ -731,7 +731,7 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.Empty = "\"\""
 	case "pointer":
 		tp.Type = "uintptr"
-		tp.CType = fmt.Sprintf("C.RTTI_pvoid")
+		tp.CType = fmt.Sprintf("C.%s_pvoid", namespace)
 		tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
 		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
 		tp.Empty = "0"
@@ -841,6 +841,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 
 	for _, param := range method.Params {
 		param.ParamName = toGoParam(param.ParamName)
+		param.ParamClass = strings.ReplaceAll(param.ParamClass, ":", "_")
 		tp, err := getGoType(param.ParamType, NameSpace, param.ParamClass, param.ParamName, false)
 		if err != nil {
 			return err
