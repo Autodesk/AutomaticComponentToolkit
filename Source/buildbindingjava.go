@@ -645,7 +645,11 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				initCallParameters = initCallParameters + MakeFirstLowerCase(param.ParamName)
 
 			case "class", "optionalclass":
-				initCommands = append(initCommands, fmt.Sprintf("%sHandle.ByValue ", NameSpace) + MakeFirstLowerCase(param.ParamName) + "Handle;")
+				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if (len(paramNameSpace) == 0) {
+					paramNameSpace = NameSpace
+				}
+				initCommands = append(initCommands, fmt.Sprintf("%sHandle.ByValue ", paramNameSpace) + MakeFirstLowerCase(param.ParamName) + "Handle;")
 				initCommands = append(initCommands, fmt.Sprintf("if (%s != null) {", MakeFirstLowerCase(param.ParamName)))
 				initCommands = append(initCommands, indent + MakeFirstLowerCase(param.ParamName) + "Handle = " + MakeFirstLowerCase(param.ParamName) + ".getHandle().Value();")
 				if (param.ParamType == "optionalclass") {
@@ -776,7 +780,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 				} else {
 					theNameSpace = NameSpace
 				}
-				initCommands = append(initCommands, fmt.Sprintf("%sHandle handle%s = new %sHandle();", NameSpace, param.ParamName, NameSpace))
+				initCommands = append(initCommands, fmt.Sprintf("%sHandle handle%s = new %sHandle();", theNameSpace, param.ParamName, theNameSpace))
 				callFunctionParameters = callFunctionParameters + "handle" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("%s %s = null;", theParamClass, MakeFirstLowerCase(param.ParamName)))
 				if param.ParamType == "class" {
