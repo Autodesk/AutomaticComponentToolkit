@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Variable extends Base {
 
-	public Variable(NumbersWrapper wrapper, Pointer handle) {
+	public Variable(NumbersWrapper wrapper, NumbersHandle handle) {
 		super(wrapper, handle);
 	}
 
@@ -40,7 +40,7 @@ public class Variable extends Base {
 	 */
 	public double getValue() throws NumbersException {
 		Pointer bufferValue = new Memory(8);
-		mWrapper.checkError(this, mWrapper.numbers_variable_getvalue.invokeInt(new java.lang.Object[]{mHandle, bufferValue}));
+		mWrapper.checkError(this, mWrapper.numbers_variable_getvalue.invokeInt(new java.lang.Object[]{mHandle.Value(), bufferValue}));
 		return bufferValue.getDouble(0);
 	}
 
@@ -51,7 +51,7 @@ public class Variable extends Base {
 	 * @throws NumbersException
 	 */
 	public void setValue(double value) throws NumbersException {
-		mWrapper.checkError(this, mWrapper.numbers_variable_setvalue.invokeInt(new java.lang.Object[]{mHandle, value}));
+		mWrapper.checkError(this, mWrapper.numbers_variable_setvalue.invokeInt(new java.lang.Object[]{mHandle.Value(), value}));
 	}
 
 

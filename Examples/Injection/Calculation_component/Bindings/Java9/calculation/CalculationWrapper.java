@@ -114,14 +114,13 @@ public class CalculationWrapper {
 	 * @throws CalculationException
 	 */
 	public Calculator createCalculator() throws CalculationException {
-		Pointer bufferInstance = new Memory(8);
-		checkError(null, calculation_createcalculator.invokeInt(new java.lang.Object[]{bufferInstance}));
-		Pointer valueInstance = bufferInstance.getPointer(0);
+		CalculationHandle handleInstance = new CalculationHandle();
+		checkError(null, calculation_createcalculator.invokeInt(new java.lang.Object[]{handleInstance}));
 		Calculator instance = null;
-		if (valueInstance == Pointer.NULL) {
+		if (handleInstance.Handle == Pointer.NULL) {
 		  throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance was a null pointer");
 		}
-		instance = this.PolymorphicFactory(valueInstance, Calculator.class);
+		instance = this.PolymorphicFactory(handleInstance, Calculator.class);
 		return instance;
 	}
 
@@ -168,9 +167,9 @@ public class CalculationWrapper {
 	 * @throws CalculationException
 	 */
 	public GetLastErrorResult getLastError(Base instance) throws CalculationException {
-		Pointer instanceHandle = null;
+		CalculationHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -205,9 +204,9 @@ public class CalculationWrapper {
 	 * @throws CalculationException
 	 */
 	public void releaseInstance(Base instance) throws CalculationException {
-		Pointer instanceHandle = null;
+		CalculationHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -221,9 +220,9 @@ public class CalculationWrapper {
 	 * @throws CalculationException
 	 */
 	public void acquireInstance(Base instance) throws CalculationException {
-		Pointer instanceHandle = null;
+		CalculationHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -276,21 +275,15 @@ public class CalculationWrapper {
 	 *            CalculationWrapper::acquireInstance(Base object) must be called after instantiating new object.
 	 *            This is important to keep reference count matching between application and library sides.
 	*/
-	public <T> T PolymorphicFactory(Pointer handle, Class<T> cls) {
-		if (handle == Pointer.NULL)
-		 return null;
-		 Class[] cArg = new Class[2];
-		 cArg[0] = CalculationWrapper.class;
-		 cArg[1] = Pointer.class;
-			
-			try {
-		   T obj = null;
-		   Pointer bufferClassTypeId = new Memory(8);
-		   checkError(null, calculation_base_classtypeid.invokeInt(new java.lang.Object[]{handle, bufferClassTypeId}));
-		   long classTypeId = bufferClassTypeId.getLong(0);
-		   
-		   int msbId = (int)(classTypeId >> 32); 
-		   int lsbId = (int)classTypeId; 
+	public <T> T PolymorphicFactory(CalculationHandle handle, Class<T> cls) {
+		Class[] cArg = new Class[2];
+		cArg[0] = CalculationWrapper.class;
+		cArg[1] = CalculationHandle.class;
+	
+		try {
+			T obj = null;
+			int msbId = (int)(handle.ClassTypeId >> 32); 
+			int lsbId = (int)handle.ClassTypeId; 
 			switch(msbId) {
 				case 0x3BA5271B: 
 					switch(lsbId) {

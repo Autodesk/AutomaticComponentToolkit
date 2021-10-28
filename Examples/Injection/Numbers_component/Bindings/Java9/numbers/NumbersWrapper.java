@@ -96,14 +96,13 @@ public class NumbersWrapper {
 	 * @throws NumbersException
 	 */
 	public Variable createVariable(double initialValue) throws NumbersException {
-		Pointer bufferInstance = new Memory(8);
-		checkError(null, numbers_createvariable.invokeInt(new java.lang.Object[]{initialValue, bufferInstance}));
-		Pointer valueInstance = bufferInstance.getPointer(0);
+		NumbersHandle handleInstance = new NumbersHandle();
+		checkError(null, numbers_createvariable.invokeInt(new java.lang.Object[]{initialValue, handleInstance}));
 		Variable instance = null;
-		if (valueInstance == Pointer.NULL) {
+		if (handleInstance.Handle == Pointer.NULL) {
 		  throw new NumbersException(NumbersException.NUMBERS_ERROR_INVALIDPARAM, "Instance was a null pointer");
 		}
-		instance = this.PolymorphicFactory(valueInstance, Variable.class);
+		instance = this.PolymorphicFactory(handleInstance, Variable.class);
 		return instance;
 	}
 
@@ -150,9 +149,9 @@ public class NumbersWrapper {
 	 * @throws NumbersException
 	 */
 	public GetLastErrorResult getLastError(Base instance) throws NumbersException {
-		Pointer instanceHandle = null;
+		NumbersHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new NumbersException(NumbersException.NUMBERS_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -187,9 +186,9 @@ public class NumbersWrapper {
 	 * @throws NumbersException
 	 */
 	public void releaseInstance(Base instance) throws NumbersException {
-		Pointer instanceHandle = null;
+		NumbersHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new NumbersException(NumbersException.NUMBERS_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -203,9 +202,9 @@ public class NumbersWrapper {
 	 * @throws NumbersException
 	 */
 	public void acquireInstance(Base instance) throws NumbersException {
-		Pointer instanceHandle = null;
+		NumbersHandle.ByValue instanceHandle;
 		if (instance != null) {
-			instanceHandle = instance.getHandle();
+			instanceHandle = instance.getHandle().Value();
 		} else {
 			throw new NumbersException(NumbersException.NUMBERS_ERROR_INVALIDPARAM, "Instance is a null value.");
 		}
@@ -231,21 +230,15 @@ public class NumbersWrapper {
 	 *            NumbersWrapper::acquireInstance(Base object) must be called after instantiating new object.
 	 *            This is important to keep reference count matching between application and library sides.
 	*/
-	public <T> T PolymorphicFactory(Pointer handle, Class<T> cls) {
-		if (handle == Pointer.NULL)
-		 return null;
-		 Class[] cArg = new Class[2];
-		 cArg[0] = NumbersWrapper.class;
-		 cArg[1] = Pointer.class;
-			
-			try {
-		   T obj = null;
-		   Pointer bufferClassTypeId = new Memory(8);
-		   checkError(null, numbers_base_classtypeid.invokeInt(new java.lang.Object[]{handle, bufferClassTypeId}));
-		   long classTypeId = bufferClassTypeId.getLong(0);
-		   
-		   int msbId = (int)(classTypeId >> 32); 
-		   int lsbId = (int)classTypeId; 
+	public <T> T PolymorphicFactory(NumbersHandle handle, Class<T> cls) {
+		Class[] cArg = new Class[2];
+		cArg[0] = NumbersWrapper.class;
+		cArg[1] = NumbersHandle.class;
+	
+		try {
+			T obj = null;
+			int msbId = (int)(handle.ClassTypeId >> 32); 
+			int lsbId = (int)handle.ClassTypeId; 
 			switch(msbId) {
 				case 0x23934EDF: 
 					switch(lsbId) {

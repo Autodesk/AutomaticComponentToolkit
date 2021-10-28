@@ -30,23 +30,23 @@ public class Base {
 
 	protected static final Cleaner mCleaner = Cleaner.create();
 
-	protected Pointer mHandle;
+	protected NumbersHandle mHandle;
 
 	protected NumbersWrapper mWrapper;
 
-	public Base(NumbersWrapper wrapper, Pointer handle) {
+	public Base(NumbersWrapper wrapper, NumbersHandle handle) {
 		mHandle = handle;
 		mWrapper = wrapper;
 		mCleaner.register(this, new InstanceReleaser(this));
 	}
 
-	public Pointer getHandle() {
+	public NumbersHandle getHandle() {
 		return mHandle;
 	}
 	
 	protected static class InstanceReleaser implements Runnable{
 	
-		protected Pointer mHandle;
+		protected NumbersHandle mHandle;
 		
 		protected NumbersWrapper mWrapper;
 		
@@ -58,7 +58,7 @@ public class Base {
 		@Override
 		public void run() {
 			try {
-				mWrapper.checkError(null, mWrapper.numbers_releaseinstance.invokeInt(new java.lang.Object[]{mHandle}));
+				mWrapper.checkError(null, mWrapper.numbers_releaseinstance.invokeInt(new java.lang.Object[]{mHandle.Value()}));
 			} catch (NumbersException e) {
 				e.printStackTrace();
 			}
@@ -72,7 +72,7 @@ public class Base {
 	 */
 	public long classTypeId() throws NumbersException {
 		Pointer bufferClassTypeId = new Memory(8);
-		mWrapper.checkError(this, mWrapper.numbers_base_classtypeid.invokeInt(new java.lang.Object[]{mHandle, bufferClassTypeId}));
+		mWrapper.checkError(this, mWrapper.numbers_base_classtypeid.invokeInt(new java.lang.Object[]{mHandle.Value(), bufferClassTypeId}));
 		return bufferClassTypeId.getLong(0);
 	}
 

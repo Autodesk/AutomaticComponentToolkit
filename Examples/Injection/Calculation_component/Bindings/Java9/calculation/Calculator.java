@@ -29,7 +29,7 @@ import java.util.List;
 
 public class Calculator extends Base {
 
-	public Calculator(CalculationWrapper wrapper, Pointer handle) {
+	public Calculator(CalculationWrapper wrapper, CalculationHandle handle) {
 		super(wrapper, handle);
 	}
 
@@ -40,13 +40,13 @@ public class Calculator extends Base {
 	 * @throws CalculationException
 	 */
 	public void enlistVariable(Variable variable) throws CalculationException {
-		Pointer variableHandle = null;
+		NumbersHandle.ByValue variableHandle;
 		if (variable != null) {
-			variableHandle = variable.getHandle();
+			variableHandle = variable.getHandle().Value();
 		} else {
 			throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Variable is a null value.");
 		}
-		mWrapper.checkError(this, mWrapper.calculation_calculator_enlistvariable.invokeInt(new java.lang.Object[]{mHandle, variableHandle}));
+		mWrapper.checkError(this, mWrapper.calculation_calculator_enlistvariable.invokeInt(new java.lang.Object[]{mHandle.Value(), variableHandle}));
 	}
 
 	/**
@@ -57,14 +57,13 @@ public class Calculator extends Base {
 	 * @throws CalculationException
 	 */
 	public Variable getEnlistedVariable(int index) throws CalculationException {
-		Pointer bufferVariable = new Memory(8);
-		mWrapper.checkError(this, mWrapper.calculation_calculator_getenlistedvariable.invokeInt(new java.lang.Object[]{mHandle, index, bufferVariable}));
-		Pointer valueVariable = bufferVariable.getPointer(0);
+		NumbersHandle handleVariable = new NumbersHandle();
+		mWrapper.checkError(this, mWrapper.calculation_calculator_getenlistedvariable.invokeInt(new java.lang.Object[]{mHandle.Value(), index, handleVariable}));
 		Variable variable = null;
-		if (valueVariable == Pointer.NULL) {
+		if (handleVariable.Handle == Pointer.NULL) {
 		  throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Variable was a null pointer");
 		}
-		variable = mWrapper.getNumbersWrapper().PolymorphicFactory(valueVariable, Variable.class);
+		variable = mWrapper.getNumbersWrapper().PolymorphicFactory(handleVariable, Variable.class);
 		return variable;
 	}
 
@@ -74,7 +73,7 @@ public class Calculator extends Base {
 	 * @throws CalculationException
 	 */
 	public void clearVariables() throws CalculationException {
-		mWrapper.checkError(this, mWrapper.calculation_calculator_clearvariables.invokeInt(new java.lang.Object[]{mHandle}));
+		mWrapper.checkError(this, mWrapper.calculation_calculator_clearvariables.invokeInt(new java.lang.Object[]{mHandle.Value()}));
 	}
 
 	/**
@@ -84,14 +83,13 @@ public class Calculator extends Base {
 	 * @throws CalculationException
 	 */
 	public Variable multiply() throws CalculationException {
-		Pointer bufferInstance = new Memory(8);
-		mWrapper.checkError(this, mWrapper.calculation_calculator_multiply.invokeInt(new java.lang.Object[]{mHandle, bufferInstance}));
-		Pointer valueInstance = bufferInstance.getPointer(0);
+		NumbersHandle handleInstance = new NumbersHandle();
+		mWrapper.checkError(this, mWrapper.calculation_calculator_multiply.invokeInt(new java.lang.Object[]{mHandle.Value(), handleInstance}));
 		Variable instance = null;
-		if (valueInstance == Pointer.NULL) {
+		if (handleInstance.Handle == Pointer.NULL) {
 		  throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance was a null pointer");
 		}
-		instance = mWrapper.getNumbersWrapper().PolymorphicFactory(valueInstance, Variable.class);
+		instance = mWrapper.getNumbersWrapper().PolymorphicFactory(handleInstance, Variable.class);
 		return instance;
 	}
 
@@ -102,14 +100,13 @@ public class Calculator extends Base {
 	 * @throws CalculationException
 	 */
 	public Variable add() throws CalculationException {
-		Pointer bufferInstance = new Memory(8);
-		mWrapper.checkError(this, mWrapper.calculation_calculator_add.invokeInt(new java.lang.Object[]{mHandle, bufferInstance}));
-		Pointer valueInstance = bufferInstance.getPointer(0);
+		NumbersHandle handleInstance = new NumbersHandle();
+		mWrapper.checkError(this, mWrapper.calculation_calculator_add.invokeInt(new java.lang.Object[]{mHandle.Value(), handleInstance}));
 		Variable instance = null;
-		if (valueInstance == Pointer.NULL) {
+		if (handleInstance.Handle == Pointer.NULL) {
 		  throw new CalculationException(CalculationException.CALCULATION_ERROR_INVALIDPARAM, "Instance was a null pointer");
 		}
-		instance = mWrapper.getNumbersWrapper().PolymorphicFactory(valueInstance, Variable.class);
+		instance = mWrapper.getNumbersWrapper().PolymorphicFactory(handleInstance, Variable.class);
 		return instance;
 	}
 
