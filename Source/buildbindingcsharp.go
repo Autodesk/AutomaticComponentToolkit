@@ -967,7 +967,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("        }")
 		w.Writeln("")
 	}
-	w.Writeln("        throw new Exception(sMessage + \"(# \" + errorCode + \")\");")
+	w.Writeln("        throw new ExternalException(sMessage, errorCode);")
 	w.Writeln("      }")
 
 	w.Writeln("")
@@ -1171,6 +1171,10 @@ func buildCSharpExample(componentdefinition ComponentDefinition, w LanguageWrite
 		w.Writeln("          versionString = versionString + '-' + sBuildInfo;")
 	}
 	w.Writeln("        Console.WriteLine(versionString);")
+	w.Writeln("      }")
+	w.Writeln("      catch (ExternalException ex)")
+	w.Writeln("      {")
+	w.Writeln("        Console.WriteLine(\"Code: \" + ex.ErrorCode + \", Message: \" + ex.Message);")
 	w.Writeln("      }")
 	w.Writeln("      catch (Exception e)")
 	w.Writeln("      {")
