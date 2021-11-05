@@ -35,3 +35,15 @@ IAnimal * CAnimalIterator::GetNextAnimal()
 		return nullptr;
 	}
 }
+
+bool CAnimalIterator::GetNextOptinalAnimal(IAnimal*& pAnimal)
+{
+	pAnimal = GetNextAnimal();
+	return true;
+}
+
+bool CAnimalIterator::GetNextMandatoryAnimal(IAnimal*& pAnimal)
+{
+	pAnimal = GetNextAnimal();
+	return true;
+}

@@ -72,6 +72,15 @@
 		<method name="GetNextAnimal" description="Return next animal">
 			<param name="Animal" pass="return" type="optionalclass" class="Animal"/>
 		</method>
+		<method name="GetNextOptinalAnimal" description="Return next animal">
+			<param name="Animal" pass="out" type="optionalclass" class="Animal"/>
+			<param name="Error" pass="return" type="bool"/>
+		</method>
+		<method name="GetNextMandatoryAnimal" description="Return next animal">
+			<param name="Animal" pass="out" type="optionalclass" class="Animal"/>
+			<param name="Error" pass="return" type="bool"/>
+		</method>
+
 	</class>
 
 	<class name="Zoo" description="">

@@ -1,6 +1,6 @@
 (*++
 
-Copyright (C) 2020 ADSK
+Copyright (C) 2021 ADSK
 
 All rights reserved.
 
@@ -31,6 +31,8 @@ exports
 	rtti_animal_name,
 	rtti_tiger_roar,
 	rtti_animaliterator_getnextanimal,
+	rtti_animaliterator_getnextoptinalanimal,
+	rtti_animaliterator_getnextmandatoryanimal,
 	rtti_zoo_iterator,
 	rtti_getversion,
 	rtti_getlasterror,

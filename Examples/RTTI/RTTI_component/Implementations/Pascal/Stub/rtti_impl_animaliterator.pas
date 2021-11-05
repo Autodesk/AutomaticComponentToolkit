@@ -33,6 +33,9 @@ type
 
 			constructor Create(Animals: TList);
 			function GetNextAnimal(): TObject;
+			function GetNextOptinalAnimal(out AAnimal: TObject): Boolean;
+			function GetNextMandatoryAnimal(out AAnimal: TObject): Boolean;
+
 		protected
 	end;
 
@@ -56,6 +59,18 @@ begin
         else
             Result := nil;
         Index := Index + 1;
+end;
+
+function TRTTIAnimalIterator.GetNextOptinalAnimal(out AAnimal: TObject): Boolean;
+begin
+    AAnimal := GetNextAnimal();
+	Result := true;
+end;
+
+function TRTTIAnimalIterator.GetNextMandatoryAnimal(out AAnimal: TObject): Boolean;
+begin
+    AAnimal := GetNextAnimal();
+	Result := true;
 end;
 
 end.

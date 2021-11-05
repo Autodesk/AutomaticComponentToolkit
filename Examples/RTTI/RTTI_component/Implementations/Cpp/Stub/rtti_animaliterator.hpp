@@ -59,6 +59,8 @@ public:
 	*/
 
 	IAnimal * GetNextAnimal() override;
+	bool GetNextOptinalAnimal(IAnimal*& pAnimal) override;
+	bool GetNextMandatoryAnimal(IAnimal*& pAnimal) override;
 
 };
 
