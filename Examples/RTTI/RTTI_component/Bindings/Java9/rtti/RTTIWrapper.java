@@ -36,6 +36,8 @@ public class RTTIWrapper {
 	protected Function rtti_animal_name;
 	protected Function rtti_tiger_roar;
 	protected Function rtti_animaliterator_getnextanimal;
+	protected Function rtti_animaliterator_getnextoptinalanimal;
+	protected Function rtti_animaliterator_getnextmandatoryanimal;
 	protected Function rtti_zoo_iterator;
 
 	protected NativeLibrary mLibrary;
@@ -53,6 +55,8 @@ public class RTTIWrapper {
 		rtti_animal_name = mLibrary.getFunction("rtti_animal_name");
 		rtti_tiger_roar = mLibrary.getFunction("rtti_tiger_roar");
 		rtti_animaliterator_getnextanimal = mLibrary.getFunction("rtti_animaliterator_getnextanimal");
+		rtti_animaliterator_getnextoptinalanimal = mLibrary.getFunction("rtti_animaliterator_getnextoptinalanimal");
+		rtti_animaliterator_getnextmandatoryanimal = mLibrary.getFunction("rtti_animaliterator_getnextmandatoryanimal");
 		rtti_zoo_iterator = mLibrary.getFunction("rtti_zoo_iterator");
 	}
 
@@ -69,6 +73,8 @@ public class RTTIWrapper {
 		rtti_animal_name = loadFunctionByLookup(lookupMethod, "rtti_animal_name");
 		rtti_tiger_roar = loadFunctionByLookup(lookupMethod, "rtti_tiger_roar");
 		rtti_animaliterator_getnextanimal = loadFunctionByLookup(lookupMethod, "rtti_animaliterator_getnextanimal");
+		rtti_animaliterator_getnextoptinalanimal = loadFunctionByLookup(lookupMethod, "rtti_animaliterator_getnextoptinalanimal");
+		rtti_animaliterator_getnextmandatoryanimal = loadFunctionByLookup(lookupMethod, "rtti_animaliterator_getnextmandatoryanimal");
 		rtti_zoo_iterator = loadFunctionByLookup(lookupMethod, "rtti_zoo_iterator");
 	}
 

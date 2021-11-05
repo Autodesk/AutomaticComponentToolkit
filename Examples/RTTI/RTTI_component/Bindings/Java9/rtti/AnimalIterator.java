@@ -49,6 +49,72 @@ public class AnimalIterator extends Base {
 		return animal;
 	}
 
+	/**
+	 * Return next animal
+	 *
+	 * @return GetNextOptinalAnimal Result Tuple
+	 * @throws RTTIException
+	 */
+	public GetNextOptinalAnimalResult getNextOptinalAnimal() throws RTTIException {
+		Pointer bufferAnimal = new Memory(8);
+		Pointer bufferError = new Memory(1);
+		mWrapper.checkError(this, mWrapper.rtti_animaliterator_getnextoptinalanimal.invokeInt(new java.lang.Object[]{mHandle, bufferAnimal, bufferError}));
+		Pointer valueAnimal = bufferAnimal.getPointer(0);
+		Animal animal = null;
+		if (valueAnimal != Pointer.NULL) {
+		  animal = mWrapper.PolymorphicFactory(valueAnimal, Animal.class);
+		}
+		GetNextOptinalAnimalResult returnTuple = new GetNextOptinalAnimalResult();
+		returnTuple.Animal = animal;
+		returnTuple.Error = bufferError.getByte(0) != 0;
+		return returnTuple;
+	}
+
+	public static class GetNextOptinalAnimalResult {
+		/**
+		 * 
+		 */
+		public Animal Animal;
+
+		/**
+		 * 
+		 */
+		public boolean Error;
+
+	}
+	/**
+	 * Return next animal
+	 *
+	 * @return GetNextMandatoryAnimal Result Tuple
+	 * @throws RTTIException
+	 */
+	public GetNextMandatoryAnimalResult getNextMandatoryAnimal() throws RTTIException {
+		Pointer bufferAnimal = new Memory(8);
+		Pointer bufferError = new Memory(1);
+		mWrapper.checkError(this, mWrapper.rtti_animaliterator_getnextmandatoryanimal.invokeInt(new java.lang.Object[]{mHandle, bufferAnimal, bufferError}));
+		Pointer valueAnimal = bufferAnimal.getPointer(0);
+		Animal animal = null;
+		if (valueAnimal != Pointer.NULL) {
+		  animal = mWrapper.PolymorphicFactory(valueAnimal, Animal.class);
+		}
+		GetNextMandatoryAnimalResult returnTuple = new GetNextMandatoryAnimalResult();
+		returnTuple.Animal = animal;
+		returnTuple.Error = bufferError.getByte(0) != 0;
+		return returnTuple;
+	}
+
+	public static class GetNextMandatoryAnimalResult {
+		/**
+		 * 
+		 */
+		public Animal Animal;
+
+		/**
+		 * 
+		 */
+		public boolean Error;
+
+	}
 
 }
 

@@ -214,6 +214,66 @@ RTTIResult rtti_animaliterator_getnextanimal(RTTI_AnimalIterator pAnimalIterator
 	}
 }
 
+RTTIResult rtti_animaliterator_getnextoptinalanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	IBase* pIBaseClass = (IBase *)pAnimalIterator;
+
+	try {
+		if (pAnimal == nullptr)
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		if (pError == nullptr)
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		IAnimal* pBaseAnimal(nullptr);
+		IAnimalIterator* pIAnimalIterator = dynamic_cast<IAnimalIterator*>(pIBaseClass);
+		if (!pIAnimalIterator)
+			throw ERTTIInterfaceException(RTTI_ERROR_INVALIDCAST);
+		
+		*pError = pIAnimalIterator->GetNextOptinalAnimal(pBaseAnimal);
+
+		*pAnimal = (IBase*)(pBaseAnimal);
+		return RTTI_SUCCESS;
+	}
+	catch (ERTTIInterfaceException & Exception) {
+		return handleRTTIException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
+RTTIResult rtti_animaliterator_getnextmandatoryanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	IBase* pIBaseClass = (IBase *)pAnimalIterator;
+
+	try {
+		if (pAnimal == nullptr)
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		if (pError == nullptr)
+			throw ERTTIInterfaceException (RTTI_ERROR_INVALIDPARAM);
+		IAnimal* pBaseAnimal(nullptr);
+		IAnimalIterator* pIAnimalIterator = dynamic_cast<IAnimalIterator*>(pIBaseClass);
+		if (!pIAnimalIterator)
+			throw ERTTIInterfaceException(RTTI_ERROR_INVALIDCAST);
+		
+		*pError = pIAnimalIterator->GetNextMandatoryAnimal(pBaseAnimal);
+
+		*pAnimal = (IBase*)(pBaseAnimal);
+		return RTTI_SUCCESS;
+	}
+	catch (ERTTIInterfaceException & Exception) {
+		return handleRTTIException(pIBaseClass, Exception);
+	}
+	catch (std::exception & StdException) {
+		return handleStdException(pIBaseClass, StdException);
+	}
+	catch (...) {
+		return handleUnhandledException(pIBaseClass);
+	}
+}
+
 
 /*************************************************************************************************************************
  Class implementation for Zoo
@@ -269,6 +329,10 @@ RTTIResult RTTI::Impl::RTTI_GetProcAddress (const char * pProcName, void ** ppPr
 		*ppProcAddress = (void*) &rtti_tiger_roar;
 	if (sProcName == "rtti_animaliterator_getnextanimal") 
 		*ppProcAddress = (void*) &rtti_animaliterator_getnextanimal;
+	if (sProcName == "rtti_animaliterator_getnextoptinalanimal") 
+		*ppProcAddress = (void*) &rtti_animaliterator_getnextoptinalanimal;
+	if (sProcName == "rtti_animaliterator_getnextmandatoryanimal") 
+		*ppProcAddress = (void*) &rtti_animaliterator_getnextmandatoryanimal;
 	if (sProcName == "rtti_zoo_iterator") 
 		*ppProcAddress = (void*) &rtti_zoo_iterator;
 	if (sProcName == "rtti_getversion") 

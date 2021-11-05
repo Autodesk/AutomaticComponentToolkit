@@ -263,8 +263,7 @@ public:
 	inline void AcquireInstance(classParam<CBase> pInstance);
 	inline Numbers_pvoid GetSymbolLookupMethod();
 
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(NumbersHandle);
+	inline CBase* polymorphicFactory(NumbersHandle);
 
 private:
 	sNumbersDynamicWrapperTable m_WrapperTable;
@@ -375,16 +374,15 @@ public:
 *            CWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
 *            This is important to keep reference count matching between application and library sides.
 */
-template <class T>
-std::shared_ptr<T> CWrapper::polymorphicFactory(NumbersHandle pHandle)
+inline CBase* CWrapper::polymorphicFactory(NumbersHandle pHandle)
 {
 	Numbers_uint64 resultClassTypeId = 0;
 	CheckError(nullptr, m_WrapperTable.m_Base_ClassTypeId(pHandle, &resultClassTypeId));
 	switch(resultClassTypeId) {
-		case 0x27799F69B3FD1C9EUL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "Numbers::Base"
-		case 0x23934EDF762423EAUL: return std::dynamic_pointer_cast<T>(std::make_shared<CVariable>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "Numbers::Variable"
+		case 0x27799F69B3FD1C9EUL: return new CBase(this, pHandle); break; // First 64 bits of SHA1 of a string: "Numbers::Base"
+		case 0x23934EDF762423EAUL: return new CVariable(this, pHandle); break; // First 64 bits of SHA1 of a string: "Numbers::Variable"
 	}
-	return std::make_shared<T>(this, pHandle);
+	return new CBase(this, pHandle);
 }
 	
 	/**
@@ -400,7 +398,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(NumbersHandle pHandle)
 		if (!hInstance) {
 			CheckError(nullptr,NUMBERS_ERROR_INVALIDPARAM);
 		}
-		return this->polymorphicFactory<CVariable>(hInstance);
+		return std::shared_ptr<CVariable>(dynamic_cast<CVariable*>(this->polymorphicFactory(hInstance)));
 	}
 	
 	/**

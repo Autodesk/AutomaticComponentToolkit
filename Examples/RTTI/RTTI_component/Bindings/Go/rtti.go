@@ -88,6 +88,24 @@ RTTIResult CCall_rtti_animaliterator_getnextanimal(RTTIHandle libraryHandle, RTT
 }
 
 
+RTTIResult CCall_rtti_animaliterator_getnextoptinalanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AnimalIterator_GetNextOptinalAnimal (pAnimalIterator, pAnimal, pError);
+}
+
+
+RTTIResult CCall_rtti_animaliterator_getnextmandatoryanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AnimalIterator_GetNextMandatoryAnimal (pAnimalIterator, pAnimal, pError);
+}
+
+
 RTTIResult CCall_rtti_zoo_iterator(RTTIHandle libraryHandle, RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
 {
 	if (libraryHandle == 0) 
@@ -381,6 +399,38 @@ func (inst AnimalIterator) GetNextAnimal() (*Animal, error) {
 		_animalPtr = &_animalPtrVal
 	}
 	return _animalPtr, nil
+}
+
+// GetNextOptinalAnimal return next animal.
+func (inst AnimalIterator) GetNextOptinalAnimal() (*Animal, bool, error) {
+	var animal ref
+	var error C.bool
+	ret := C.CCall_rtti_animaliterator_getnextoptinalanimal(inst.wrapperRef.LibraryHandle, inst.Ref, &animal, &error)
+	if ret != 0 {
+		return nil, false, makeError(uint32(ret))
+	}
+	var _animalPtr *Animal
+	if animal != nil {
+		_animalPtrVal := inst.wrapperRef.NewAnimal(animal)
+		_animalPtr = &_animalPtrVal
+	}
+	return _animalPtr, bool(error), nil
+}
+
+// GetNextMandatoryAnimal return next animal.
+func (inst AnimalIterator) GetNextMandatoryAnimal() (*Animal, bool, error) {
+	var animal ref
+	var error C.bool
+	ret := C.CCall_rtti_animaliterator_getnextmandatoryanimal(inst.wrapperRef.LibraryHandle, inst.Ref, &animal, &error)
+	if ret != 0 {
+		return nil, false, makeError(uint32(ret))
+	}
+	var _animalPtr *Animal
+	if animal != nil {
+		_animalPtrVal := inst.wrapperRef.NewAnimal(animal)
+		_animalPtr = &_animalPtrVal
+	}
+	return _animalPtr, bool(error), nil
 }
 
 

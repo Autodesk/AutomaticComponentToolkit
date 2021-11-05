@@ -22,6 +22,12 @@ namespace RTTI {
 			[DllImport("rtti.dll", EntryPoint = "rtti_animaliterator_getnextanimal", CallingConvention=CallingConvention.Cdecl)]
 			public unsafe extern static Int32 AnimalIterator_GetNextAnimal (IntPtr Handle, out IntPtr AAnimal);
 
+			[DllImport("rtti.dll", EntryPoint = "rtti_animaliterator_getnextoptinalanimal", CallingConvention=CallingConvention.Cdecl)]
+			public unsafe extern static Int32 AnimalIterator_GetNextOptinalAnimal (IntPtr Handle, out IntPtr AAnimal, out Byte AError);
+
+			[DllImport("rtti.dll", EntryPoint = "rtti_animaliterator_getnextmandatoryanimal", CallingConvention=CallingConvention.Cdecl)]
+			public unsafe extern static Int32 AnimalIterator_GetNextMandatoryAnimal (IntPtr Handle, out IntPtr AAnimal, out Byte AError);
+
 			[DllImport("rtti.dll", EntryPoint = "rtti_zoo_iterator", CallingConvention=CallingConvention.Cdecl)]
 			public unsafe extern static Int32 Zoo_Iterator (IntPtr Handle, out IntPtr AIterator);
 
@@ -235,6 +241,26 @@ namespace RTTI {
 
 			CheckError(Internal.RTTIWrapper.AnimalIterator_GetNextAnimal (Handle, out newAnimal));
 			return Internal.RTTIWrapper.PolymorphicFactory<CAnimal>(newAnimal);
+		}
+
+		public bool GetNextOptinalAnimal (out CAnimal AAnimal)
+		{
+			IntPtr newAnimal = IntPtr.Zero;
+			Byte resultError = 0;
+
+			CheckError(Internal.RTTIWrapper.AnimalIterator_GetNextOptinalAnimal (Handle, out newAnimal, out resultError));
+			AAnimal = Internal.RTTIWrapper.PolymorphicFactory<CAnimal>(newAnimal);
+			return (resultError != 0);
+		}
+
+		public bool GetNextMandatoryAnimal (out CAnimal AAnimal)
+		{
+			IntPtr newAnimal = IntPtr.Zero;
+			Byte resultError = 0;
+
+			CheckError(Internal.RTTIWrapper.AnimalIterator_GetNextMandatoryAnimal (Handle, out newAnimal, out resultError));
+			AAnimal = Internal.RTTIWrapper.PolymorphicFactory<CAnimal>(newAnimal);
+			return (resultError != 0);
 		}
 
 	}

@@ -246,8 +246,7 @@ public:
 	inline void InjectComponent(const std::string & sNameSpace, const Calculation_pvoid pSymbolAddressMethod);
 	inline Calculation_pvoid GetSymbolLookupMethod();
 
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(CalculationHandle);
+	inline CBase* polymorphicFactory(CalculationHandle);
 
 private:
 	// Injected Components
@@ -359,16 +358,15 @@ public:
 *            CWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
 *            This is important to keep reference count matching between application and library sides.
 */
-template <class T>
-std::shared_ptr<T> CWrapper::polymorphicFactory(CalculationHandle pHandle)
+inline CBase* CWrapper::polymorphicFactory(CalculationHandle pHandle)
 {
 	Calculation_uint64 resultClassTypeId = 0;
 	CheckError(nullptr, calculation_base_classtypeid(pHandle, &resultClassTypeId));
 	switch(resultClassTypeId) {
-		case 0x3BA5271BAB410E5DUL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "Calculation::Base"
-		case 0xB23F514353D0C606UL: return std::dynamic_pointer_cast<T>(std::make_shared<CCalculator>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "Calculation::Calculator"
+		case 0x3BA5271BAB410E5DUL: return new CBase(this, pHandle); break; // First 64 bits of SHA1 of a string: "Calculation::Base"
+		case 0xB23F514353D0C606UL: return new CCalculator(this, pHandle); break; // First 64 bits of SHA1 of a string: "Calculation::Calculator"
 	}
-	return std::make_shared<T>(this, pHandle);
+	return new CBase(this, pHandle);
 }
 	
 	/**
@@ -383,7 +381,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(CalculationHandle pHandle)
 		if (!hInstance) {
 			CheckError(nullptr,CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return this->polymorphicFactory<CCalculator>(hInstance);
+		return std::shared_ptr<CCalculator>(dynamic_cast<CCalculator*>(this->polymorphicFactory(hInstance)));
 	}
 	
 	/**
@@ -526,7 +524,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(CalculationHandle pHandle)
 		if (!hVariable) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory<Numbers::CVariable>(hVariable);
+		return std::shared_ptr<Numbers::CVariable>(dynamic_cast<Numbers::CVariable*>(m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory(hVariable)));
 	}
 	
 	/**
@@ -549,7 +547,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(CalculationHandle pHandle)
 		if (!hInstance) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory<Numbers::CVariable>(hInstance);
+		return std::shared_ptr<Numbers::CVariable>(dynamic_cast<Numbers::CVariable*>(m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory(hInstance)));
 	}
 	
 	/**
@@ -564,7 +562,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(CalculationHandle pHandle)
 		if (!hInstance) {
 			CheckError(CALCULATION_ERROR_INVALIDPARAM);
 		}
-		return m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory<Numbers::CVariable>(hInstance);
+		return std::shared_ptr<Numbers::CVariable>(dynamic_cast<Numbers::CVariable*>(m_pWrapper->m_pNumbersWrapper.get()->polymorphicFactory(hInstance)));
 	}
 
 } // namespace Calculation

@@ -67,6 +67,8 @@ class FunctionTable:
 	rtti_animal_name = None
 	rtti_tiger_roar = None
 	rtti_animaliterator_getnextanimal = None
+	rtti_animaliterator_getnextoptinalanimal = None
+	rtti_animaliterator_getnextmandatoryanimal = None
 	rtti_zoo_iterator = None
 
 
@@ -177,6 +179,18 @@ class Wrapper:
 			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p))
 			self.lib.rtti_animaliterator_getnextanimal = methodType(int(methodAddress.value))
 			
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animaliterator_getnextoptinalanimal")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_bool))
+			self.lib.rtti_animaliterator_getnextoptinalanimal = methodType(int(methodAddress.value))
+			
+			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_animaliterator_getnextmandatoryanimal")), methodAddress)
+			if err != 0:
+				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
+			methodType = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_bool))
+			self.lib.rtti_animaliterator_getnextmandatoryanimal = methodType(int(methodAddress.value))
+			
 			err = symbolLookupMethod(ctypes.c_char_p(str.encode("rtti_zoo_iterator")), methodAddress)
 			if err != 0:
 				raise ERTTIException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))
@@ -220,6 +234,12 @@ class Wrapper:
 			
 			self.lib.rtti_animaliterator_getnextanimal.restype = ctypes.c_int32
 			self.lib.rtti_animaliterator_getnextanimal.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+			
+			self.lib.rtti_animaliterator_getnextoptinalanimal.restype = ctypes.c_int32
+			self.lib.rtti_animaliterator_getnextoptinalanimal.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_bool)]
+			
+			self.lib.rtti_animaliterator_getnextmandatoryanimal.restype = ctypes.c_int32
+			self.lib.rtti_animaliterator_getnextmandatoryanimal.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_bool)]
 			
 			self.lib.rtti_zoo_iterator.restype = ctypes.c_int32
 			self.lib.rtti_zoo_iterator.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
@@ -448,6 +468,28 @@ class AnimalIterator(Base):
 			AnimalObject = None
 		
 		return AnimalObject
+	
+	def GetNextOptinalAnimal(self):
+		AnimalHandle = ctypes.c_void_p()
+		pError = ctypes.c_bool()
+		self._wrapper.checkError(self, self._wrapper.lib.rtti_animaliterator_getnextoptinalanimal(self._handle, AnimalHandle, pError))
+		if AnimalHandle:
+			AnimalObject = self._wrapper._polymorphicFactory(AnimalHandle)
+		else:
+			AnimalObject = None
+		
+		return AnimalObject, pError.value
+	
+	def GetNextMandatoryAnimal(self):
+		AnimalHandle = ctypes.c_void_p()
+		pError = ctypes.c_bool()
+		self._wrapper.checkError(self, self._wrapper.lib.rtti_animaliterator_getnextmandatoryanimal(self._handle, AnimalHandle, pError))
+		if AnimalHandle:
+			AnimalObject = self._wrapper._polymorphicFactory(AnimalHandle)
+		else:
+			AnimalObject = None
+		
+		return AnimalObject, pError.value
 	
 
 

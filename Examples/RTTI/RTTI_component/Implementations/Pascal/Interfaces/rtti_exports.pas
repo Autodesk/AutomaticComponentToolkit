@@ -99,6 +99,26 @@ function rtti_tiger_roar(pTiger: TRTTIHandle): TRTTIResult; cdecl;
 *)
 function rtti_animaliterator_getnextanimal(pAnimalIterator: TRTTIHandle; pAnimal: PRTTIHandle): TRTTIResult; cdecl;
 
+(**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*)
+function rtti_animaliterator_getnextoptinalanimal(pAnimalIterator: TRTTIHandle; pAnimal: PRTTIHandle; pError: PByte): TRTTIResult; cdecl;
+
+(**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*)
+function rtti_animaliterator_getnextmandatoryanimal(pAnimalIterator: TRTTIHandle; pAnimal: PRTTIHandle; pError: PByte): TRTTIResult; cdecl;
+
 (*************************************************************************************************************************
  Class export definition of Zoo 
 **************************************************************************************************************************)
@@ -316,6 +336,84 @@ begin
 			ResultAnimal := IntfAnimalIterator.GetNextAnimal();
 
 			pAnimal^ := ResultAnimal;
+		end else
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
+
+		Result := RTTI_SUCCESS;
+	except
+		On E: ERTTIException do begin
+			Result := HandleRTTIException(ObjectAnimalIterator , E);
+		end;
+		On E: Exception do begin
+			Result := HandleStdException(ObjectAnimalIterator , E);
+		end
+		else begin
+			Result := HandleUnhandledException(ObjectAnimalIterator);
+		end;
+	end;
+end;
+
+function rtti_animaliterator_getnextoptinalanimal(pAnimalIterator: TRTTIHandle; pAnimal: PRTTIHandle; pError: PByte): TRTTIResult; cdecl;
+var
+	OutAnimal: TObject;
+	ResultError: Boolean;
+	ObjectAnimalIterator: TObject;
+	IntfAnimalIterator: IRTTIAnimalIterator;
+begin
+	try
+		if not Assigned(pAnimal) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+		if not Assigned(pError) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+		if not Assigned(pAnimalIterator) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+
+		ObjectAnimalIterator := TObject(pAnimalIterator);
+		if Supports(ObjectAnimalIterator, IRTTIAnimalIterator) then begin
+			IntfAnimalIterator := ObjectAnimalIterator as IRTTIAnimalIterator;
+			ResultError := IntfAnimalIterator.GetNextOptinalAnimal(OutAnimal);
+
+			pAnimal^ := OutAnimal;
+			pError^ := Ord(ResultError);
+		end else
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
+
+		Result := RTTI_SUCCESS;
+	except
+		On E: ERTTIException do begin
+			Result := HandleRTTIException(ObjectAnimalIterator , E);
+		end;
+		On E: Exception do begin
+			Result := HandleStdException(ObjectAnimalIterator , E);
+		end
+		else begin
+			Result := HandleUnhandledException(ObjectAnimalIterator);
+		end;
+	end;
+end;
+
+function rtti_animaliterator_getnextmandatoryanimal(pAnimalIterator: TRTTIHandle; pAnimal: PRTTIHandle; pError: PByte): TRTTIResult; cdecl;
+var
+	OutAnimal: TObject;
+	ResultError: Boolean;
+	ObjectAnimalIterator: TObject;
+	IntfAnimalIterator: IRTTIAnimalIterator;
+begin
+	try
+		if not Assigned(pAnimal) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+		if not Assigned(pError) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+		if not Assigned(pAnimalIterator) then
+			raise ERTTIException.Create(RTTI_ERROR_INVALIDPARAM);
+
+		ObjectAnimalIterator := TObject(pAnimalIterator);
+		if Supports(ObjectAnimalIterator, IRTTIAnimalIterator) then begin
+			IntfAnimalIterator := ObjectAnimalIterator as IRTTIAnimalIterator;
+			ResultError := IntfAnimalIterator.GetNextMandatoryAnimal(OutAnimal);
+
+			pAnimal^ := OutAnimal;
+			pError^ := Ord(ResultError);
 		end else
 			raise ERTTIException.Create(RTTI_ERROR_INVALIDCAST);
 
@@ -561,6 +659,10 @@ begin
 		ppProcAddress := @rtti_tiger_roar
 	else if (pProcName = 'rtti_animaliterator_getnextanimal') then
 		ppProcAddress := @rtti_animaliterator_getnextanimal
+	else if (pProcName = 'rtti_animaliterator_getnextoptinalanimal') then
+		ppProcAddress := @rtti_animaliterator_getnextoptinalanimal
+	else if (pProcName = 'rtti_animaliterator_getnextmandatoryanimal') then
+		ppProcAddress := @rtti_animaliterator_getnextmandatoryanimal
 	else if (pProcName = 'rtti_zoo_iterator') then
 		ppProcAddress := @rtti_zoo_iterator
 	else if (pProcName = 'rtti_getversion') then

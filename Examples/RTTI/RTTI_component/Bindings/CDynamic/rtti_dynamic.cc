@@ -32,6 +32,8 @@ RTTIResult InitRTTIWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable)
 	pWrapperTable->m_Animal_Name = NULL;
 	pWrapperTable->m_Tiger_Roar = NULL;
 	pWrapperTable->m_AnimalIterator_GetNextAnimal = NULL;
+	pWrapperTable->m_AnimalIterator_GetNextOptinalAnimal = NULL;
+	pWrapperTable->m_AnimalIterator_GetNextMandatoryAnimal = NULL;
 	pWrapperTable->m_Zoo_Iterator = NULL;
 	pWrapperTable->m_GetVersion = NULL;
 	pWrapperTable->m_GetLastError = NULL;
@@ -126,6 +128,24 @@ RTTIResult LoadRTTIWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable, const 
 	dlerror();
 	#endif // _WIN32
 	if (pWrapperTable->m_AnimalIterator_GetNextAnimal == NULL)
+		return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	
+	#ifdef _WIN32
+	pWrapperTable->m_AnimalIterator_GetNextOptinalAnimal = (PRTTIAnimalIterator_GetNextOptinalAnimalPtr) GetProcAddress(hLibrary, "rtti_animaliterator_getnextoptinalanimal");
+	#else // _WIN32
+	pWrapperTable->m_AnimalIterator_GetNextOptinalAnimal = (PRTTIAnimalIterator_GetNextOptinalAnimalPtr) dlsym(hLibrary, "rtti_animaliterator_getnextoptinalanimal");
+	dlerror();
+	#endif // _WIN32
+	if (pWrapperTable->m_AnimalIterator_GetNextOptinalAnimal == NULL)
+		return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
+	
+	#ifdef _WIN32
+	pWrapperTable->m_AnimalIterator_GetNextMandatoryAnimal = (PRTTIAnimalIterator_GetNextMandatoryAnimalPtr) GetProcAddress(hLibrary, "rtti_animaliterator_getnextmandatoryanimal");
+	#else // _WIN32
+	pWrapperTable->m_AnimalIterator_GetNextMandatoryAnimal = (PRTTIAnimalIterator_GetNextMandatoryAnimalPtr) dlsym(hLibrary, "rtti_animaliterator_getnextmandatoryanimal");
+	dlerror();
+	#endif // _WIN32
+	if (pWrapperTable->m_AnimalIterator_GetNextMandatoryAnimal == NULL)
 		return RTTI_ERROR_COULDNOTFINDLIBRARYEXPORT;
 	
 	#ifdef _WIN32

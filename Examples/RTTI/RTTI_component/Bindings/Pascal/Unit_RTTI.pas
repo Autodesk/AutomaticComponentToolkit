@@ -166,6 +166,26 @@ type
   *)
   TRTTIAnimalIterator_GetNextAnimalFunc = function(pAnimalIterator: TRTTIHandle; out pAnimal: TRTTIHandle): TRTTIResult; cdecl;
   
+  (**
+  * Return next animal
+  *
+  * @param[in] pAnimalIterator - AnimalIterator instance.
+  * @param[out] pAnimal - 
+  * @param[out] pError - 
+  * @return error code or 0 (success)
+  *)
+  TRTTIAnimalIterator_GetNextOptinalAnimalFunc = function(pAnimalIterator: TRTTIHandle; out pAnimal: TRTTIHandle; out pError: Byte): TRTTIResult; cdecl;
+  
+  (**
+  * Return next animal
+  *
+  * @param[in] pAnimalIterator - AnimalIterator instance.
+  * @param[out] pAnimal - 
+  * @param[out] pError - 
+  * @return error code or 0 (success)
+  *)
+  TRTTIAnimalIterator_GetNextMandatoryAnimalFunc = function(pAnimalIterator: TRTTIHandle; out pAnimal: TRTTIHandle; out pError: Byte): TRTTIResult; cdecl;
+  
 
 (*************************************************************************************************************************
  Function type definitions for Zoo
@@ -373,6 +393,8 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
     constructor Create(AWrapper: TRTTIWrapper; AHandle: TRTTIHandle);
     destructor Destroy; override;
     function GetNextAnimal(): TRTTIAnimal;
+    function GetNextOptinalAnimal(out AAnimal: TRTTIAnimal): Boolean;
+    function GetNextMandatoryAnimal(out AAnimal: TRTTIAnimal): Boolean;
   end;
 
 
@@ -398,6 +420,8 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
     FRTTIAnimal_NameFunc: TRTTIAnimal_NameFunc;
     FRTTITiger_RoarFunc: TRTTITiger_RoarFunc;
     FRTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc;
+    FRTTIAnimalIterator_GetNextOptinalAnimalFunc: TRTTIAnimalIterator_GetNextOptinalAnimalFunc;
+    FRTTIAnimalIterator_GetNextMandatoryAnimalFunc: TRTTIAnimalIterator_GetNextMandatoryAnimalFunc;
     FRTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc;
     FRTTIGetVersionFunc: TRTTIGetVersionFunc;
     FRTTIGetLastErrorFunc: TRTTIGetLastErrorFunc;
@@ -420,6 +444,8 @@ TRTTISymbolLookupMethod = function(const pSymbolName: PAnsiChar; out pValue: Poi
     property RTTIAnimal_NameFunc: TRTTIAnimal_NameFunc read FRTTIAnimal_NameFunc;
     property RTTITiger_RoarFunc: TRTTITiger_RoarFunc read FRTTITiger_RoarFunc;
     property RTTIAnimalIterator_GetNextAnimalFunc: TRTTIAnimalIterator_GetNextAnimalFunc read FRTTIAnimalIterator_GetNextAnimalFunc;
+    property RTTIAnimalIterator_GetNextOptinalAnimalFunc: TRTTIAnimalIterator_GetNextOptinalAnimalFunc read FRTTIAnimalIterator_GetNextOptinalAnimalFunc;
+    property RTTIAnimalIterator_GetNextMandatoryAnimalFunc: TRTTIAnimalIterator_GetNextMandatoryAnimalFunc read FRTTIAnimalIterator_GetNextMandatoryAnimalFunc;
     property RTTIZoo_IteratorFunc: TRTTIZoo_IteratorFunc read FRTTIZoo_IteratorFunc;
     property RTTIGetVersionFunc: TRTTIGetVersionFunc read FRTTIGetVersionFunc;
     property RTTIGetLastErrorFunc: TRTTIGetLastErrorFunc read FRTTIGetLastErrorFunc;
@@ -733,6 +759,34 @@ implementation
       Result := TRTTIPolymorphicFactory<TRTTIAnimal, TRTTIAnimal>.Make(FWrapper, HAnimal);
   end;
 
+  function TRTTIAnimalIterator.GetNextOptinalAnimal(out AAnimal: TRTTIAnimal): Boolean;
+  var
+    HAnimal: TRTTIHandle;
+    ResultError: Byte;
+  begin
+    AAnimal := nil;
+    HAnimal := nil;
+    ResultError := 0;
+    FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextOptinalAnimalFunc(FHandle, HAnimal, ResultError));
+    if Assigned(HAnimal) then
+      AAnimal := TRTTIAnimal.Create(FWrapper, HAnimal);
+    Result := (ResultError <> 0);
+  end;
+
+  function TRTTIAnimalIterator.GetNextMandatoryAnimal(out AAnimal: TRTTIAnimal): Boolean;
+  var
+    HAnimal: TRTTIHandle;
+    ResultError: Byte;
+  begin
+    AAnimal := nil;
+    HAnimal := nil;
+    ResultError := 0;
+    FWrapper.CheckError(Self, FWrapper.RTTIAnimalIterator_GetNextMandatoryAnimalFunc(FHandle, HAnimal, ResultError));
+    if Assigned(HAnimal) then
+      AAnimal := TRTTIAnimal.Create(FWrapper, HAnimal);
+    Result := (ResultError <> 0);
+  end;
+
 (*************************************************************************************************************************
  Class implementation for Zoo
 **************************************************************************************************************************)
@@ -784,6 +838,8 @@ implementation
     FRTTIAnimal_NameFunc := LoadFunction('rtti_animal_name');
     FRTTITiger_RoarFunc := LoadFunction('rtti_tiger_roar');
     FRTTIAnimalIterator_GetNextAnimalFunc := LoadFunction('rtti_animaliterator_getnextanimal');
+    FRTTIAnimalIterator_GetNextOptinalAnimalFunc := LoadFunction('rtti_animaliterator_getnextoptinalanimal');
+    FRTTIAnimalIterator_GetNextMandatoryAnimalFunc := LoadFunction('rtti_animaliterator_getnextmandatoryanimal');
     FRTTIZoo_IteratorFunc := LoadFunction('rtti_zoo_iterator');
     FRTTIGetVersionFunc := LoadFunction('rtti_getversion');
     FRTTIGetLastErrorFunc := LoadFunction('rtti_getlasterror');
@@ -813,6 +869,12 @@ implementation
     if AResult <> RTTI_SUCCESS then
       raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
     AResult := ALookupMethod(PAnsiChar('rtti_animaliterator_getnextanimal'), @FRTTIAnimalIterator_GetNextAnimalFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_animaliterator_getnextoptinalanimal'), @FRTTIAnimalIterator_GetNextOptinalAnimalFunc);
+    if AResult <> RTTI_SUCCESS then
+      raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
+    AResult := ALookupMethod(PAnsiChar('rtti_animaliterator_getnextmandatoryanimal'), @FRTTIAnimalIterator_GetNextMandatoryAnimalFunc);
     if AResult <> RTTI_SUCCESS then
       raise ERTTIException.CreateCustomMessage(RTTI_ERROR_COULDNOTLOADLIBRARY, '');
     AResult := ALookupMethod(PAnsiChar('rtti_zoo_iterator'), @FRTTIZoo_IteratorFunc);

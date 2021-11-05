@@ -398,6 +398,20 @@ public:
 	*/
 	virtual IAnimal * GetNextAnimal() = 0;
 
+	/**
+	* IAnimalIterator::GetNextOptinalAnimal - Return next animal
+	* @param[out] pAnimal - 
+	* @return 
+	*/
+	virtual bool GetNextOptinalAnimal(IAnimal*& pAnimal) = 0;
+
+	/**
+	* IAnimalIterator::GetNextMandatoryAnimal - Return next animal
+	* @param[out] pAnimal - 
+	* @return 
+	*/
+	virtual bool GetNextMandatoryAnimal(IAnimal*& pAnimal) = 0;
+
 };
 
 typedef IBaseSharedPtr<IAnimalIterator> PIAnimalIterator;

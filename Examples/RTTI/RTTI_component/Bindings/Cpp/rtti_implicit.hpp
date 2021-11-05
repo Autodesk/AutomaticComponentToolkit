@@ -277,8 +277,7 @@ public:
 	inline RTTI_pvoid GetSymbolLookupMethod();
 	inline PZoo CreateZoo();
 
-	template<class U>
-	std::shared_ptr<U> polymorphicFactory(RTTIHandle);
+	inline CBase* polymorphicFactory(RTTIHandle);
 
 private:
 	
@@ -492,6 +491,8 @@ public:
 	}
 	
 	inline PAnimal GetNextAnimal();
+	inline bool GetNextOptinalAnimal(PAnimal & pAnimal);
+	inline bool GetNextMandatoryAnimal(PAnimal & pAnimal);
 };
 	
 /*************************************************************************************************************************
@@ -522,24 +523,23 @@ public:
 *            CWrapper::AcquireInstance(CBase object) must be called after instantiating new object.
 *            This is important to keep reference count matching between application and library sides.
 */
-template <class T>
-std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
+inline CBase* CWrapper::polymorphicFactory(RTTIHandle pHandle)
 {
 	RTTI_uint64 resultClassTypeId = 0;
 	CheckError(nullptr, rtti_base_classtypeid(pHandle, &resultClassTypeId));
 	switch(resultClassTypeId) {
-		case 0x1549AD28813DAE05UL: return std::dynamic_pointer_cast<T>(std::make_shared<CBase>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
-		case 0x8B40467DA6D327AFUL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
-		case 0xBC9D5FA7750C1020UL: return std::dynamic_pointer_cast<T>(std::make_shared<CMammal>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
-		case 0x6756AA8EA5802EC3UL: return std::dynamic_pointer_cast<T>(std::make_shared<CReptile>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
-		case 0x9751971BD2C2D958UL: return std::dynamic_pointer_cast<T>(std::make_shared<CGiraffe>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
-		case 0x08D007E7B5F7BAF4UL: return std::dynamic_pointer_cast<T>(std::make_shared<CTiger>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
-		case 0x5F6826EF909803B2UL: return std::dynamic_pointer_cast<T>(std::make_shared<CSnake>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
-		case 0x8E551B208A2E8321UL: return std::dynamic_pointer_cast<T>(std::make_shared<CTurtle>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
-		case 0xF1917FE6BBE77831UL: return std::dynamic_pointer_cast<T>(std::make_shared<CAnimalIterator>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
-		case 0x2262ABE80A5E7878UL: return std::dynamic_pointer_cast<T>(std::make_shared<CZoo>(this, pHandle)); break; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
+		case 0x1549AD28813DAE05UL: return new CBase(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Base"
+		case 0x8B40467DA6D327AFUL: return new CAnimal(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Animal"
+		case 0xBC9D5FA7750C1020UL: return new CMammal(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+		case 0x6756AA8EA5802EC3UL: return new CReptile(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Reptile"
+		case 0x9751971BD2C2D958UL: return new CGiraffe(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+		case 0x08D007E7B5F7BAF4UL: return new CTiger(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+		case 0x5F6826EF909803B2UL: return new CSnake(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Snake"
+		case 0x8E551B208A2E8321UL: return new CTurtle(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+		case 0xF1917FE6BBE77831UL: return new CAnimalIterator(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::AnimalIterator"
+		case 0x2262ABE80A5E7878UL: return new CZoo(this, pHandle); break; // First 64 bits of SHA1 of a string: "RTTI::Zoo"
 	}
-	return std::make_shared<T>(this, pHandle);
+	return new CBase(this, pHandle);
 }
 	
 	/**
@@ -631,7 +631,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 		if (!hInstance) {
 			CheckError(nullptr,RTTI_ERROR_INVALIDPARAM);
 		}
-		return this->polymorphicFactory<CZoo>(hInstance);
+		return std::shared_ptr<CZoo>(dynamic_cast<CZoo*>(this->polymorphicFactory(hInstance)));
 	}
 	
 	inline void CWrapper::CheckError(CBase * pBaseClass, RTTIResult nResult)
@@ -728,10 +728,48 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 		CheckError(rtti_animaliterator_getnextanimal(m_pHandle, &hAnimal));
 		
 		if (hAnimal) {
-			return m_pWrapper->polymorphicFactory<CAnimal>(hAnimal);
+			return std::shared_ptr<CAnimal>(dynamic_cast<CAnimal*>(m_pWrapper->polymorphicFactory(hAnimal)));
 		} else {
 			return nullptr;
 		}
+	}
+	
+	/**
+	* CAnimalIterator::GetNextOptinalAnimal - Return next animal
+	* @param[out] pAnimal - 
+	* @return 
+	*/
+	bool CAnimalIterator::GetNextOptinalAnimal(PAnimal & pAnimal)
+	{
+		RTTIHandle hAnimal = nullptr;
+		bool resultError = 0;
+		CheckError(rtti_animaliterator_getnextoptinalanimal(m_pHandle, &hAnimal, &resultError));
+		if (hAnimal) {
+			pAnimal = std::shared_ptr<CAnimal>(dynamic_cast<CAnimal*>(m_pWrapper->polymorphicFactory(hAnimal)));
+		} else {
+			pAnimal = nullptr;
+		}
+		
+		return resultError;
+	}
+	
+	/**
+	* CAnimalIterator::GetNextMandatoryAnimal - Return next animal
+	* @param[out] pAnimal - 
+	* @return 
+	*/
+	bool CAnimalIterator::GetNextMandatoryAnimal(PAnimal & pAnimal)
+	{
+		RTTIHandle hAnimal = nullptr;
+		bool resultError = 0;
+		CheckError(rtti_animaliterator_getnextmandatoryanimal(m_pHandle, &hAnimal, &resultError));
+		if (hAnimal) {
+			pAnimal = std::shared_ptr<CAnimal>(dynamic_cast<CAnimal*>(m_pWrapper->polymorphicFactory(hAnimal)));
+		} else {
+			pAnimal = nullptr;
+		}
+		
+		return resultError;
 	}
 	
 	/**
@@ -750,7 +788,7 @@ std::shared_ptr<T> CWrapper::polymorphicFactory(RTTIHandle pHandle)
 		if (!hIterator) {
 			CheckError(RTTI_ERROR_INVALIDPARAM);
 		}
-		return m_pWrapper->polymorphicFactory<CAnimalIterator>(hIterator);
+		return std::shared_ptr<CAnimalIterator>(dynamic_cast<CAnimalIterator*>(m_pWrapper->polymorphicFactory(hIterator)));
 	}
 
 } // namespace RTTI

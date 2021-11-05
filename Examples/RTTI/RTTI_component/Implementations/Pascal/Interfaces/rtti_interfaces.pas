@@ -123,6 +123,8 @@ IRTTIAnimalIterator = interface(IRTTIBase)
 	['{6325253F-EC73-4DD7-A9E2-8BF921119C16}']
 
 	function GetNextAnimal(): TObject;
+	function GetNextOptinalAnimal(out AAnimal: TObject): Boolean;
+	function GetNextMandatoryAnimal(out AAnimal: TObject): Boolean;
 end;
 
 

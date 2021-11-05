@@ -93,6 +93,26 @@ typedef RTTIResult (*PRTTITiger_RoarPtr) (RTTI_Tiger pTiger);
 */
 typedef RTTIResult (*PRTTIAnimalIterator_GetNextAnimalPtr) (RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal);
 
+/**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*/
+typedef RTTIResult (*PRTTIAnimalIterator_GetNextOptinalAnimalPtr) (RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError);
+
+/**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*/
+typedef RTTIResult (*PRTTIAnimalIterator_GetNextMandatoryAnimalPtr) (RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError);
+
 /*************************************************************************************************************************
  Class definition for Zoo
 **************************************************************************************************************************/
@@ -183,6 +203,8 @@ typedef struct {
 	PRTTIAnimal_NamePtr m_Animal_Name;
 	PRTTITiger_RoarPtr m_Tiger_Roar;
 	PRTTIAnimalIterator_GetNextAnimalPtr m_AnimalIterator_GetNextAnimal;
+	PRTTIAnimalIterator_GetNextOptinalAnimalPtr m_AnimalIterator_GetNextOptinalAnimal;
+	PRTTIAnimalIterator_GetNextMandatoryAnimalPtr m_AnimalIterator_GetNextMandatoryAnimal;
 	PRTTIZoo_IteratorPtr m_Zoo_Iterator;
 	PRTTIGetVersionPtr m_GetVersion;
 	PRTTIGetLastErrorPtr m_GetLastError;

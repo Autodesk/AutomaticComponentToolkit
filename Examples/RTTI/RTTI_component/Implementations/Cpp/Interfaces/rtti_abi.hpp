@@ -106,6 +106,26 @@ RTTI_DECLSPEC RTTIResult rtti_tiger_roar(RTTI_Tiger pTiger);
 */
 RTTI_DECLSPEC RTTIResult rtti_animaliterator_getnextanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal);
 
+/**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_animaliterator_getnextoptinalanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError);
+
+/**
+* Return next animal
+*
+* @param[in] pAnimalIterator - AnimalIterator instance.
+* @param[out] pAnimal - 
+* @param[out] pError - 
+* @return error code or 0 (success)
+*/
+RTTI_DECLSPEC RTTIResult rtti_animaliterator_getnextmandatoryanimal(RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError);
+
 /*************************************************************************************************************************
  Class definition for Zoo
 **************************************************************************************************************************/
