@@ -35,7 +35,7 @@ implementation
 
 function TRTTIMammal.ClassTypeId(): QWord;
 begin
-	Result := $BC9D5FA7750C1020; // First 64 bits of SHA1 of a string: "RTTI::Mammal"
+	Result := QWord($BC9D5FA7750C1020); // First 64 bits of SHA1 of a string: "RTTI::Mammal"
 end;
 
 end.

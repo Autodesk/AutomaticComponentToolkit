@@ -35,7 +35,7 @@ implementation
 
 function TRTTITurtle.ClassTypeId(): QWord;
 begin
-	Result := $8E551B208A2E8321; // First 64 bits of SHA1 of a string: "RTTI::Turtle"
+	Result := QWord($8E551B208A2E8321); // First 64 bits of SHA1 of a string: "RTTI::Turtle"
 end;
 
 end.

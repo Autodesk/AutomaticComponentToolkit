@@ -35,7 +35,7 @@ implementation
 
 function TRTTIGiraffe.ClassTypeId(): QWord;
 begin
-	Result := $9751971BD2C2D958; // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
+	Result := QWord($9751971BD2C2D958); // First 64 bits of SHA1 of a string: "RTTI::Giraffe"
 end;
 
 end.

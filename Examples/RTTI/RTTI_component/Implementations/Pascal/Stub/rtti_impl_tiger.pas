@@ -36,7 +36,7 @@ implementation
 
 function TRTTITiger.ClassTypeId(): QWord;
 begin
-	Result := $08D007E7B5F7BAF4; // First 64 bits of SHA1 of a string: "RTTI::Tiger"
+	Result := QWord($08D007E7B5F7BAF4); // First 64 bits of SHA1 of a string: "RTTI::Tiger"
 end;
 
 procedure TRTTITiger.Roar();
