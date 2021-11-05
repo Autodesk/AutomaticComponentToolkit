@@ -699,9 +699,10 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				callParameter = fmt.Sprintf("&h%s", param.ParamName)
 				initCallParameter = callParameter
 
+				CPPClass := fmt.Sprintf("%s%s%s", cppClassPrefix, ClassIdentifier, param.ParamClass)
 				if (param.ParamType == "optionalclass") {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = %s->polymorphicFactory<%s%s%s>(h%s);", param.ParamName, makeSharedParameter, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", param.ParamName, CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = nullptr;", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
@@ -709,7 +710,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
-					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = %s->polymorphicFactory<%s%s%s>(h%s);", param.ParamName, makeSharedParameter, cppClassPrefix, ClassIdentifier, param.ParamClass, param.ParamName))
+					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", param.ParamName, CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("}"))
 				}
 
@@ -779,7 +780,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				
 				if (param.ParamType == "optionalclass") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
@@ -787,7 +788,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return %s->polymorphicFactory<%s>(h%s);", makeSharedParameter, CPPClass, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 				}
 
 			case "basicarray":
@@ -1338,8 +1339,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		}
 	}
 	w.Writeln("")
-	w.Writeln("  template<class U>")
-	w.Writeln("  std::shared_ptr<U> polymorphicFactory(%sHandle);", NameSpace)
+	w.Writeln("  inline C%s* polymorphicFactory(%sHandle);", component.Global.BaseClassName, NameSpace)
 
 	w.Writeln("")
 	w.Writeln("private:")
@@ -1454,8 +1454,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("*            %s%sWrapper::AcquireInstance(C%s object) must be called after instantiating new object.", cppClassPrefix, ClassIdentifier, component.Global.BaseClassName)
 	w.Writeln("*            This is important to keep reference count matching between application and library sides.")
 	w.Writeln("*/")
-	w.Writeln("template <class T>")
-	w.Writeln("std::shared_ptr<T> %s%sWrapper::polymorphicFactory(%sHandle pHandle)", cppClassPrefix, ClassIdentifier, NameSpace)
+	w.Writeln("inline C%s* %s%sWrapper::polymorphicFactory(%sHandle pHandle)", component.Global.BaseClassName, cppClassPrefix, ClassIdentifier, NameSpace)
 	w.Writeln("{")
 	w.Writeln("  %s_uint64 resultClassTypeId = 0;", NameSpace)
 	if ExplicitLinking {
@@ -1467,11 +1466,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		classTypeId, chashHashString := class.classTypeId(NameSpace)
-		w.Writeln("    case 0x%016XUL: return std::dynamic_pointer_cast<T>(std::make_shared<C%s>(this, pHandle)); break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, class.ClassName, chashHashString)
+		w.Writeln("    case 0x%016XUL: return new C%s(this, pHandle); break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, class.ClassName, chashHashString)
 	}
 	w.Writeln("  }")
 
-	w.Writeln("  return std::make_shared<T>(this, pHandle);")
+	w.Writeln("  return new C%s(this, pHandle);", component.Global.BaseClassName)
 	w.Writeln("}")
 
 	for j := 0; j < len(global.Methods); j++ {
