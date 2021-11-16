@@ -407,7 +407,10 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				if (ParamTypeName == "IntPtr") {
 					callFunctionParameter = "A" + param.ParamName
 				} else {
-					callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
+					defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr A%sHandle = IntPtr.Zero;", param.ParamName))
+					defineCommands = append(defineCommands, fmt.Sprintf("  if (A%s != null)", param.ParamName))
+					defineCommands = append(defineCommands, fmt.Sprintf("    A%sHandle = A%s.GetHandle();", param.ParamName, param.ParamName))
+					callFunctionParameter = "A" + param.ParamName + "Handle"
 				}
 				
 				initCallParameter = callFunctionParameter
