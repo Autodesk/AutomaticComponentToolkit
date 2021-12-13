@@ -441,7 +441,11 @@ func buildCCPPStructs(component ComponentDefinition, w LanguageWriter, NameSpace
 
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i];
-		w.Writeln("typedef struct {");
+		if (useCPPTypes) {
+			w.Writeln("typedef struct s%s {", structinfo.Name);
+		} else {
+			w.Writeln("typedef struct s%s%s {", NameSpace, structinfo.Name);
+		}
 		
 		for j := 0; j < len(structinfo.Members); j++ {
 			member := structinfo.Members[j];
