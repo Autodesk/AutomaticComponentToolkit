@@ -1807,7 +1807,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 				if (isClientImpl) {
-          inputVecTypeParam := cppParamType[:len(cppParamType)-2]
+					// note: slicing because we need to chop off the trailing " *".
+					inputVecTypeParam := cppParamType[:len(cppParamType)-2]
 					callParameters = callParameters + fmt.Sprintf("%sInputVector<%s>(%s, n%sBufferSize)", ClassIdentifier, inputVecTypeParam, variableName, param.ParamName) 
 				} else {
 					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
@@ -1816,7 +1817,8 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				if (isClientImpl) {
-          inputVecTypeParam := cppParamType[:len(cppParamType)-2]
+					// note: slicing because we need to chop off the trailing " *".
+					inputVecTypeParam := cppParamType[:len(cppParamType)-2]
 					callParameters = callParameters + fmt.Sprintf("%sInputVector<%s>(%s, n%sBufferSize)", ClassIdentifier, inputVecTypeParam, variableName, param.ParamName) 
 				} else {
 					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
