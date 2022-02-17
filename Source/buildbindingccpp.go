@@ -965,7 +965,7 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string, ClassIdentifier str
 	w.Writeln("  ")
 	w.Writeln("public:")
 	w.Writeln("  ")
-	w.Writeln("  explicit C%sInputVector( const std::vector<T>& vec)", ClassIdentifier)
+	w.Writeln("  C%sInputVector( const std::vector<T>& vec)", ClassIdentifier)
 	w.Writeln("    : m_data( vec.data() ), m_size( vec.size() )")
 	w.Writeln("  {")
 	w.Writeln("  }")
