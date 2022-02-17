@@ -45,7 +45,7 @@ go build -o ..\act.arm.linux %Sources%
 set GOOS=linux
 set GOARCH=arm64
 set GOARM=5
-echo "Build act.arm64"
-go build -o ..\act.arm64 %Sources%
+echo "Build act.arm.linux64"
+go build -o ..\act.arm.linux64 %Sources%
 
 cd %startingDir%
