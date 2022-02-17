@@ -1,5 +1,7 @@
 *.exe
 *.linux
+*.linux32
+*.linux64
 *.darwin
 *.exe
 *.dylib
