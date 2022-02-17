@@ -994,7 +994,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		
 		// Special functions are an exception for string outs in global functions!
 		bHasCacheCall := (len (stringOutParameters) > 0) && (isSpecialFunction != eSpecialMethodError) && (isSpecialFunction != eSpecialMethodBuildinfo) && (isSpecialFunction != eSpecialMethodPrerelease); 
-		if (isGlobal && method.DisableStringOutCache) {
+		if (method.DisableStringOutCache) {
 			bHasCacheCall = false;
 		}
 		
