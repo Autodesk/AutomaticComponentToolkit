@@ -983,6 +983,8 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			} else {
 				CSharpParentClassName = ": C" + class.ParentClass
 			}
+		} else {
+			CSharpParentClassName = ": IDisposable"
 		}
 
 		w.Writeln("  public class C%s %s", class.ClassName, CSharpParentClassName)
@@ -996,12 +998,16 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("      Handle = NewHandle;")
 			w.Writeln("    }")
 			w.Writeln("")
-			w.Writeln("    ~C%s ()", class.ClassName)
+			w.Writeln("    public void Dispose()")
 			w.Writeln("    {")
 			w.Writeln("      if (Handle != IntPtr.Zero) {")
 			w.Writeln("        Internal.%sWrapper.%s (Handle);", NameSpace, component.Global.ReleaseMethod)
 			w.Writeln("        Handle = IntPtr.Zero;")
 			w.Writeln("      }")
+			w.Writeln("    }")
+			w.Writeln("    ~C%s ()", class.ClassName)
+			w.Writeln("    {")
+			w.Writeln("      Dispose();")
 			w.Writeln("    }")
 			w.Writeln("")
 
