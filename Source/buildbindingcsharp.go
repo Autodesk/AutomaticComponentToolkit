@@ -977,7 +977,9 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		class := component.Classes[i]
 
 		CSharpParentClassName := ""
-		if !component.isBaseClass(class) {
+		if component.isBaseClass(class) {
+			CSharpParentClassName = ": IDisposable"
+		} else {
 			if class.ParentClass == "" {
 				CSharpParentClassName = ": " + CSharpBaseClassName
 			} else {
@@ -996,13 +998,27 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			w.Writeln("      Handle = NewHandle;")
 			w.Writeln("    }")
 			w.Writeln("")
-			w.Writeln("    ~C%s ()", class.ClassName)
+			w.Writeln("    protected virtual void Dispose(bool disposing)")
 			w.Writeln("    {")
+			w.Writeln("      if (disposing)")
+			w.Writeln("      {")
+			w.Writeln("        // dispose managed state (managed objects).")
+			w.Writeln("      }")
 			w.Writeln("      if (Handle != IntPtr.Zero) {")
 			w.Writeln("        Internal.%sWrapper.%s (Handle);", NameSpace, component.Global.ReleaseMethod)
 			w.Writeln("        Handle = IntPtr.Zero;")
 			w.Writeln("      }")
 			w.Writeln("    }")
+			w.Writeln("")
+			w.Writeln("    public void Dispose()")
+			w.Writeln("    {")
+			w.Writeln("      // Dispose of unmanaged resources.")
+			w.Writeln("      Dispose(true);")
+			w.Writeln("      // Suppress finalization.")
+			w.Writeln("      GC.SuppressFinalize(this);")
+			w.Writeln("    }")
+			w.Writeln("")
+			w.Writeln("    ~C%s () => Dispose(false);", class.ClassName)
 			w.Writeln("")
 
 			w.Writeln("    protected void CheckError (Int32 errorCode)")
