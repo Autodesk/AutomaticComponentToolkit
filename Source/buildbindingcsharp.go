@@ -977,14 +977,14 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		class := component.Classes[i]
 
 		CSharpParentClassName := ""
-		if !component.isBaseClass(class) {
+		if component.isBaseClass(class) {
+			CSharpParentClassName = ": IDisposable"
+		} else {
 			if class.ParentClass == "" {
 				CSharpParentClassName = ": " + CSharpBaseClassName
 			} else {
 				CSharpParentClassName = ": C" + class.ParentClass
 			}
-		} else {
-			CSharpParentClassName = ": IDisposable"
 		}
 
 		w.Writeln("  public class C%s %s", class.ClassName, CSharpParentClassName)
