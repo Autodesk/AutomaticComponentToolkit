@@ -36,6 +36,11 @@ set GOARCH=amd64
 echo "Build act.darwin"
 go build -o ..\act.darwin %Sources%
 
+set GOOS=darwin
+set GOARCH=arm
+echo "Build act.arm.darwin"
+go build -o ..\act.arm.darwin %Sources%
+
 set GOOS=linux
 set GOARCH=arm
 set GOARM=5
