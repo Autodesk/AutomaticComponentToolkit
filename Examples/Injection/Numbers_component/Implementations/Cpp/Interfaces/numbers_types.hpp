@@ -83,7 +83,7 @@ typedef void * Numbers_pvoid;
 #define NUMBERS_ERROR_INCOMPATIBLEBINARYVERSION 8
 
 /*************************************************************************************************************************
- Declaration of handle classes 
+ Declaration of handle classes
 **************************************************************************************************************************/
 
 typedef NumbersHandle Numbers_Base;

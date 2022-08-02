@@ -420,7 +420,9 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 
 	w.Writeln("#ifdef _WIN32")
 	w.Writeln("// Convert filename to UTF16-string")
-	w.Writeln("int nLength = (int)strlen(pLibraryFileName);")
+	w.Writeln("int nLength = 0;")
+	w.Writeln("while ((pLibraryFileName[nLength] != 0) && (nLength < MAX_PATH))")
+	w.Writeln("  nLength++;")
 	w.Writeln("int nBufferSize = nLength * 2 + 2;")
 	if (!useStrictC) {
 		w.Writeln("std::vector<wchar_t> wsLibraryFileName(nBufferSize);")
@@ -430,7 +432,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 		w.Writeln("")
 		w.Writeln("HMODULE hLibrary = LoadLibraryW(wsLibraryFileName.data());")
 	} else {
-		w.Writeln("wchar_t* wsLibraryFileName = malloc(nBufferSize*sizeof(wchar_t));")
+		w.Writeln("wchar_t* wsLibraryFileName = (wchar_t*)malloc(nBufferSize*sizeof(wchar_t));")
 		w.Writeln("memset(wsLibraryFileName, 0, nBufferSize*sizeof(wchar_t));")
 		w.Writeln("int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, wsLibraryFileName, nBufferSize);")
 		w.Writeln("if (nResult == 0) {")
@@ -493,7 +495,8 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
-	w.Writeln("#endif // _WIN32")
+	w.Writeln("#include <stdlib.h>")
+		w.Writeln("#endif // _WIN32")
 
 	w.Writeln("")
 	w.Writeln("%sResult Init%sWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, NameSpace, NameSpace)
@@ -666,10 +669,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					paramNameSpace = NameSpace
 				}
 
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = nullptr;", paramNameSpace, param.ParamName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("if (%s != nullptr) {", variableName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("  h%s = %s->GetHandle();", param.ParamName, variableName))
-				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("};"))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = %s.GetHandle();", paramNameSpace, param.ParamName, variableName))
 				callParameter = "h" + param.ParamName
 				initCallParameter = callParameter
 				parameters = parameters + fmt.Sprintf("%s %s", cppParamType, variableName)
@@ -901,11 +901,19 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
-	w.Writeln("  * %s::GetHandle - Returns handle to instance.", cppBaseClassName)
+	w.Writeln("  * %s::handle - Returns handle to instance.", cppBaseClassName)
 	w.Writeln("  */")
-	w.Writeln("  %sHandle GetHandle()", NameSpace)
+	w.Writeln("  %sHandle handle() const", NameSpace)
 	w.Writeln("  {")
 	w.Writeln("    return m_pHandle;")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::wrapper - Returns wrapper instance.", cppBaseClassName)
+	w.Writeln("  */")
+	w.Writeln("  %s%sWrapper * wrapper() const", cppClassPrefix, ClassIdentifier)
+	w.Writeln("  {")
+	w.Writeln("    return m_pWrapper;")
 	w.Writeln("  }")
 
 	w.Writeln("  ")
@@ -1055,7 +1063,7 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
 	case "class", "optionalclass":
 		if isInput {
-			return fmt.Sprintf("%s%s%s%s *", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
+			return fmt.Sprintf("classParam<%s%s%s%s>", paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
 		}
 		return fmt.Sprintf("%sP%s%s", paramNameSpace, ClassIdentifier, paramClassName)
 	case "functiontype":
@@ -1165,6 +1173,35 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	buildBindingCPPAllForwardDeclarations(component, w, NameSpace, cppClassPrefix, ClassIdentifier)
 
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" classParam Definition")
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("template<class T> class classParam {")
+	w.Writeln("private:")
+	w.Writeln("  const T* m_ptr;")
+	w.Writeln("")
+	w.Writeln("public:")
+	w.Writeln("  classParam(const T* ptr)")
+	w.Writeln("    : m_ptr (ptr)")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  classParam(std::shared_ptr <T> sharedPtr)")
+	w.Writeln("    : m_ptr (sharedPtr.get())")
+	w.Writeln("  {")
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  %sHandle GetHandle()", NameSpace)
+	w.Writeln("  {")
+	w.Writeln("    if (m_ptr != nullptr)")
+	w.Writeln("      return m_ptr->handle();")
+	w.Writeln("    return nullptr;")
+	w.Writeln("  }")
+	w.Writeln("};")
+
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Class E%sException ", NameSpace)
@@ -1179,15 +1216,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  * Error message for the Exception.")
 	w.Writeln("  */")
 	w.Writeln("  std::string m_errorMessage;")
+	w.Writeln("  std::string m_originalErrorMessage;")
 	w.Writeln("")
 	w.Writeln("public:")
 	w.Writeln("  /**")
 	w.Writeln("  * Exception Constructor.")
 	w.Writeln("  */")
 	w.Writeln("  E%sException(%sResult errorCode, const std::string & sErrorMessage)", NameSpace, NameSpace)
-	w.Writeln("    : m_errorMessage(\"%s Error \" + std::to_string(errorCode) + \" (\" + sErrorMessage + \")\")", NameSpace)
+	w.Writeln("    : m_errorCode(errorCode), m_originalErrorMessage(sErrorMessage)")
 	w.Writeln("  {")
-	w.Writeln("    m_errorCode = errorCode;")
+	w.Writeln("    m_errorMessage = buildErrorMessage();")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  /**")
@@ -1205,7 +1243,46 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")
+	w.Writeln("");
+	w.Writeln("  const char* getErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    return m_originalErrorMessage.c_str();")
+	w.Writeln("  }")
 	w.Writeln("")
+	w.Writeln("  const char* getErrorName() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"SUCCESS\";", strings.ToUpper(NameSpace))
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Name)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"UNKNOWN\";");
+	w.Writeln("  }")
+	w.Writeln("")
+	w.Writeln("  const char* getErrorDescription() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    switch(getErrorCode()) {")
+	w.Writeln("      case %s_SUCCESS: return \"success\";", strings.ToUpper(NameSpace))
+	for _, errorDef := range(component.Errors.Errors) {
+		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Description)
+	}
+	w.Writeln("    }")
+	w.Writeln("    return \"unknown error\";");
+	w.Writeln("  }")
+	w.Writeln("")
+
+	w.Writeln("private:")
+	w.Writeln("")
+
+	w.Writeln("  std::string buildErrorMessage() const noexcept")
+	w.Writeln("  {")
+	w.Writeln("    std::string msg = m_originalErrorMessage;")
+	w.Writeln("    if (msg.empty()) {")
+	w.Writeln("      msg = getErrorDescription();")
+	w.Writeln("    }")
+	w.Writeln("    return std::string(\"Error: \") + getErrorName() + \": \" + msg;")
+	w.Writeln("  }")
 
 	w.Writeln("};")
 
@@ -1226,7 +1303,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  ")
 	
 	if ExplicitLinking {
-		w.Writeln("  %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
+		w.Writeln("  explicit %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
 		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
 		w.Writeln("    CheckError(nullptr, loadWrapperTableFromSymbolLookupMethod(&m_WrapperTable, pSymbolLookupMethod));")
@@ -1235,7 +1312,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("  }")
 		w.Writeln("  ")
 
-		w.Writeln("  %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
+		w.Writeln("  explicit %s%sWrapper(const std::string &sFileName)", cppClassPrefix, ClassIdentifier)
 		w.Writeln("  {")
 		w.Writeln("    CheckError(nullptr, initWrapperTable(&m_WrapperTable));")
 		w.Writeln("    CheckError(nullptr, loadWrapperTable(&m_WrapperTable, sFileName.c_str()));")
@@ -1310,7 +1387,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("  {")
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
 	w.Writeln("    %s(nMajor, nMinor, nMicro);", global.VersionMethod)
-	w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	if minorVersion(component.Version) > 0 {
+		w.Writeln("    if ( (nMajor != %s_VERSION_MAJOR) || (nMinor < %s_VERSION_MINOR) ) {", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace))
+	} else {
+		w.Writeln("    if (nMajor != %s_VERSION_MAJOR) {", strings.ToUpper(NameSpace))
+	}
 	w.Writeln("      return %s_ERROR_INCOMPATIBLEBINARYVERSION;", strings.ToUpper(NameSpace))
 	w.Writeln("    }")
 	w.Writeln("    return %s_SUCCESS;", strings.ToUpper(NameSpace))

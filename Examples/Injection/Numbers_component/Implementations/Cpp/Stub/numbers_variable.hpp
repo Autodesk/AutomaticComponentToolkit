@@ -29,10 +29,11 @@ namespace Impl {
 
 
 /*************************************************************************************************************************
- Class declaration of CVariable 
+ Class declaration of CVariable
 **************************************************************************************************************************/
 
-class CVariable : public virtual IVariable, public virtual CBase {
+class CVariable : public virtual IVariable, public virtual CBase
+{
 private:
 
 	double m_dValue;

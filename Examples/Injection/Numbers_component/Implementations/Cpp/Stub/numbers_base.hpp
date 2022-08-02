@@ -26,10 +26,11 @@ namespace Impl {
 
 
 /*************************************************************************************************************************
- Class declaration of CBase 
+ Class declaration of CBase
 **************************************************************************************************************************/
 
-class CBase : public virtual IBase {
+class CBase : public virtual IBase
+{
 private:
 
 	std::unique_ptr<std::list<std::string>> m_pErrors;
