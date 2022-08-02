@@ -1001,7 +1001,7 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 
 
 // CheckHeaderSpecialFunction checks a special function of the header against their required definitions
-func CheckHeaderSpecialFunction (method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
+func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global ComponentDefinitionGlobal) (int, error) {
 
 	if (global.ReleaseMethod == "") {
 		return eSpecialMethodNone, errors.New ("No release method specified");
