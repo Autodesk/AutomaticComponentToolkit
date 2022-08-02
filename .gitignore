@@ -3,6 +3,8 @@
 *.h
 *.exe
 *.linux
+*.linux32
+*.linux64
 *.darwin
 *.exe
 *.arm

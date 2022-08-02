@@ -967,15 +967,20 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 		outParameterCount := method.countOutParameters ();
 		
 		
-		bHasCacheCall := (len (stringOutParameters) > 0) && (isSpecialFunction != eSpecialMethodError); // GetLastError is an exception for string outs in global functions!
+		// Special functions are an exception for string outs in global functions!
+		bHasCacheCall := (len (stringOutParameters) > 0) && (isSpecialFunction != eSpecialMethodError) && (isSpecialFunction != eSpecialMethodBuildinfo) && (isSpecialFunction != eSpecialMethodPrerelease); 
+		if (method.DisableStringOutCache) {
+			bHasCacheCall = false;
+		}
+		
 		if (bHasCacheCall) {
 		
 			if (isGlobal) {
-				return errors.New ("String out parameter not allowed in global functions.");			
+				return errors.New ("String out parameter not allowed in global functions: " + method.MethodName);			
 			}
 		
 			if (!isStringOutClass) {
-				return errors.New ("String out parameter without being the string out base class.");			
+				return errors.New ("String out parameter without being the string out base class: " + method.MethodName)	
 			}
 		
 			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace, BaseClassName, ClassIdentifier);

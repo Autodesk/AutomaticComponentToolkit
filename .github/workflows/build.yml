@@ -35,12 +35,17 @@ jobs:
         with:
           name: act.darwin
           path: act.darwin
+      - name: Upload MacOS ARM Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.arm.darwin
+          path: act.arm.darwin
       - name: Upload Linux Binary
         uses: actions/upload-artifact@v2
         with:
           name: act.linux
           path: act.linux
-      - name: Upload Linux Arm Binary
+      - name: Upload Linux ARM Binary
         uses: actions/upload-artifact@v2
         with:
           name: act.arm.linux
