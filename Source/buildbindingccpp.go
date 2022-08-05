@@ -170,9 +170,13 @@ func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string,
 		}
 	}
 
-	err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
-	if err != nil {
-		return err
+	if (outputFolderDocumentation != "") {
+
+		err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
+		if err != nil {
+			return err
+		}
+		
 	}
 
 
@@ -1580,7 +1584,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 // BuildBindingCppExplicit builds headeronly C++-bindings of a library's API in form of expliclty loaded function handles.
 func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string, outputFolderExample string,
-	indentString string, ClassIdentifier string) error {
+	outputFolderDocumentation string, indentString string, ClassIdentifier string) error {
 	forceRecreation := false
 	ExplicitLinking := true
 	namespace := component.NameSpace
@@ -1645,6 +1649,15 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 		} else {
 			log.Printf("Omitting recreation of C++Dynamic example file \"%s\"", DynamicCPPCMake)
 		}
+	}
+	
+	if (outputFolderDocumentation != "") {
+
+		err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
+		if err != nil {
+			return err
+		}
+		
 	}
 
 	return nil

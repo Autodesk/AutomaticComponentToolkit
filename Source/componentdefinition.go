@@ -137,6 +137,7 @@ type ComponentDefinitionBinding struct {
 	Language string `xml:"language,attr"`
 	Indentation string `xml:"indentation,attr"`
 	ClassIdentifier string `xml:"classidentifier,attr"`
+	Documentation string `xml:"documentation,attr"`
 	Version string `xml:"version,attr"`
 }
 
