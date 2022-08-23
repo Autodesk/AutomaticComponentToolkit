@@ -2,15 +2,19 @@ FROM centos:centos8
 
 LABEL maintainer="Andrii Anpilogov (andrii.anpilogov@autodesk.com)"
 
-ARG USER_ID
-ARG GROUP_ID
+# ARG USER_ID
+# ARG GROUP_ID
 
-RUN : "${USER_ID:?Build argument needs to be set and non-empty.}" \
-    : "${GROUP_ID:?Build argument needs to be set and non-empty.}"
+# RUN : "${USER_ID:?Build argument needs to be set and non-empty.}" \
+#    : "${GROUP_ID:?Build argument needs to be set and non-empty.}"
 
 RUN [ -e /etc/yum.conf ] && sed -i '/tsflags=nodocs/d' /etc/yum.conf || true
 
 # RUN yum install -y icu
+
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+RUN yum update -y
 
 RUN dnf -y install dnf-plugins-core
 RUN dnf -y install dnf-plugin-config-manager
@@ -31,6 +35,7 @@ RUN dnf -y install ninja-build
 # 3.0.4 should be used for validating compiler base compatibility.
 RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm' \
     && rpm -i fpc-3.0.4-1.x86_64.rpm)
+
 # Using 3.2.2 until PolymorphicFactory is reworked to not using generics that are not full functional in 3.0.4.
 # RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.2.2/fpc-3.2.2-1.x86_64.rpm' \
 #     && rpm -i fpc-3.2.2-1.x86_64.rpm)
@@ -38,6 +43,7 @@ RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/
 # Golang
 RUN (cd /opt && curl -O -L https://golang.org/dl/go1.17.2.linux-amd64.tar.gz \
     && tar zxvf go1.17.2.linux-amd64.tar.gz)
+ENV PATH="${PATH}:/opt/go/bin"
 
 # Java
 RUN dnf -y install \
@@ -65,20 +71,26 @@ RUN dnf -y install \
            yum-utils \
            && yum clean all
 
-# Create user
-RUN groupadd docker \
-    && useradd -ms /bin/bash --uid $USER_ID -g docker -G wheel user \
-    && printf "user:user" | chpasswd \
-    && printf "user ALL= NOPASSWD: ALL\\n" >> /etc/sudoers
+# # Create user
+# RUN groupadd docker \
+#     && useradd -ms /bin/bash --uid $USER_ID -g docker -G wheel user \
+#     && printf "user:user" | chpasswd \
+#     && printf "user ALL= NOPASSWD: ALL\\n" >> /etc/sudoers
 
-# Initialize Toolkit
-RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /home/user/.bash_profile
-RUN echo "export PATH=\$PATH:/opt/go/bin" >> /home/user/.bash_profile
+# # Initialize Toolkit
+RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /etc/bashrc
+# RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /home/user/.bash_profile
+# RUN echo "export PATH=\$PATH:/opt/go/bin" >> /home/user/.bash_profile
 
-VOLUME /data
+# VOLUME /data
 
-# Run Container as nonroot
-USER user
-WORKDIR /data
+# # Run Container as nonroot
+# USER user
+# WORKDIR /data
 
-ENTRYPOINT [ "/bin/bash", "-l" ]
+# ENTRYPOINT [ "/bin/bash", "-l" ]
+
+# COPY entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
+
