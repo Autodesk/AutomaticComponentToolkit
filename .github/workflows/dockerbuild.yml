@@ -1,0 +1,21 @@
+on: [push]
+
+jobs:
+  build_with_docker:
+    runs-on: ubuntu-latest
+    name: Build and test ACT inside Docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: build step
+        id: build_act
+        uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
+        with:
+          command: 'act'
+      - name: example step
+        id: build_and_test_examples
+        uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
+        with:
+          command: 'examples'
+      - name: Get the build time
+        run: echo "The build time was ${{ steps.build.outputs.time }}"

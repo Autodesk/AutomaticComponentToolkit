@@ -1,0 +1,16 @@
+# docker.yml
+name: 'BuildWithDocker'
+description: 'Build ACT with in a Docker container'
+inputs:
+  command:  # id of input
+    description: 'What command to run'
+    required: true
+    default: 'act'
+outputs:
+  time: # id of output
+    description: 'The time docker ran'
+runs:
+  using: 'docker'
+  image: 'Build/Dockerfile'
+  args:
+    - ${{ inputs.command }}
