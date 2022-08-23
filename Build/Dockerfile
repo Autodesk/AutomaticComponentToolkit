@@ -1,12 +1,9 @@
 FROM centos:centos8
 
+ARG USER_ID
+ARG GROUP_ID
+
 LABEL maintainer="Andrii Anpilogov (andrii.anpilogov@autodesk.com)"
-
-# ARG USER_ID
-# ARG GROUP_ID
-
-# RUN : "${USER_ID:?Build argument needs to be set and non-empty.}" \
-#    : "${GROUP_ID:?Build argument needs to be set and non-empty.}"
 
 RUN [ -e /etc/yum.conf ] && sed -i '/tsflags=nodocs/d' /etc/yum.conf || true
 
@@ -43,7 +40,6 @@ RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/
 # Golang
 RUN (cd /opt && curl -O -L https://golang.org/dl/go1.17.2.linux-amd64.tar.gz \
     && tar zxvf go1.17.2.linux-amd64.tar.gz)
-ENV PATH="${PATH}:/opt/go/bin"
 
 # Java
 RUN dnf -y install \
@@ -53,7 +49,6 @@ RUN dnf -y install \
 RUN rpm --import https://download.mono-project.com/repo/xamarin.gpg \
     && dnf config-manager --add-repo https://download.mono-project.com/repo/centos8-stable.repo \
     && dnf -y install mono-complete
-
 
 # General purpose tools
 RUN dnf -y install \
@@ -71,26 +66,22 @@ RUN dnf -y install \
            yum-utils \
            && yum clean all
 
-# # Create user
-# RUN groupadd docker \
-#     && useradd -ms /bin/bash --uid $USER_ID -g docker -G wheel user \
-#     && printf "user:user" | chpasswd \
-#     && printf "user ALL= NOPASSWD: ALL\\n" >> /etc/sudoers
-
 # # Initialize Toolkit
 RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /etc/bashrc
-# RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /home/user/.bash_profile
-# RUN echo "export PATH=\$PATH:/opt/go/bin" >> /home/user/.bash_profile
+ENV PATH="${PATH}:/opt/go/bin"
 
-# VOLUME /data
+# Initialize Toolkit
+# RUN : "${USER_ID:?Build argument needs to be set and non-empty.}" \
+#     : "${GROUP_ID:?Build argument needs to be set and non-empty.}"
 
-# # Run Container as nonroot
-# USER user
-# WORKDIR /data
+# Create user
+RUN if [ $USER_ID != "" ] ; then groupadd docker \
+    && useradd -ms /bin/bash --uid $USER_ID -g docker -G wheel user \
+    && printf "user:user" | chpasswd \
+    && printf "user ALL= NOPASSWD: ALL\\n" >> /etc/sudoers ; fi
 
-# ENTRYPOINT [ "/bin/bash", "-l" ]
-
-# COPY entrypoint.sh /entrypoint.sh
+# Initialize Toolkit
+RUN if [ $USER_ID != "" ] ; then echo "source /opt/rh/gcc-toolset-9/enable" >> /home/user/.bash_profile ; fi
+RUN if [ $USER_ID != "" ] ; then echo "export PATH=\$PATH:/opt/go/bin" >> /home/user/.bash_profile ; fi
 
 ENTRYPOINT ["./entrypoint.sh"]
-

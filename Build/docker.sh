@@ -9,17 +9,17 @@ case "$1" in
         docker build -t act-build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .
     ;;
     act)
-        docker run -it --rm -v $PWD/..:/data act-build /data/Build/build.sh
+        docker run -it --rm -v $PWD/..:/data --user $(id -u):$(id -g) --entrypoint /data/Build/build.sh act-build
     ;;
     examples)
-        docker run -it --rm -v $PWD/..:/data act-build /data/Examples/build.sh
+        docker run -it --rm -v $PWD/..:/data --user $(id -u):$(id -g) --entrypoint /data/Examples/build.sh act-build
     ;;
     all)
-        docker run -it --rm -v $PWD/..:/data act-build /data/Build/build.sh
-        docker run -it --rm -v $PWD/..:/data act-build /data/Examples/build.sh
+        docker run -it --rm -v $PWD/..:/data --user $(id -u):$(id -g) --entrypoint /data/Build/build.sh act-build
+        docker run -it --rm -v $PWD/..:/data --user $(id -u):$(id -g) --entrypoint /data/Examples/build.sh act-build
     ;;
     cli)
-        docker run -it --rm -v $PWD/..:/data --entrypoint bash act-build -l
+        docker run -it --rm -v $PWD/..:/data --user $(id -u):$(id -g) --entrypoint bash act-build -l
     ;;
     *)
     echo "Use one of availbale commands:"

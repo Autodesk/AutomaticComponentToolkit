@@ -1,4 +1,4 @@
-# docker.yml
+# action.yml
 name: 'BuildWithDocker'
 description: 'Build ACT with in a Docker container'
 inputs:
@@ -6,9 +6,6 @@ inputs:
     description: 'What command to run'
     required: true
     default: 'act'
-outputs:
-  time: # id of output
-    description: 'The time docker ran'
 runs:
   using: 'docker'
   image: 'Build/Dockerfile'

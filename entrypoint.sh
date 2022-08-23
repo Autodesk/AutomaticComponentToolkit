@@ -3,6 +3,9 @@
 echo "Action selected: $1"
 time=$(date)
 echo "::set-output name=time::$time"
+echo $(id -u)
+echo $(id -g)
+
 
 case "$1" in 
     act)

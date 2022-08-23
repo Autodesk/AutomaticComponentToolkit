@@ -7,15 +7,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: build step
+      - name: build act
         id: build_act
         uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
         with:
           command: 'act'
-      - name: example step
+      - name: run examples
         id: build_and_test_examples
         uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
         with:
           command: 'examples'
-      - name: Get the build time
-        run: echo "The build time was ${{ steps.build.outputs.time }}"
