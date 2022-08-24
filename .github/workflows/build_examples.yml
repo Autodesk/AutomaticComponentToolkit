@@ -1,9 +1,9 @@
 on: [push]
-
+name: Build ACT examples
 jobs:
   build_with_docker:
     runs-on: ubuntu-latest
-    name: Build and test ACT inside Docker
+    name: Build ACT examples with docker
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -12,8 +12,8 @@ jobs:
         uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
         with:
           command: 'act'
-      - name: run examples
-        id: build_and_test_examples
+      - name: build examples
+        id: build_examples
         uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
         with:
           command: 'examples'
