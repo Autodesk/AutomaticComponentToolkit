@@ -38,16 +38,16 @@ export GOOS="darwin"
 export GOARCH="arm64"
 go build -o ../act.arm.darwin $Sources
 
-echo "Build act.linux32.arm"
+echo "Build act.arm.linux32"
 export GOOS="linux"
 export GOARM="5"
 export GOARCH="386"
-go build -o ../act.linux32.arm $Sources
+go build -o ../act.arm.linux32 $Sources
 
-echo "Build act.linux64.arm"
+echo "Build act.arm.linux64"
 export GOOS="linux"
 export GOARCH="arm64"
 export GOARM="5"
-go build -o ../act.linux64.arm $Sources
+go build -o ../act.arm.linux64 $Sources
 
 cd "$startingpath"
