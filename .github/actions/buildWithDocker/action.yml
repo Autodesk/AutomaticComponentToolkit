@@ -8,6 +8,6 @@ inputs:
     default: 'act'
 runs:
   using: 'docker'
-  image: 'Build/Dockerfile'
+  image: '../../../Build/Dockerfile'
   args:
     - ${{ inputs.command }}
