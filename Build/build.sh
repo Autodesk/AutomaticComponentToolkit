@@ -22,6 +22,7 @@ echo "Build act.linux64"
 export GOOS="linux"
 export GOARCH="amd64"
 go build -o ../act.linux64 $Sources
+cp ../act.linux64 ../act.linux
 
 echo "Build act.linux32"
 export GOOS="linux"

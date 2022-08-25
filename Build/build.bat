@@ -55,5 +55,6 @@ echo "Build act.arm.linux64"
 go build -o ..\act.arm.linux64 %Sources%
 
 copy ..\act.win64.exe ..\act.exe /Y
+copy ..\act.linux64 ..\act.linux /Y
 
 cd %startingDir%
