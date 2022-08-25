@@ -9,11 +9,11 @@ jobs:
         uses: actions/checkout@v3
       - name: build act
         id: build_act
-        uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
+        uses: ./.github/actions/buildWithDocker.yml
         with:
           command: 'act'
       - name: build examples
         id: build_examples
-        uses: martinweismann/AutomaticComponentToolkit@rtti-native-2
+        uses: ./.github/actions/buildWithDocker.yml
         with:
           command: 'examples'
