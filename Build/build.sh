@@ -35,6 +35,7 @@ go build -o ../act.darwin $Sources
 
 echo "Build act.arm.darwin"
 export GOOS="darwin"
+export GOARM="5"
 export GOARCH="arm64"
 go build -o ../act.arm.darwin $Sources
 

@@ -9,11 +9,11 @@ jobs:
         uses: actions/checkout@v3
       - name: build act
         id: build_act
-        uses: ./.github/actions/buildWithDocker.yml
+        uses: ./.github/actions/buildWithDocker
         with:
           command: 'act'
       - name: build examples
         id: build_examples
-        uses: ./.github/actions/buildWithDocker.yml
+        uses: ./.github/actions/buildWithDocker
         with:
           command: 'examples'

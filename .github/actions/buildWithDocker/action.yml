@@ -1,4 +1,4 @@
-# buildWithDocker.yml
+# action.yml
 name: 'BuildWithDocker'
 description: 'Build ACT within a Docker container'
 inputs:
