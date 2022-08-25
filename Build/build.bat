@@ -4,6 +4,7 @@ set basepath="%~dp0"
 
 cd %basepath%\..\Source
 set Sources=actutils.go automaticcomponenttoolkit.go buildbindingccpp.go buildbindingccppdocumentation.go buildbindingcsharp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildimplementationcpp.go buildbindingjava.go buildimplementationpascal.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagecpp.go languagepascal.go
+<<<<<<< HEAD
 
 set GOOS=windows
 set GOARCH=amd64
@@ -14,11 +15,27 @@ echo "Patching properties of act.win64.exe"
 ..\build\verpatch ..\act.win64.exe /high /va 1.7.0 /pv "1.7.0-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
 
 set GOOS=windows
+=======
+
+set GOOS=windows
+set GOARCH=amd64
+echo "Build act.exe"
+go build -o ..\act.win64.exe %Sources%
+
+echo "Patching properties of act.win64.exe"
+..\build\verpatch ..\act.win64.exe /high /va 1.7.0 /pv "1.7.0-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
+
+set GOOS=windows
+>>>>>>> ADSK/develop
 set GOARCH=386
 echo "Build act.win32.exe"
 go build -o ..\act.win32.exe %Sources%
 
+<<<<<<< HEAD
 echo "Patching properties of act.win32.exe"
+=======
+echo "Patching properties of act_win32.exe"
+>>>>>>> ADSK/develop
 ..\build\verpatch ..\act.win32.exe /high /va 1.7.0 /pv "1.7.0-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
 
 set GOOS=linux
@@ -45,7 +62,6 @@ go build -o ..\act.arm.darwin %Sources%
 set GOOS=linux
 set GOARCH=arm
 set GOARM=5
-echo "Build act.arm.linux32"
 go build -o ..\act.arm.linux32 %Sources%
 
 set GOOS=linux
@@ -56,5 +72,6 @@ go build -o ..\act.arm.linux64 %Sources%
 
 copy ..\act.win64.exe ..\act.exe /Y
 copy ..\act.linux64 ..\act.linux /Y
+
 
 cd %startingDir%
