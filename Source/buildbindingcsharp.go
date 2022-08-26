@@ -527,7 +527,9 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = new C%s (new%s );", param.ParamName, param.ParamClass, param.ParamName))
+				// TODO: Using plain NameSpace here for calling PolymorphicFactory is most likely incorrect.
+				//       It should be extracted from param.ClassName.
+				resultCommands = append(resultCommands, fmt.Sprintf("  A%s = Internal.%sWrapper.PolymorphicFactory<C%s>(new%s);", param.ParamName, NameSpace, param.ParamClass, param.ParamName))
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
@@ -586,7 +588,9 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				if (ParamTypeName == "IntPtr") {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
 				} else {
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new %s (new%s );", ParamTypeName, param.ParamName))
+					// TODO: Using plain NameSpace here for calling PolymorphicFactory is most likely incorrect.
+					//       It should be extracted from param.ClassName.
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return Internal.%sWrapper.PolymorphicFactory<%s>(new%s);", NameSpace, ParamTypeName, param.ParamName))
 				}
 
 			default:
@@ -965,6 +969,36 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	}
 	w.Writeln("        throw new Exception(sMessage + \"(# \" + errorCode + \")\");")
 	w.Writeln("      }")
+
+	w.Writeln("")
+	w.Writeln("      /**")
+	w.Writeln("       * IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("       *            It's designed to be used on Handle object only once.")
+	w.Writeln("       *            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("       *            %sWrapper::AcquireInstance(C%s object) must be called after instantiating new object.", NameSpace, component.Global.BaseClassName)
+	w.Writeln("       *            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("      */")
+	w.Writeln("      public static T PolymorphicFactory<T>(IntPtr Handle) where T : class")
+	w.Writeln("      {")
+	w.Writeln("        T Object;")
+	w.Writeln("        if (Handle == IntPtr.Zero)")
+	w.Writeln("          return System.Activator.CreateInstance(typeof(T), Handle) as T;")
+	w.Writeln("        ")
+	w.Writeln("        UInt64 resultClassTypeId = 0;")
+	w.Writeln("        Int32 errorCode = %s_%s (Handle, out resultClassTypeId);", component.Global.BaseClassName, component.Global.ClassTypeIdMethod)
+	w.Writeln("        if (errorCode != 0)")
+	w.Writeln("          ThrowError (IntPtr.Zero, errorCode);")
+	w.Writeln("        switch (resultClassTypeId) {")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classTypeId, chashHashString := class.classTypeId(NameSpace)
+		w.Writeln("          case 0x%016X: Object = new C%s(Handle) as T; break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, class.ClassName, chashHashString)
+	}
+	w.Writeln("          default: Object = System.Activator.CreateInstance(typeof(T), Handle) as T; break;")
+	w.Writeln("        }")
+	w.Writeln("        return Object;")
+	w.Writeln("      }")
+
 	w.Writeln("")
 
 	w.Writeln("    }")
@@ -1219,7 +1253,7 @@ func buildCSharpExampleProject(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("<Project Sdk=\"Microsoft.NET.Sdk\">")
 	w.Writeln("  <PropertyGroup>")
 	w.Writeln("    <OutputType>Exe</OutputType>")
-	w.Writeln("    <TargetFramework>netcoreapp2.0</TargetFramework>")
+	w.Writeln("    <TargetFramework>netstandard2.0</TargetFramework>")
 	w.Writeln("    <StartupObject>%s.%s</StartupObject>", exampleName, exampleName)
 	w.Writeln("    <ApplicationIcon />")
 	w.Writeln("    <Platforms>x64</Platforms>")

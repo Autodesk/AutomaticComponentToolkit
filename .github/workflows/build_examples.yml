@@ -1,0 +1,19 @@
+on: [push, pull_request]
+name: Build ACT examples
+jobs:
+  build_with_docker:
+    runs-on: ubuntu-latest
+    name: Build ACT examples with docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: build act
+        id: build_act
+        uses: ./.github/actions/buildWithDocker
+        with:
+          command: 'act'
+      - name: build examples
+        id: build_examples
+        uses: ./.github/actions/buildWithDocker
+        with:
+          command: 'examples'

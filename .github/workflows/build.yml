@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - run: sh build.sh
+      - run: ./build.sh
         working-directory: ./Build 
   build-macos:
     runs-on: macos-10.15
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - run: sh build.sh
+      - run: ./build.sh
         working-directory: ./Build 
   build-windows:
     runs-on: windows-2019
@@ -25,11 +25,16 @@ jobs:
           submodules: true
       - run: ./build.bat
         working-directory: ./Build 
-      - name: Upload Windows Binary
+      - name: Upload Windows 64bit Binary
         uses: actions/upload-artifact@v2
         with:
-          name: act.exe
-          path: act.exe
+          name: act.win64.exe
+          path: act.win64.exe
+      - name: Upload Windows 32bit Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.win32.exe
+          path: act.win32.exe
       - name: Upload MacOS Binary
         uses: actions/upload-artifact@v2
         with:
@@ -40,14 +45,24 @@ jobs:
         with:
           name: act.arm.darwin
           path: act.arm.darwin
-      - name: Upload Linux Binary
+      - name: Upload Linux 32bit Binary
         uses: actions/upload-artifact@v2
         with:
-          name: act.linux
-          path: act.linux
-      - name: Upload Linux ARM Binary
+          name: act.linux32
+          path: act.linux32
+      - name: Upload Linux ARM 32bit Binary
         uses: actions/upload-artifact@v2
         with:
-          name: act.arm.linux
-          path: act.arm.linux
+          name: act.arm.linux32
+          path: act.arm.linux32
+      - name: Upload Linux 64bit Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.linux64
+          path: act.linux64
+      - name: Upload Linux ARM 64bit Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: act.arm.linux64
+          path: act.arm.linux64
 

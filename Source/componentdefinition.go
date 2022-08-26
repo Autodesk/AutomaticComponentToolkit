@@ -34,17 +34,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"strconv"
-	"fmt"
-	"errors"
+	"crypto/sha1"
+	"encoding/binary"
 	"encoding/xml"
-	"regexp"
-	"strings"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
-	"io/ioutil"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -119,6 +121,7 @@ type ComponentDefinitionGlobal struct {
 	BaseClassName string `xml:"baseclassname,attr"`
 	StringOutBaseClassName string `xml:"stringoutclassname,attr"`
 	ErrorMethod string `xml:"errormethod,attr"`
+	ClassTypeIdMethod string `xml:"classtypeidmethod,attr"`
 	ReleaseMethod string `xml:"releasemethod,attr"`
 	AcquireMethod string `xml:"acquiremethod,attr"`
 	SymbolLookupMethod string `xml:"symbollookupmethod,attr"`
@@ -515,8 +518,10 @@ func (component *ComponentDefinition) checkClasses() (error) {
 
 	classLowerNameList := make(map[string]bool, 0)
 	classNameIndex := make(map[string]int, 0)
+	classTypeIdIndex := make(map[uint64]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
+		classTypeHash, _ := class.classTypeId(component.NameSpace);
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
@@ -526,10 +531,15 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
 			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
+		collision, hashExists := classTypeIdIndex[classTypeHash]
+		if hashExists {
+			return fmt.Errorf ("Classes \"%s\" and \"%s\" have a collision in their Class Type Id. Change class name.", classes[collision].ClassName, class.ClassName);
+		}
 		
 		classLowerNameList[strings.ToLower(class.ClassName)] = true
 		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
+		classTypeIdIndex[classTypeHash] = i
 	}
 
 	// Check parent class definitions
@@ -706,6 +716,21 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 }
 
 
+func (component *ComponentDefinition) checkBaseClassMethods() (error) {
+
+	method := component.classTypeIdMethod()
+	if method.MethodName == "" {
+		return fmt.Errorf ("ClassTypeId method is not defined in Base class");
+	}
+
+	if (method.MethodName == component.Global.ClassTypeIdMethod) {
+		if (len (method.Params) != 1) || (method.Params[0].ParamType != "uint64") || (method.Params[0].ParamPass != "return") {
+			return fmt.Errorf ("ClassTypeId method does not match the expected function template");
+		}
+	}
+	return nil
+}
+
 func (component *ComponentDefinition) checkClassMethods() (error) {
 	classes := component.Classes
 
@@ -715,7 +740,9 @@ func (component *ComponentDefinition) checkClassMethods() (error) {
 		methodNameList := make(map[string]bool, 0)
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-
+			if (!component.isBaseClass(class) && (method.MethodName == component.Global.ClassTypeIdMethod)) {
+				return fmt.Errorf ("class type id method \"%s\" is redefined in \"%s\".%s\"", method.MethodName, class.ClassName)
+			}
 			if (methodNameList[strings.ToLower(method.MethodName)]) {
 				return fmt.Errorf ("duplicate name for method \"%s.%s\"", class.ClassName, method.MethodName)
 			}
@@ -958,6 +985,11 @@ func (component *ComponentDefinition) CheckComponentDefinition() (error) {
 		return err
 	}
 
+	err = component.checkBaseClassMethods()
+	if err != nil {
+		return err
+	}
+
 	err = component.checkClassMethods()
 	if err != nil {
 		return err
@@ -1018,6 +1050,10 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 
 	if (global.ErrorMethod == "") {
 		return eSpecialMethodNone, errors.New ("No error method specified");
+	}
+
+	if (global.ClassTypeIdMethod == "") {
+		return eSpecialMethodNone, errors.New ("No ClassTypeId method specified");
 	}
 
 	if (global.ReleaseMethod == global.JournalMethod) {
@@ -1162,7 +1198,6 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 
 	return eSpecialMethodNone, nil;
 }
-
 
 // GetLastErrorMessageMethod returns the xml definition of the GetLastErrorMessage-method
 func GetLastErrorMessageMethod() (ComponentDefinitionMethod) {
@@ -1370,3 +1405,23 @@ func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
 	return maxOutParameters;
 }
 
+func (component *ComponentDefinition) classTypeIdMethod() (ComponentDefinitionMethod) {
+	var method ComponentDefinitionMethod
+	baseClass := component.baseClass()
+
+	for j := 0; j < len(baseClass.Methods); j++ {
+		if (baseClass.Methods[j].MethodName == component.Global.ClassTypeIdMethod) {
+			return baseClass.Methods[j]
+			break
+		}
+	}
+
+	return method
+}
+
+func (class *ComponentDefinitionClass) classTypeId(namespace string) (uint64, string) {
+	hash := sha1.New()
+	plainString := namespace + "::" + class.ClassName
+	hash.Write([]byte(plainString))
+	return binary.LittleEndian.Uint64(hash.Sum(nil)), plainString
+}

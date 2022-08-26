@@ -15,6 +15,7 @@
 		<binding language="CppDynamic" indentation="tabs" />
 		<binding language="Pascal" indentation="2spaces" />
 		<binding language="Python" indentation="tabs" />
+		<binding language="Java" indentation="tabs" />
 	</bindings>
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
@@ -33,6 +34,9 @@
 	</errors>
 	
 	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
 	</class>
 	
 	<class name="Calculator" parent="Base" description="Sums up or multiplies a list of variables">
@@ -62,7 +66,7 @@
 		versionmethod="GetVersion" errormethod="GetLastError"
 		injectionmethod="InjectComponent"
 		symbollookupmethod="GetSymbolLookupMethod"
-		>
+		classtypeidmethod="ClassTypeId">
 		<method name="CreateCalculator" description="Creates a new Calculator instance">
 			<param name="Instance" type="class" class="Calculator" pass="return" description="New Calculator instance" />
 		</method>

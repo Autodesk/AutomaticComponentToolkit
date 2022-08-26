@@ -36,6 +36,7 @@ type
       procedure RegisterErrorMessage(const AErrorMessage: String);
       procedure IncRefCount();
       function DecRefCount(): Boolean;
+      function ClassTypeId(): QWord; Virtual; Abstract;
   end;
 
 implementation
@@ -67,7 +68,6 @@ end;
 
 procedure TNumbersBase.RegisterErrorMessage(const AErrorMessage: String);
 begin
-  FMessages.Clear();
   FMessages.Add(AErrorMessage);
 end;
 
@@ -80,10 +80,11 @@ function TNumbersBase.DecRefCount(): Boolean;
 begin
   dec(FReferenceCount);
   if (FReferenceCount = 0) then begin
-    result := true;
     self.Destroy();
-  end;
-   result := false;
+    result := true;
+  end
+  else
+    result := false;
 end;
 
 end.

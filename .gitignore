@@ -1,22 +1,28 @@
-*.cpp
-*.hpp
-*.h
 *.exe
 *.linux
 *.linux32
 *.linux64
 *.darwin
 *.exe
+*.dylib
+*.so
+*.dll
 *.arm
-*.c
-*.go
 *.orig
+*.class
+*.jar
+*.log
+*.o
+*.ppu
+__pycache__
+
+Examples/**/build
+Examples/**/build-*
+Examples/**/bin
+Examples/**/obj
 
 # Visual Studio Code
 debug
 .vscode
 
-*_headers
-*_component
-
-Examples/*.xml
+.DS_Store

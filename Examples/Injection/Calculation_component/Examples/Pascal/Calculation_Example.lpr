@@ -14,7 +14,7 @@ Interface version: 1.0.0
 *)
 
 program CalculationPascalTest;
-
+{$mode objfpc}{$H+}
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
@@ -48,7 +48,7 @@ var
 begin
   writeln ('loading DLL');
   ALibPath := ''; // TODO add the location of the shared library binary here
-  ACalculationWrapper := TCalculationWrapper.Create (ALibPath + '/' + 'calculation.dll'); // TODO add the extension of the shared library file here
+  ACalculationWrapper := TCalculationWrapper.Create (ALibPath + 'calculation.dll'); // TODO add the extension of the shared library file here
   try
     writeln ('loading DLL Done');
     ACalculationWrapper.GetVersion(AMajor, AMinor, AMicro);
@@ -56,7 +56,7 @@ begin
     writeln(AVersionString);
 
     ALibPath := '';
-    ANumbersWrapper := TNumbersWrapper.Create (ALibPath + '/' + 'numbers.'); // TODO add the extension of the shared library file here
+    ANumbersWrapper := TNumbersWrapper.Create (ALibPath + 'numbers.dll'); // TODO add the extension of the shared library file here
     ANumbersWrapper.GetVersion(AMajor, AMinor, AMicro);
     AVersionString := Format('Numbers.version = %d.%d.%d', [AMajor, AMinor, AMicro]);
     writeln(AVersionString);

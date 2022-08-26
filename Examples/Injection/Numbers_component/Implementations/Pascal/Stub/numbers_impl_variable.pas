@@ -28,12 +28,18 @@ type
     protected
 
     public
-      constructor Create(AInitialValue: double);
+      function ClassTypeId(): QWord; Override;
+	  constructor Create(AInitialValue: double);
       function GetValue(): Double;
       procedure SetValue(const AValue: Double);
   end;
 
 implementation
+
+function TNumbersVariable.ClassTypeId(): QWord;
+begin
+  Result := QWord($23934EDF762423EA); // First 64 bits of SHA1 of a string: "Numbers::Variable"
+end;
 
 constructor TNumbersVariable.Create(AInitialValue: double);
 begin

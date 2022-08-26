@@ -1,0 +1,13 @@
+# action.yml
+name: 'BuildWithDocker'
+description: 'Build ACT within a Docker container'
+inputs:
+  command:  # id of input
+    description: 'What command to run'
+    required: true
+    default: 'act'
+runs:
+  using: 'docker'
+  image: '../../../Build/Dockerfile'
+  args:
+    - ${{ inputs.command }}

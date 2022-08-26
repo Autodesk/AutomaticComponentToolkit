@@ -365,6 +365,33 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		}
 	}
 
+	w.Writeln("  '''IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("                It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("                If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("                Wrapper.AcquireInstance(object) must be called after instantiating new object.")
+	w.Writeln("                This is important to keep reference count matching between application and library sides.")
+	w.Writeln("  '''")
+
+	w.Writeln("  def _polymorphicFactory(self, handle):")
+	w.Writeln("    class PolymorphicFactory():")
+	w.Writeln("      def getObjectById(self, classtypeid, handle, wrapper):")
+	w.Writeln("        methodName = 'getObjectById_' + format(classtypeid.value, '016X')")
+	w.Writeln("        method = getattr(self, methodName, lambda: 'Invalid class type id')")
+	w.Writeln("        return method(handle, wrapper)")
+	for i:=0; i<len(componentdefinition.Classes); i++ {
+		classTypeId, chashHashString := componentdefinition.Classes[i].classTypeId(NameSpace)
+		w.Writeln("      def getObjectById_%016X(self, handle, wrapper): # First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString)
+		w.Writeln("        return %s(handle, wrapper)", componentdefinition.Classes[i].ClassName)
+	}
+	w.Writeln("    ")
+	w.Writeln("    if not handle:")
+	w.Writeln("      return None")
+	w.Writeln("    pClassTypeId = ctypes.c_uint64()")
+	w.Writeln("    self.checkError(None, self.lib.%s_%s_%s(handle, pClassTypeId))", strings.ToLower(NameSpace), strings.ToLower(componentdefinition.Global.BaseClassName), strings.ToLower(componentdefinition.Global.ClassTypeIdMethod))
+	w.Writeln("    factory = PolymorphicFactory()")
+	w.Writeln("    return factory.getObjectById(pClassTypeId, handle, self)")
+	w.Writeln("  ")
+
 	for i:=0; i<len(componentdefinition.Classes); i++ {
 		w.Writeln("")
 		w.Writeln("")
@@ -740,6 +767,7 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 
 	} else {
 		w.Writeln("class %s:", class.ClassName)
+
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    if not handle or not wrapper:")
 		w.Writeln("      raise E%sException(ErrorCodes.INVALIDPARAM)", NameSpace)
@@ -809,15 +837,15 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cCheckArguments = cCheckArguments + newArgument
 
 				theWrapperReference := wrapperReference
-				subNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
+				subNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
 				if len(subNameSpace) > 0 {
 					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
 					subNameSpace = subNameSpace + "."
 				}
 				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle:", param.ParamName))
 				postCallLines = append(postCallLines,
-					fmt.Sprintf("  %sObject = %s%s(%sHandle, %s)",
-					param.ParamName, subNameSpace, paramClassName, param.ParamName, theWrapperReference))
+					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle)",
+					param.ParamName, theWrapperReference, param.ParamName))
 				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
 				if (param.ParamType == "optionalclass") {
 					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))

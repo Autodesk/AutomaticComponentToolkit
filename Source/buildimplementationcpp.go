@@ -35,9 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"errors"
 	"path"
 	"strings"
 )
@@ -414,8 +414,32 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("")			
 	}
 
+	if (component.isBaseClass(class)) {
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component.classTypeIdMethod(), class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
+		if err != nil {
+			return err
+		}
+		// Only IBase class has pure virtual ClassTypeId method. It's needed for proper interpretation of "override" in deriver interface classes.
+		w.Writeln("%s;", methodstring)
+	
+	} else {
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(component.classTypeIdMethod(), class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, false, true)
+		if err != nil {
+			return err
+		}
+		classTypeId, chashHashString := class.classTypeId(NameSpace)
+		w.Writeln("%s", methodstring)
+		w.Writeln("  {")
+		w.Writeln("    return 0x%XUL; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString)
+		w.Writeln("  }")	
+		w.Writeln("")	
+	}
+
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
+		if method.MethodName == component.Global.ClassTypeIdMethod {
+			continue
+		}
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 		if err != nil {
 			return err
@@ -560,7 +584,7 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
-		// Omit Journal Method
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
@@ -618,7 +642,7 @@ func buildCPPGlobalStubFile(component ComponentDefinition, stubfile LanguageWrit
 
 		thisMethodDefaultImpl := defaultImplementation
 		
-		// Treat special functions
+		// Omit special functions that are automatically implemented
 		isSpecialFunction, err := CheckHeaderSpecialFunction(method, component.Global);
 		if err != nil {
 			return err
@@ -719,8 +743,9 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 		method := global.Methods[j]
 		procName := strings.ToLower(method.MethodName)
 
-		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));		
+		processfuncMap = append (processfuncMap, fmt.Sprintf("%s_%s", strings.ToLower(NameSpace), procName));
 	}
+	
 
 	w.Writeln("if (pProcName == nullptr)")		
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
@@ -850,7 +875,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		method := global.Methods[j]
 				
 		// Check for special functions
-		isSpecialFunction, err := CheckHeaderSpecialFunction (method, global);
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
 		if err != nil {
 			return err
 		}
@@ -1701,7 +1726,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					theWrapper := "C" + ClassIdentifier + "Wrapper::sP" + paramNameSpace + "Wrapper"
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(%s.get());", theWrapper, acqurireMethod, outVarName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->GetHandle();", variableName, outVarName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = %s->handle();", variableName, outVarName));
 					callParameters = callParameters + outVarName
 					outCallParameters = outCallParameters + outVarName
 				} else {
@@ -1767,7 +1792,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					acqurireMethod := component.ImportedComponentDefinitions[paramNameSpace].Global.AcquireMethod
 					returnVariable = fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
 					postCallCode = append(postCallCode, fmt.Sprintf("%s->%s(p%s%s.get());", theWrapper, acqurireMethod, paramNameSpace, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->GetHandle();", variableName, paramNameSpace, param.ParamName));
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = p%s%s->handle();", variableName, paramNameSpace, param.ParamName));
 				} else {
 					preCallCode = append(preCallCode, fmt.Sprintf("%s* pBase%s(nullptr);", IBaseClassName, param.ParamName))
 					returnVariable = fmt.Sprintf("pBase%s", param.ParamName)

@@ -41,6 +41,7 @@ import (
 	"bytes"
 	"os"
 	"strconv"
+	"sort"
 )
 
 type JavaParameter struct {
@@ -68,7 +69,7 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 	if err != nil {
 		return err;
 	}
-	
+
 	JavaWrapperName := namespace + "Wrapper";
 	JavaWrapperPath := path.Join(JavaFolder, JavaWrapperName + ".java");
 	log.Printf("Creating \"%s\"", JavaWrapperPath)
@@ -173,15 +174,20 @@ func BuildBindingJavaDynamic(component ComponentDefinition, outputFolder string,
 
 		JavaBuildName := "build.sh";
 		JavaBuildPath := path.Join(outputFolderExample, JavaBuildName);
-		log.Printf("Creating \"%s\"", JavaBuildPath)
-		JavaWrapperFile, err2 := CreateLanguageFile (JavaBuildPath, indent)
-		if err2 != nil {
-			return err2;
+		if (forceRecreation || !FileExists(JavaBuildPath)) {
+			log.Printf("Creating \"%s\"", JavaBuildPath)
+			JavaWrapperFile, err2 := CreateLanguageFile (JavaBuildPath, indent)
+			if err2 != nil {
+				return err2;
+			}
+			err = buildJavaBuildExampleScript(component, JavaWrapperFile, version)
+			if err != nil {
+				return err;
+			}
+		} else {
+			log.Printf("Omitting recreation of Java example build file\"%s\"", JavaBuildPath)
 		}
-		err = buildJavaBuildExampleScript(component, JavaWrapperFile, version)
-		if err != nil {
-			return err;
-		}
+
 	}
 
 	return nil;
@@ -263,6 +269,9 @@ func buildJavaBuildExampleScript(component ComponentDefinition, w LanguageWriter
 	}
 
 	w.Writeln("#!/bin/bash")
+	w.Writeln("set -euxo pipefail")
+	w.Writeln("")
+	w.Writeln("cd \"$(dirname \"$0\")\"")
 	w.Writeln("")
 	w.Writeln("JnaJar=\"jna-5.5.0.jar\"")
 	w.Writeln("Classpath=\".:${JnaJar}:../../Bindings/Java%d/\"", version)
@@ -282,15 +291,15 @@ func buildJavaBuildExampleScript(component ComponentDefinition, w LanguageWriter
 	w.Writeln("fi")
 	w.Writeln("")
 	w.Writeln("echo \"Download JNA\"")
-	w.Writeln("wget https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
+	w.Writeln("[ -f jna-5.5.0.jar ] || curl -O https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
 	w.Writeln("")
 	w.Writeln("echo \"Compile Java bindings\"")
-	w.Writeln("javac -classpath \"${JnaJar}\" %s", imports)
+	w.Writeln("javac -encoding UTF8 -classpath \"${JnaJar}\" %s", imports)
 	w.Writeln("echo \"Compile Java example\"")
-	w.Writeln("javac -classpath $Classpath %s_Example.java", component.NameSpace)
+	w.Writeln("javac -encoding UTF8 -classpath $Classpath %s_Example.java", component.NameSpace)
 	w.Writeln("")
 	w.Writeln("echo \"Execute example\"")
-	w.Writeln("java -classpath $Classpath %s_Example", component.NameSpace)
+	w.Writeln("java -ea -classpath $Classpath %s_Example", component.NameSpace)
 	return nil;
 }
 
@@ -302,9 +311,11 @@ func buildJavaBuildScript(component ComponentDefinition, w LanguageWriter) error
 	}
 
 	w.Writeln("#!/bin/bash")
+	w.Writeln("set -euxo pipefail")
 	w.Writeln("")
+	w.Writeln("cd \"$(dirname \"$0\")\"")
 	w.Writeln("echo \"Download JNA\"")
-	w.Writeln("wget https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
+	w.Writeln("[ -f jna-5.5.0.jar ] || curl -O https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar")
 	w.Writeln("")
 	w.Writeln("echo \"Compile Java Bindings\"")
 	w.Writeln("javac -classpath *.jar " + imports)
@@ -757,10 +768,10 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 					resultCommands = append(resultCommands, fmt.Sprintf("  throw new %sException(%sException.%s_ERROR_INVALIDPARAM, \"%s was a null pointer\");", 
 							NameSpace, NameSpace, strings.ToUpper(NameSpace), param.ParamName))
 					resultCommands = append(resultCommands, "}")
-					resultCommands = append(resultCommands, fmt.Sprintf("%s = new %s(%s, value%s);", MakeFirstLowerCase(param.ParamName), theParamClass, theWrapperInstance, param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("%s = %s.PolymorphicFactory(value%s, %s.class);", MakeFirstLowerCase(param.ParamName), theWrapperInstance, param.ParamName, theParamClass))
 				} else {
 					resultCommands = append(resultCommands, fmt.Sprintf("if (value%s != Pointer.NULL) {", param.ParamName))
-					resultCommands = append(resultCommands, fmt.Sprintf("  %s = new %s(%s, value%s);", MakeFirstLowerCase(param.ParamName), theParamClass, theWrapperInstance, param.ParamName))
+					resultCommands = append(resultCommands, fmt.Sprintf("  %s = %s.PolymorphicFactory(value%s, %s.class);", MakeFirstLowerCase(param.ParamName), theWrapperInstance, param.ParamName, theParamClass))
 					resultCommands = append(resultCommands, "}")
 				}
 				ReturnItem.ParamValue = fmt.Sprintf("%s;", MakeFirstLowerCase(param.ParamName))
@@ -1181,6 +1192,79 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 		}
 	}
 
+	// Write PolymorphicFactory
+	w.Writeln("  /**")
+	w.Writeln("   * IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("   *            It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("   *            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("   *            %sWrapper::acquireInstance(%s object) must be called after instantiating new object.", NameSpace, component.Global.BaseClassName)
+	w.Writeln("   *            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("  */")
+	w.Writeln("  public <T> T PolymorphicFactory(Pointer handle, Class<T> cls) {")
+	w.Writeln("    if (handle == Pointer.NULL)")
+	w.Writeln("  	 return null;")
+
+	w.Writeln("  	 Class[] cArg = new Class[2];")
+	w.Writeln("  	 cArg[0] = %sWrapper.class;", NameSpace)
+	w.Writeln("  	 cArg[1] = Pointer.class;")
+	w.Writeln("      ")
+	w.Writeln("      try {")
+	w.Writeln("  	   T obj = null;")
+	w.Writeln("  	   Pointer bufferClassTypeId = new Memory(8);");
+	w.Writeln("  	   checkError(null, %s_%s_%s.invokeInt(new java.lang.Object[]{handle, bufferClassTypeId}));", strings.ToLower(NameSpace), strings.ToLower(component.Global.BaseClassName), strings.ToLower(component.Global.ClassTypeIdMethod));
+	w.Writeln("  	   long classTypeId = bufferClassTypeId.getLong(0);")
+
+	w.Writeln("  	   ")
+	w.Writeln("  	   int msbId = (int)(classTypeId >> 32); ")
+	w.Writeln("  	   int lsbId = (int)classTypeId; ")
+
+	msbIds := make(map[uint32][]ComponentDefinitionClass)
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classTypeId, _ := class.classTypeId(NameSpace)
+		msb := uint32((classTypeId >> 32) & 0xFFFFFFFF)
+		msbIds[msb] = append(msbIds[msb], class)
+	}
+
+    // Sork Ids so change to binding file is always human readable
+    msbKeys := make([]uint32, len(msbIds))
+    i := 0
+    for k := range msbIds {
+        msbKeys[i] = k
+        i++
+    }
+	sort.Slice(msbKeys, func(i, j int) bool { return msbKeys[i] < msbKeys[j] })
+
+	w.Writeln("      switch(msbId) {")
+	// for id, classes := range msbIds {
+	for _, id := range msbKeys {
+		classes := msbIds[id]
+		// Sork Ids so change to binding file is always human readable
+		sort.Slice(classes, func(i, j int) bool { 
+			iId, _ := classes[i].classTypeId(NameSpace)
+			jId, _ := classes[j].classTypeId(NameSpace)
+			return uint32(iId & 0xFFFFFFFF) < uint32(jId & 0xFFFFFFFF)
+		})	
+		w.Writeln("        case 0x%08X: ", id)
+		w.Writeln("          switch(lsbId) {")
+		for i := 0; i < len(classes); i++ {
+			class := classes[i]
+			ClassTypeId, chashHashString := class.classTypeId(NameSpace)
+			lsbId := uint32(ClassTypeId & 0xFFFFFFFF)
+			w.Writeln("            case 0x%08X: obj = (T)(new %s(this, handle)); break; // First 64 bits of SHA1 of a string: \"%s\"", lsbId, class.ClassName, chashHashString)
+		}
+		w.Writeln("          }")
+		w.Writeln("        break;")
+	}
+	w.Writeln("        default: obj = cls.getDeclaredConstructor(cArg).newInstance(this, handle); break;")
+	w.Writeln("      }")
+
+	w.Writeln("  		return obj;")
+	w.Writeln("  	}")
+	w.Writeln("  	catch(Exception e) {")
+	w.Writeln("  		return null;")
+	w.Writeln("  	}")
+	w.Writeln("  }")
 	w.Writeln("}")
 	w.Writeln("")
 

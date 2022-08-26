@@ -533,6 +533,7 @@ func buildGoWrapper(component ComponentDefinition, w LanguageWriter) error {
 	w.Writeln("package %s", packageName)
 	w.Writeln("")
 	w.Writeln("/*")
+	w.Writeln("#cgo linux LDFLAGS: -ldl")
 	w.Writeln("#include \"%s_dynamic.cc\"", packageName)
 	w.Writeln("")
 	w.Writeln("%sHandle load%sLibrary (const char * pFileName)", component.NameSpace, component.NameSpace)
@@ -727,8 +728,8 @@ func getGoType(paramType, namespace, paramClass, paramName string, isPtr bool) (
 		tp.GoToC = fmt.Sprintf("(%s)(unsafe.Pointer(&[]byte(%s)[0]))", tp.CType, paramName)
 		tp.Empty = "\"\""
 	case "pointer":
-		tp.Type = "uint64"
-		tp.CType = fmt.Sprintf("C.uint64_t")
+		tp.Type = "uintptr"
+		tp.CType = fmt.Sprintf("C.%s_pvoid", namespace)
 		tp.CToGo = fmt.Sprintf("%s(%s)", tp.Type, paramName)
 		tp.GoToC = fmt.Sprintf("(%s)(%s)", tp.CType, paramName)
 		tp.Empty = "0"
@@ -838,6 +839,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 
 	for _, param := range method.Params {
 		param.ParamName = toGoParam(param.ParamName)
+		param.ParamClass = strings.ReplaceAll(param.ParamClass, ":", "_")
 		tp, err := getGoType(param.ParamType, NameSpace, param.ParamClass, param.ParamName, false)
 		if err != nil {
 			return err
@@ -903,7 +905,7 @@ func writeGoMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace
 				initCallParameters = append(initCallParameters, callParam)
 				if param.ParamType == "optionalclass" {
 					preOKReturn = append(preOKReturn, fmt.Sprintf("var _%sPtr %s", param.ParamName, tp.Type))
-					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s == nil {", param.ParamName))
+					preOKReturn = append(preOKReturn, fmt.Sprintf("if %s != nil {", param.ParamName))
 
 					if isGlobal {
 						preOKReturn = append(preOKReturn, fmt.Sprintf("  _%sPtrVal := wrapper.New%s(%s)", param.ParamName, param.ParamClass, param.ParamName))

@@ -413,12 +413,56 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 
 	writeEnumConversionInterface(component, w, NameSpace)
 
+	w.Writeln("  T%sPolymorphicFactory<_T:class; _B> = record", NameSpace)
+	w.Writeln("    class function Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T; static;", NameSpace, NameSpace)
+	w.Writeln("  end;")
+
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		fullClassName := fmt.Sprintf("T%s%s", strings.ToUpper(NameSpace), class.ClassName)
+		w.Writeln("  function T%sPolymorphicFactoryMake%s(Wrapper: T%sWrapper; Handle: T%sHandle): %s;", NameSpace, class.ClassName, NameSpace, NameSpace, fullClassName)
+	}
+
 	w.Writeln("")
 	w.Writeln("implementation")
 	w.Writeln("")
 
 	writeEnumConversionImplementation(component, w, NameSpace)
-
+	w.Writeln("")
+	w.Writeln("(*************************************************************************************************************************")
+	w.Writeln(" PolymorficFactory implementation")
+	w.Writeln("**************************************************************************************************************************)")
+	w.Writeln("")
+	w.Writeln("  (**")
+	w.Writeln("   * IMPORTANT: PolymorphicFactory method should not be used by application directly.")
+	w.Writeln("   *            It's designed to be used on %sHandle object only once.", NameSpace)
+	w.Writeln("   *            If it's used on any existing object as a form of dynamic cast then")
+	w.Writeln("   *            T%sWrapper::AcquireInstance(object: T%s%s) must be called after instantiating new object.", strings.ToUpper(NameSpace), strings.ToUpper(NameSpace), component.Global.BaseClassName)
+	w.Writeln("   *            This is important to keep reference count matching between application and library sides.")
+	w.Writeln("  *)")
+	w.Writeln("  class function T%sPolymorphicFactory<_T, _B>.Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T;", NameSpace, NameSpace, NameSpace)
+	w.Writeln("  var")
+	w.Writeln("    ClassTypeId: QWord;")
+    w.Writeln("    Obj: T%sBase;", strings.ToUpper(NameSpace))
+	w.Writeln("  begin")
+	w.Writeln("    Result := nil;")
+	w.Writeln("    Wrapper.CheckError(nil, Wrapper.%sBase_ClassTypeIdFunc(handle, ClassTypeId));", NameSpace)
+	w.Writeln("    case (ClassTypeId) of")
+	for i := 0; i < len(component.Classes); i++ {
+		classTypeId, chashHashString := component.Classes[i].classTypeId(NameSpace)
+		w.Writeln("      QWord($%016X): begin Obj := T%s%s.Create(Wrapper, Handle); if Obj.inheritsFrom(_T) then Result := Obj as _T; end; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, strings.ToUpper(NameSpace), component.Classes[i].ClassName, chashHashString)
+	}
+	w.Writeln("    end;")
+	w.Writeln("    if Result = nil then Result := _B.Create(Wrapper, Handle);")
+	w.Writeln("  end;")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		fullClassName := fmt.Sprintf("T%s%s", strings.ToUpper(NameSpace), class.ClassName)
+		w.Writeln("  function T%sPolymorphicFactoryMake%s(Wrapper: T%sWrapper; Handle: T%sHandle): %s;", NameSpace, class.ClassName, NameSpace, NameSpace, fullClassName)
+		w.Writeln("  begin")
+		w.Writeln("    Result := T%sPolymorphicFactory<%s, %s>.Make(Wrapper, Handle);", NameSpace, fullClassName, fullClassName)
+		w.Writeln("  end;")	
+	}
 	w.Writeln("")
 	w.Writeln("(*************************************************************************************************************************")
 	w.Writeln(" Exception implementation")
@@ -675,8 +719,10 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 				implementationLines = append(implementationLines, fmt.Sprintf("  ANameSpaceFound := True;"))
 				implementationLines = append(implementationLines, fmt.Sprintf("end;"))
 			}
-			implementationLines = append(implementationLines, fmt.Sprintf("if not ANameSpaceFound then"))
-			implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
+			if len(component.ImportedComponentDefinitions) > 0 {
+				implementationLines = append(implementationLines, fmt.Sprintf("if not ANameSpaceFound then"))
+				implementationLines = append(implementationLines, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_COULDNOTLOADLIBRARY, 'Unknown namespace ' + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
+			}
 		}
 
 		err = writePascalClassMethodImplementation(method, w, NameSpace, "Wrapper", definitionLines, implementationLines, true)
@@ -864,7 +910,11 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameters = initCallParameters + "A" + param.ParamName
 
 			case "class", "optionalclass":
-				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+NameSpace+"Handle;")
+				paramNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if len(paramNameSpace) == 0 {
+					paramNameSpace = NameSpace
+				}
+				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+paramNameSpace+"Handle;")
 				initCommands = append(initCommands, fmt.Sprintf("if Assigned(A%s) then", param.ParamName))
 				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A" + param.ParamName + ".TheHandle")
 				initCommands = append(initCommands, fmt.Sprintf("else"))
@@ -1030,7 +1080,11 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCommands = append(initCommands, "H"+param.ParamName+" := nil;")
 				callFunctionParameters = callFunctionParameters + "H" + param.ParamName
 				resultCommands = append(resultCommands, fmt.Sprintf("  if Assigned(H%s) then", param.ParamName))
-				resultCommands = append(resultCommands, fmt.Sprintf("    Result := T%s%s.Create(%s, H%s);", theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
+				if NameSpace == theNameSpace {
+					resultCommands = append(resultCommands, fmt.Sprintf("    Result := T%sPolymorphicFactory<T%s%s, T%s%s>.Make(%s, H%s);", theNameSpace, theNameSpace, theParamClass, theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
+				} else {
+					resultCommands = append(resultCommands, fmt.Sprintf("    Result := T%sPolymorphicFactoryMake%s(%s, H%s);", theNameSpace, theParamClass, theWrapperInstance, param.ParamName))
+				}
 
 			default:
 				return fmt.Errorf("invalid method parameter type \"%s\" for %s.%s (%s)", param.ParamType, ClassName, method.MethodName, param.ParamName)
