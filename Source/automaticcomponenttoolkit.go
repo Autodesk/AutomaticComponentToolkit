@@ -551,6 +551,43 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 			{
 				log.Printf("Implementation in language \"%s\" is not yet supported.", implementation.Language)
 			}
+			
+		case "JS":
+			{
+
+				outputFolderImplementationProject := outputFolderImplementations + "/JS"
+				outputFolderImplementationJS := outputFolderImplementations + "/JS/Interfaces"
+				outputFolderImplementationJSStub := outputFolderImplementations + "/JS/Stub"
+
+				if (!suppressStub) {
+					if (stubDirectoryOverride != "") {
+						outputFolderImplementationJSStub = stubDirectoryOverride;
+					}
+				
+					err = os.MkdirAll(outputFolderImplementationJSStub, os.ModePerm)
+					if err != nil {
+						return err
+					}
+				}
+
+
+				if (!suppressInterfaces) {
+					if (interfacesDirectoryOverride != "") {
+						outputFolderImplementationJS = interfacesDirectoryOverride;
+					}
+					err = os.MkdirAll(outputFolderImplementationJS, os.ModePerm)
+					if err != nil {
+						return err
+					}
+					err = BuildImplementationJS(component, outputFolderImplementationJS, outputFolderImplementationJSStub,
+						outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces)
+					if err != nil {
+						return err
+					}
+					
+				}
+			} 
+			
 		default:
 			log.Fatal("Unknown export")
 		}
