@@ -442,7 +442,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		for i := 0; i < len(class.Methods); i++ {
 			method := class.Methods[i]
 						
-			lowerCaseMethodName = strings.ToLower(method.MethodName[:1]) + method.MethodName[1:];
+			lowerCaseMethodName := strings.ToLower(method.MethodName[:1]) + method.MethodName[1:];
 			
 			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", method.MethodName, class.ClassName, method.MethodName);
 			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", lowerCaseMethodName, class.ClassName, method.MethodName);
