@@ -34,13 +34,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"strings"
 	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -98,7 +98,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 		for bindingindex := 0; bindingindex < len(component.BindingList.Bindings); bindingindex++ {
 			binding := component.BindingList.Bindings[bindingindex]
 			indentString := getIndentationString(binding.Indentation)
-			log.Printf("Exporting Interface Binding for Languge \"%s\"", binding.Language)
+			log.Printf("Exporting Interface Binding for Language \"%s\"", binding.Language)
 
 			switch binding.Language {
 			case "C":
@@ -175,7 +175,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 
 					CPPTypesHeaderName := path.Join(outputFolderBindingCppDynamic, component.BaseName+"_types.hpp")
-					err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+					err = CreateCPPTypesHeader(component, CPPTypesHeaderName, false)
 					if err != nil {
 						return err
 					}
@@ -215,7 +215,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 
 					CPPTypesHeaderName := path.Join(outputFolderBindingCppImplicit, component.BaseName+"_types.hpp")
-					err = CreateCPPTypesHeader(component, CPPTypesHeaderName)
+					err = CreateCPPTypesHeader(component, CPPTypesHeaderName, false)
 					if err != nil {
 						return err
 					}
@@ -385,6 +385,61 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 				}
 
+			case "Cppwasmtime":
+				{
+					outputFolderExampleCppwasmtime := "";
+					if (!suppressExamples) {
+						outputFolderExampleCppwasmtime = outputFolderExamples + "/Cppwasmtime"
+						err = os.MkdirAll(outputFolderExampleCppwasmtime, os.ModePerm)
+						if err != nil {
+							return err
+						}
+					}
+
+					// host files
+					outputFolderBindingCppwasmtimeHost := outputFolderBindings + "/Cppwasmtime/host"
+					err = os.MkdirAll(outputFolderBindingCppwasmtimeHost, os.ModePerm)
+					if err != nil {
+						return err
+					}
+
+					CTypesHeaderNameHost := path.Join(outputFolderBindingCppwasmtimeHost, component.BaseName+"_types.h")
+					err = CreateCTypesHeader(component, CTypesHeaderNameHost)
+					if err != nil {
+						return err
+					}
+
+					err = BuildBindingCExplicit(component, outputFolderBindingCppwasmtimeHost, outputFolderExampleCppwasmtime, indentString)
+					if err != nil {
+						return err
+					}
+
+					outputFolderDocumentationCppwasmtime := "";
+					err = BuildBindingCppwasmtimeHost(component, outputFolderBindingCppwasmtimeHost, outputFolderExampleCppwasmtime,
+						outputFolderDocumentationCppwasmtime, indentString, binding.ClassIdentifier)
+					if err != nil {
+						return err
+					}
+
+					// guest files
+					outputFolderBindingCppwasmtimeGuest := outputFolderBindings + "/Cppwasmtime/guest"
+					err = os.MkdirAll(outputFolderBindingCppwasmtimeGuest, os.ModePerm)
+					if err != nil {
+						return err
+					}
+
+					CppTypesHeaderNameGuest := path.Join(outputFolderBindingCppwasmtimeGuest, component.BaseName+"_types.hpp")
+					err = CreateCPPTypesHeader(component, CppTypesHeaderNameGuest, true)
+					if err != nil {
+						return err
+					}
+
+					err = BuildBindingCppwasmtimeGuest(component, outputFolderBindingCppwasmtimeGuest, outputFolderExampleCppwasmtime,
+					 	outputFolderDocumentationCppwasmtime, indentString, binding.ClassIdentifier)
+
+					// TODO: example + documentation
+				}
+
 			case "Fortran":
 				{
 					log.Printf("Interface binding for language \"%s\" is not yet supported.", binding.Language)
@@ -438,7 +493,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 
 					CTypesHeaderName := path.Join(outputFolderImplementationCpp, component.BaseName+"_types.hpp")
-					err = CreateCPPTypesHeader(component, CTypesHeaderName)
+					err = CreateCPPTypesHeader(component, CTypesHeaderName, false)
 					if err != nil {
 						return err
 					}
