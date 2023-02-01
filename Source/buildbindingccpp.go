@@ -1883,6 +1883,9 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 		if !cParamIsPointer(cParam) {
 			pointerString = "*"
 		}
+		// ensure memory access does not go outside of WASM linear memory
+		lines = append(lines, fmt.Sprintf("if (w%s + sizeof(%s) >= nMemorySize)", cParam.ParamName, cParam.ParamType))
+		lines = append(lines, fmt.Sprintf("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace)))
 		lines = append(lines, fmt.Sprintf("%s %s = %s( (%s %s)(_pData + w%s) );" , cParam.ParamType, cParam.ParamName, pointerString, cParam.ParamType, pointerString, cParam.ParamName))
 		if cParamIsPointer(cParam) {
 			// a nullptr in the WASM module is conveyed to the host as a 0 offset in WASM linear memory
@@ -1895,9 +1898,9 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 
 	w.Writeln("  auto %s = [this, &store](%s)", methodName, wasmtimeParams)
 	w.Writeln("  {")
-	w.Writeln("    ")
 	w.Writeln("    auto data = this->m_pMemory->data(store);")
 	w.Writeln("    uint8_t* _pData = data.data();")
+	w.Writeln("    const uint64_t nMemorySize = this->m_pMemory->size(store);")
 	w.Writeln("    ")
 	
 	w.Writelns("    ", lines)
@@ -1943,7 +1946,7 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 	}
 	w.Writeln("")
 
-	w.Writeln("namespace %s {", NameSpace)
+	w.Writeln("namespace %sWASM {", NameSpace)
 	w.Writeln("")
 
 	w.Writeln("/*************************************************************************************************************************")
