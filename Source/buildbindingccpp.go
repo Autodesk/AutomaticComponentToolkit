@@ -1900,7 +1900,7 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 	w.Writeln("  {")
 	w.Writeln("    auto data = this->m_pMemory->data(store);")
 	w.Writeln("    uint8_t* _pData = data.data();")
-	w.Writeln("    const uint64_t nMemorySize = this->m_pMemory->size(store);")
+	w.Writeln("    const uint64_t nMemorySize = data.size();")
 	w.Writeln("    ")
 	
 	w.Writelns("    ", lines)
