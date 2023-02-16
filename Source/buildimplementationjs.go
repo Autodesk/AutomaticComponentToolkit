@@ -523,6 +523,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 					cppParamType := "";
 					argumentMethodCallType := "";
 					argumentDefault := "";
+					cppReturnValueCast := "";
 				
 					switch (param.ParamType) {
 						case "uint8":
@@ -585,6 +586,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 							cppParamType = subComponent.NameSpace + "::e" + param.ParamClass;
 							argumentMethodCallType = "Int32";
 							argumentDefault = "(" + subComponent.NameSpace + "::e" + param.ParamClass + ") 0";
+							cppReturnValueCast = "(" + subComponent.NameSpace + "::e" + param.ParamClass + ")"
 						default:
 							return errors.New ("Invalid parameter type: " + param.ParamType);
 
@@ -607,7 +609,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 							cppw.Writeln("    %s::%s object%s = v8instance->get%sArgument (isolate, args, %d);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType, k);
 							cppw.Writeln("    %s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType, param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName);
 						} else {
-							cppw.Writeln("    %s param%s = v8instance->get%sArgument (isolate, args, %d);", cppParamType, param.ParamName, argumentMethodCallType, k);
+							cppw.Writeln("    %s param%s = %sv8instance->get%sArgument (isolate, args, %d);", cppParamType, param.ParamName, cppReturnValueCast, argumentMethodCallType, k);
 						}
 					}
 					
