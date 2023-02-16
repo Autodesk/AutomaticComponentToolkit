@@ -35,8 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"log"
 	"path"
 	"strings"
@@ -254,6 +254,15 @@ func buildJSTypesFiles(component ComponentDefinition, NameSpace string, NameSpac
 		}
 		classdefinitionw.Writeln("    }")
 		classdefinitionw.Writeln("")
+		
+		
+		classdefinitionw.AddIndentationLevel(2);
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			writeMapClassIdtoInjectionClassTypeFunction(classdefinitionw, subComponent, subComponent.NameSpace)
+			classdefinitionw.Writeln("")
+		}
+		classdefinitionw.AddIndentationLevel(-2);
+
 		classdefinitionw.Writeln("  }")
 		classdefinitionw.Writeln("}")
 		classdefinitionw.Writeln("")
@@ -350,6 +359,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		cppw.Writeln ("");
 		cppw.Writeln ("#include \"%s_v8utils.hpp\"", component.BaseName);
 		cppw.Writeln ("#include \"%s_v8objectcreator.hpp\"", component.BaseName);
+		cppw.Writeln ("#include \"%s%s_v8classes.hpp\"", component.BaseName, stubIdentifier);
 		cppw.Writeln("");
 		cppw.Writeln("");
 		
@@ -616,9 +626,11 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 						returnValueCall = "set" + argumentMethodCallType + "ReturnValue";
 						
 						if (param.ParamType == "class") {
-							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, eInjectionClassType::e_v8%s_%s)", param.ParamName, subComponent.NameSpace, param.ParamClass);
+							cppw.Writeln("    eInjectionClassType e%sClassType = %s_MapClassIdToInjectionClassType(param%s->%s());", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
+							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, e%sClassType)", param.ParamName, param.ParamName);
 						} else if (param.ParamType == "optionalclass") {
-							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, eInjectionClassType::e_v8%s_%s)", param.ParamName, subComponent.NameSpace, param.ParamClass);
+							cppw.Writeln("    eInjectionClassType e%sClassType = %s_MapClassIdToInjectionClassType(param%s->%s());", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
+							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, e%sClassType)", param.ParamName, param.ParamName);
 						} else if (param.ParamType == "enum") {
 							returnValueParameter = "(uint32_t) param" + param.ParamName;
 						} else {
@@ -648,5 +660,22 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		cppw.Writeln("")
 
 	return nil;		
+}
+
+
+func writeMapClassIdtoInjectionClassTypeFunction(w LanguageWriter, component ComponentDefinition, NameSpace string) {
+	w.Writeln("")
+	w.Writeln("inline eInjectionClassType %s_MapClassIdToInjectionClassType(uint64_t nClassTypeId)", NameSpace)
+	w.Writeln("{")
+	w.Writeln("  switch(nClassTypeId) {")
+	for i := 0; i < len(component.Classes); i++ {
+		class := component.Classes[i]
+		classTypeId, chashHashString := class.classTypeId(NameSpace)
+		w.Writeln("    case 0x%016XUL: return eInjectionClassType::e_v8%s_%s; break; // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, NameSpace, class.ClassName, chashHashString)
+	}
+	w.Writeln("  }")
+
+	w.Writeln("  return eInjectionClassType::e_Injection_Invalid;")
+	w.Writeln("}")
 }
 
