@@ -628,11 +628,9 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 						returnValueCall = "set" + argumentMethodCallType + "ReturnValue";
 						
 						if (param.ParamType == "class") {
-							cppw.Writeln("    eInjectionClassType e%sClassType = %s_MapClassIdToInjectionClassType(param%s->%s());", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
-							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, e%sClassType)", param.ParamName, param.ParamName);
+							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
 						} else if (param.ParamType == "optionalclass") {
-							cppw.Writeln("    eInjectionClassType e%sClassType = %s_MapClassIdToInjectionClassType(param%s->%s());", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
-							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, e%sClassType)", param.ParamName, param.ParamName);
+							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
 						} else if (param.ParamType == "enum") {
 							returnValueParameter = "(uint32_t) param" + param.ParamName;
 						} else {
