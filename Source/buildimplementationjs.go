@@ -601,7 +601,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 							argumentString = argumentString + ", ";							
 						}
 						argumentString = argumentString + "param" + param.ParamName;
-					
+						
 						if (param.ParamType == "class") {
 							cppw.Writeln("    %s::%s object%s = v8instance->get%sArgument (isolate, args, %d);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType, k);
 							cppw.Writeln("    %s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType, param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName);
@@ -630,7 +630,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 						if (param.ParamType == "class") {
 							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
 						} else if (param.ParamType == "optionalclass") {
-							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
+							returnValueParameter = fmt.Sprintf ("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
 						} else if (param.ParamType == "enum") {
 							returnValueParameter = "(uint32_t) param" + param.ParamName;
 						} else {
@@ -642,7 +642,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 				
 			cppw.Writeln("    %sinstancePtr->%s (%s);", resultString, method.MethodName, argumentString);
 			if (returnValueCall != "") {
-				cppw.Writeln("    %s (isolate, args, %s);", returnValueCall, returnValueParameter);
+				cppw.Writeln("    %s(isolate, args, %s);", returnValueCall, returnValueParameter);
 			}
 			cppw.Writeln("    ");
 			cppw.Writeln("");
