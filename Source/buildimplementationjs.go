@@ -514,9 +514,20 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 			argumentString := "";
 			returnValueCall := "";
 			returnValueParameter := "";
+			cppArrayClass := "";
 			
 			baseClassName := "P" + component.Global.BaseClassName;
 			
+			outOrResultParameterCount := 0;
+			
+			for k := 0; k < len(method.Params); k++ {
+				param := method.Params[k];
+				if ((param.ParamPass == "out") || (param.ParamPass == "return")) {
+					outOrResultParameterCount = outOrResultParameterCount + 1;
+				}
+			}
+
+
 			for k := 0; k < len(method.Params); k++ {
 				param := method.Params[k];
 				
@@ -587,11 +598,50 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 							argumentMethodCallType = "Int32";
 							argumentDefault = "(" + subComponent.NameSpace + "::e" + param.ParamClass + ") 0";
 							cppReturnValueCast = "(" + subComponent.NameSpace + "::e" + param.ParamClass + ")"
+						case "basicarray":
+							switch (param.ParamClass) {
+							case "uint8":
+								argumentMethodCallType = "Uint8Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "uint16":
+								argumentMethodCallType = "Uint16Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "uint32":
+								argumentMethodCallType = "Uint32Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "uint64":
+								argumentMethodCallType = "Uint64Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "int8":
+								argumentMethodCallType = "Int8Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "int16":
+								argumentMethodCallType = "Int16Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "int32":
+								argumentMethodCallType = "Int32Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "int64":
+								argumentMethodCallType = "Int64Array";
+								cppArrayClass = param.ParamClass + "_t";
+							case "single":
+								argumentMethodCallType = "FloatArray";
+								cppArrayClass = "float";
+							case "double":
+								argumentMethodCallType = "DoubleArray";
+								cppArrayClass = "double";
+							case "bool":
+								argumentMethodCallType = "BoolArray";
+								cppArrayClass = "uint8_t";
+							default:
+								return errors.New ("Invalid array class: " + param.ParamClass);
+							}
+						
+						
 						default:
 							return errors.New ("Invalid parameter type: " + param.ParamType);
 
-/*						case "basicarray":
-						case "structarray":
+/*						case "structarray":
 						case "struct":
 						case "functiontype": */
 					}
@@ -608,6 +658,9 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 						} else if (param.ParamType == "optionalclass") {
 							cppw.Writeln("    %s::%s object%s = v8instance->get%sArgument (isolate, args, %d);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType, k);
 							cppw.Writeln("    %s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType, param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName);
+						} else if (param.ParamType == "basicarray") {
+							cppw.Writeln("    std::vector<%s> param%s;", cppArrayClass, param.ParamName);
+							cppw.Writeln("    v8instance->get%sArgument (isolate, args, param%s, %d);", argumentMethodCallType, param.ParamName, k);
 						} else {
 							cppw.Writeln("    %s param%s = %sv8instance->get%sArgument (isolate, args, %d);", cppParamType, param.ParamName, cppReturnValueCast, argumentMethodCallType, k);
 						}
@@ -619,11 +672,33 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 						}
 						argumentString = argumentString + "param" + param.ParamName;
 						
-						cppw.Writeln("    %s param%s = %s;", cppParamType, param.ParamName, argumentDefault);
+						if (param.ParamType == "basicarray") {
+							cppw.Writeln("    std::vector<%s> param%s;", cppArrayClass, param.ParamName);
+						} else {
+							cppw.Writeln("    %s param%s = %s;", cppParamType, param.ParamName, argumentDefault);
+						}
+						
+						returnValueCall = "set" + argumentMethodCallType + "ReturnValue";
+						
+						if (param.ParamType == "class") {
+							returnValueParameter = fmt.Sprintf ("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
+						} else if (param.ParamType == "optionalclass") {
+							returnValueParameter = fmt.Sprintf ("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod);
+						} else if (param.ParamType == "enum") {
+							returnValueParameter = "(uint32_t) param" + param.ParamName;
+						} else {
+							returnValueParameter = "param" + param.ParamName;
+						}
+						
 					}
 
 					if (param.ParamPass == "return") {
-						cppw.Writeln("    %s param%s = %s;", cppParamType, param.ParamName, argumentDefault);						
+
+						if (param.ParamType == "basicarray") {
+							cppw.Writeln("    std::vector<%s> param%s;", cppArrayClass, param.ParamName);
+						} else {
+							cppw.Writeln("    %s param%s = %s;", cppParamType, param.ParamName, argumentDefault);						
+						}
 						resultString = "param" + param.ParamName + " = ";
 						returnValueCall = "set" + argumentMethodCallType + "ReturnValue";
 						
