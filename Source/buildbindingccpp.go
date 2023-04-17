@@ -838,7 +838,20 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				}
 
 			case "basicarray":
-				return fmt.Errorf("can not return basicarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				requiresInitCall = true
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s %s;", returntype, variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsNeeded%s = 0;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsWritten%s = 0;", NameSpace, param.ParamName))
+
+				if (forWASM) {
+					initCallParameter = fmt.Sprintf("%s&elementsWritten%s, %s&elementsNeeded%s, 0", WASMCast, param.ParamName, WASMCast, param.ParamName)
+				} else {
+					initCallParameter = fmt.Sprintf("0, &elementsNeeded%s, nullptr", param.ParamName)
+				}
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%s.resize((size_t) elementsNeeded%s);", variableName, param.ParamName))
+				callParameter = fmt.Sprintf("%selementsNeeded%s, %s&elementsWritten%s, %s%s.data()", WASMCastp, param.ParamName, WASMCast, param.ParamName, WASMCast, variableName)
+
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return %s;", variableName))
 
 			case "structarray":
 				return fmt.Errorf("can not return structarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)

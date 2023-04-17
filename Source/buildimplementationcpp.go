@@ -1526,6 +1526,15 @@ func buildCPPInterfaceMethodDeclaration(method ComponentDefinitionMethod, classN
 					returntype = fmt.Sprintf("I%s%s *", ClassIdentifier, param.ParamClass)
 				}
 
+			case "basicarray":
+				cppParamType := getCppParamType(param, NameSpace, false)
+				
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[in] n%sBufferSize - Number of elements in buffer\n", param.ParamName)
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sNeededCount - will be filled with the count of the written structs, or needed buffer size.\n", param.ParamName)
+				commentcode = commentcode + fmt.Sprintf(indentString + "* @param[out] p%sBuffer - %s buffer of %s\n", param.ParamName, param.ParamClass, param.ParamDescription)
+				parameters = parameters + fmt.Sprintf("%s_uint64 n%sBufferSize, %s_uint64* p%sNeededCount, %s p%sBuffer", NameSpace, param.ParamName, NameSpace, param.ParamName, cppParamType, param.ParamName)
+
+			
 			default:
 				return "", "", fmt.Errorf("invalid method parameter type \"%s\" for %s.%s(%s)", param.ParamType, className, method.MethodName, param.ParamName)
 			}
@@ -1762,6 +1771,11 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 
 				returnVariable = fmt.Sprintf("*p%s", param.ParamName)
 				outCallParameters = outCallParameters + returnVariable;
+
+			case "basicarray":
+				checkInputCode = append(checkInputCode, fmt.Sprintf("if ((!p%sBuffer) && !(p%sNeededCount))", param.ParamName, param.ParamName))
+				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
+				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, p%sNeededCount, ", param.ParamName, param.ParamName) + variableName
 
 			case "string":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && !(p%sNeededChars) )", param.ParamName, param.ParamName))
