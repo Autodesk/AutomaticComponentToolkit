@@ -558,6 +558,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				outputFolderImplementationProject := outputFolderImplementations + "/JS"
 				outputFolderImplementationJS := outputFolderImplementations + "/JS/Interfaces"
 				outputFolderImplementationJSStub := outputFolderImplementations + "/JS/Stub"
+				outputFolderImplementationJSDocumentation := outputFolderImplementations + "/JS/Documentation"
 
 				if (!suppressStub) {
 					if (stubDirectoryOverride != "") {
@@ -579,8 +580,14 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					if err != nil {
 						return err
 					}
+					
+					err = os.MkdirAll(outputFolderImplementationJSDocumentation, os.ModePerm)
+					if err != nil {
+						return err
+					}
+					
 					err = BuildImplementationJS(component, outputFolderImplementationJS, outputFolderImplementationJSStub,
-						outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces)
+						outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces, outputFolderImplementationJSDocumentation)
 					if err != nil {
 						return err
 					}
