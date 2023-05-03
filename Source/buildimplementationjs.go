@@ -341,6 +341,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		headerw.Writeln("           static %s::P%s getInstance(const v8::FunctionCallbackInfo<v8::Value>& args);", subComponent.NameSpace, class.ClassName);
 		headerw.Writeln("");	
 		headerw.Writeln("           /* V8 Registration commands */");
+		headerw.Writeln("           static void internalV8RegisterMethods(v8::Local<v8::FunctionTemplate> localClassTemplate, std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> target);");
 		headerw.Writeln("           static void internalV8Register(std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> target);");
 		headerw.Writeln("           static void internalV8New(const v8::FunctionCallbackInfo<v8::Value>& args);");
 		headerw.Writeln("");	
@@ -421,11 +422,11 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		
 		cppw.Writeln("%s::P%s Cv8%s::getInstance(const v8::FunctionCallbackInfo<v8::Value>& args)", subComponent.NameSpace, class.ClassName, class.ClassName); 
 		cppw.Writeln("{");
-		cppw.Writeln("  auto objectWrapper = Cv8%s::Unwrap<Cv8%s>(args.Holder());", class.ClassName, class.ClassName);
+		cppw.Writeln("  auto objectWrapper = UnwrapBase(args.Holder());");
 		cppw.Writeln("  if (objectWrapper == nullptr)");
 		cppw.Writeln("    throw std::runtime_error (\"could not get %s instance wrapper.\");", class.ClassName);
 		cppw.Writeln("");
-		cppw.Writeln("  auto pInstance = objectWrapper->m_pObjectInstance;");
+		cppw.Writeln("  auto pInstance = objectWrapper->getObjectInstance ();");
 		cppw.Writeln("  if (pInstance.get () == nullptr)");
 		cppw.Writeln("    throw std::runtime_error (\"could not get %s instance.\");", class.ClassName);
 		cppw.Writeln("");
@@ -447,30 +448,40 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		cppw.Writeln("}");
 		cppw.Writeln("");
 	
-		cppw.Writeln("void Cv8%s::internalV8Register(std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> target)", class.ClassName);
-		cppw.Writeln("{");
-		cppw.Writeln("  v8::Isolate* isolate = v8::Isolate::GetCurrent();");
-		cppw.Writeln("  if (isolate == nullptr)");
-		cppw.Writeln("    return;");
-		cppw.Writeln("");
-		cppw.Writeln("  // Create class template");
-		cppw.Writeln("  v8::HandleScope handle_scope(isolate);");
-		cppw.Writeln("");
-		cppw.Writeln("  v8::Local<v8::FunctionTemplate> localClassTemplate = createClassTemplate (isolate, \"%s\", Cv8%s::internalV8New);", class.ClassName, class.ClassName);
-		cppw.Writeln("");
-		cppw.Writeln("  // Add functions to prototype object");		
+		cppw.Writeln("void Cv8%s::internalV8Register(std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> target)", class.ClassName)
+		cppw.Writeln("{")
+		cppw.Writeln("  v8::Isolate* isolate = v8::Isolate::GetCurrent();")
+		cppw.Writeln("  if (isolate == nullptr)")
+		cppw.Writeln("    return;")
+		cppw.Writeln("")
+		cppw.Writeln("  // Create class template")
+		cppw.Writeln("  v8::HandleScope handle_scope(isolate);")
+		cppw.Writeln("")
+		cppw.Writeln("  v8::Local<v8::FunctionTemplate> localClassTemplate = createClassTemplate (isolate, \"%s\", Cv8%s::internalV8New);", class.ClassName, class.ClassName)
+		cppw.Writeln("")
+		cppw.Writeln("	Cv8%s::internalV8RegisterMethods(localClassTemplate, pObjectCreator, target);", class.ClassName)
+		cppw.Writeln("")
+		cppw.Writeln("  pObjectCreator->setTemplate(getClassType(), localClassTemplate);")
+		cppw.Writeln("}")
+		cppw.Writeln("")
+		cppw.Writeln("void Cv8%s::internalV8RegisterMethods(v8::Local<v8::FunctionTemplate> localClassTemplate,", class.ClassName)
+		cppw.Writeln("	std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> target)")
+		cppw.Writeln("{")
+		if (class.ParentClass != "") && (class.ClassName != "Base") {
+			cppw.Writeln("	Cv8%s::internalV8RegisterMethods(localClassTemplate, pObjectCreator, target);", class.ParentClass)
+		}
+		cppw.Writeln("  // Add functions to prototype object")
 		for i := 0; i < len(class.Methods); i++ {
 			method := class.Methods[i]
-						
-			lowerCaseMethodName := strings.ToLower(method.MethodName[:1]) + method.MethodName[1:];
-			
-			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", method.MethodName, class.ClassName, method.MethodName);
-			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", lowerCaseMethodName, class.ClassName, method.MethodName);
+
+			lowerCaseMethodName := strings.ToLower(method.MethodName[:1]) + method.MethodName[1:]
+
+			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", method.MethodName, class.ClassName, method.MethodName)
+			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", lowerCaseMethodName, class.ClassName, method.MethodName)
 		}
-		cppw.Writeln("");
-		cppw.Writeln("  pObjectCreator->setTemplate(getClassType(), localClassTemplate);");
-		cppw.Writeln("}");
-		cppw.Writeln("");
+		cppw.Writeln("")
+		cppw.Writeln("}")		
+		
 
 		cppw.Writeln("void Cv8%s::internalV8New(const v8::FunctionCallbackInfo<v8::Value>& args)", class.ClassName);
 		cppw.Writeln("{");
@@ -511,7 +522,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 			cppw.Writeln("");
 			cppw.Writeln("    auto instancePtr = getInstance(args);");
 			cppw.Writeln("");
-			cppw.Writeln("    auto v8instance = Cv8%s::Unwrap<Cv8%s>(args.Holder());", class.ClassName, class.ClassName);
+			cppw.Writeln("    auto v8instance = UnwrapBase(args.Holder());");
 			cppw.Writeln("    if (v8instance == nullptr)");
 			cppw.Writeln("      throw std::runtime_error(\"could not get %s instance.\");", class.ClassName);
 			cppw.Writeln("");
