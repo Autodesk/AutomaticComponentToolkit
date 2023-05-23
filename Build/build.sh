@@ -6,7 +6,7 @@ startingpath="$(pwd)"
 basepath="$(cd "$(dirname "$0")" && pwd)"
 cd "$basepath/../Source"
 
-Sources="actutils.go automaticcomponenttoolkit.go buildbindingccpp.go buildbindingccppdocumentation.go buildbindingcsharp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildbindingjava.go buildimplementationcpp.go buildimplementationpascal.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagecpp.go languagepascal.go"
+Sources="actutils.go automaticcomponenttoolkit.go buildbindingccpp.go buildbindingccppdocumentation.go buildbindingcsharp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildbindingjava.go buildimplementationcpp.go buildimplementationpascal.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagecpp.go languagepascal.go  buildimplementationjs.go"
 
 echo "Build act.win64.exe"
 export GOARCH="amd64"
