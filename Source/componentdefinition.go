@@ -439,7 +439,7 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 
 	for j := 0; j < len(options); j++ {
 		option := options[j]
-		if !nameIsValidIdentifier(option.Name) {
+		if !nameIsValidEnumOptionIdentifier(option.Name) {
 			return fmt.Errorf("invalid option name \"%s\"", option.Name)
 		}
 		if (math.Abs( float64(option.Value)) > math.Exp2(31) - 1) {
@@ -780,6 +780,14 @@ func decomposeParamClassName(paramClassName string) (string, string, error) {
 	return namespace, className, nil
 }
 
+func nameIsValidEnumOptionIdentifier(name string) bool {
+	var IsValidIdentifier = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]{0,63}$").MatchString
+	if (name != "") {
+		return IsValidIdentifier(name);
+	}
+	return false;
+}
+
 func nameIsValidIdentifier(name string) bool {
 	var IsValidIdentifier = regexp.MustCompile("^[A-Z][a-zA-Z0-9_]{0,63}$").MatchString
 	if (name != "") {
@@ -789,7 +797,7 @@ func nameIsValidIdentifier(name string) bool {
 }
 
 func descriptionIsValid(description string) bool {
-	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; |]*$").MatchString
+	var IsValidMethodDescription = regexp.MustCompile("^ *[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; |]*$").MatchString
 	if (description != "") {
 		return IsValidMethodDescription(description);
 	}
