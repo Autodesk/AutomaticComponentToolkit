@@ -196,6 +196,7 @@ func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, Nam
 	wHeader.Writeln("#define __%s_INTERFACEEXCEPTION_HEADER", strings.ToUpper(NameSpace));
 	wHeader.Writeln("");
 
+	wHeader.Writeln("#include <string>");
 	wHeader.Writeln("#include <exception>");
 	wHeader.Writeln("#include <stdexcept>");
 
@@ -969,9 +970,6 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 			theNameSpace := subComponent.NameSpace
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
 			wrapperName := "C" + ClassIdentifier + "Wrapper"
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  if (%s::sP%sWrapper.get() != nullptr) {", wrapperName, theNameSpace))
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("    throw E%sInterfaceException(%s_ERROR_COULDNOTLOADLIBRARY);", NameSpace, strings.ToUpper(NameSpace)) )
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  }"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  %s::sP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
@@ -1742,7 +1740,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s* pBase%s(nullptr);", paramClassName, param.ParamName))
 					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
 					callParameters = callParameters + "pBase" + param.ParamName
-					outCallParameters = outCallParameters + "pBase" + param.ParamName
+					outCallParameters = outCallParameters + "(IBase*&)pBase" + param.ParamName
 				}
 				
 

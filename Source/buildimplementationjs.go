@@ -252,7 +252,7 @@ func buildJSTypesFiles(component ComponentDefinition, NameSpace string, NameSpac
 		classdefinitionw.Writeln("namespace v8%s {", NameSpace );
 		classdefinitionw.Writeln("  namespace %s {", NameSpaceImplementation );
 		classdefinitionw.Writeln("")
-		classdefinitionw.Writeln("    _inline void registerInjectionClasses (std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> pTarget)", )
+		classdefinitionw.Writeln("    inline void registerInjectionClasses (std::shared_ptr<Cv8objectCreator> pObjectCreator, v8::Local<v8::Object> pTarget)", )
 		classdefinitionw.Writeln("    {")
 		for _, subComponent := range(component.ImportedComponentDefinitions) {
 		
