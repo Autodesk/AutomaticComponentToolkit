@@ -1006,7 +1006,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 				return errors.New ("String out parameter without being the string out base class: " + method.MethodName)	
 			}
 		
-			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace, BaseClassName, ClassIdentifier);
+			templateParameters, err := buildOutCacheTemplateParameters (method, NameSpace, BaseClassName + "/*here*/", ClassIdentifier);
 			if err != nil {
 				return err
 			}
