@@ -970,7 +970,9 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 			theNameSpace := subComponent.NameSpace
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s == \"%s\") {", method.Params[0].ParamName, theNameSpace))
 			wrapperName := "C" + ClassIdentifier + "Wrapper"
-			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  %s::sP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  if (%s::sP%sWrapper.get() == nullptr) {", wrapperName, theNameSpace))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("    %s::sP%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", wrapperName, theNameSpace, theNameSpace, method.Params[1].ParamName))
+			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  }"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  bNameSpaceFound = true;"))
 			callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("}"))
 		}
