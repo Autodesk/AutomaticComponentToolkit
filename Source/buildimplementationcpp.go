@@ -196,6 +196,7 @@ func buildCPPInternalException(wHeader LanguageWriter, wImpl LanguageWriter, Nam
 	wHeader.Writeln("#define __%s_INTERFACEEXCEPTION_HEADER", strings.ToUpper(NameSpace));
 	wHeader.Writeln("");
 
+	wHeader.Writeln("#include <string>");
 	wHeader.Writeln("#include <exception>");
 	wHeader.Writeln("#include <stdexcept>");
 
@@ -912,7 +913,7 @@ func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpac
 		
 			cppParamType := getCppParamType(param, NameSpace, true);
 			if param.ParamType == "class" || param.ParamType == "optionalclass" {
-				cppParamType = fmt.Sprintf("I%s%s*", ClassIdentifier, BaseClassName)
+				cppParamType = fmt.Sprintf("I%s%s*", ClassIdentifier, param.ParamClass)
 			}
 			result += cppParamType;
 		}
@@ -1727,7 +1728,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 			case "class", "optionalclass":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if (p%s == nullptr)", param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper(NameSpace)))
-
+	
 				paramNameSpace, paramClassName, _ := decomposeParamClassName(param.ParamClass)
 				if len(paramNameSpace) > 0 {
 					outVarName := fmt.Sprintf("p%s%s", paramNameSpace, param.ParamName)
@@ -1739,10 +1740,10 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					callParameters = callParameters + outVarName
 					outCallParameters = outCallParameters + outVarName
 				} else {
-					preCallCode = append(preCallCode, fmt.Sprintf("I%s* pBase%s(nullptr);", paramClassName, param.ParamName))
-					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pBase%s);", variableName, IBaseClassName, param.ParamName));
-					callParameters = callParameters + "pBase" + param.ParamName
-					outCallParameters = outCallParameters + "pBase" + param.ParamName
+					preCallCode = append(preCallCode, fmt.Sprintf("I%s* pClass%s(nullptr);", paramClassName, param.ParamName))
+					postCallCode = append(postCallCode, fmt.Sprintf("*%s = (%s*)(pClass%s);", variableName, IBaseClassName, param.ParamName));
+					callParameters = callParameters + "pClass" + param.ParamName
+					outCallParameters = fmt.Sprintf("%s pClass%s", outCallParameters, param.ParamName)
 				}
 				
 
