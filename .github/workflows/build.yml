@@ -2,7 +2,7 @@ on: [push, pull_request]
 name: Build
 jobs:
   build-linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -10,7 +10,7 @@ jobs:
       - run: ./build.sh
         working-directory: ./Build 
   build-macos:
-    runs-on: macos-10.15
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
         with:
