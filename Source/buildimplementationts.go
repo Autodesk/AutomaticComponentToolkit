@@ -112,7 +112,7 @@ func writeTypescriptEnum(
 	writer.Writeln("const enum %s {", getId(enum.Name, options))
 	writer.Indentation++
 	for _, option := range enum.Options {
-		writer.Writeln("// %s", option.Description)
+		writeCommentEnumOption(option, writer, options)
 		identifier := getId(option.Name, options)
 		value := option.Value
 		writer.Writeln("%s = %d,", identifier, value)
@@ -178,7 +178,11 @@ func writeTypescriptMethod(
 	writer.BeginLine()
 	writer.Printf("%s: (", getId(method.MethodName, options))
 	for i, param := range inParams {
-		writer.Printf("%s: %s", getId(param.ParamName, options), getType(param, options))
+		writer.Printf(
+      "%s: %s", 
+      getId(param.ParamName, options), 
+      getType(param, options),
+    )
 		if (i + 1 < len(inParams)) {
 			writer.Printf(", ")
 		}
@@ -188,7 +192,11 @@ func writeTypescriptMethod(
 	if (len(outParams) > 0) {
 		writer.Printf("[")
 		for i, param := range outParams {
-			writer.Printf("%s: %s", getId(param.ParamName, options), getType(param, options))
+			writer.Printf(
+        "%s: %s", 
+        getId(param.ParamName, options), 
+        getType(param, options),
+      )
 			if (i + 1 < len(outParams)) {
 				writer.Printf(", ")
 			}
@@ -209,7 +217,10 @@ func writeTypescriptMethod(
 	return nil;
 } 
 
-func filterPass(params []ComponentDefinitionParam, pass string) []ComponentDefinitionParam {
+func filterPass(
+  params []ComponentDefinitionParam, 
+  pass string,
+) []ComponentDefinitionParam {
 	var result []ComponentDefinitionParam;
 	for _, param := range params {
 		if (param.ParamPass == pass) {
@@ -279,6 +290,19 @@ func camelize(identifier string) string {
 	return buffer.String()
 }
 
+func writeCommentEnumOption(
+	option ComponentDefinitionEnumOption, 
+	writer LanguageWriter,
+	options TypeScriptOptions,
+) {
+	writer.Writeln("/**")
+	lines := getCommentLines(" * ", option.Description, writer, options)
+	for _, line := range lines {
+		writer.Writeln(" * " + line)
+	}
+	writer.Writeln(" */")
+}
+
 func writeCommentClass(
 	class ComponentDefinitionClass, 
 	writer LanguageWriter,
@@ -322,7 +346,8 @@ func writeCommentInParams(
 	options TypeScriptOptions,
 ) {
 	for _, param := range params {
-		prefix := " * @param {" + getType(param, options) + "} " + getId(param.ParamName, options) + " "
+		prefix := " * @param {" + getType(param, options) + "} " + 
+              getId(param.ParamName, options) + " "
 		lines := getCommentLines(prefix, param.ParamDescription, writer, options)
 		if (len(lines) > 0) {
 			writer.Writeln(prefix + lines[0])
