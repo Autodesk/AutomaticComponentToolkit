@@ -179,10 +179,10 @@ func writeTypescriptMethod(
 	writer.Printf("%s: (", getId(method.MethodName, options))
 	for i, param := range inParams {
 		writer.Printf(
-      "%s: %s", 
-      getId(param.ParamName, options), 
-      getType(param, options),
-    )
+			"%s: %s", 
+			getId(param.ParamName, options), 
+			getType(param, options),
+		)
 		if (i + 1 < len(inParams)) {
 			writer.Printf(", ")
 		}
@@ -193,10 +193,10 @@ func writeTypescriptMethod(
 		writer.Printf("[")
 		for i, param := range outParams {
 			writer.Printf(
-        "%s: %s", 
-        getId(param.ParamName, options), 
-        getType(param, options),
-      )
+				"%s: %s", 
+				getId(param.ParamName, options), 
+				getType(param, options),
+			)
 			if (i + 1 < len(outParams)) {
 				writer.Printf(", ")
 			}
@@ -218,8 +218,8 @@ func writeTypescriptMethod(
 } 
 
 func filterPass(
-  params []ComponentDefinitionParam, 
-  pass string,
+	params []ComponentDefinitionParam, 
+	pass string,
 ) []ComponentDefinitionParam {
 	var result []ComponentDefinitionParam;
 	for _, param := range params {
@@ -347,7 +347,7 @@ func writeCommentInParams(
 ) {
 	for _, param := range params {
 		prefix := " * @param {" + getType(param, options) + "} " + 
-              getId(param.ParamName, options) + " "
+							getId(param.ParamName, options) + " "
 		lines := getCommentLines(prefix, param.ParamDescription, writer, options)
 		if (len(lines) > 0) {
 			writer.Writeln(prefix + lines[0])
