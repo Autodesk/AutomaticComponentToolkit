@@ -338,9 +338,9 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		if method.Property == "get" {
+		if method.PropertyGet != "" {
 			headerw.Writeln("           static void v8%s(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& args);", method.MethodName)
-		} else if method.Property == "set" {
+		} else if method.PropertySet != "" {
 			headerw.Writeln("           static void v8%s(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& args);", method.MethodName)
 		} else {
 			headerw.Writeln("           static void v8%s(const v8::FunctionCallbackInfo<v8::Value>& args);", method.MethodName)
@@ -466,28 +466,26 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 	cppw.Writeln("  // Add functions to prototype object")
 	for i := 0; i < len(class.Methods); i++ {
 		method := class.Methods[i]
-		if method.Property == "set" {
+		if method.PropertySet != "" {
 			// Ignore setters
-		} else if method.Property == "get" {
-			propertyName := method.MethodName
+		} else if method.PropertyGet != "" {
 			readOnly := true
-			setterName := "Set" + propertyName
-			for m := 0; m < len(class.Methods); m++ {
-				setter := class.Methods[m]
-				if setter.Property == "set" && setter.MethodName == setterName {
+			var getter = &method
+			var setter *ComponentDefinitionMethod
+			for _, method := range class.Methods {
+				if method.PropertySet == getter.PropertyGet {
+					setter = &method
 					readOnly = false
+					break
 				}
 			}
 			if readOnly {
-				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s);", propertyName, class.ClassName, method.MethodName)
+				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s);", getter.PropertyGet, class.ClassName, getter.MethodName)
 			} else {
-				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s, Cv8%s::v8%s);", propertyName, class.ClassName, method.MethodName, class.ClassName, setterName)
+				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s, Cv8%s::v8%s);", setter.PropertySet, class.ClassName, getter.MethodName, class.ClassName, setter.MethodName)
 			}
 		} else {
-			//lowerCaseMethodName := strings.ToLower(method.MethodName[:1]) + method.MethodName[1:]
-
 			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", method.MethodName, class.ClassName, method.MethodName)
-			//cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", lowerCaseMethodName, class.ClassName, method.MethodName)
 		}
 	}
 	cppw.Writeln("")
@@ -522,9 +520,9 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 			}
 		}
 
-		if method.Property == "get" {
+		if method.PropertyGet != "" {
 			cppw.Writeln("void Cv8%s::v8%s(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& args)", class.ClassName, method.MethodName)
-		} else if method.Property == "set" {
+		} else if method.PropertySet != "" {
 			cppw.Writeln("void Cv8%s::v8%s(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& args)", class.ClassName, method.MethodName)
 		} else {
 			cppw.Writeln("void Cv8%s::v8%s(const v8::FunctionCallbackInfo<v8::Value>& args)", class.ClassName, method.MethodName)
@@ -533,12 +531,12 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		cppw.Writeln("  v8::Isolate* isolate = v8::Isolate::GetCurrent();")
 		cppw.Writeln("")
 		cppw.Writeln("  try {")
-		if method.Property != "set" && method.Property != "get" {
+		if method.PropertySet != "" && method.PropertyGet != "" {
 			cppw.Writeln("    checkArgumentParameters(args, %d, \"%s.%s (%s)\");", argCount, class.ClassName, method.MethodName, argString)
 			cppw.Writeln("")
 		}
 		// This is probably because I should be adding to the prototype
-		if method.Property == "set" || method.Property == "get" {
+		if method.PropertySet != "" || method.PropertyGet != "" {
 			cppw.Writeln("    auto instancePtr = getInstance(args.This());")
 			cppw.Writeln("")
 			cppw.Writeln("    auto v8instance = UnwrapBase(args.This());")
@@ -695,7 +693,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 				}
 				argumentString = argumentString + "param" + param.ParamName
 
-				if method.Property == "set" {
+				if method.PropertySet != "" {
 					if param.ParamType == "class" {
 						cppw.Writeln("    %s::%s object%s = v8instance->get%sArgument (isolate, value);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType)
 						cppw.Writeln("    %s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType, param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName)
@@ -758,7 +756,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 				}
 				resultString = "param" + param.ParamName + " = "
 				returnValueCall = ""
-				if method.Property != "set" {
+				if method.PropertySet != "" {
 					returnValueCall = "set" + argumentMethodCallType + "ReturnValue"
 				}
 
