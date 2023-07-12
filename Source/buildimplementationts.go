@@ -241,10 +241,6 @@ func writeTypescriptProperty(
   if (len(returnParams) != 1) {
     return errors.New("Property getters should have a single return value.")
   }
-  inParams := filterPass(setter.Params, "in")
-  if (len(inParams) != 1) {
-    return errors.New("Property setters should have a single input parameter")
-  }
   readOnly := "readonly "
   if (setter != nil) {
     readOnly = ""
