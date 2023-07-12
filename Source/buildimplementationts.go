@@ -39,7 +39,6 @@ import (
 	"strings"
 	"errors"
 	"unicode"
-	"bytes"
 )
 
 type TypeScriptOptions struct {
@@ -152,7 +151,12 @@ func writeTypescriptInterface(
 
 	for _, method := range class.Methods {
 		writer.Indentation++
-		err := writeTypescriptMethod(class, method, writer, options)
+    var err error
+    if (method.PropertyGet != "" || method.PropertySet != "" ) {
+      err = writeTypescriptProperty(class, method, writer, options)
+    } else {
+		  err = writeTypescriptMethod(class, method, writer, options)
+    }
 		if err != nil {
 			return err
 		}	
@@ -214,8 +218,49 @@ func writeTypescriptMethod(
 
 	writer.Printf(";")
 	writer.EndLine()
-	return nil;
+	return nil
 } 
+
+func writeTypescriptProperty(
+	class ComponentDefinitionClass, 
+	method ComponentDefinitionMethod, 
+	writer LanguageWriter, 
+	options TypeScriptOptions,
+) error {
+  if (method.PropertySet != "") {
+    // Ignore setters
+    return nil
+  }
+  getter := &method
+  var setter *ComponentDefinitionMethod
+  for _, method := range class.Methods {
+    if method.PropertySet == getter.PropertyGet {
+      setter = &method
+      continue
+    }
+  }
+  returnParams := filterPass(getter.Params, "return")
+  if (len(returnParams) != 1) {
+    return errors.New("Property getters should have a single return value.")
+  }
+  inParams := filterPass(setter.Params, "in")
+  if (len(inParams) != 1) {
+    return errors.New("Property setters should have a single input parameter")
+  }
+  readOnly := "readonly "
+  if (setter != nil) {
+    readOnly = ""
+  }
+  writer.Writeln("")
+  writeCommentProperty(class, *getter, writer, options)
+  writer.Writeln(
+    "%s%s: %s;", 
+    readOnly,
+    getId(getter.PropertyGet, options), 
+    getType(returnParams[0], options),
+  )
+  return nil
+}
 
 func filterPass(
 	params []ComponentDefinitionParam, 
@@ -272,22 +317,12 @@ func getTypeString(
 }
 
 func camelize(identifier string) string {
-	var buffer bytes.Buffer
-
-	for i, char := range identifier {
-		if i == 0 && unicode.IsUpper(char) {
-			buffer.WriteRune(unicode.ToLower(char))
-			continue
-		}
-
-		if unicode.IsUpper(char) {
-			buffer.WriteRune(unicode.ToLower(char))
-		} else {
-			buffer.WriteRune(char)
-		}
-	}
-
-	return buffer.String()
+  if len(identifier) == 0 {
+    return identifier
+  }
+  result := []rune(identifier)
+  result[0] = unicode.ToLower(result[0])
+  return string(result)
 }
 
 func writeCommentEnumOption(
@@ -336,6 +371,20 @@ func writeCommentMethod(
 		writeCommentOutParams(outParams, writer, options)
 	} else {
 		writeCommentReturnParams(returnParams, writer, options)
+	}
+	writer.Writeln(" */")
+}
+
+func writeCommentProperty(
+	class ComponentDefinitionClass,
+	method ComponentDefinitionMethod, 
+	writer LanguageWriter,
+	options TypeScriptOptions,
+) {
+	writer.Writeln("/**")
+	lines := getCommentLines(" * ", method.MethodDescription, writer, options)
+	for _, line := range lines {
+		writer.Writeln(" * " + line)
 	}
 	writer.Writeln(" */")
 }

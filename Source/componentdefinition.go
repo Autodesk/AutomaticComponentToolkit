@@ -81,6 +81,8 @@ type ComponentDefinitionMethod struct {
 	MethodDescription string `xml:"description,attr"`
 	DisableStringOutCache bool `xml:"disablestringoutcache,attr"`
 	Params   []ComponentDefinitionParam `xml:"param"`
+	PropertyGet string `xml:"propertyget,attr"`
+	PropertySet string `xml:"propertyset,attr"`
 }
 
 // ComponentDefinitionClass definition of a class provided by the component's API
