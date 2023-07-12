@@ -43,7 +43,6 @@ import (
 
 type TypeScriptOptions struct {
 	Camelize bool
-	Properties bool // Getters and setters
 	JsArrays bool
 	LineLength int
 }
@@ -59,7 +58,6 @@ func BuildImplementationTS(
 
 	options := TypeScriptOptions{
 		Camelize: false,
-		Properties: false, // Getters and setters
 		JsArrays: false,
 		LineLength: 80,
 	}
