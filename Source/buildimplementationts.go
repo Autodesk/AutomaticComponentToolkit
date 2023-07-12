@@ -149,12 +149,12 @@ func writeTypescriptInterface(
 
 	for _, method := range class.Methods {
 		writer.Indentation++
-    var err error
-    if (method.PropertyGet != "" || method.PropertySet != "" ) {
-      err = writeTypescriptProperty(class, method, writer, options)
-    } else {
-		  err = writeTypescriptMethod(class, method, writer, options)
-    }
+		var err error
+		if (method.PropertyGet != "" || method.PropertySet != "" ) {
+			err = writeTypescriptProperty(class, method, writer, options)
+		} else {
+			err = writeTypescriptMethod(class, method, writer, options)
+		}
 		if err != nil {
 			return err
 		}	
@@ -225,35 +225,35 @@ func writeTypescriptProperty(
 	writer LanguageWriter, 
 	options TypeScriptOptions,
 ) error {
-  if (method.PropertySet != "") {
-    // Ignore setters
-    return nil
-  }
-  getter := &method
-  var setter *ComponentDefinitionMethod
-  for _, method := range class.Methods {
-    if method.PropertySet == getter.PropertyGet {
-      setter = &method
-      continue
-    }
-  }
-  returnParams := filterPass(getter.Params, "return")
-  if (len(returnParams) != 1) {
-    return errors.New("Property getters should have a single return value.")
-  }
-  readOnly := "readonly "
-  if (setter != nil) {
-    readOnly = ""
-  }
-  writer.Writeln("")
-  writeCommentProperty(class, *getter, writer, options)
-  writer.Writeln(
-    "%s%s: %s;", 
-    readOnly,
-    getId(getter.PropertyGet, options), 
-    getType(returnParams[0], options),
-  )
-  return nil
+	if (method.PropertySet != "") {
+		// Ignore setters
+		return nil
+	}
+	getter := &method
+	var setter *ComponentDefinitionMethod
+	for _, method := range class.Methods {
+		if method.PropertySet == getter.PropertyGet {
+			setter = &method
+			continue
+		}
+	}
+	returnParams := filterPass(getter.Params, "return")
+	if (len(returnParams) != 1) {
+		return errors.New("Property getters should have a single return value.")
+	}
+	readOnly := "readonly "
+	if (setter != nil) {
+		readOnly = ""
+	}
+	writer.Writeln("")
+	writeCommentProperty(class, *getter, writer, options)
+	writer.Writeln(
+		"%s%s: %s;", 
+		readOnly,
+		getId(getter.PropertyGet, options), 
+		getType(returnParams[0], options),
+	)
+	return nil
 }
 
 func filterPass(
@@ -311,12 +311,12 @@ func getTypeString(
 }
 
 func camelize(identifier string) string {
-  if len(identifier) == 0 {
-    return identifier
-  }
-  result := []rune(identifier)
-  result[0] = unicode.ToLower(result[0])
-  return string(result)
+	if len(identifier) == 0 {
+		return identifier
+	}
+	result := []rune(identifier)
+	result[0] = unicode.ToLower(result[0])
+	return string(result)
 }
 
 func writeCommentEnumOption(
