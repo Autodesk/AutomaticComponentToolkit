@@ -502,20 +502,6 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
 
-		argCount := 0
-		argString := ""
-		for k := 0; k < len(method.Params); k++ {
-			param := method.Params[k]
-			if param.ParamPass != "return" {
-				if argCount != 0 {
-					argString = argString + ", "
-				}
-
-				argString = argString + param.ParamName
-				argCount = argCount + 1
-			}
-		}
-
 		if method.PropertyGet != "" {
 			cppw.Writeln("void Cv8%s::v8%s(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& args)", class.ClassName, method.MethodName)
 		} else if method.PropertySet != "" {
@@ -529,10 +515,19 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 		cppw.Writeln("  try {")
 		cppw.Indentation += 2
 
-		if method.PropertySet != "" && method.PropertyGet != "" {
-			cppw.Writeln("checkArgumentParameters(args, %d, \"%s.%s (%s)\");", argCount, class.ClassName, method.MethodName, argString)
+		if method.PropertySet == "" && method.PropertyGet == "" {
+			inArgs := filterPass(method.Params, "in")
+			argString := ""
+			for k, param := range inArgs {
+				if k != 0 {
+					argString = argString + ", "
+				}
+				argString = argString + param.ParamName
+			}
+			cppw.Writeln("checkArgumentParameters(args, %d, \"%s.%s (%s)\");", len(inArgs), class.ClassName, method.MethodName, argString)
 			cppw.Writeln("")
 		}
+
 		// This is probably because I should be adding to the prototype
 		if method.PropertySet != "" || method.PropertyGet != "" {
 			cppw.Writeln("auto instancePtr = getInstance(args.This());")
