@@ -594,7 +594,28 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					
 				}
 			} 
+
+		case "TS":
+			{
+
+				output := path.Join(outfolderBase, "TS")
+				
+				err = os.MkdirAll(output, os.ModePerm)
+				if err != nil {
+					return err
+				}
+				
+				err = BuildImplementationTS(
+					component, 
+					output, 
+					implementation, 
+				)
+				if err != nil {
+					return err
+				}					
+			} 
 			
+
 		default:
 			log.Fatal("Unknown export")
 		}
