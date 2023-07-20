@@ -65,12 +65,14 @@ const (
 // ComponentDefinitionParam definition of a method parameter used in the component's API
 type ComponentDefinitionParam struct {
 	ComponentDiffableElement
-	XMLName          xml.Name `xml:"param"`
-	ParamName        string   `xml:"name,attr"`
-	ParamType        string   `xml:"type,attr"`
-	ParamPass        string   `xml:"pass,attr"`
-	ParamClass       string   `xml:"class,attr"`
-	ParamDescription string   `xml:"description,attr"`
+	XMLName           xml.Name `xml:"param"`
+	ParamName         string   `xml:"name,attr"`
+	ParamType         string   `xml:"type,attr"`
+	ParamPass         string   `xml:"pass,attr"`
+	ParamClass        string   `xml:"class,attr"`
+	ParamDefaultValue string   `xml:"defaultvalue,attr"`
+	ParamOptional     string   `xml:"optional,attr"`
+	ParamDescription  string   `xml:"description,attr"`
 }
 
 // ComponentDefinitionMethod definition of a method provided by the component's API
@@ -81,6 +83,8 @@ type ComponentDefinitionMethod struct {
 	MethodDescription     string                     `xml:"description,attr"`
 	DisableStringOutCache bool                       `xml:"disablestringoutcache,attr"`
 	Params                []ComponentDefinitionParam `xml:"param"`
+	PropertyGet           string                     `xml:"propertyget,attr"`
+	PropertySet           string                     `xml:"propertyset,attr"`
 }
 
 // ComponentDefinitionClass definition of a class provided by the component's API

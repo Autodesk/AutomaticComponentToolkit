@@ -1648,7 +1648,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 					preCallCode = append(preCallCode, fmt.Sprintf("I%s%s* pI%s = dynamic_cast<I%s%s*>(pIBaseClass%s);", ClassIdentifier, param.ParamClass, param.ParamName, ClassIdentifier, param.ParamClass, param.ParamName))
 				}
 
-				if param.ParamType == "class" {
+				if param.ParamType == "class" && param.ParamOptional != "true" {
 					preCallCode = append(preCallCode, fmt.Sprintf("if (!pI%s)", param.ParamName))
 					preCallCode = append(preCallCode, fmt.Sprintf("  throw E%sInterfaceException (%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
 					preCallCode = append(preCallCode, "")
