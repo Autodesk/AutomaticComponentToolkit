@@ -477,11 +477,14 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 			}
 			if readOnly {
 				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s);", getter.PropertyGet, class.ClassName, getter.MethodName)
+				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s);", camelize(getter.PropertyGet), class.ClassName, getter.MethodName)
 			} else {
 				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s, Cv8%s::v8%s);", setter.PropertySet, class.ClassName, getter.MethodName, class.ClassName, setter.MethodName)
+				cppw.Writeln("  Cv8toolsUtils::Set_proto_accessor(localClassTemplate, \"%s\", Cv8%s::v8%s, Cv8%s::v8%s);", camelize(setter.PropertySet), class.ClassName, getter.MethodName, class.ClassName, setter.MethodName)
 			}
 		} else {
 			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", method.MethodName, class.ClassName, method.MethodName)
+			cppw.Writeln("  Cv8toolsUtils::Set_proto_method(localClassTemplate, \"%s\", Cv8%s::v8%s);", camelize(method.MethodName), class.ClassName, method.MethodName)
 		}
 	}
 	cppw.Writeln("")
