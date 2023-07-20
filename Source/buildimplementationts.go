@@ -57,7 +57,7 @@ func BuildImplementationTS(
 	log.Printf("Creating TypeScript Implementation")
 
 	options := TypeScriptOptions{
-		Camelize:   false,
+		Camelize:   true,
 		JsArrays:   false,
 		LineLength: 80,
 	}
@@ -106,11 +106,11 @@ func writeTypescriptEnum(
 	writer LanguageWriter,
 	options TypeScriptOptions,
 ) error {
-	writer.Writeln("const enum %s {", getId(enum.Name, options))
+	writer.Writeln("const enum %s {", getTypeId(enum.Name, options))
 	writer.Indentation++
 	for _, option := range enum.Options {
 		writeCommentEnumOption(option, writer, options)
-		identifier := getId(option.Name, options)
+		identifier := getTypeId(option.Name, options)
 		value := option.Value
 		writer.Writeln("%s = %d,", identifier, value)
 	}
@@ -140,7 +140,7 @@ func writeTypescriptInterface(
 	options TypeScriptOptions,
 ) error {
 	writeCommentClass(class, writer, options)
-	identifier := getId(class.ClassName, options)
+	identifier := getTypeId(class.ClassName, options)
 	extends := ""
 	if class.ParentClass != "" {
 		extends = "extends " + class.ParentClass + " "
@@ -178,18 +178,18 @@ func writeTypescriptMethod(
 	writer.Writeln("")
 	writeCommentMethod(class, method, writer, options)
 	writer.BeginLine()
-	writer.Printf("%s: (", getId(method.MethodName, options))
+	writer.Printf("%s: (", getName(method.MethodName, options))
 	for i, param := range inParams {
 		if param.ParamOptional == "true" {
 			writer.Printf(
 				"%s?: %s",
-				getId(param.ParamName, options),
+				getName(param.ParamName, options),
 				getType(param, options),
 			)
 		} else {
 			writer.Printf(
 				"%s: %s",
-				getId(param.ParamName, options),
+				getName(param.ParamName, options),
 				getType(param, options),
 			)
 		}
@@ -204,7 +204,7 @@ func writeTypescriptMethod(
 		for i, param := range outParams {
 			writer.Printf(
 				"%s: %s",
-				getId(param.ParamName, options),
+				getName(param.ParamName, options),
 				getType(param, options),
 			)
 			if i+1 < len(outParams) {
@@ -258,7 +258,7 @@ func writeTypescriptProperty(
 	writer.Writeln(
 		"%s%s: %s;",
 		readOnly,
-		getId(getter.PropertyGet, options),
+		getName(getter.PropertyGet, options),
 		getType(returnParams[0], options),
 	)
 	return nil
@@ -287,7 +287,11 @@ func filterOptional(params []ComponentDefinitionParam) []ComponentDefinitionPara
 	return result
 }
 
-func getId(identifier string, options TypeScriptOptions) string {
+func getTypeId(identifier string, options TypeScriptOptions) string {
+	return identifier
+}
+
+func getName(identifier string, options TypeScriptOptions) string {
 	if options.Camelize {
 		return camelize(identifier)
 	}
@@ -407,7 +411,7 @@ func writeCommentInParams(
 ) {
 	for _, param := range params {
 		prefix := " * @param {" + getType(param, options) + "} " +
-			getId(param.ParamName, options) + " "
+			getName(param.ParamName, options) + " "
 		lines := getCommentLines(prefix, param.ParamDescription, writer, options)
 		if len(lines) > 0 {
 			writer.Writeln(prefix + lines[0])
@@ -427,7 +431,7 @@ func writeCommentOutParams(
 ) {
 	for _, param := range params {
 		prefix := " * @returns {" + getType(param, options) + "} "
-		prefix2 := prefix + getId(param.ParamName, options) + " "
+		prefix2 := prefix + getName(param.ParamName, options) + " "
 		lines := getCommentLines(prefix2, param.ParamDescription, writer, options)
 		if len(lines) > 0 {
 			writer.Writeln(prefix2 + lines[0])
