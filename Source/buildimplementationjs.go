@@ -517,14 +517,26 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 
 		if method.PropertySet == "" && method.PropertyGet == "" {
 			inArgs := filterPass(method.Params, "in")
+			optionalArgs := filterOptional(inArgs)
 			argString := ""
 			for k, param := range inArgs {
 				if k != 0 {
 					argString = argString + ", "
 				}
-				argString = argString + param.ParamName
+				if param.ParamOptional == "true" {
+					argString = argString + "[" + param.ParamName + "]"
+				} else {
+					argString = argString + param.ParamName
+				}
 			}
-			cppw.Writeln("checkArgumentParameters(args, %d, \"%s.%s (%s)\");", len(inArgs), class.ClassName, method.MethodName, argString)
+			cppw.Writeln(
+				"checkArgumentParameters(args, %d, %d, \"%s.%s (%s)\");",
+				len(inArgs)-len(optionalArgs),
+				len(inArgs),
+				class.ClassName,
+				method.MethodName,
+				argString,
+			)
 			cppw.Writeln("")
 		}
 
@@ -555,7 +567,7 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 				if method.PropertySet == "" {
 					argName = fmt.Sprintf("args[%d]", k)
 				}
-				writeExtractV8InArg(param, subComponent, baseClassName, argName, cppw)
+				writeExtractV8InArg(param, k, subComponent, baseClassName, argName, cppw)
 			}
 		}
 
@@ -645,23 +657,55 @@ func writeMapClassIdtoInjectionClassTypeFunction(w LanguageWriter, component Com
 
 func writeExtractV8InArg(
 	param ComponentDefinitionParam,
+	index int,
 	subComponent ComponentDefinition,
 	baseClassName string,
 	argName string,
 	writer LanguageWriter,
 ) {
 	switch param.ParamType {
-	case "class":
-		writer.Writeln("%s::%s object%s = v8instance->get%sArgument (isolate, %s);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType(param), argName)
-		writer.Writeln("%s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType(param, subComponent), param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName)
-	case "optionalclass":
-		writer.Writeln("%s::%s object%s = v8instance->get%sArgument (isolate, %s);", subComponent.NameSpace, baseClassName, param.ParamName, argumentMethodCallType(param), argName)
-		writer.Writeln("%s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType(param, subComponent), param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName)
+	case "class", "optionalclass":
+		writer.Writeln("%s::%s object%s;", subComponent.NameSpace, baseClassName, param.ParamName)
 	case "basicarray":
 		writer.Writeln("std::vector<%s> param%s;", cppArrayClass(param), param.ParamName)
+	case "string":
+		if param.ParamOptional == "true" {
+			writer.Writeln("%s param%s = \"%s\";", cppParamType(param, subComponent), param.ParamName, param.ParamDefaultValue)
+		} else {
+			writer.Writeln("%s param%s;", cppParamType(param, subComponent), param.ParamName)
+		}
+	case "enum":
+		if param.ParamOptional == "true" {
+			writer.Writeln("%s param%s = %s::%s;", cppParamType(param, subComponent), param.ParamName, cppParamType(param, subComponent), param.ParamDefaultValue)
+		} else {
+			writer.Writeln("%s param%s;", cppParamType(param, subComponent), param.ParamName)
+		}
+	default:
+		if param.ParamOptional == "true" {
+			writer.Writeln("%s param%s = %s;", cppParamType(param, subComponent), param.ParamName, param.ParamDefaultValue)
+		} else {
+			writer.Writeln("%s param%s;", cppParamType(param, subComponent), param.ParamName)
+		}
+	}
+	if param.ParamOptional == "true" {
+		writer.Writeln("if (args.Length() > %d) {", index)
+		writer.Indentation++
+	}
+	switch param.ParamType {
+	case "class", "optionalclass":
+		writer.Writeln("object%s = v8instance->get%sArgument (isolate, %s);", param.ParamName, argumentMethodCallType(param), argName)
+	case "basicarray":
 		writer.Writeln("v8instance->get%sArgument (isolate, %s, param%s);", argumentMethodCallType(param), argName, param.ParamName)
 	default:
-		writer.Writeln("%s param%s = %sv8instance->get%sArgument (isolate, %s);", cppParamType(param, subComponent), param.ParamName, cppReturnValueCast(param, subComponent), argumentMethodCallType(param), argName)
+		writer.Writeln("param%s = %sv8instance->get%sArgument (isolate, %s);", param.ParamName, cppReturnValueCast(param, subComponent), argumentMethodCallType(param), argName)
+	}
+	if param.ParamOptional == "true" {
+		writer.Indentation--
+		writer.Writeln("}")
+	}
+	switch param.ParamType {
+	case "class", "optionalclass":
+		writer.Writeln("%s param%s = std::dynamic_pointer_cast<%s::C%s> (object%s);", cppParamType(param, subComponent), param.ParamName, subComponent.NameSpace, param.ParamClass, param.ParamName)
 	}
 }
 
