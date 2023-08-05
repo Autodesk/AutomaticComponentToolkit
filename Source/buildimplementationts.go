@@ -37,8 +37,9 @@ import (
 	"errors"
 	"log"
 	"path"
+	"regexp"
 	"strings"
-	"unicode"
+	"unicode/utf8"
 )
 
 type TypeScriptOptions struct {
@@ -331,13 +332,24 @@ func getTypeString(
 	return paramType
 }
 
-func camelize(identifier string) string {
-	if len(identifier) == 0 {
-		return identifier
+func camelize(str string) string {
+	r, _ := regexp.Compile("^([A-Z]+)([A-Z])(.*)")
+	result := r.FindStringSubmatch(str)
+
+	if len(result) > 0 {
+		if len(result) > 1 {
+			if len(result) == 4 && result[3] == "" {
+				str = strings.ToLower(str)
+			} else {
+				str = strings.ToLower(result[1]) + strings.Join(result[2:], "")
+			}
+		}
+	} else {
+		r, _ := utf8.DecodeRuneInString(str)
+		str = strings.ToLower(string(r)) + str[len(string(r)):]
 	}
-	result := []rune(identifier)
-	result[0] = unicode.ToLower(result[0])
-	return string(result)
+
+	return str
 }
 
 func writeCommentEnumOption(
