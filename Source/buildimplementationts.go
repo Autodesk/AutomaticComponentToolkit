@@ -178,7 +178,7 @@ func writeTypescriptMethod(
 	writer.Writeln("")
 	writeCommentMethod(class, method, writer, options)
 	writer.BeginLine()
-	writer.Printf("%s: (", getName(method.MethodName, options))
+	writer.Printf("%s(", getName(method.MethodName, options))
 	for i, param := range inParams {
 		if param.ParamOptional == "true" {
 			writer.Printf(
@@ -197,7 +197,7 @@ func writeTypescriptMethod(
 			writer.Printf(", ")
 		}
 	}
-	writer.Printf(") => ")
+	writer.Printf("): ")
 
 	if len(outParams) > 0 {
 		writer.Printf("[")
