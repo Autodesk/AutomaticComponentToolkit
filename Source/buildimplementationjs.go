@@ -767,7 +767,7 @@ func v8TypeString(paramType string) string {
 func generateReturnValue(param ComponentDefinitionParam, subComponent ComponentDefinition) string {
 	returnValue := ""
 	if param.ParamType == "class" {
-		returnValue = fmt.Sprintf("createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()))", param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod)
+		returnValue = fmt.Sprintf("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod) // Very bad
 	} else if param.ParamType == "optionalclass" {
 		returnValue = fmt.Sprintf("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod)
 	} else if param.ParamType == "enum" {
