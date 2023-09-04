@@ -544,7 +544,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", param.ParamName))
 
 					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
-					if (param.ParamType == "class") {
+					if param.ParamType == "class" {
 						checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
 						checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
 					}

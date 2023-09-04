@@ -33,8 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package main
 
-
-
 import (
 	"encoding/xml"
 )
@@ -47,13 +45,14 @@ type ComponentDiffBase struct {
 // ComponentDiffElementRemove encodes the removal or an element
 type ComponentDiffElementRemove struct {
 	ComponentDiffBase
-	XMLName xml.Name `xml:"removeelement"`
+	XMLName xml.Name                 `xml:"removeelement"`
 	Removal ComponentDiffableElement `xml:"diffable"`
 }
+
 // ComponentDiffElementAdd encodes the change of an element
 type ComponentDiffElementAdd struct {
 	ComponentDiffBase
-	XMLName xml.Name `xml:"addelement"`
+	XMLName  xml.Name                 `xml:"addelement"`
 	Addition ComponentDiffableElement `xml:"diffable"`
 }
 
@@ -62,39 +61,40 @@ type ComponentDiffAttributeRemove struct {
 	ComponentDiffBase
 	XMLName xml.Name `xml:"removeattribute"`
 }
+
 // ComponentDiffAttributeAdd encodes the change of a scalar attribute
 type ComponentDiffAttributeAdd struct {
 	ComponentDiffBase
 	XMLName xml.Name `xml:"addattribute"`
 }
+
 // ComponentDiffAttributeChange encodes the change of a scalar attribute
 type ComponentDiffAttributeChange struct {
 	ComponentDiffBase
-	XMLName xml.Name `xml:"changeattribute"`
-	OldValue string `xml:"oldvalue"`
-	NewValue string `xml:"newvalue"`
+	XMLName  xml.Name `xml:"changeattribute"`
+	OldValue string   `xml:"oldvalue"`
+	NewValue string   `xml:"newvalue"`
 }
 
 // ComponentDiff contains the difference between two component definitions
 type ComponentDiff struct {
-	XMLName xml.Name `xml:"componentdiff"`
-	AttributeRemovals []ComponentDiffAttributeRemove `xml:"removeattribute"`
-	AttributeAdditions []ComponentDiffAttributeAdd `xml:"addattribute"`
-	AttributeChanges []ComponentDiffAttributeChange `xml:"changeattribute"`
-	ElementRemovals []ComponentDiffElementRemove `xml:"removeelement"`
-	ElementAdditions []ComponentDiffElementAdd `xml:"addelement"`
+	XMLName            xml.Name                       `xml:"componentdiff"`
+	AttributeRemovals  []ComponentDiffAttributeRemove `xml:"removeattribute"`
+	AttributeAdditions []ComponentDiffAttributeAdd    `xml:"addattribute"`
+	AttributeChanges   []ComponentDiffAttributeChange `xml:"changeattribute"`
+	ElementRemovals    []ComponentDiffElementRemove   `xml:"removeelement"`
+	ElementAdditions   []ComponentDiffElementAdd      `xml:"addelement"`
 }
 
 // ComponentDiffableElement is an interface for any element in a componentdefinition that can be diffed
 type ComponentDiffableElement interface {
-
 }
 
 func diffParam(path string, paramA ComponentDefinitionParam, paramB ComponentDefinitionParam) ([]ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 
 	pathA := path + "/param[@name='" + paramA.ParamName + "']"
-	if (paramA.ParamDescription != paramB.ParamDescription) {
+	if paramA.ParamDescription != paramB.ParamDescription {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/description"
 		change.OldValue = paramA.ParamDescription
@@ -102,7 +102,7 @@ func diffParam(path string, paramA ComponentDefinitionParam, paramB ComponentDef
 		changes = append(changes, change)
 	}
 
-	if (paramA.ParamPass != paramB.ParamPass) {
+	if paramA.ParamPass != paramB.ParamPass {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/pass"
 		change.OldValue = paramA.ParamPass
@@ -110,7 +110,7 @@ func diffParam(path string, paramA ComponentDefinitionParam, paramB ComponentDef
 		changes = append(changes, change)
 	}
 
-	if (paramA.ParamType != paramB.ParamType) {
+	if paramA.ParamType != paramB.ParamType {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/type"
 		change.OldValue = paramA.ParamType
@@ -118,7 +118,7 @@ func diffParam(path string, paramA ComponentDefinitionParam, paramB ComponentDef
 		changes = append(changes, change)
 	}
 
-	if (paramA.ParamClass != paramB.ParamClass) {
+	if paramA.ParamClass != paramB.ParamClass {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/class"
 		change.OldValue = paramA.ParamClass
@@ -136,29 +136,29 @@ func diffMethod(path string, methodA ComponentDefinitionMethod, methodB Componen
 
 	pathA := path + "/method[@name='" + methodA.MethodName + "']"
 	pathB := path + "/method[@name='" + methodB.MethodName + "']"
-	if (methodA.MethodDescription != methodB.MethodDescription) {
+	if methodA.MethodDescription != methodB.MethodDescription {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/description"
 		change.OldValue = methodA.MethodDescription
 		change.NewValue = methodB.MethodDescription
 		changes = append(changes, change)
 	}
-	
+
 	IFirstChangedParam := len(methodA.Params)
-	for iA, paramA := range(methodA.Params) {
+	for iA, paramA := range methodA.Params {
 		BHasParamA := false
 		if (iA < IFirstChangedParam) && (iA < len(methodB.Params)) {
 			paramB := methodB.Params[iA]
-			if (paramA.ParamName == paramB.ParamName) {
+			if paramA.ParamName == paramB.ParamName {
 				Pchanges, err := diffParam(pathA, paramA, paramB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				changes = append(changes, Pchanges...)
 				BHasParamA = true
 			}
 		}
-		if (!BHasParamA) {
+		if !BHasParamA {
 			IFirstChangedParam = iA
 			var remove ComponentDiffElementRemove
 			remove.Path = pathA
@@ -167,15 +167,15 @@ func diffMethod(path string, methodA ComponentDefinitionMethod, methodB Componen
 		}
 	}
 
-	for iB, paramB := range(methodB.Params) {
+	for iB, paramB := range methodB.Params {
 		AHasParamB := false
 		if (iB < IFirstChangedParam) && (iB < len(methodA.Params)) {
 			paramA := methodA.Params[iB]
-			if (paramA.ParamName == paramB.ParamName) {
+			if paramA.ParamName == paramB.ParamName {
 				AHasParamB = true
 			}
 		}
-		if (!AHasParamB) {
+		if !AHasParamB {
 			var add ComponentDiffElementAdd
 			add.Path = pathB
 			add.Addition = paramB
@@ -190,9 +190,9 @@ func diffClass(path string, classA ComponentDefinitionClass, classB ComponentDef
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	pathA := path + "/class[@name='"+ classA.ClassName + "']"
-	pathB := path + "/class[@name='"+ classB.ClassName + "']"
-	if (classA.ClassDescription != classB.ClassDescription) {
+	pathA := path + "/class[@name='" + classA.ClassName + "']"
+	pathB := path + "/class[@name='" + classB.ClassName + "']"
+	if classA.ClassDescription != classB.ClassDescription {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/description"
 		change.OldValue = classA.ClassDescription
@@ -200,7 +200,7 @@ func diffClass(path string, classA ComponentDefinitionClass, classB ComponentDef
 		changes = append(changes, change)
 	}
 
-	if (classA.ParentClass != classB.ParentClass) {
+	if classA.ParentClass != classB.ParentClass {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/parent"
 		change.OldValue = classA.ParentClass
@@ -208,22 +208,22 @@ func diffClass(path string, classA ComponentDefinitionClass, classB ComponentDef
 		changes = append(changes, change)
 	}
 
-	for _, methodA := range(classA.Methods) {
+	for _, methodA := range classA.Methods {
 		BHasMethodA := false
-		for _, methodB := range(classB.Methods) {
+		for _, methodB := range classB.Methods {
 			if methodA.MethodName == methodB.MethodName {
 				BHasMethodA = true
 				Madds, Mremoves, Mchanges, err := diffMethod(pathA, methodA, methodB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				adds = append(adds, Madds...)
 				removes = append(removes, Mremoves...)
 				changes = append(changes, Mchanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasMethodA) {
+		if !BHasMethodA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = methodA
@@ -231,15 +231,15 @@ func diffClass(path string, classA ComponentDefinitionClass, classB ComponentDef
 		}
 	}
 
-	for _, methodB := range(classB.Methods) {
+	for _, methodB := range classB.Methods {
 		AHasMethodB := false
-		for _, methodA := range(classA.Methods) {
+		for _, methodA := range classA.Methods {
 			if methodA.MethodName == methodB.MethodName {
 				AHasMethodB = true
-				break;
+				break
 			}
 		}
-		if (!AHasMethodB) {
+		if !AHasMethodB {
 			var add ComponentDiffElementAdd
 			add.Path = pathB
 			add.Addition = methodB
@@ -250,28 +250,27 @@ func diffClass(path string, classA ComponentDefinitionClass, classB ComponentDef
 	return adds, removes, changes, nil
 }
 
-
-func diffClasses(path string, classesA[] ComponentDefinitionClass, classesB[] ComponentDefinitionClass) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
+func diffClasses(path string, classesA []ComponentDefinitionClass, classesB []ComponentDefinitionClass) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	for _, classA := range(classesA) {
+	for _, classA := range classesA {
 		BHasClassA := false
-		for _, classB := range(classesB) {
+		for _, classB := range classesB {
 			if classA.ClassName == classB.ClassName {
 				BHasClassA = true
 				Cadds, Cremoves, Cchanges, err := diffClass(path, classA, classB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				adds = append(adds, Cadds...)
 				removes = append(removes, Cremoves...)
 				changes = append(changes, Cchanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasClassA) {
+		if !BHasClassA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = classA
@@ -279,15 +278,15 @@ func diffClasses(path string, classesA[] ComponentDefinitionClass, classesB[] Co
 		}
 	}
 
-	for _, classB := range(classesB) {
+	for _, classB := range classesB {
 		AHasClassB := false
-		for _, classA := range(classesA) {
+		for _, classA := range classesA {
 			if classB.ClassName == classA.ClassName {
 				AHasClassB = true
-				break;
+				break
 			}
 		}
-		if (!AHasClassB) {
+		if !AHasClassB {
 			var add ComponentDiffElementAdd
 			add.Path = path
 			add.Addition = classB
@@ -303,25 +302,25 @@ func diffEnum(path string, enumA ComponentDefinitionEnum, enumB ComponentDefinit
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	pathA := path + "/enum[@name='"+ enumA.Name + "']"
-	pathB := path + "/enum[@name='"+ enumB.Name + "']"
+	pathA := path + "/enum[@name='" + enumA.Name + "']"
+	pathB := path + "/enum[@name='" + enumB.Name + "']"
 
-	for _, optionA := range(enumA.Options) {
+	for _, optionA := range enumA.Options {
 		BHasOptionA := false
-		for _, optionB := range(enumB.Options) {
+		for _, optionB := range enumB.Options {
 			if optionA.Name == optionB.Name {
 				BHasOptionA = true
-				if (optionA.Value != optionB.Value) {
+				if optionA.Value != optionB.Value {
 					var change ComponentDiffAttributeChange
 					change.Path = pathA + "/value"
 					change.OldValue = string(optionA.Value)
 					change.NewValue = string(optionB.Value)
 					changes = append(changes, change)
 				}
-				break;
+				break
 			}
 		}
-		if (!BHasOptionA) {
+		if !BHasOptionA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = optionA
@@ -329,15 +328,15 @@ func diffEnum(path string, enumA ComponentDefinitionEnum, enumB ComponentDefinit
 		}
 	}
 
-	for _, optionB := range(enumB.Options) {
+	for _, optionB := range enumB.Options {
 		AHasOptionB := false
-		for _, optionA := range(enumA.Options) {
+		for _, optionA := range enumA.Options {
 			if optionA.Name == optionB.Name {
 				AHasOptionB = true
-				break;
+				break
 			}
 		}
-		if (!AHasOptionB) {
+		if !AHasOptionB {
 			var add ComponentDiffElementAdd
 			add.Path = pathB
 			add.Addition = enumB
@@ -348,28 +347,27 @@ func diffEnum(path string, enumA ComponentDefinitionEnum, enumB ComponentDefinit
 	return adds, removes, changes, nil
 }
 
-
-func diffEnums(path string, enumsA[] ComponentDefinitionEnum, enumsB[] ComponentDefinitionEnum) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
+func diffEnums(path string, enumsA []ComponentDefinitionEnum, enumsB []ComponentDefinitionEnum) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	for _, enumA := range(enumsA) {
+	for _, enumA := range enumsA {
 		BHasEnumA := false
-		for _, enumB := range(enumsB) {
+		for _, enumB := range enumsB {
 			if enumA.Name == enumB.Name {
 				BHasEnumA = true
 				Eadds, Eremoves, Echanges, err := diffEnum(path, enumA, enumB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				adds = append(adds, Eadds...)
 				removes = append(removes, Eremoves...)
 				changes = append(changes, Echanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasEnumA) {
+		if !BHasEnumA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = enumA
@@ -377,15 +375,15 @@ func diffEnums(path string, enumsA[] ComponentDefinitionEnum, enumsB[] Component
 		}
 	}
 
-	for _, enumB := range(enumsB) {
+	for _, enumB := range enumsB {
 		AHasEnumB := false
-		for _, enumA := range(enumsA) {
+		for _, enumA := range enumsA {
 			if enumB.Name == enumA.Name {
 				AHasEnumB = true
-				break;
+				break
 			}
 		}
-		if (!AHasEnumB) {
+		if !AHasEnumB {
 			var add ComponentDiffElementAdd
 			add.Path = path
 			add.Addition = enumB
@@ -396,12 +394,11 @@ func diffEnums(path string, enumsA[] ComponentDefinitionEnum, enumsB[] Component
 	return adds, removes, changes, nil
 }
 
-
 func diffError(path string, errorA ComponentDefinitionError, errorB ComponentDefinitionError) ([]ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 
 	pathA := path + "/error[@name='" + errorA.Name + "']"
-	if (errorA.Code != errorB.Code) {
+	if errorA.Code != errorB.Code {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/code"
 		change.OldValue = string(errorA.Code)
@@ -409,7 +406,7 @@ func diffError(path string, errorA ComponentDefinitionError, errorB ComponentDef
 		changes = append(changes, change)
 	}
 
-	if (errorA.Description != errorB.Description) {
+	if errorA.Description != errorB.Description {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/description"
 		change.OldValue = errorA.Description
@@ -420,25 +417,25 @@ func diffError(path string, errorA ComponentDefinitionError, errorB ComponentDef
 	return changes, nil
 }
 
-func diffErrors(path string, errorsA[] ComponentDefinitionError, errorsB[] ComponentDefinitionError) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
+func diffErrors(path string, errorsA []ComponentDefinitionError, errorsB []ComponentDefinitionError) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	for _, errorA := range(errorsA) {
+	for _, errorA := range errorsA {
 		BHasErrorA := false
-		for _, errorB := range(errorsB) {
+		for _, errorB := range errorsB {
 			if errorA.Name == errorB.Name {
 				BHasErrorA = true
 				Echanges, err := diffError(path, errorA, errorB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				changes = append(changes, Echanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasErrorA) {
+		if !BHasErrorA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = errorA
@@ -446,15 +443,15 @@ func diffErrors(path string, errorsA[] ComponentDefinitionError, errorsB[] Compo
 		}
 	}
 
-	for _, errorB := range(errorsB) {
+	for _, errorB := range errorsB {
 		AHasErrorB := false
-		for _, errorA := range(errorsA) {
+		for _, errorA := range errorsA {
 			if errorB.Name == errorA.Name {
 				AHasErrorB = true
-				break;
+				break
 			}
 		}
-		if (!AHasErrorB) {
+		if !AHasErrorB {
 			var add ComponentDiffElementAdd
 			add.Path = path
 			add.Addition = errorB
@@ -465,7 +462,6 @@ func diffErrors(path string, errorsA[] ComponentDefinitionError, errorsB[] Compo
 	return adds, removes, changes, nil
 }
 
-
 func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB ComponentDefinitionGlobal) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 	adds := make([]ComponentDiffElementAdd, 0)
@@ -473,21 +469,21 @@ func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB Componen
 
 	pathA := path + "/global"
 	pathB := path + "/global"
-	if (globalA.JournalMethod != globalB.JournalMethod) {
+	if globalA.JournalMethod != globalB.JournalMethod {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/journalmethod"
 		change.OldValue = globalA.JournalMethod
 		change.NewValue = globalB.JournalMethod
 		changes = append(changes, change)
 	}
-	if (globalA.ReleaseMethod != globalB.ReleaseMethod) {
+	if globalA.ReleaseMethod != globalB.ReleaseMethod {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/releasemethod"
 		change.OldValue = globalA.ReleaseMethod
 		change.NewValue = globalB.ReleaseMethod
 		changes = append(changes, change)
 	}
-	if (globalA.VersionMethod != globalB.VersionMethod) {
+	if globalA.VersionMethod != globalB.VersionMethod {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/versionmethod"
 		change.OldValue = globalA.VersionMethod
@@ -495,22 +491,22 @@ func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB Componen
 		changes = append(changes, change)
 	}
 
-	for _, methodA := range(globalA.Methods) {
+	for _, methodA := range globalA.Methods {
 		BHasMethodA := false
-		for _, methodB := range(globalB.Methods) {
+		for _, methodB := range globalB.Methods {
 			if methodA.MethodName == methodB.MethodName {
 				BHasMethodA = true
 				Madds, Mremoves, Mchanges, err := diffMethod(pathA, methodA, methodB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				adds = append(adds, Madds...)
 				removes = append(removes, Mremoves...)
 				changes = append(changes, Mchanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasMethodA) {
+		if !BHasMethodA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = methodA
@@ -518,15 +514,15 @@ func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB Componen
 		}
 	}
 
-	for _, methodB := range(globalB.Methods) {
+	for _, methodB := range globalB.Methods {
 		AHasMethodB := false
-		for _, methodA := range(globalA.Methods) {
+		for _, methodA := range globalA.Methods {
 			if methodA.MethodName == methodB.MethodName {
 				AHasMethodB = true
-				break;
+				break
 			}
 		}
-		if (!AHasMethodB) {
+		if !AHasMethodB {
 			var add ComponentDiffElementAdd
 			add.Path = pathB
 			add.Addition = methodB
@@ -541,7 +537,7 @@ func diffMember(path string, memberA ComponentDefinitionMember, memberB Componen
 	changes := make([]ComponentDiffAttributeChange, 0)
 
 	pathA := path + "/member[@name='" + memberA.Name + "']"
-	if (memberA.Type != memberB.Type) {
+	if memberA.Type != memberB.Type {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/type"
 		change.OldValue = memberA.Type
@@ -549,7 +545,7 @@ func diffMember(path string, memberA ComponentDefinitionMember, memberB Componen
 		changes = append(changes, change)
 	}
 
-	if (memberA.Class != memberB.Class) {
+	if memberA.Class != memberB.Class {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/class"
 		change.OldValue = memberA.Class
@@ -557,7 +553,7 @@ func diffMember(path string, memberA ComponentDefinitionMember, memberB Componen
 		changes = append(changes, change)
 	}
 
-	if (memberA.Columns != memberB.Columns) {
+	if memberA.Columns != memberB.Columns {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/columns"
 		change.OldValue = string(memberA.Columns)
@@ -565,7 +561,7 @@ func diffMember(path string, memberA ComponentDefinitionMember, memberB Componen
 		changes = append(changes, change)
 	}
 
-	if (memberA.Rows != memberB.Rows) {
+	if memberA.Rows != memberB.Rows {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/rows"
 		change.OldValue = string(memberA.Rows)
@@ -581,24 +577,24 @@ func diffStruct(path string, structA ComponentDefinitionStruct, structB Componen
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	pathA := path + "/structA[@name='"+ structA.Name + "']"
-	pathB := path + "/structB[@name='"+ structB.Name + "']"
+	pathA := path + "/structA[@name='" + structA.Name + "']"
+	pathB := path + "/structB[@name='" + structB.Name + "']"
 
 	IFirstChangedMember := len(structA.Members)
-	for iA, memberA := range(structA.Members) {
+	for iA, memberA := range structA.Members {
 		BHasMemberA := false
 		if (iA < IFirstChangedMember) && (iA < len(structB.Members)) {
 			memberB := structB.Members[iA]
-			if (memberA.Name == memberB.Name) {
+			if memberA.Name == memberB.Name {
 				Pchanges, err := diffMember(pathA, memberA, memberB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				changes = append(changes, Pchanges...)
 				BHasMemberA = true
 			}
 		}
-		if (!BHasMemberA) {
+		if !BHasMemberA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = memberA
@@ -606,15 +602,15 @@ func diffStruct(path string, structA ComponentDefinitionStruct, structB Componen
 		}
 	}
 
-	for iB, memberB := range(structB.Members) {
+	for iB, memberB := range structB.Members {
 		AHasMemberB := false
 		if (iB < IFirstChangedMember) && (iB < len(structA.Members)) {
 			memberA := structA.Members[iB]
-			if (memberB.Name == memberA.Name) {
+			if memberB.Name == memberA.Name {
 				AHasMemberB = true
 			}
 		}
-		if (!AHasMemberB) {
+		if !AHasMemberB {
 			var add ComponentDiffElementAdd
 			add.Path = pathB
 			add.Addition = memberB
@@ -625,28 +621,27 @@ func diffStruct(path string, structA ComponentDefinitionStruct, structB Componen
 	return adds, removes, changes, nil
 }
 
-
-func diffStructs(path string, structsA[] ComponentDefinitionStruct, structsB[] ComponentDefinitionStruct) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
+func diffStructs(path string, structsA []ComponentDefinitionStruct, structsB []ComponentDefinitionStruct) ([]ComponentDiffElementAdd, []ComponentDiffElementRemove, []ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 	adds := make([]ComponentDiffElementAdd, 0)
 	removes := make([]ComponentDiffElementRemove, 0)
 
-	for _, structA := range(structsA) {
+	for _, structA := range structsA {
 		BHasStructA := false
-		for _, structB := range(structsB) {
+		for _, structB := range structsB {
 			if structA.Name == structB.Name {
 				BHasStructA = true
 				EAdds, ERemoves, Echanges, err := diffStruct(path, structA, structB)
-				if (err != nil)	{
+				if err != nil {
 					return adds, removes, changes, err
 				}
 				adds = append(adds, EAdds...)
 				removes = append(removes, ERemoves...)
 				changes = append(changes, Echanges...)
-				break;
+				break
 			}
 		}
-		if (!BHasStructA) {
+		if !BHasStructA {
 			var remove ComponentDiffElementRemove
 			remove.Path = path
 			remove.Removal = structA
@@ -654,15 +649,15 @@ func diffStructs(path string, structsA[] ComponentDefinitionStruct, structsB[] C
 		}
 	}
 
-	for _, structB := range(structsB) {
+	for _, structB := range structsB {
 		AHasStructB := false
-		for _, structA := range(structsA) {
+		for _, structA := range structsA {
 			if structB.Name == structA.Name {
 				AHasStructB = true
-				break;
+				break
 			}
 		}
-		if (!AHasStructB) {
+		if !AHasStructB {
 			var add ComponentDiffElementAdd
 			add.Path = path
 			add.Addition = structB
@@ -673,32 +668,31 @@ func diffStructs(path string, structsA[] ComponentDefinitionStruct, structsB[] C
 	return adds, removes, changes, nil
 }
 
-
 func diffComponentAttributes(path string, componentA ComponentDefinition, componentB ComponentDefinition) ([]ComponentDiffAttributeChange, error) {
 	changes := make([]ComponentDiffAttributeChange, 0)
 
-	if (componentA.Year != componentB.Year) {
+	if componentA.Year != componentB.Year {
 		var change ComponentDiffAttributeChange
 		change.Path = path + "/year"
 		change.OldValue = string(componentA.Year)
 		change.NewValue = string(componentB.Year)
 		changes = append(changes, change)
 	}
-	if (componentA.NameSpace != componentB.NameSpace) {
+	if componentA.NameSpace != componentB.NameSpace {
 		var change ComponentDiffAttributeChange
 		change.Path = path + "/namespace"
 		change.OldValue = componentA.NameSpace
 		change.NewValue = componentB.NameSpace
 		changes = append(changes, change)
 	}
-	if (componentA.LibraryName != componentB.LibraryName) {
+	if componentA.LibraryName != componentB.LibraryName {
 		var change ComponentDiffAttributeChange
 		change.Path = path + "/libraryname"
 		change.OldValue = componentA.LibraryName
 		change.NewValue = componentB.LibraryName
 		changes = append(changes, change)
 	}
-	if (componentA.BaseName != componentB.BaseName) {
+	if componentA.BaseName != componentB.BaseName {
 		var change ComponentDiffAttributeChange
 		change.Path = path + "/basename"
 		change.OldValue = componentA.BaseName
@@ -715,7 +709,7 @@ func DiffComponentDefinitions(A ComponentDefinition, B ComponentDefinition) (Com
 	path := "/component"
 
 	changes, err := diffComponentAttributes(path, A, B)
-	if (err != nil) {
+	if err != nil {
 		return diff, err
 	}
 
@@ -723,7 +717,7 @@ func DiffComponentDefinitions(A ComponentDefinition, B ComponentDefinition) (Com
 	// TODO: check bindings(!?)
 
 	adds, removes, changes, err := diffGlobal(path, A.Global, B.Global)
-	if (err != nil) {
+	if err != nil {
 		return diff, err
 	}
 	diff.ElementAdditions = append(diff.ElementAdditions, adds...)
@@ -731,23 +725,23 @@ func DiffComponentDefinitions(A ComponentDefinition, B ComponentDefinition) (Com
 	diff.AttributeChanges = append(diff.AttributeChanges, changes...)
 
 	adds, removes, changes, err = diffClasses(path, A.Classes, B.Classes)
-	if (err != nil) {
+	if err != nil {
 		return diff, err
 	}
 	diff.ElementAdditions = append(diff.ElementAdditions, adds...)
 	diff.ElementRemovals = append(diff.ElementRemovals, removes...)
 	diff.AttributeChanges = append(diff.AttributeChanges, changes...)
-	
+
 	adds, removes, changes, err = diffEnums(path, A.Enums, B.Enums)
-	if (err != nil) {
+	if err != nil {
 		return diff, err
 	}
 	diff.ElementAdditions = append(diff.ElementAdditions, adds...)
 	diff.ElementRemovals = append(diff.ElementRemovals, removes...)
 	diff.AttributeChanges = append(diff.AttributeChanges, changes...)
-	
-	adds, removes, changes, err = diffErrors(path + "/Errors", A.Errors.Errors, B.Errors.Errors)
-	if (err != nil) {
+
+	adds, removes, changes, err = diffErrors(path+"/Errors", A.Errors.Errors, B.Errors.Errors)
+	if err != nil {
 		return diff, err
 	}
 	diff.ElementAdditions = append(diff.ElementAdditions, adds...)
@@ -755,7 +749,7 @@ func DiffComponentDefinitions(A ComponentDefinition, B ComponentDefinition) (Com
 	diff.AttributeChanges = append(diff.AttributeChanges, changes...)
 
 	adds, removes, changes, err = diffStructs(path, A.Structs, B.Structs)
-	if (err != nil) {
+	if err != nil {
 		return diff, err
 	}
 	diff.ElementAdditions = append(diff.ElementAdditions, adds...)

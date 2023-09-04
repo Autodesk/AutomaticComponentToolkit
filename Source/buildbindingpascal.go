@@ -866,9 +866,9 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 			case "class", "optionalclass":
 				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+NameSpace+"Handle;")
 				initCommands = append(initCommands, fmt.Sprintf("if Assigned(A%s) then", param.ParamName))
-				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A" + param.ParamName + ".TheHandle")
+				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A"+param.ParamName+".TheHandle")
 				initCommands = append(initCommands, fmt.Sprintf("else"))
-				if (param.ParamType == "optionalclass") {
+				if param.ParamType == "optionalclass" {
 					initCommands = append(initCommands, "A"+param.ParamName+"Handle := nil;")
 				} else {
 					initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))

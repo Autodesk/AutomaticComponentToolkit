@@ -46,12 +46,12 @@ const (
 	eACTModeDiff     = 1
 )
 
-func createComponent(component ComponentDefinition, outfolderBase string) (error) {
+func createComponent(component ComponentDefinition, outfolderBase string) error {
 
 	log.Printf("Creating Component \"%s\"", component.LibraryName)
 	for _, subComponent := range component.ImportedComponentDefinitions {
 		err := createComponent(subComponent, outfolderBase)
-		if (err != nil) {
+		if err != nil {
 			return err
 		}
 	}
@@ -258,21 +258,21 @@ func createComponent(component ComponentDefinition, outfolderBase string) (error
 
 		case "CSharp":
 			{
-				outputFolderBindingCSharp := outputFolderBindings + "/CSharp";
-				err  = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderBindingCSharp := outputFolderBindings + "/CSharp"
+				err = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				outputFolderExampleCSharp := outputFolderExamples + "/CSharp";
-				err  = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm);
-				if (err != nil) {
-					log.Fatal (err);
+				outputFolderExampleCSharp := outputFolderExamples + "/CSharp"
+				err = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
 				}
-				
-				err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString);
-				if (err != nil) {
-					log.Fatal (err);
+
+				err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
 		case "Python":
@@ -478,7 +478,7 @@ func main() {
 	// }
 
 	err = createComponent(component, outfolderBase)
-	if (err != nil) {
+	if err != nil {
 		log.Println("Fatal error")
 		log.Fatal(err)
 	} else {
