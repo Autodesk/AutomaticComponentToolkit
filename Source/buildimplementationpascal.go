@@ -62,7 +62,7 @@ func BuildImplementationPascal(component ComponentDefinition, outputFolder strin
 		return errors.New("pascal Stub Identifier must not be empty")
 	}
 
-	if (!suppressInterfaces) {
+	if !suppressInterfaces {
 
 		IntfWrapperTypesName := path.Join(outputFolder, baseName+"_types.pas")
 		log.Printf("Creating \"%s\"", IntfWrapperTypesName)
@@ -114,7 +114,7 @@ func BuildImplementationPascal(component ComponentDefinition, outputFolder strin
 	var defaultImplementation []string
 	defaultImplementation = append(defaultImplementation, fmt.Sprintf("raise E%sException.Create(%s_ERROR_NOTIMPLEMENTED);", NameSpace, strings.ToUpper(NameSpace)))
 
-	if (!suppressStub) {
+	if !suppressStub {
 
 		IntfWrapperStubName := path.Join(stubOutputFolder, baseName+stubIdentifier+".pas")
 		if forceRecreation || (!FileExists(IntfWrapperStubName)) {
@@ -551,7 +551,7 @@ func generatePrePostCallPascalFunctionCode(component ComponentDefinition, method
 					variableDefinitions = append(variableDefinitions, fmt.Sprintf("Object%s: TObject;", param.ParamName))
 
 					checkInputCode = append(checkInputCode, fmt.Sprintf("Object%s := TObject(%s);", param.ParamName, pascalParams[0].ParamName))
-					if (param.ParamType == "class") {
+					if param.ParamType == "class" {
 						checkInputCode = append(checkInputCode, fmt.Sprintf("if (not Supports(Object%s, I%s%s)) then", param.ParamName, NameSpace, param.ParamClass))
 						checkInputCode = append(checkInputCode, fmt.Sprintf("  raise E%sException.Create(%s_ERROR_INVALIDCAST);", NameSpace, strings.ToUpper(NameSpace)))
 					}
@@ -1467,7 +1467,7 @@ func buildPascalStub(component ComponentDefinition, NameSpace string, ClassIdent
 
 			var methodImplementation []string
 			methodImplementation = append(methodImplementation, fmt.Sprintf("Result := QWord($%016X); // First 64 bits of SHA1 of a string: \"%s\"", classTypeId, chashHashString))
-		
+
 			err := writePascalClassMethodDummyStub(component.classTypeIdMethod(), w, NameSpace, class.ClassName, outClassName, false, methodImplementation)
 			if err != nil {
 				return err
@@ -1503,24 +1503,24 @@ func writePascalImplClassMethodDefinition(method ComponentDefinitionMethod, w La
 	if isGlobal {
 		classPrefix = "class "
 	}
-	str := "";
+	str := ""
 	if returnType == "" {
 		str = fmt.Sprintf("%sprocedure %s(%s);", classPrefix, method.MethodName, parameters)
 	} else {
 		str = fmt.Sprintf("%sfunction %s(%s): %s;", classPrefix, method.MethodName, parameters, returnType)
 	}
 	if isOverride {
-		str = str + " Override;";
+		str = str + " Override;"
 	} else {
 		if isVirtual {
-			str = str + " Virtual;";
+			str = str + " Virtual;"
 		}
 		if isAbstract {
-			str = str + " Abstract;";
-		}	
+			str = str + " Abstract;"
+		}
 	}
 
-	w.Writeln(str);
+	w.Writeln(str)
 
 	return nil
 }
