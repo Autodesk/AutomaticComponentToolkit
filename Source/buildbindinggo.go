@@ -471,7 +471,7 @@ func WriteCGoAbiMethod(method ComponentDefinitionMethod, w LanguageWriter, NameS
 			return err
 		}
 		for _, cParam := range cParams {
-			parameters = append(parameters, cParam.ParamType + " " + cParam.ParamName)
+			parameters = append(parameters, cParam.ParamType+" "+cParam.ParamName)
 			callParameters = append(callParameters, cParam.ParamName)
 
 		}

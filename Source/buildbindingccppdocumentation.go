@@ -39,12 +39,11 @@ import (
 	"path"
 )
 
-
 // BuildCCPPDocumentation builds the Sphinx documentation of a library's C++-bindings
-func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, ClassIdentifier string) (error) {
+func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, ClassIdentifier string) error {
 	BaseName := component.BaseName
 
-	globalFileName := path.Join(outputFolder, BaseName + ".rst")
+	globalFileName := path.Join(outputFolder, BaseName+".rst")
 	log.Printf("Creating \"%s\"", globalFileName)
 	globalDocFile, err := CreateLanguageFile(globalFileName, "\t")
 	if err != nil {
@@ -55,7 +54,7 @@ func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, 
 		return err
 	}
 
-	typesFileName := path.Join(outputFolder, BaseName + "-types.rst")
+	typesFileName := path.Join(outputFolder, BaseName+"-types.rst")
 	log.Printf("Creating \"%s\"", typesFileName)
 	typesDocFile, err := CreateLanguageFile(typesFileName, "\t")
 	if err != nil {
@@ -65,10 +64,10 @@ func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, 
 	if err != nil {
 		return err
 	}
-	
+
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		classFileName := path.Join(outputFolder, BaseName + "_" + class.ClassName + ".rst")
+		classFileName := path.Join(outputFolder, BaseName+"_"+class.ClassName+".rst")
 		log.Printf("Creating \"%s\"", classFileName)
 		classDocFile, err := CreateLanguageFile(classFileName, "\t")
 		if err != nil {
@@ -81,7 +80,6 @@ func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, 
 
 	}
 
-
 	err = buildCCPPDocumentationExample(component, outputFolder, ClassIdentifier, true, "_dynamic")
 	if err != nil {
 		return err
@@ -90,14 +88,14 @@ func BuildCCPPDocumentation(component ComponentDefinition, outputFolder string, 
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
 func buildCCPPDocumentationExample(component ComponentDefinition, outputFolder string, ClassIdentifier string, ExplicitLinking bool, suffix string) error {
 	NameSpace := component.NameSpace
 
-	DynamicCPPExample := path.Join(outputFolder, NameSpace +"_example"+suffix+".cpp")
+	DynamicCPPExample := path.Join(outputFolder, NameSpace+"_example"+suffix+".cpp")
 	log.Printf("Creating \"%s\"", DynamicCPPExample)
 	dyncppexamplefile, err := CreateLanguageFile(DynamicCPPExample, "  ")
 	if err != nil {
@@ -116,8 +114,8 @@ func buildCCPPDocumentationExample(component ComponentDefinition, outputFolder s
 }
 
 func writeCPPDocumentationFunctionPointer(component ComponentDefinition, w LanguageWriter,
-	functiontype ComponentDefinitionFunctionType) (error) {
-	
+	functiontype ComponentDefinitionFunctionType) error {
+
 	NameSpace := component.NameSpace
 	returnType := "void"
 	parameters := ""
@@ -125,14 +123,14 @@ func writeCPPDocumentationFunctionPointer(component ComponentDefinition, w Langu
 	for j := 0; j < len(functiontype.Params); j++ {
 		param := functiontype.Params[j]
 
-		cParamTypeName, err := getCPPParameterTypeName(param.ParamType, NameSpace, param.ParamClass);
-		if (err != nil) {
-			return err;
+		cParamTypeName, err := getCPPParameterTypeName(param.ParamType, NameSpace, param.ParamClass)
+		if err != nil {
+			return err
 		}
-		if (parameters != "") {
+		if parameters != "" {
 			parameters = parameters + ", "
 		}
-		if (param.ParamPass == "in") {
+		if param.ParamPass == "in" {
 			parameters = parameters + cParamTypeName
 		} else {
 			parameters = parameters + cParamTypeName + "*"
@@ -147,11 +145,11 @@ func writeCPPDocumentationFunctionPointer(component ComponentDefinition, w Langu
 		param := functiontype.Params[j]
 
 		cParams, err := generateCCPPParameter(param, "", functiontype.FunctionName, NameSpace, true)
-		if (err != nil) {
-			return err;
+		if err != nil {
+			return err
 		}
 		for _, cParam := range cParams {
-			w.Writeln("    %s", cParam.ParamDocumentationLine);
+			w.Writeln("    %s", cParam.ParamDocumentationLine)
 		}
 	}
 	w.Writeln("    ")
@@ -159,14 +157,13 @@ func writeCPPDocumentationFunctionPointer(component ComponentDefinition, w Langu
 	return nil
 }
 
-
-func buildCCPPDocumentationGlobal(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) (error) {
+func buildCCPPDocumentationGlobal(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) error {
 
 	NameSpace := component.NameSpace
 	LibraryName := component.LibraryName
 	global := component.Global
 
-	wrapperName := "C"+ClassIdentifier+"Wrapper"
+	wrapperName := "C" + ClassIdentifier + "Wrapper"
 
 	w.Writeln("")
 	w.Writeln("The wrapper class %s", wrapperName)
@@ -182,12 +179,11 @@ func buildCCPPDocumentationGlobal(component ComponentDefinition, w LanguageWrite
 	w.Writeln("  A suitable way to use %s::%s is as a singleton.", NameSpace, wrapperName)
 	w.Writeln("")
 
-	
 	for j := 0; j < len(global.Methods); j++ {
 		method := global.Methods[j]
 
 		parameters, returntype, err := getDynamicCPPMethodParameters(method, NameSpace, ClassIdentifier, "Wrapper")
-		if (err != nil) {
+		if err != nil {
 			return err
 		}
 		w.Writeln("  .. cpp:function:: %s %s(%s)", returntype, method.MethodName, parameters)
@@ -200,20 +196,19 @@ func buildCCPPDocumentationGlobal(component ComponentDefinition, w LanguageWrite
 
 	w.Writeln(".. cpp:type:: std::shared_ptr<%s> %s::P%s%s", wrapperName, NameSpace, ClassIdentifier, "Wrapper")
 	w.Writeln("  ")
-	
+
 	// Load library functions
 	// Check error functions of the base class
 
 	return nil
 }
 
-
 func writeCPPDocumentationParameters(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string) {
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		variableName := getBindingCppVariableName(param)
-		if (param.ParamPass == "return") {
-			w.Writeln("    :returns: %s", param.ParamDescription )
+		if param.ParamPass == "return" {
+			w.Writeln("    :returns: %s", param.ParamDescription)
 		} else {
 			w.Writeln("    :param %s: %s ", variableName, param.ParamDescription)
 		}
@@ -221,17 +216,17 @@ func writeCPPDocumentationParameters(method ComponentDefinitionMethod, w Languag
 	w.Writeln("")
 }
 
-func buildCCPPDocumentationClass(component ComponentDefinition, w LanguageWriter, class ComponentDefinitionClass, ClassIdentifier string) (error) {
-	
+func buildCCPPDocumentationClass(component ComponentDefinition, w LanguageWriter, class ComponentDefinitionClass, ClassIdentifier string) error {
+
 	NameSpace := component.NameSpace
-	className := "C"+ClassIdentifier+class.ClassName
+	className := "C" + ClassIdentifier + class.ClassName
 
 	w.Writeln("")
 	w.Writeln("%s", className)
 	w.Writeln("====================================================================================================")
 	w.Writeln("")
 	w.Writeln("")
-	
+
 	_, inheritanceSpecifier := getCPPInheritanceSpecifier(component, class, "C", ClassIdentifier)
 
 	w.Writeln(".. cpp:class:: %s::%s %s", NameSpace, className, inheritanceSpecifier)
@@ -246,7 +241,7 @@ func buildCCPPDocumentationClass(component ComponentDefinition, w LanguageWriter
 		method := class.Methods[j]
 
 		parameters, returntype, err := getDynamicCPPMethodParameters(method, NameSpace, ClassIdentifier, class.ClassName)
-		if (err != nil) {
+		if err != nil {
 			return err
 		}
 		w.Writeln("  .. cpp:function:: %s %s(%s)", returntype, method.MethodName, parameters)
@@ -267,7 +262,7 @@ func buildCCPPDocumentationClass(component ComponentDefinition, w LanguageWriter
 
 func buildCCPPDocumentationException(component ComponentDefinition, w LanguageWriter) {
 	LibraryName := component.LibraryName
-	NameSpace := component.NameSpace 
+	NameSpace := component.NameSpace
 
 	ExceptionName := "E" + NameSpace + "Exception"
 	w.Writeln("  ")
@@ -286,7 +281,6 @@ func buildCCPPDocumentationException(component ComponentDefinition, w LanguageWr
 	w.Writeln("       :return: the error message of this exception")
 	w.Writeln("    ")
 
-
 	w.Writeln("  ")
 	w.Writeln("    .. cpp:function:: %sResult %s::getErrorCode() const noexcept", NameSpace, ExceptionName)
 	w.Writeln("    ")
@@ -296,10 +290,9 @@ func buildCCPPDocumentationException(component ComponentDefinition, w LanguageWr
 	w.Writeln("    ")
 }
 
-
 func buildCCPPDocumentationInputVector(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) {
 	LibraryName := component.LibraryName
-	NameSpace := component.NameSpace 
+	NameSpace := component.NameSpace
 
 	InputVector := "C" + ClassIdentifier + "InputVector"
 	w.Writeln("  ")
@@ -314,8 +307,7 @@ func buildCCPPDocumentationInputVector(component ComponentDefinition, w Language
 	w.Writeln("  Usually, instances of %s are generated anonymously (or even implicitly) in the call to a function that expects an input array.", InputVector)
 	w.Writeln("  ")
 	w.Writeln("  ")
-	
-	
+
 	w.Writeln("  .. cpp:class:: template<typename T> %s::%s", NameSpace, InputVector)
 	w.Writeln("  ")
 	w.Writeln("    .. cpp:function:: %s(const std::vector<T>& vec)", InputVector)
@@ -339,8 +331,7 @@ func buildCCPPDocumentationInputVector(component ComponentDefinition, w Language
 	w.Writeln(" ")
 }
 
-
-func buildCCPPDocumentationStructs(component ComponentDefinition, w LanguageWriter) (error) {
+func buildCCPPDocumentationStructs(component ComponentDefinition, w LanguageWriter) error {
 	if len(component.Structs) == 0 {
 		return nil
 	}
@@ -354,34 +345,34 @@ func buildCCPPDocumentationStructs(component ComponentDefinition, w LanguageWrit
 	w.Writeln("  All structs are defined as `packed`, i.e. with the")
 	w.Writeln("  ")
 	w.Writeln("  .. code-block:: c")
-	w.Writeln("    ");
-	w.Writeln("    #pragma pack (1)");
-	w.Writeln("");
+	w.Writeln("    ")
+	w.Writeln("    #pragma pack (1)")
+	w.Writeln("")
 
 	for i := 0; i < len(component.Structs); i++ {
-		structinfo := component.Structs[i];
-		w.Writeln("  .. cpp:struct:: s%s", structinfo.Name);
-		w.Writeln("  ");
+		structinfo := component.Structs[i]
+		w.Writeln("  .. cpp:struct:: s%s", structinfo.Name)
+		w.Writeln("  ")
 		// w.Writeln("    %s", structinfo.Description);
 		// w.Writeln("  ");
 		for j := 0; j < len(structinfo.Members); j++ {
-			member := structinfo.Members[j];
-			arraysuffix := "";
-			if (member.Rows > 0) {
-				if (member.Columns > 0) {
-					arraysuffix = fmt.Sprintf ("[%d][%d]", member.Columns, member.Rows)
+			member := structinfo.Members[j]
+			arraysuffix := ""
+			if member.Rows > 0 {
+				if member.Columns > 0 {
+					arraysuffix = fmt.Sprintf("[%d][%d]", member.Columns, member.Rows)
 				} else {
-					arraysuffix = fmt.Sprintf ("[%d]",member.Rows)
+					arraysuffix = fmt.Sprintf("[%d]", member.Rows)
 				}
 			}
-			memberLine, err:= getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, "")
-			if (err!=nil) {
+			memberLine, err := getCPPMemberLine(member, NameSpace, arraysuffix, structinfo.Name, "")
+			if err != nil {
 				return err
 			}
 			w.Writeln("    .. cpp:member:: %s", memberLine)
-			w.Writeln("  ");
+			w.Writeln("  ")
 		}
-		w.Writeln("");
+		w.Writeln("")
 	}
 
 	return nil
@@ -393,7 +384,7 @@ func buildCCPPDocumentationSimpleTypes(component ComponentDefinition, w Language
 	w.Writeln("Simple types")
 	w.Writeln("--------------")
 	w.Writeln("")
-	types := []string{"uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64"} 
+	types := []string{"uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64"}
 	for _, _type := range types {
 		w.Writeln("  .. cpp:type:: %s_t %s_%s", _type, NameSpace, _type)
 		w.Writeln("  ")
@@ -422,19 +413,19 @@ func buildCCPPDocumentationEnums(component ComponentDefinition, w LanguageWriter
 	w.Writeln("")
 	for i := 0; i < len(component.Enums); i++ {
 		enum := component.Enums[i]
-		w.Writeln("  .. cpp:enum-class:: e%s : %s_int32", enum.Name, NameSpace);
+		w.Writeln("  .. cpp:enum-class:: e%s : %s_int32", enum.Name, NameSpace)
 		w.Writeln("  ")
 		// w.Writeln("  %s", enum.Description)
 		// w.Writeln("  ")
 		for j := 0; j < len(enum.Options); j++ {
-			option := enum.Options[j];
-			w.Writeln("    .. cpp:enumerator:: %s = %d", option.Name, option.Value);
+			option := enum.Options[j]
+			w.Writeln("    .. cpp:enumerator:: %s = %d", option.Name, option.Value)
 		}
-		w.Writeln("  ");
+		w.Writeln("  ")
 	}
 }
 
-func buildCCPPDocumentationFunctionTypes(component ComponentDefinition, w LanguageWriter) (error) {
+func buildCCPPDocumentationFunctionTypes(component ComponentDefinition, w LanguageWriter) error {
 	if len(component.Functions) == 0 {
 		return nil
 	}
@@ -446,7 +437,7 @@ func buildCCPPDocumentationFunctionTypes(component ComponentDefinition, w Langua
 	for i := 0; i < len(component.Functions); i++ {
 		functiontype := component.Functions[i]
 		err := writeCPPDocumentationFunctionPointer(component, w, functiontype)
-		if (err!=nil) {
+		if err != nil {
 			return err
 		}
 	}
@@ -455,7 +446,7 @@ func buildCCPPDocumentationFunctionTypes(component ComponentDefinition, w Langua
 	return nil
 }
 
-func buildCCPPDocumentationTypes(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) (error) {
+func buildCCPPDocumentationTypes(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) error {
 	LibraryName := component.LibraryName
 
 	w.Writeln("")
@@ -466,13 +457,13 @@ func buildCCPPDocumentationTypes(component ComponentDefinition, w LanguageWriter
 
 	buildCCPPDocumentationSimpleTypes(component, w)
 	buildCCPPDocumentationEnums(component, w)
-	
+
 	err := buildCCPPDocumentationStructs(component, w)
-	if (err!=nil) {
+	if err != nil {
 		return err
 	}
 	err = buildCCPPDocumentationFunctionTypes(component, w)
-	if (err!=nil) {
+	if err != nil {
 		return err
 	}
 	buildCCPPDocumentationException(component, w)

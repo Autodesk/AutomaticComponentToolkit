@@ -48,14 +48,14 @@ const (
 	eACTModeDiff     = 1
 )
 
-func createComponent(component ComponentDefinition, outfolderBase string, bindingsDirectoryOverride string, interfacesDirectoryOverride string, stubDirectoryOverride string, suppressBindings bool, suppressStub bool, suppressInterfaces bool, suppressSubcomponents bool, suppressLicense bool, suppressExamples bool) (error) {
+func createComponent(component ComponentDefinition, outfolderBase string, bindingsDirectoryOverride string, interfacesDirectoryOverride string, stubDirectoryOverride string, suppressBindings bool, suppressStub bool, suppressInterfaces bool, suppressSubcomponents bool, suppressLicense bool, suppressExamples bool) error {
 
 	log.Printf("Creating Component \"%s\"", component.LibraryName)
-	
-	if (!suppressSubcomponents) {	
+
+	if !suppressSubcomponents {
 		for _, subComponent := range component.ImportedComponentDefinitions {
 			err := createComponent(subComponent, outfolderBase, "", "", "", suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
-			if (err != nil) {
+			if err != nil {
 				return err
 			}
 		}
@@ -66,9 +66,9 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 	outputFolderExamples := path.Join(outputFolder, "Examples")
 	outputFolderDocumentation := path.Join(outputFolder, "Documentations")
 	outputFolderImplementations := path.Join(outputFolder, "Implementations")
-	
+
 	if bindingsDirectoryOverride != "" {
-		outputFolderBindings = bindingsDirectoryOverride;
+		outputFolderBindings = bindingsDirectoryOverride
 	}
 
 	err := os.MkdirAll(outputFolder, os.ModePerm)
@@ -76,7 +76,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 		return err
 	}
 
-	if (!suppressLicense) {
+	if !suppressLicense {
 		licenseFileName := path.Join(outputFolder, "license.txt")
 		log.Printf("Creating \"%s\"", licenseFileName)
 		licenseFile, err := CreateLanguageFile(licenseFileName, "")
@@ -87,8 +87,8 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 	} else {
 		log.Printf("Suppressing license...")
 	}
-	
-	if (!suppressBindings) {
+
+	if !suppressBindings {
 		if len(component.BindingList.Bindings) > 0 {
 			err = os.MkdirAll(outputFolderBindings, os.ModePerm)
 			if err != nil {
@@ -123,9 +123,9 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					if err != nil {
 						return err
 					}
-					
-					outputFolderExampleCDynamic := "";
-					if (!suppressExamples) {
+
+					outputFolderExampleCDynamic := ""
+					if !suppressExamples {
 						outputFolderExampleCDynamic = outputFolderExamples + "/CDynamic"
 						err = os.MkdirAll(outputFolderExampleCDynamic, os.ModePerm)
 						if err != nil {
@@ -146,27 +146,27 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				}
 
 			case "CppDynamic":
-				{		
-				
-					outputFolderDocumentationCppExplicit := "";
-					
-					if (binding.Documentation != "") {
-					
+				{
+
+					outputFolderDocumentationCppExplicit := ""
+
+					if binding.Documentation != "" {
+
 						outputFolderDocumentationCppExplicit = outputFolderDocumentation + "/Cpp"
 						err = os.MkdirAll(outputFolderDocumentationCppExplicit, os.ModePerm)
 						if err != nil {
 							log.Fatal(err)
 						}
 					}
-				
+
 					outputFolderBindingCppDynamic := outputFolderBindings + "/CppDynamic"
 					err = os.MkdirAll(outputFolderBindingCppDynamic, os.ModePerm)
 					if err != nil {
 						return err
 					}
-					
-					outputFolderExampleCppDynamic := "";
-					if (!suppressExamples) {
+
+					outputFolderExampleCppDynamic := ""
+					if !suppressExamples {
 						outputFolderExampleCppDynamic = outputFolderExamples + "/CppDynamic"
 						err = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm)
 						if err != nil {
@@ -189,10 +189,10 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 			case "Cpp":
 				{
-					outputFolderDocumentationCppImplicit := "";
-					
-					if (binding.Documentation != "") {
-						outputFolderDocumentationCppImplicit = outputFolderDocumentation + "/Cpp";
+					outputFolderDocumentationCppImplicit := ""
+
+					if binding.Documentation != "" {
+						outputFolderDocumentationCppImplicit = outputFolderDocumentation + "/Cpp"
 						err = os.MkdirAll(outputFolderDocumentationCppImplicit, os.ModePerm)
 						if err != nil {
 							log.Fatal(err)
@@ -204,9 +204,9 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					if err != nil {
 						return err
 					}
-					
-					outputFolderExampleCppImplicit := "";
-					if (!suppressExamples) {
+
+					outputFolderExampleCppImplicit := ""
+					if !suppressExamples {
 						outputFolderExampleCppImplicit = outputFolderExamples + "/Cpp"
 						err = os.MkdirAll(outputFolderExampleCppImplicit, os.ModePerm)
 						if err != nil {
@@ -241,8 +241,8 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					outputFolderExampleGo := "";
-					if (!suppressExamples) {
+					outputFolderExampleGo := ""
+					if !suppressExamples {
 						outputFolderExampleGo = outputFolderExamples + "/Go"
 						err = os.MkdirAll(outputFolderExampleGo, os.ModePerm)
 						if err != nil {
@@ -290,9 +290,8 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					
-					outputFolderExamplePascal := "";
-					if (!suppressExamples) {
+					outputFolderExamplePascal := ""
+					if !suppressExamples {
 						outputFolderExamplePascal = outputFolderExamples + "/Pascal"
 						err = os.MkdirAll(outputFolderExamplePascal, os.ModePerm)
 						if err != nil {
@@ -308,25 +307,24 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 			case "CSharp":
 				{
-					outputFolderBindingCSharp := outputFolderBindings + "/CSharp";
-					err  = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm);
-					if (err != nil) {
-						log.Fatal (err);
+					outputFolderBindingCSharp := outputFolderBindings + "/CSharp"
+					err = os.MkdirAll(outputFolderBindingCSharp, os.ModePerm)
+					if err != nil {
+						log.Fatal(err)
 					}
 
-					
-					outputFolderExampleCSharp := "";
-					if (!suppressExamples) {
-						outputFolderExampleCSharp = outputFolderExamples + "/CSharp";
-						err  = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm);
-						if (err != nil) {
-							log.Fatal (err);
+					outputFolderExampleCSharp := ""
+					if !suppressExamples {
+						outputFolderExampleCSharp = outputFolderExamples + "/CSharp"
+						err = os.MkdirAll(outputFolderExampleCSharp, os.ModePerm)
+						if err != nil {
+							log.Fatal(err)
 						}
 					}
-					
-					err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString);
-					if (err != nil) {
-						log.Fatal (err);
+
+					err = BuildBindingCSharp(component, outputFolderBindingCSharp, outputFolderExampleCSharp, indentString)
+					if err != nil {
+						log.Fatal(err)
 					}
 				}
 
@@ -338,8 +336,8 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					outputFolderExamplePython := "";
-					if (!suppressExamples) {
+					outputFolderExamplePython := ""
+					if !suppressExamples {
 						outputFolderExamplePython = outputFolderExamples + "/Python"
 						err = os.MkdirAll(outputFolderExamplePython, os.ModePerm)
 						if err != nil {
@@ -387,8 +385,8 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 			case "Cppwasmtime":
 				{
-					outputFolderExampleCppwasmtime := "";
-					if (!suppressExamples) {
+					outputFolderExampleCppwasmtime := ""
+					if !suppressExamples {
 						outputFolderExampleCppwasmtime = outputFolderExamples + "/Cppwasmtime"
 						err = os.MkdirAll(outputFolderExampleCppwasmtime, os.ModePerm)
 						if err != nil {
@@ -414,7 +412,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					outputFolderDocumentationCppwasmtime := "";
+					outputFolderDocumentationCppwasmtime := ""
 					err = BuildBindingCppwasmtimeHost(component, outputFolderBindingCppwasmtimeHost, outputFolderExampleCppwasmtime,
 						outputFolderDocumentationCppwasmtime, indentString, binding.ClassIdentifier)
 					if err != nil {
@@ -435,7 +433,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 
 					err = BuildBindingCppwasmtimeGuest(component, outputFolderBindingCppwasmtimeGuest, outputFolderExampleCppwasmtime,
-					 	outputFolderDocumentationCppwasmtime, indentString, binding.ClassIdentifier)
+						outputFolderDocumentationCppwasmtime, indentString, binding.ClassIdentifier)
 
 					// TODO: example + documentation
 				}
@@ -469,22 +467,22 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				outputFolderImplementationCpp := outputFolderImplementations + "/Cpp/Interfaces"
 				outputFolderImplementationCppStub := outputFolderImplementations + "/Cpp/Stub"
 
-				if (!suppressStub) {
-				
-					if (stubDirectoryOverride != "") {
-						outputFolderImplementationCppStub = stubDirectoryOverride;
+				if !suppressStub {
+
+					if stubDirectoryOverride != "" {
+						outputFolderImplementationCppStub = stubDirectoryOverride
 					}
-				
+
 					err = os.MkdirAll(outputFolderImplementationCppStub, os.ModePerm)
 					if err != nil {
 						return err
 					}
 				}
 
-				if (!suppressInterfaces) {
+				if !suppressInterfaces {
 
-					if (interfacesDirectoryOverride != "") {
-						outputFolderImplementationCpp = interfacesDirectoryOverride;
+					if interfacesDirectoryOverride != "" {
+						outputFolderImplementationCpp = interfacesDirectoryOverride
 					}
 
 					err = os.MkdirAll(outputFolderImplementationCpp, os.ModePerm)
@@ -518,21 +516,20 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				outputFolderImplementationPascal := outputFolderImplementations + "/Pascal/Interfaces"
 				outputFolderImplementationPascalStub := outputFolderImplementations + "/Pascal/Stub"
 
-				if (!suppressStub) {
-					if (stubDirectoryOverride != "") {
-						outputFolderImplementationPascalStub = stubDirectoryOverride;
+				if !suppressStub {
+					if stubDirectoryOverride != "" {
+						outputFolderImplementationPascalStub = stubDirectoryOverride
 					}
-				
+
 					err = os.MkdirAll(outputFolderImplementationPascalStub, os.ModePerm)
 					if err != nil {
 						return err
 					}
 				}
 
-
-				if (!suppressInterfaces) {
-					if (interfacesDirectoryOverride != "") {
-						outputFolderImplementationPascal = interfacesDirectoryOverride;
+				if !suppressInterfaces {
+					if interfacesDirectoryOverride != "" {
+						outputFolderImplementationPascal = interfacesDirectoryOverride
 					}
 					err = os.MkdirAll(outputFolderImplementationPascal, os.ModePerm)
 					if err != nil {
@@ -543,7 +540,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					if err != nil {
 						return err
 					}
-					
+
 				}
 			}
 
@@ -551,7 +548,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 			{
 				log.Printf("Implementation in language \"%s\" is not yet supported.", implementation.Language)
 			}
-			
+
 		case "JS":
 			{
 
@@ -560,61 +557,59 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				outputFolderImplementationJSStub := outputFolderImplementations + "/JS/Stub"
 				outputFolderImplementationJSDocumentation := outputFolderImplementations + "/JS/Documentation"
 
-				if (!suppressStub) {
-					if (stubDirectoryOverride != "") {
-						outputFolderImplementationJSStub = stubDirectoryOverride;
+				if !suppressStub {
+					if stubDirectoryOverride != "" {
+						outputFolderImplementationJSStub = stubDirectoryOverride
 					}
-				
+
 					err = os.MkdirAll(outputFolderImplementationJSStub, os.ModePerm)
 					if err != nil {
 						return err
 					}
 				}
 
-
-				if (!suppressInterfaces) {
-					if (interfacesDirectoryOverride != "") {
-						outputFolderImplementationJS = interfacesDirectoryOverride;
+				if !suppressInterfaces {
+					if interfacesDirectoryOverride != "" {
+						outputFolderImplementationJS = interfacesDirectoryOverride
 					}
 					err = os.MkdirAll(outputFolderImplementationJS, os.ModePerm)
 					if err != nil {
 						return err
 					}
-					
+
 					err = os.MkdirAll(outputFolderImplementationJSDocumentation, os.ModePerm)
 					if err != nil {
 						return err
 					}
-					
+
 					err = BuildImplementationJS(component, outputFolderImplementationJS, outputFolderImplementationJSStub,
 						outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces, outputFolderImplementationJSDocumentation)
 					if err != nil {
 						return err
 					}
-					
+
 				}
-			} 
+			}
 
 		case "TS":
 			{
 
 				output := path.Join(outfolderBase, "TS")
-				
+
 				err = os.MkdirAll(output, os.ModePerm)
 				if err != nil {
 					return err
 				}
-				
+
 				err = BuildImplementationTS(
-					component, 
-					output, 
-					implementation, 
+					component,
+					output,
+					implementation,
 				)
 				if err != nil {
 					return err
-				}					
-			} 
-			
+				}
+			}
 
 		default:
 			log.Fatal("Unknown export")
@@ -623,7 +618,6 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 
 	return nil
 }
-
 
 func printUsageInfo() {
 	fmt.Fprintln(os.Stdout, "Run ACT with the Interface Description XML as command line parameter:")
@@ -674,64 +668,64 @@ func main() {
 	bindingsDirectoryOverride := ""
 	interfacesDirectoryOverride := ""
 	stubDirectoryOverride := ""
-	
-	suppressLicense := false;
-	suppressBindings := false;
-	suppressStub := false;
-	suppressInterfaces := false;
-	suppressSubcomponents := false;
-	suppressExamples := false;
-	
+
+	suppressLicense := false
+	suppressBindings := false
+	suppressStub := false
+	suppressInterfaces := false
+	suppressSubcomponents := false
+	suppressExamples := false
+
 	if len(os.Args) >= 4 {
-		for idx := 2; idx < len(os.Args); idx ++ {
+		for idx := 2; idx < len(os.Args); idx++ {
 			if os.Args[idx] == "-o" {
-				outfolderBase = os.Args[idx + 1]
+				outfolderBase = os.Args[idx+1]
 			}
-	
+
 			if os.Args[idx] == "-d" {
-				diffFile = os.Args[idx + 1]
+				diffFile = os.Args[idx+1]
 				mode = eACTModeDiff
 			}
-			
+
 			if os.Args[idx] == "-bindings" {
-				bindingsDirectoryOverride = os.Args[idx + 1]
+				bindingsDirectoryOverride = os.Args[idx+1]
 				log.Printf("Bindings override directory: %s", bindingsDirectoryOverride)
 			}
 
 			if os.Args[idx] == "-interfaces" {
-				interfacesDirectoryOverride = os.Args[idx + 1]
+				interfacesDirectoryOverride = os.Args[idx+1]
 				log.Printf("Interfaces override directory: %s", interfacesDirectoryOverride)
 			}
 
 			if os.Args[idx] == "-stubs" {
-				stubDirectoryOverride = os.Args[idx + 1]
+				stubDirectoryOverride = os.Args[idx+1]
 				log.Printf("Stub override directory: %s", stubDirectoryOverride)
 			}
-				
+
 			if os.Args[idx] == "-suppresslicense" {
-				suppressLicense = true;
+				suppressLicense = true
 			}
 
 			if os.Args[idx] == "-suppressbindings" {
-				suppressBindings = true;
+				suppressBindings = true
 			}
 
 			if os.Args[idx] == "-suppressstub" {
-				suppressStub = true;
+				suppressStub = true
 			}
 
 			if os.Args[idx] == "-suppressinterfaces" {
-				suppressInterfaces = true;
+				suppressInterfaces = true
 			}
 
 			if os.Args[idx] == "-suppresssubcomponents" {
-				suppressSubcomponents = true;
+				suppressSubcomponents = true
 			}
 
 			if os.Args[idx] == "-suppressexamples" {
-				suppressExamples = true;
+				suppressExamples = true
 			}
-			
+
 		}
 	}
 	if mode == eACTModeGenerate {
@@ -794,9 +788,9 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	
+
 	err = createComponent(component, outfolderBase, bindingsDirectoryOverride, interfacesDirectoryOverride, stubDirectoryOverride, suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
-	if (err != nil) {
+	if err != nil {
 		log.Println("Fatal error")
 		log.Fatal(err)
 	} else {
