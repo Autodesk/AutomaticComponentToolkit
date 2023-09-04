@@ -38,7 +38,7 @@ import (
 )
 
 // FileExists returns true if and only if the file in a given path exists
-func FileExists(path string) (bool) {
-	_, err := os.Stat(path); 
-	return !os.IsNotExist(err);
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }

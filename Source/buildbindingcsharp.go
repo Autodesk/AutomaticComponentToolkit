@@ -404,12 +404,12 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				initCallParameter = callFunctionParameter
 
 			case "class", "optionalclass":
-				if (ParamTypeName == "IntPtr") {
+				if ParamTypeName == "IntPtr" {
 					callFunctionParameter = "A" + param.ParamName
 				} else {
 					callFunctionParameter = "A" + param.ParamName + ".GetHandle()"
 				}
-				
+
 				initCallParameter = callFunctionParameter
 
 			default:
@@ -577,7 +577,7 @@ func writeCSharpClassMethodImplementation(method ComponentDefinitionMethod, w La
 				defineCommands = append(defineCommands, fmt.Sprintf("  IntPtr new%s = IntPtr.Zero;", param.ParamName))
 				callFunctionParameter = "out new" + param.ParamName
 				initCallParameter = callFunctionParameter
-				if (ParamTypeName == "IntPtr") {
+				if ParamTypeName == "IntPtr" {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new%s;", param.ParamName))
 				} else {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return new %s (new%s );", ParamTypeName, param.ParamName))
@@ -1072,7 +1072,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		} else {
 			writeCSharpClassMethodImplementation(method, w, NameSpace, "Wrapper", true, "    ")
 		}
-		
+
 		w.Writeln("    }")
 		w.Writeln("")
 	}
