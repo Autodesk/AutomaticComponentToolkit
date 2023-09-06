@@ -303,25 +303,24 @@ func getType(
 	param ComponentDefinitionParam,
 	options TypeScriptOptions,
 ) string {
-	return getTypeString(param.ParamType, param.ParamClass, param.ParamNullable, options)
+	return getTypeString(param.ParamType, param.ParamClass, options)
 }
 
 func getTypeString(
 	paramType string,
 	paramClass string,
-	paramNullable string,
 	options TypeScriptOptions,
 ) string {
-	if paramType == "class" || paramType == "enum" {
+	if paramType == "class" || paramType == "optionalclass" || paramType == "enum" {
 		if options.JsArrays && strings.HasSuffix(paramClass, "Vector") {
 			return strings.TrimSuffix(paramClass, "Vector") + "[]"
 		}
-		if paramNullable == "true" {
-			return paramClass + "|undefined"
+		if paramType == "optionalclass" {
+			return paramClass + "|null"
 		}
 		return paramClass
 	} else if paramType == "basicarray" {
-		return getTypeString(paramClass, "", "false", options) + "[]"
+		return getTypeString(paramClass, "", options) + "[]"
 	} else if paramType == "double" ||
 		paramType == "int16" ||
 		paramType == "int32" ||

@@ -620,8 +620,8 @@ func buildJSInjectionClass(component ComponentDefinition, subComponent Component
 				param := method.Params[k]
 				if param.ParamPass == "return" {
 					if method.PropertySet == "" {
-						returnValueArg := generateReturnValue(param, subComponent)
-						cppw.Writeln("setReturnValue(isolate, args, %s);", returnValueArg)
+						writeReturnValue(cppw, param, subComponent)
+						cppw.Writeln("setReturnValue(isolate, args, retVal);")
 					}
 				}
 			}
@@ -764,18 +764,23 @@ func v8TypeString(paramType string) string {
 	return v8type
 }
 
-func generateReturnValue(param ComponentDefinitionParam, subComponent ComponentDefinition) string {
-	returnValue := ""
+func writeReturnValue(writer LanguageWriter, param ComponentDefinitionParam, subComponent ComponentDefinition) {
 	if param.ParamType == "class" {
-		returnValue = fmt.Sprintf("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod) // Very bad
+		writer.Writeln(
+			"auto retVal = param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>();",
+			param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod)
 	} else if param.ParamType == "optionalclass" {
-		returnValue = fmt.Sprintf("param%s?createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s())):v8::Local<v8::Object>()", param.ParamName, param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod)
+		writer.Writeln("v8::Local<v8::Value> retVal = v8::Null(isolate);")
+		writer.Writeln("if (param%s) {", param.ParamName)
+		writer.Writeln(
+			"  retVal = createV8Instance(objectCreator, param%s, %s_MapClassIdToInjectionClassType(param%s->%s()));",
+			param.ParamName, subComponent.NameSpace, param.ParamName, subComponent.Global.ClassTypeIdMethod)
+		writer.Writeln("}")
 	} else if param.ParamType == "enum" {
-		returnValue = "(uint32_t) param" + param.ParamName
+		writer.Writeln("auto retVal = (uint32_t) param%s;", param.ParamName)
 	} else {
-		returnValue = "param" + param.ParamName
+		writer.Writeln("auto retVal = param%s;", param.ParamName)
 	}
-	return returnValue
 }
 
 func cppParamType(

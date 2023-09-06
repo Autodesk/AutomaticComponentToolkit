@@ -827,15 +827,11 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return nullptr;"))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 				} else {
-					if param.ParamNullable != "true" {
-						returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
-						returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
-						returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
-					} else {
-						returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) return nullptr;", param.ParamName))
-					}
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
+					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
 				}
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 
 			case "basicarray":
 				requiresInitCall = true

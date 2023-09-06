@@ -73,7 +73,6 @@ type ComponentDefinitionParam struct {
 	ParamDefaultValue string   `xml:"defaultvalue,attr"`
 	ParamOptional     string   `xml:"optional,attr"`
 	ParamDescription  string   `xml:"description,attr"`
-	ParamNullable     string   `xml:"nullable,attr"`
 }
 
 // ComponentDefinitionMethod definition of a method provided by the component's API
