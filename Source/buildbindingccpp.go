@@ -1321,7 +1321,7 @@ func writeExceptionClass(w LanguageWriter, NameSpace string, errors ComponentDef
 	w.Writeln("    if (msg.empty()) {")
 	w.Writeln("      msg = getErrorDescription();")
 	w.Writeln("    }")
-	w.Writeln("    return std::string(\"Error: \") + getErrorName() + \": \" + msg;")
+	w.Writeln("    return std::string(getErrorName()) + \": \" + msg;")
 	w.Writeln("  }")
 
 	w.Writeln("};")
