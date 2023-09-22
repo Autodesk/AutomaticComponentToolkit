@@ -25,4 +25,4 @@ Examples/**/obj
 debug
 .vscode
 
-.DS_Store
+tmp
