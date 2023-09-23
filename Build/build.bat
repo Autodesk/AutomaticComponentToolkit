@@ -3,7 +3,7 @@ set startingDir="%CD%"
 set basepath="%~dp0"
 
 cd %basepath%\..\Source
-set Sources=actutils.go automaticcomponenttoolkit.go buildbindingccpp.go buildbindingcsharp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildimplementationcpp.go buildimplementationpascal.go buildimplementationrust.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagecpp.go languagepascal.go
+set Sources=actutils.go automaticcomponenttoolkit.go buildbindingccpp.go buildbindingcsharp.go buildbindinggo.go buildbindingnode.go buildbindingpascal.go buildbindingpython.go buildimplementationcpp.go buildimplementationpascal.go buildimplementationrust.go componentdefinition.go componentdiff.go languagewriter.go languagec.go languagecpp.go languagepascal.go languagerust.go
 set GOARCH=amd64
 echo "Build act.win64.exe"
 go build -o ..\act.win64.exe %Sources%
