@@ -125,10 +125,10 @@ func buildRustInterfaces(component ComponentDefinition, w LanguageWriter, ClassI
 func buildCargoForRustImplementation(component ComponentDefinition, w LanguageWriter, path string) error {
 	NameSpace := component.NameSpace
 	w.Writeln("[package]")
-	w.Writeln("  name = %s", NameSpace)
-	w.Writeln("  version = 0.1.0 # Version of the library not the interface")
+	w.Writeln("  name = \"%s\"", NameSpace)
+	w.Writeln("  version = \"0.1.0\"")
 	w.Writeln("[lib]")
-	w.Writeln("  path = \"%s\"", path)
+	w.Writeln("  path = \"%s\"", strings.ReplaceAll(path, "\\", "/"))
 	w.Writeln("  crate-type = [\"cdylib\"]")
 	return nil
 }
