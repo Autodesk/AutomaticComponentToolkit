@@ -131,7 +131,7 @@ func buildRustInterfaces(component ComponentDefinition, w LanguageWriter, ClassI
 func buildCargoForRustImplementation(component ComponentDefinition, w LanguageWriter, path string) error {
 	projectName := strings.ToLower(component.NameSpace)
 	w.Writeln("[package]")
-	w.Writeln("  name = \"%s\"", NameSpace)
+	w.Writeln("  name = \"%s\"", projectName)
 	w.Writeln("  version = \"0.1.0\"")
 	w.Writeln("[lib]")
 	w.Writeln("  path = \"%s\"", strings.ReplaceAll(path, "\\", "/"))
