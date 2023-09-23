@@ -19,7 +19,7 @@
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
 		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
-		<implementation language="Rust" indentation="2spaces">
+		<implementation language="Rust" indentation="2spaces"/>
 	</implementations>
 	
 	<errors>
