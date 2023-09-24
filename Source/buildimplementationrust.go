@@ -141,6 +141,14 @@ func buildRustInterfaces(component ComponentDefinition, w LanguageWriter, ClassI
 			return err
 		}
 	}
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Trait defined for global methods of %s", NameSpace)
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	err := writeRustGlobalTrait(component, w)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -186,7 +194,7 @@ func writeRustTrait(component ComponentDefinition, class ComponentDefinitionClas
 	for j := 0; j < len(methods); j++ {
 		method := methods[j]
 		w.Writeln("")
-		err := writeRustTraitFn(method, w)
+		err := writeRustTraitFn(method, w, true)
 		if err != nil {
 			return err
 		}
@@ -198,12 +206,15 @@ func writeRustTrait(component ComponentDefinition, class ComponentDefinitionClas
 	return nil
 }
 
-func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter) error {
+func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter, hasSelf bool) error {
 	methodName := toSnakeCase(method.MethodName)
 	w.Writeln("// %s", methodName)
 	w.Writeln("//")
 	w.Writeln("// %s", method.MethodDescription)
-	parameterString := "&mut self"
+	parameterString := ""
+	if hasSelf {
+		parameterString += "&mut self"
+	}
 	returnType := ""
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
@@ -213,7 +224,11 @@ func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter) error 
 		}
 		RustParam := RustParams[0]
 		if param.ParamPass != "return" {
-			parameterString += fmt.Sprintf(", %s : %s", RustParam.ParamName, RustParam.ParamType)
+			if parameterString == "" {
+				parameterString += fmt.Sprintf("%s : %s", RustParam.ParamName, RustParam.ParamType)
+			} else {
+				parameterString += fmt.Sprintf(", %s : %s", RustParam.ParamName, RustParam.ParamType)
+			}
 		} else {
 			returnType = RustParam.ParamType
 		}
@@ -225,5 +240,24 @@ func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter) error 
 	} else {
 		w.Writeln("fn %s(%s) -> %s;", methodName, parameterString, returnType)
 	}
+	return nil
+}
+
+func writeRustGlobalTrait(component ComponentDefinition, w LanguageWriter) error {
+	w.Writeln("// Wrapper trait for global methods")
+	w.Writeln("//")
+	w.Writeln("trait Wrapper {")
+	w.AddIndentationLevel(1)
+	methods := component.Global.Methods
+	for j := 0; j < len(methods); j++ {
+		method := methods[j]
+		w.Writeln("")
+		err := writeRustTraitFn(method, w, false)
+		if err != nil {
+			return err
+		}
+	}
+	w.ResetIndentationLevel()
+	w.Writeln("}")
 	return nil
 }

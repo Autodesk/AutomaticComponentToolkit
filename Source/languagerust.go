@@ -355,8 +355,14 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("Handle")
 		} else {
-			// TODO
-			return "", fmt.Errorf("%s Not yet handled", param.ParamType)
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut impl %s", ParamClass)
+			case "in":
+				RustParamTypeName = fmt.Sprintf("& impl %s", ParamClass)
+			case "return":
+				RustParamTypeName = fmt.Sprintf("Box<dyn %s>", ParamClass)
+			}
 		}
 
 	default:
