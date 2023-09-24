@@ -35,8 +35,15 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+func toSnakeCase(BaseType string) string {
+	var matchCapital = regexp.MustCompile("(.)([A-Z])")
+	underscored := matchCapital.ReplaceAllString(BaseType, "${1}_${2}")
+	return strings.ToLower(underscored)
+}
 
 func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 	w.Writeln("#[allow(unused_imports)]")
@@ -59,7 +66,7 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln(" Basic pointers definition for %s", NameSpace)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	w.Writeln("type Handle = std::ffi::c_void")
+	w.Writeln("type Handle = std::ffi::c_void;")
 
 	if len(componentdefinition.Enums) > 0 {
 		w.Writeln("/*************************************************************************************************************************")
@@ -69,15 +76,16 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 		for i := 0; i < len(componentdefinition.Enums); i++ {
 			enuminfo := componentdefinition.Enums[i]
 			w.Writeln("#[repr(C, u16)]")
-			w.Writeln("#[allow(non_snake_case)]")
-			w.Writeln("pub enum %s {", enuminfo.Name)
+			enumName := enuminfo.Name
+			w.Writeln("pub enum %s {", enumName)
 			for j := 0; j < len(enuminfo.Options); j++ {
 				option := enuminfo.Options[j]
 				sep := ","
 				if j == len(enuminfo.Options)-1 {
 					sep = ""
 				}
-				w.Writeln("  pub %s = %d%s", option.Name, option.Value, sep)
+				optionName := option.Name
+				w.Writeln("  pub %s = %d%s", optionName, option.Value, sep)
 			}
 			w.Writeln("}")
 			w.Writeln("")
@@ -91,9 +99,9 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 		w.Writeln("")
 		for i := 0; i < len(componentdefinition.Structs); i++ {
 			structinfo := componentdefinition.Structs[i]
+			structName := structinfo.Name
 			w.Writeln("#[repr(C)]")
-			w.Writeln("#[allow(non_snake_case)]")
-			w.Writeln("pub struct %s {", structinfo.Name)
+			w.Writeln("pub struct %s {", structName)
 			for j := 0; j < len(structinfo.Members); j++ {
 				member := structinfo.Members[j]
 				last := j == len(structinfo.Members)-1
@@ -118,7 +126,7 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 			w.Writeln("//")
 			parameterString := ""
 			for j := 0; j < len(funcinfo.Params); j++ {
-				RustParameters, err := generatePlainRustParameters(funcinfo.Params[j])
+				RustParameters, err := generateRustParameters(funcinfo.Params[j], true)
 				RustParameter := RustParameters[0]
 				if err != nil {
 					return err
@@ -130,7 +138,9 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 					parameterString += fmt.Sprintf(", %s : %s", RustParameter.ParamName, RustParameter.ParamType)
 				}
 			}
-			w.Writeln("type %s = unsafe extern \"C\" fn(%s);", funcinfo.FunctionName, parameterString)
+			w.Writeln("//")
+			funcName := funcinfo.FunctionName
+			w.Writeln("type %s = unsafe extern \"C\" fn(%s);", funcName, parameterString)
 		}
 	}
 
@@ -150,37 +160,38 @@ func writeRustMemberLine(member ComponentDefinitionMember, w LanguageWriter, Str
 			arraysuffix = fmt.Sprintf("[%d]%s", member.Rows, suffix)
 		}
 	}
+	memberName := toSnakeCase(member.Name)
 	switch member.Type {
 	case "uint8":
-		w.Writeln("  pub %s: u8%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: u8%s", memberName, arraysuffix)
 	case "uint16":
-		w.Writeln("  pub %s: u16%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: u16%s", memberName, arraysuffix)
 	case "uint32":
-		w.Writeln("  pub %s: u32%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: u32%s", memberName, arraysuffix)
 	case "uint64":
-		w.Writeln("  pub %s: u64%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: u64%s", memberName, arraysuffix)
 	case "int8":
-		w.Writeln("  pub %s: i8%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: i8%s", memberName, arraysuffix)
 	case "int16":
-		w.Writeln("  pub %s: i16%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: i16%s", memberName, arraysuffix)
 	case "int32":
-		w.Writeln("  pub %s: i32%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: i32%s", memberName, arraysuffix)
 	case "int64":
-		w.Writeln("  pub %s: i64%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: i64%s", memberName, arraysuffix)
 	case "bool":
-		w.Writeln("  pub %s: bool%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: bool%s", memberName, arraysuffix)
 	case "single":
-		w.Writeln("  pub %s: f32%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: f32%s", memberName, arraysuffix)
 	case "double":
-		w.Writeln("  pub %s: f64%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: f64%s", memberName, arraysuffix)
 	case "pointer":
-		w.Writeln("  pub %s: c_void%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: c_void%s", memberName, arraysuffix)
 	case "string":
 		return fmt.Errorf("it is not possible for struct %s to contain a string value", StructName)
 	case "class", "optionalclass":
 		return fmt.Errorf("it is not possible for struct %s to contain a handle value", StructName)
 	case "enum":
-		w.Writeln("  pub %s: u16%s", member.Name, arraysuffix)
+		w.Writeln("  pub %s: u16%s", memberName, arraysuffix)
 	}
 	return nil
 }
@@ -192,8 +203,28 @@ type RustParameter struct {
 	ParamComment string
 }
 
-func generatePlainRustParameters(param ComponentDefinitionParam) ([]RustParameter, error) {
+func generateRustParameters(param ComponentDefinitionParam, isPlain bool) ([]RustParameter, error) {
+	Params := make([]RustParameter, 1)
+	ParamTypeName, err := generateRustParameterType(param, isPlain)
+	if err != nil {
+		return nil, err
+	}
 
+	if isPlain {
+		if param.ParamType == "basicarray" {
+			return nil, fmt.Errorf("Not yet handled")
+		}
+
+		if param.ParamType == "structarray" {
+			return nil, fmt.Errorf("Not yet handled")
+		}
+	}
+
+	Params[0].ParamType = ParamTypeName
+	Params[0].ParamName = toSnakeCase(param.ParamName)
+	Params[0].ParamComment = fmt.Sprintf("* @param[%s] %s - %s", param.ParamPass, Params[0].ParamName, param.ParamDescription)
+
+	return Params, nil
 }
 
 func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (string, error) {
@@ -246,35 +277,43 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 			RustParamTypeName = "*mut char"
 		} else {
 			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			return "", fmt.Errorf("%s Not yet handled", param.ParamType)
 		}
 
 	case "enum":
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("u16")
 		} else {
-			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut %s", ParamClass)
+			case "in", "return":
+				RustParamTypeName = fmt.Sprintf("%s", ParamClass)
+			}
 		}
 
 	case "functiontype":
-		if isPlain {
-			RustParamTypeName = fmt.Sprintf("%s", ParamClass)
-		} else {
-			// TODO
-			return "", fmt.Errorf("Not yet handled")
-		}
+		RustParamTypeName = fmt.Sprintf("%s", ParamClass)
 
 	case "struct":
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
 		} else {
-			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut %s", ParamClass)
+			case "in":
+				RustParamTypeName = fmt.Sprintf("& %s", ParamClass)
+			case "return":
+				RustParamTypeName = fmt.Sprintf("%s", ParamClass)
+			}
 		}
 
 	case "basicarray":
-		basicTypeName, err := generateRustParameterType(param, isPlain)
+		basicParam := param
+		basicParam.ParamType = param.ParamClass
+		basicParam.ParamPass = "return"
+		basicTypeName, err := generateRustParameterType(basicParam, isPlain)
 		if err != nil {
 			return "", err
 		}
@@ -282,16 +321,28 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("*mut %s", basicTypeName)
 		} else {
-			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut Vec<%s>", basicTypeName)
+			case "in":
+				RustParamTypeName = fmt.Sprintf("&[%s]", basicTypeName)
+			case "return":
+				RustParamTypeName = fmt.Sprintf("Vec<%s>", basicTypeName)
+			}
 		}
 
 	case "structarray":
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
 		} else {
-			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut Vec<%s>", ParamClass)
+			case "in":
+				RustParamTypeName = fmt.Sprintf("&[%s]", ParamClass)
+			case "return":
+				RustParamTypeName = fmt.Sprintf("Vec<%s>", ParamClass)
+			}
 		}
 
 	case "class", "optionalclass":
@@ -299,11 +350,11 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 			RustParamTypeName = fmt.Sprintf("Handle")
 		} else {
 			// TODO
-			return "", fmt.Errorf("Not yet handled")
+			return "", fmt.Errorf("%s Not yet handled", param.ParamType)
 		}
 
 	default:
-		return "", fmt.Errorf("invalid parameter type \"%s\" for Pascal parameter", ParamTypeName)
+		return "", fmt.Errorf("invalid parameter type \"%s\" for Rust parameter", ParamTypeName)
 	}
 
 	return RustParamTypeName, nil

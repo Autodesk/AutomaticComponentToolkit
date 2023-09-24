@@ -129,6 +129,18 @@ func buildRustGlobalStubFile(component ComponentDefinition, w LanguageWriter, Cl
 }
 
 func buildRustInterfaces(component ComponentDefinition, w LanguageWriter, ClassIdentifier string) error {
+	NameSpace := component.NameSpace
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Traits defined for %s", NameSpace)
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	for i := 0; i < len(component.Classes); i++ {
+		classinfo := component.Classes[i]
+		err := writeRustTrait(component, classinfo, w)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -140,5 +152,69 @@ func buildCargoForRustImplementation(component ComponentDefinition, w LanguageWr
 	w.Writeln("[lib]")
 	w.Writeln("  path = \"%s\"", strings.ReplaceAll(path, "\\", "/"))
 	w.Writeln("  crate-type = [\"cdylib\"]")
+	return nil
+}
+
+func writeRustTrait(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter) error {
+	w.Writeln("// Trait for interface %s", class.ClassName)
+	w.Writeln("//")
+	if class.ClassDescription != "" {
+		w.Writeln("// %s", class.ClassDescription)
+		w.Writeln("//")
+	}
+	parentClassString := ""
+	if !component.isBaseClass(class) {
+		if class.ParentClass == "" {
+			parentClassString = fmt.Sprintf(": %s ", component.Global.BaseClassName)
+		} else {
+			parentClassString = fmt.Sprintf(": %s ", class.ParentClass)
+		}
+	}
+	w.Writeln("trait %s %s {", class.ClassName, parentClassString)
+	w.AddIndentationLevel(1)
+	// TODO add the base class methods!
+
+	for j := 0; j < len(class.Methods); j++ {
+		method := class.Methods[j]
+		w.Writeln("")
+		err := writeRustTraitFn(method, w)
+		if err != nil {
+			return err
+		}
+	}
+	w.ResetIndentationLevel()
+	w.Writeln("}")
+	w.Writeln("")
+	w.Writeln("")
+	return nil
+}
+
+func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter) error {
+	methodName := toSnakeCase(method.MethodName)
+	w.Writeln("// %s", methodName)
+	w.Writeln("//")
+	w.Writeln("// %s", method.MethodDescription)
+	parameterString := "&mut self"
+	returnType := ""
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k]
+		RustParams, err := generateRustParameters(param, false)
+		if err != nil {
+			return err
+		}
+		RustParam := RustParams[0]
+		if param.ParamPass != "return" {
+			parameterString += fmt.Sprintf(", %s : %s", RustParam.ParamName, RustParam.ParamType)
+		} else {
+			returnType = RustParam.ParamType
+		}
+		w.Writeln("// %s", RustParam.ParamComment)
+	}
+	w.Writeln("//")
+	if returnType == "" {
+		w.Writeln("fn %s(%s);", methodName, parameterString)
+	} else {
+		w.Writeln("fn %s(%s) -> %s;", methodName, parameterString, returnType)
+	}
 	return nil
 }
