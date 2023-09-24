@@ -55,6 +55,12 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln("")
 	w.Writeln("")
 
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Basic pointers definition for %s", NameSpace)
+	w.Writeln("**************************************************************************************************************************/")
+	w.Writeln("")
+	w.Writeln("type Handle = std::ffi::c_void")
+
 	if len(componentdefinition.Enums) > 0 {
 		w.Writeln("/*************************************************************************************************************************")
 		w.Writeln(" Enum definitions for %s", NameSpace)
@@ -98,6 +104,33 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 			}
 			w.Writeln("}")
 			w.Writeln("")
+		}
+	}
+
+	if len(componentdefinition.Functions) > 0 {
+		w.Writeln("/*************************************************************************************************************************")
+		w.Writeln(" Function type definitions for %s", NameSpace)
+		w.Writeln("**************************************************************************************************************************/")
+		w.Writeln("")
+		for i := 0; i < len(componentdefinition.Functions); i++ {
+			funcinfo := componentdefinition.Functions[i]
+			w.Writeln("// %s", funcinfo.FunctionDescription)
+			w.Writeln("//")
+			parameterString := ""
+			for j := 0; j < len(funcinfo.Params); j++ {
+				RustParameters, err := generatePlainRustParameters(funcinfo.Params[j])
+				RustParameter := RustParameters[0]
+				if err != nil {
+					return err
+				}
+				w.Writeln("// %s", RustParameter.ParamComment)
+				if j == 0 {
+					parameterString += fmt.Sprintf("%s : %s", RustParameter.ParamName, RustParameter.ParamType)
+				} else {
+					parameterString += fmt.Sprintf(", %s : %s", RustParameter.ParamName, RustParameter.ParamType)
+				}
+			}
+			w.Writeln("type %s = unsafe extern \"C\" fn(%s);", funcinfo.FunctionName, parameterString)
 		}
 	}
 
@@ -150,4 +183,128 @@ func writeRustMemberLine(member ComponentDefinitionMember, w LanguageWriter, Str
 		w.Writeln("  pub %s: u16%s", member.Name, arraysuffix)
 	}
 	return nil
+}
+
+// CParameter is a handy representation of a function parameter in C
+type RustParameter struct {
+	ParamType    string
+	ParamName    string
+	ParamComment string
+}
+
+func generatePlainRustParameters(param ComponentDefinitionParam) ([]RustParameter, error) {
+
+}
+
+func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (string, error) {
+	RustParamTypeName := ""
+	ParamTypeName := param.ParamType
+	ParamClass := param.ParamClass
+	switch ParamTypeName {
+	case "uint8":
+		RustParamTypeName = "u8"
+
+	case "uint16":
+		RustParamTypeName = "u16"
+
+	case "uint32":
+		RustParamTypeName = "u32"
+
+	case "uint64":
+		RustParamTypeName = "u64"
+
+	case "int8":
+		RustParamTypeName = "i8"
+
+	case "int16":
+		RustParamTypeName = "i16"
+
+	case "int32":
+		RustParamTypeName = "i32"
+
+	case "int64":
+		RustParamTypeName = "i64"
+
+	case "bool":
+		if isPlain {
+			RustParamTypeName = "u8"
+		} else {
+			RustParamTypeName = "bool"
+		}
+
+	case "single":
+		RustParamTypeName = "f32"
+
+	case "double":
+		RustParamTypeName = "f64"
+
+	case "pointer":
+		RustParamTypeName = "c_void"
+
+	case "string":
+		if isPlain {
+			RustParamTypeName = "*mut char"
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "enum":
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("u16")
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "functiontype":
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("%s", ParamClass)
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "struct":
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "basicarray":
+		basicTypeName, err := generateRustParameterType(param, isPlain)
+		if err != nil {
+			return "", err
+		}
+
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("*mut %s", basicTypeName)
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "structarray":
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	case "class", "optionalclass":
+		if isPlain {
+			RustParamTypeName = fmt.Sprintf("Handle")
+		} else {
+			// TODO
+			return "", fmt.Errorf("Not yet handled")
+		}
+
+	default:
+		return "", fmt.Errorf("invalid parameter type \"%s\" for Pascal parameter", ParamTypeName)
+	}
+
+	return RustParamTypeName, nil
 }
