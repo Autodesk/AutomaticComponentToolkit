@@ -172,10 +172,19 @@ func writeRustTrait(component ComponentDefinition, class ComponentDefinitionClas
 	}
 	w.Writeln("trait %s %s {", class.ClassName, parentClassString)
 	w.AddIndentationLevel(1)
-	// TODO add the base class methods!
+	methods := class.Methods
+	if component.isBaseClass(class) {
+		methods = append(
+			methods,
+			GetLastErrorMessageMethod(),
+			ClearErrorMessageMethod(),
+			RegisterErrorMessageMethod(),
+			IncRefCountMethod(),
+			DecRefCountMethod())
+	}
 
-	for j := 0; j < len(class.Methods); j++ {
-		method := class.Methods[j]
+	for j := 0; j < len(methods); j++ {
+		method := methods[j]
 		w.Writeln("")
 		err := writeRustTraitFn(method, w)
 		if err != nil {

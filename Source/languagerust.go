@@ -276,8 +276,14 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		if isPlain {
 			RustParamTypeName = "*mut char"
 		} else {
-			// TODO
-			return "", fmt.Errorf("%s Not yet handled", param.ParamType)
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = "&mut str"
+			case "in":
+				RustParamTypeName = "&str"
+			case "return":
+				RustParamTypeName = "String"
+			}
 		}
 
 	case "enum":
@@ -303,7 +309,7 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 			case "out":
 				RustParamTypeName = fmt.Sprintf("&mut %s", ParamClass)
 			case "in":
-				RustParamTypeName = fmt.Sprintf("& %s", ParamClass)
+				RustParamTypeName = fmt.Sprintf("&%s", ParamClass)
 			case "return":
 				RustParamTypeName = fmt.Sprintf("%s", ParamClass)
 			}
