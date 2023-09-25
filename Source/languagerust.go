@@ -47,7 +47,7 @@ func toSnakeCase(BaseType string) string {
 
 func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string) error {
 	w.Writeln("#[allow(unused_imports)]")
-	w.Writeln("use std::ffi;")
+	w.Writeln("use std::ffi::c_void;")
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Version definition for %s", NameSpace)
@@ -63,10 +63,28 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln("")
 
 	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Basic pointers definition for %s", NameSpace)
+	w.Writeln(" Handle definiton for %s", NameSpace)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	w.Writeln("type Handle = std::ffi::c_void;")
+	w.Writeln("// Enum of all traits - this acts as a handle as we pass trait pointers through the interface")
+	w.Writeln("pub enum HandleImpl {")
+	w.AddIndentationLevel(1)
+	for i := 0; i < len(componentdefinition.Classes); i++ {
+		class := componentdefinition.Classes[i]
+		if i != len(componentdefinition.Classes)-1 {
+			w.Writeln("T%s(Box<dyn %s>),", class.ClassName, class.ClassName)
+		} else {
+			w.Writeln("T%s(Box<dyn %s>)", class.ClassName, class.ClassName)
+		}
+	}
+	w.AddIndentationLevel(-1)
+	w.Writeln("}")
+	w.Writeln("")
+	w.Writeln("pub type Handle = *mut HandleImpl;")
+	for i := 0; i < len(componentdefinition.Classes); i++ {
+		class := componentdefinition.Classes[i]
+		w.Writeln("pub type %sHandle = *mut HandleImpl;", class.ClassName)
+	}
 
 	if len(componentdefinition.Enums) > 0 {
 		w.Writeln("/*************************************************************************************************************************")
@@ -211,6 +229,25 @@ func generateRustParameters(param ComponentDefinitionParam, isPlain bool) ([]Rus
 	}
 
 	if isPlain {
+		if param.ParamType == "string" {
+			if param.ParamPass == "out" {
+				Params = make([]RustParameter, 3)
+				Params[0].ParamType = "u64"
+				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
+				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
+
+				Params[1].ParamType = "*mut u64"
+				Params[1].ParamName = toSnakeCase(param.ParamName) + "_needed_chars"
+				Params[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", Params[1].ParamName)
+
+				Params[2].ParamType = "*mut c_char"
+				Params[2].ParamName = toSnakeCase(param.ParamName) + "_buffer"
+				Params[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", Params[2].ParamName, param.ParamClass, param.ParamDescription)
+
+				return Params, nil
+			}
+		}
+
 		if param.ParamType == "basicarray" {
 			return nil, fmt.Errorf("Not yet handled")
 		}
@@ -231,50 +268,51 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 	RustParamTypeName := ""
 	ParamTypeName := param.ParamType
 	ParamClass := param.ParamClass
+	BasicType := false
 	switch ParamTypeName {
 	case "uint8":
 		RustParamTypeName = "u8"
-
+		BasicType = true
 	case "uint16":
 		RustParamTypeName = "u16"
-
+		BasicType = true
 	case "uint32":
 		RustParamTypeName = "u32"
-
+		BasicType = true
 	case "uint64":
 		RustParamTypeName = "u64"
-
+		BasicType = true
 	case "int8":
 		RustParamTypeName = "i8"
-
+		BasicType = true
 	case "int16":
 		RustParamTypeName = "i16"
-
+		BasicType = true
 	case "int32":
 		RustParamTypeName = "i32"
-
+		BasicType = true
 	case "int64":
 		RustParamTypeName = "i64"
-
+		BasicType = true
 	case "bool":
 		if isPlain {
 			RustParamTypeName = "u8"
 		} else {
 			RustParamTypeName = "bool"
 		}
-
+		BasicType = true
 	case "single":
 		RustParamTypeName = "f32"
-
+		BasicType = true
 	case "double":
 		RustParamTypeName = "f64"
-
+		BasicType = true
 	case "pointer":
 		RustParamTypeName = "c_void"
-
+		BasicType = true
 	case "string":
 		if isPlain {
-			RustParamTypeName = "*mut char"
+			RustParamTypeName = "*const c_char"
 		} else {
 			switch param.ParamPass {
 			case "out":
@@ -290,17 +328,12 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("u16")
 		} else {
-			switch param.ParamPass {
-			case "out":
-				RustParamTypeName = fmt.Sprintf("&mut %s", ParamClass)
-			case "in", "return":
-				RustParamTypeName = fmt.Sprintf("%s", ParamClass)
-			}
+			RustParamTypeName = ParamClass
 		}
-
+		BasicType = true
 	case "functiontype":
 		RustParamTypeName = fmt.Sprintf("%s", ParamClass)
-
+		BasicType = true
 	case "struct":
 		if isPlain {
 			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
@@ -353,13 +386,14 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 
 	case "class", "optionalclass":
 		if isPlain {
-			RustParamTypeName = fmt.Sprintf("Handle")
+			RustParamTypeName = fmt.Sprintf("%sHandle", ParamClass)
+			BasicType = true
 		} else {
 			switch param.ParamPass {
 			case "out":
-				RustParamTypeName = fmt.Sprintf("&mut impl %s", ParamClass)
+				RustParamTypeName = fmt.Sprintf("&mut dyn %s", ParamClass)
 			case "in":
-				RustParamTypeName = fmt.Sprintf("& impl %s", ParamClass)
+				RustParamTypeName = fmt.Sprintf("& dyn %s", ParamClass)
 			case "return":
 				RustParamTypeName = fmt.Sprintf("Box<dyn %s>", ParamClass)
 			}
@@ -368,6 +402,16 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 	default:
 		return "", fmt.Errorf("invalid parameter type \"%s\" for Rust parameter", ParamTypeName)
 	}
-
+	if BasicType {
+		if param.ParamPass == "out" {
+			if isPlain {
+				RustParamOutTypeName := fmt.Sprintf("*mut %s", RustParamTypeName)
+				return RustParamOutTypeName, nil
+			} else {
+				RustParamOutTypeName := fmt.Sprintf("&mut %s", RustParamTypeName)
+				return RustParamOutTypeName, nil
+			}
+		}
+	}
 	return RustParamTypeName, nil
 }
