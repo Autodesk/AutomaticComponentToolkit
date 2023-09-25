@@ -140,7 +140,7 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 			}
 			w.Writeln("//")
 			funcName := funcinfo.FunctionName
-			w.Writeln("type %s = unsafe extern \"C\" fn(%s);", funcName, parameterString)
+			w.Writeln("pub type %s = unsafe extern \"C\" fn(%s);", funcName, parameterString)
 		}
 	}
 
