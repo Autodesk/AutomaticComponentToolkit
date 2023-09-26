@@ -137,6 +137,7 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 			structinfo := componentdefinition.Structs[i]
 			structName := structinfo.Name
 			w.Writeln("#[repr(C)]")
+			w.Writeln("#[derive(Clone)]")
 			w.Writeln("pub struct %s {", structName)
 			for j := 0; j < len(structinfo.Members); j++ {
 				member := structinfo.Members[j]
@@ -267,11 +268,70 @@ func generateRustParameters(param ComponentDefinitionParam, isPlain bool) ([]Rus
 		}
 
 		if param.ParamType == "basicarray" {
-			return nil, fmt.Errorf("Not yet handled")
+			basicParam := param
+			basicParam.ParamType = param.ParamClass
+			basicParam.ParamPass = "in"
+			basicTypeName, err := generateRustParameterType(basicParam, isPlain)
+			if err != nil {
+				return nil, err
+			}
+			if param.ParamPass == "out" {
+				Params = make([]RustParameter, 3)
+				Params[0].ParamType = "usize"
+				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
+				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
+
+				Params[1].ParamType = "*mut usize"
+				Params[1].ParamName = toSnakeCase(param.ParamName) + "_count"
+				Params[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", Params[1].ParamName)
+
+				Params[2].ParamType = fmt.Sprintf("*mut %s", basicTypeName)
+				Params[2].ParamName = toSnakeCase(param.ParamName) + "_buffer"
+				Params[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", Params[0].ParamName, param.ParamClass, param.ParamDescription)
+
+				return Params, nil
+			} else {
+				Params = make([]RustParameter, 2)
+				Params[0].ParamType = "usize"
+				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
+				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
+
+				Params[1].ParamType = fmt.Sprintf("*const %s", basicTypeName)
+				Params[1].ParamName = toSnakeCase(param.ParamName) + "_buffer"
+				Params[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s, may be NULL", Params[0].ParamName, param.ParamClass, param.ParamDescription)
+
+				return Params, nil
+			}
 		}
 
 		if param.ParamType == "structarray" {
-			return nil, fmt.Errorf("Not yet handled")
+			if param.ParamPass == "out" {
+				Params = make([]RustParameter, 3)
+				Params[0].ParamType = "usize"
+				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
+				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
+
+				Params[1].ParamType = "*mut usize"
+				Params[1].ParamName = toSnakeCase(param.ParamName) + "_count"
+				Params[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written elements, or needed buffer size.", Params[1].ParamName)
+
+				Params[2].ParamType = fmt.Sprintf("*mut %s", param.ParamClass)
+				Params[2].ParamName = toSnakeCase(param.ParamName) + "_buffer"
+				Params[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", Params[0].ParamName, param.ParamClass, param.ParamDescription)
+
+				return Params, nil
+			} else {
+				Params = make([]RustParameter, 2)
+				Params[0].ParamType = "usize"
+				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
+				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
+
+				Params[1].ParamType = fmt.Sprintf("*const %s", param.ParamClass)
+				Params[1].ParamName = toSnakeCase(param.ParamName) + "_buffer"
+				Params[1].ParamComment = fmt.Sprintf("* @param[in] %s - %s buffer of %s, may be NULL", Params[0].ParamName, param.ParamClass, param.ParamDescription)
+
+				return Params, nil
+			}
 		}
 	}
 
@@ -326,8 +386,29 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		RustParamTypeName = "f64"
 		BasicType = true
 	case "pointer":
-		RustParamTypeName = "c_void"
-		BasicType = true
+		basicParam := param
+		basicParam.ParamType = param.ParamClass
+		basicParam.ParamPass = "return"
+		basicTypeName, err := generateRustParameterType(basicParam, isPlain)
+		if err != nil {
+			basicTypeName = param.ParamClass
+		}
+		if isPlain {
+			if param.ParamPass == "in" {
+				RustParamTypeName = fmt.Sprintf("*const %s", basicTypeName)
+			} else {
+				RustParamTypeName = fmt.Sprintf("*mut %s", basicTypeName)
+			}
+		} else {
+			switch param.ParamPass {
+			case "out":
+				RustParamTypeName = fmt.Sprintf("&mut %s", basicTypeName)
+			case "in":
+				RustParamTypeName = fmt.Sprintf("&%s", basicTypeName)
+			case "return":
+				RustParamTypeName = fmt.Sprintf("%s", basicTypeName)
+			}
+		}
 	case "string":
 		if isPlain {
 			RustParamTypeName = "*const c_char"
@@ -354,7 +435,11 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		BasicType = true
 	case "struct":
 		if isPlain {
-			RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
+			if param.ParamPass == "in" {
+				RustParamTypeName = fmt.Sprintf("*const %s", ParamClass)
+			} else {
+				RustParamTypeName = fmt.Sprintf("*mut %s", ParamClass)
+			}
 		} else {
 			switch param.ParamPass {
 			case "out":
