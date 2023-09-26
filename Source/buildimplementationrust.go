@@ -200,6 +200,9 @@ func BuildImplementationRust(component ComponentDefinition, outputFolder string,
 
 func buildRustGlobalLibFile(component ComponentDefinition, w LanguageWriter, basedir string, modfiles []string) error {
 	w.Writeln("")
+	w.Writeln("#![feature(trait_upcasting)]")
+	w.Writeln("#![allow(incomplete_features)]")
+	w.Writeln("")
 	// Get all modules
 	for i := 0; i < len(modfiles); i++ {
 		modfile := modfiles[i]
@@ -414,6 +417,18 @@ func getParentList(component ComponentDefinition, class ComponentDefinitionClass
 	return parents, nil
 }
 
+func getChildList(component ComponentDefinition, class ComponentDefinitionClass) []string {
+	children := make([]string, 0)
+	for i := 0; i < len(component.Classes); i++ {
+		child := component.Classes[i]
+		if child.ParentClass == class.ClassName {
+			children = append(children, child.ClassName)
+			children = append(children, getChildList(component, child)...)
+		}
+	}
+	return children
+}
+
 func getClass(component ComponentDefinition, name string) (ComponentDefinitionClass, error) {
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
@@ -547,10 +562,7 @@ func buildRustHandle(component ComponentDefinition, w LanguageWriter, InterfaceM
 }
 
 func writeRustHandleAs(component ComponentDefinition, w LanguageWriter, class ComponentDefinitionClass, mut bool) error {
-	//parents, err := getParentList(component, class)
-	//if err != nil {
-	//	return err
-	//}
+	children := getChildList(component, class)
 	Name := class.ClassName
 	if !mut {
 		w.Writeln("pub fn as_%s(&self) -> Option<&dyn %s> {", toSnakeCase(Name), Name)
@@ -558,7 +570,19 @@ func writeRustHandleAs(component ComponentDefinition, w LanguageWriter, class Co
 		w.Writeln("pub fn as_mut_%s(&mut self) -> Option<&mut dyn %s> {", toSnakeCase(Name), Name)
 	}
 	w.AddIndentationLevel(1)
-	w.Writeln("None")
+	w.Writeln("match self {")
+	w.AddIndentationLevel(1)
+	for i := 0; i < len(children); i++ {
+		child := children[i]
+		if !mut {
+			w.Writeln("HandleImpl::T%s(ptr) => Some(ptr.as_ref()),", child)
+		} else {
+			w.Writeln("HandleImpl::T%s(ptr) => Some(ptr.as_mut()),", child)
+		}
+	}
+	w.Writeln("_ => None")
+	w.AddIndentationLevel(-1)
+	w.Writeln("}")
 	w.AddIndentationLevel(-1)
 	w.Writeln("}")
 	return nil
