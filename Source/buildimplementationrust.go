@@ -202,6 +202,7 @@ func buildRustGlobalLibFile(component ComponentDefinition, w LanguageWriter, bas
 	w.Writeln("")
 	w.Writeln("#![feature(trait_upcasting)]")
 	w.Writeln("#![allow(incomplete_features)]")
+	w.Writeln("#![feature(vec_into_raw_parts)]")
 	w.Writeln("")
 	// Get all modules
 	for i := 0; i < len(modfiles); i++ {
@@ -589,10 +590,11 @@ func writeRustHandleAs(component ComponentDefinition, w LanguageWriter, class Co
 }
 
 func writeGlobalRustWrapper(component ComponentDefinition, w LanguageWriter, cprefix string) error {
+	errorprefix := strings.ToUpper(component.NameSpace)
 	methods := component.Global.Methods
 	for i := 0; i < len(methods); i++ {
 		method := methods[i]
-		err := writeRustMethodWrapper(method, w, cprefix)
+		err := writeRustMethodWrapper(method, w, cprefix, errorprefix)
 		if err != nil {
 			return err
 		}
@@ -601,7 +603,7 @@ func writeGlobalRustWrapper(component ComponentDefinition, w LanguageWriter, cpr
 	return nil
 }
 
-func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, cprefix string) error {
+func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, cprefix string, errorprefix string) error {
 	// Build up the parameter strings
 	parameterString := ""
 	returnName := ""
@@ -625,7 +627,7 @@ func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, 
 	argsString := ""
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
-		OName, err := writeRustParameterConversionArg(param, w)
+		OName, err := writeRustParameterConversionArg(param, w, errorprefix)
 		if err != nil {
 			return err
 		}
@@ -642,14 +644,21 @@ func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, 
 	} else {
 		w.Writeln("CWrapper::%s(%s);", toSnakeCase(method.MethodName), argsString)
 	}
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k]
+		err := writeRustParameterConversionOutPost(param, w, errorprefix)
+		if err != nil {
+			return err
+		}
+	}
 	w.Writeln("// All ok")
-	w.Writeln("0")
+	w.Writeln("%s_SUCCESS", errorprefix)
 	w.AddIndentationLevel(-1)
 	w.Writeln("}")
 	return nil
 }
 
-func writeRustParameterConversionArg(param ComponentDefinitionParam, w LanguageWriter) (string, error) {
+func writeRustParameterConversionArg(param ComponentDefinitionParam, w LanguageWriter, errorprefix string) (string, error) {
 	if param.ParamPass == "return" {
 		return "", nil
 	}
@@ -660,25 +669,39 @@ func writeRustParameterConversionArg(param ComponentDefinitionParam, w LanguageW
 		if param.ParamPass == "in" {
 			w.Writeln("let %s = %s;", OName, IName)
 		} else {
+			w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
 			w.Writeln("let %s = unsafe {&mut *%s};", OName, IName)
 		}
 	case "class", "optionalclass":
 		if param.ParamPass == "in" {
-			HName := "_Handle_" + IName
+			HName := "_handle_" + IName
+			OpName := "_optional_" + IName
+			w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
 			w.Writeln("let %s = unsafe {&*%s};", HName, IName)
-			w.Writeln("let %s = %s.as_%s().unwrap();", OName, HName, toSnakeCase(param.ParamClass))
+			w.Writeln("let %s = %s.as_%s();", OpName, HName, toSnakeCase(param.ParamClass))
+			w.Writeln("if %s.is_none() { return %s_ERROR_INVALIDPARAM; }", OpName, errorprefix)
+			w.Writeln("let %s = %s.unwrap();", OName, OpName)
+
 		} else {
-			HName := "_Handle_" + IName
+			HName := "_handle_" + IName
+			OpName := "_optional_" + IName
+			w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
 			w.Writeln("let %s = unsafe {&mut *%s};", HName, IName)
-			w.Writeln("let %s = %s.as_mut_%s().unwrap();", OName, HName, toSnakeCase(param.ParamClass))
+			w.Writeln("let %s = %s.as_mut_%s();", OpName, HName, toSnakeCase(param.ParamClass))
+			w.Writeln("if %s.is_none() { return %s_ERROR_INVALIDPARAM; }", OpName, errorprefix)
+			w.Writeln("let %s = %s.unwrap();", OName, OpName)
 		}
 	case "string":
 		if param.ParamPass == "in" {
-			SName := "_Str_" + IName
+			SName := "_str_" + IName
+			OpName := "_optional_" + IName
+			w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
 			w.Writeln("let %s = unsafe{ CStr::from_ptr(%s) };", SName, IName)
-			w.Writeln("let %s = %s.to_str().unwrap();", OName, SName)
+			w.Writeln("let %s = %s.to_str();", OpName, SName)
+			w.Writeln("if %s.is_err() { return %s_ERROR_INVALIDPARAM; }", OpName, errorprefix)
+			w.Writeln("let %s = %s.unwrap();", OName, OpName)
 		} else {
-			SName := "_String_" + IName
+			SName := "_string_" + IName
 			w.Writeln("let mut %s = String::new();", SName)
 			w.Writeln("let %s = &mut %s;", OName, SName)
 		}
@@ -688,4 +711,38 @@ func writeRustParameterConversionArg(param ComponentDefinitionParam, w LanguageW
 		return "", fmt.Errorf("Conversion of type %s for parameter %s not supported as is unknown", param.ParamType, IName)
 	}
 	return OName, nil
+}
+
+func writeRustParameterConversionOutPost(param ComponentDefinitionParam, w LanguageWriter, errorprefix string) error {
+	if param.ParamPass != "out" {
+		return nil
+	}
+	// Any remaining bit needed to wire out variables
+	IName := toSnakeCase(param.ParamName)
+	switch param.ParamType {
+	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "class", "optionalclass":
+		return nil
+	case "string":
+		// Check the buffer size and if null
+		BuffSizeName := IName + "_buffer_size"
+		BuffName := IName + "_buffer"
+		BuffSLName := "_buffer_slice_" + IName
+		CNName := IName + "_needed_chars"
+		CNRName := "_" + CNName
+		SName := "_string_" + IName
+		SLName := "_slice_" + IName
+		w.Writeln("let %s = %s.as_bytes();", SLName, SName)
+		w.Writeln("if %s > %s.len() { return %s_ERROR_BUFFERTOOSMALL; }", BuffSizeName, SLName, errorprefix)
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", BuffName, errorprefix)
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", CNName, errorprefix)
+		w.Writeln("let mut %s = unsafe {  std::slice::from_raw_parts_mut(%s, %s.len()) };", BuffSLName, BuffName, SLName)
+		w.Writeln("%s.clone_from_slice(%s);", BuffSLName, SLName)
+		w.Writeln("let mut %s = unsafe { &mut *%s };", CNRName, CNName)
+		w.Writeln("*%s = %s.len();", CNRName, SLName)
+	case "bool", "pointer", "struct", "basicarray", "structarray":
+		//return fmt.Errorf("Conversion of type %s for parameter %s not supported", param.ParamType, IName)
+	default:
+		return fmt.Errorf("Conversion of type %s for parameter %s not supported as is unknown", param.ParamType, IName)
+	}
+	return nil
 }

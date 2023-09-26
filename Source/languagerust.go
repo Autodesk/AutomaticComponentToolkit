@@ -53,14 +53,32 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln(" Version definition for %s", NameSpace)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
-	w.Writeln("const %s_VERSION_MAJOR : usize = %d;", strings.ToUpper(NameSpace), majorVersion(componentdefinition.Version))
-	w.Writeln("const %s_VERSION_MINOR : usize = %d;", strings.ToUpper(NameSpace), minorVersion(componentdefinition.Version))
-	w.Writeln("const %s_VERSION_MICRO : usize= %d;", strings.ToUpper(NameSpace), microVersion(componentdefinition.Version))
-	w.Writeln("const %s_VERSION_PRERELEASEINFO : &str = \"%s\";", strings.ToUpper(NameSpace), preReleaseInfo(componentdefinition.Version))
-	w.Writeln("const %s_VERSION_BUILDINFO : &str = \"%s\";", strings.ToUpper(NameSpace), buildInfo(componentdefinition.Version))
+	w.Writeln("pub const %s_VERSION_MAJOR : usize = %d;", strings.ToUpper(NameSpace), majorVersion(componentdefinition.Version))
+	w.Writeln("pub const %s_VERSION_MINOR : usize = %d;", strings.ToUpper(NameSpace), minorVersion(componentdefinition.Version))
+	w.Writeln("pub const %s_VERSION_MICRO : usize= %d;", strings.ToUpper(NameSpace), microVersion(componentdefinition.Version))
+	w.Writeln("pub const %s_VERSION_PRERELEASEINFO : &str = \"%s\";", strings.ToUpper(NameSpace), preReleaseInfo(componentdefinition.Version))
+	w.Writeln("pub const %s_VERSION_BUILDINFO : &str = \"%s\";", strings.ToUpper(NameSpace), buildInfo(componentdefinition.Version))
 
 	w.Writeln("")
 	w.Writeln("")
+
+	if len(componentdefinition.Errors.Errors) > 0 {
+		w.Writeln("/*************************************************************************************************************************")
+		w.Writeln(" Error constants for %s", NameSpace)
+		w.Writeln("**************************************************************************************************************************/")
+		w.Writeln("")
+		w.Writeln("pub const %s_SUCCESS : i32 = 0;", strings.ToUpper(NameSpace))
+		for i := 0; i < len(componentdefinition.Errors.Errors); i++ {
+			errorcode := componentdefinition.Errors.Errors[i]
+			if errorcode.Description != "" {
+				w.Writeln("pub const %s_ERROR_%s : i32 = %d; /** %s */", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code, errorcode.Description)
+			} else {
+				w.Writeln("pub const %s_ERROR_%s : i32 = %d;", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code)
+			}
+		}
+		w.Writeln("")
+		w.Writeln("")
+	}
 
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Handle definiton for %s", NameSpace)
@@ -232,15 +250,15 @@ func generateRustParameters(param ComponentDefinitionParam, isPlain bool) ([]Rus
 		if param.ParamType == "string" {
 			if param.ParamPass == "out" {
 				Params = make([]RustParameter, 3)
-				Params[0].ParamType = "u64"
+				Params[0].ParamType = "usize"
 				Params[0].ParamName = toSnakeCase(param.ParamName) + "_buffer_size"
 				Params[0].ParamComment = fmt.Sprintf("* @param[in] %s - size of the buffer (including trailing 0)", Params[0].ParamName)
 
-				Params[1].ParamType = "*mut u64"
+				Params[1].ParamType = "*mut usize"
 				Params[1].ParamName = toSnakeCase(param.ParamName) + "_needed_chars"
 				Params[1].ParamComment = fmt.Sprintf("* @param[out] %s - will be filled with the count of the written bytes, or needed buffer size.", Params[1].ParamName)
 
-				Params[2].ParamType = "*mut c_char"
+				Params[2].ParamType = "*mut u8"
 				Params[2].ParamName = toSnakeCase(param.ParamName) + "_buffer"
 				Params[2].ParamComment = fmt.Sprintf("* @param[out] %s - %s buffer of %s, may be NULL", Params[2].ParamName, param.ParamClass, param.ParamDescription)
 
