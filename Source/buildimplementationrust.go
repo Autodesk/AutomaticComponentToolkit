@@ -315,16 +315,21 @@ func writeRustTraitFn(method ComponentDefinitionMethod, w LanguageWriter, hasSel
 			return err
 		}
 		RustParam := RustParams[0]
+		paramName := RustParam.ParamName
+		if hasImpl && !hasImplParent {
+			// For stubed out methods avoid warning about unued parameters
+			paramName = "_" + RustParam.ParamName
+		}
 		if param.ParamPass != "return" {
 			if parameterString == "" {
-				parameterString += fmt.Sprintf("%s : %s", RustParam.ParamName, RustParam.ParamType)
+				parameterString += fmt.Sprintf("%s : %s", paramName, RustParam.ParamType)
 			} else {
-				parameterString += fmt.Sprintf(", %s : %s", RustParam.ParamName, RustParam.ParamType)
+				parameterString += fmt.Sprintf(", %s : %s", paramName, RustParam.ParamType)
 			}
 			if parameterNames == "" {
-				parameterNames += RustParam.ParamName
+				parameterNames += paramName
 			} else {
-				parameterNames += fmt.Sprintf(", %s", RustParam.ParamName)
+				parameterNames += fmt.Sprintf(", %s", paramName)
 			}
 		} else {
 			returnType = RustParam.ParamType
@@ -557,6 +562,7 @@ func buildRustHandle(component ComponentDefinition, w LanguageWriter, InterfaceM
 	w.Writeln("")
 	w.Writeln("use %s::*;", InterfaceMod)
 	w.Writeln("")
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("impl HandleImpl {")
 	w.AddIndentationLevel(1)
 	for i := 0; i < len(component.Classes); i++ {
@@ -660,6 +666,7 @@ func writeRustMethodWrapper(method ComponentDefinitionMethod, optclass *Componen
 			}
 		}
 	}
+	w.Writeln("#[no_mangle]")
 	w.Writeln("pub fn %s%s(%s) -> i32 {", cprefix, strings.ToLower(method.MethodName), parameterString)
 	w.AddIndentationLevel(1)
 	// Convert self parameter if non global

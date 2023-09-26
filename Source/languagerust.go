@@ -53,10 +53,15 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln(" Version definition for %s", NameSpace)
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub const %s_VERSION_MAJOR : usize = %d;", strings.ToUpper(NameSpace), majorVersion(componentdefinition.Version))
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub const %s_VERSION_MINOR : usize = %d;", strings.ToUpper(NameSpace), minorVersion(componentdefinition.Version))
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub const %s_VERSION_MICRO : usize= %d;", strings.ToUpper(NameSpace), microVersion(componentdefinition.Version))
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub const %s_VERSION_PRERELEASEINFO : &str = \"%s\";", strings.ToUpper(NameSpace), preReleaseInfo(componentdefinition.Version))
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub const %s_VERSION_BUILDINFO : &str = \"%s\";", strings.ToUpper(NameSpace), buildInfo(componentdefinition.Version))
 
 	w.Writeln("")
@@ -67,9 +72,11 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 		w.Writeln(" Error constants for %s", NameSpace)
 		w.Writeln("**************************************************************************************************************************/")
 		w.Writeln("")
+		w.Writeln("#[allow(dead_code)]")
 		w.Writeln("pub const %s_SUCCESS : i32 = 0;", strings.ToUpper(NameSpace))
 		for i := 0; i < len(componentdefinition.Errors.Errors); i++ {
 			errorcode := componentdefinition.Errors.Errors[i]
+			w.Writeln("#[allow(dead_code)]")
 			if errorcode.Description != "" {
 				w.Writeln("pub const %s_ERROR_%s : i32 = %d; /** %s */", strings.ToUpper(NameSpace), errorcode.Name, errorcode.Code, errorcode.Description)
 			} else {
@@ -85,6 +92,8 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 	w.Writeln("// Enum of all traits - this acts as a handle as we pass trait pointers through the interface")
+	w.Writeln("")
+	w.Writeln("#[allow(dead_code)]")
 	w.Writeln("pub enum HandleImpl {")
 	w.AddIndentationLevel(1)
 	for i := 0; i < len(componentdefinition.Classes); i++ {
@@ -101,7 +110,7 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	w.Writeln("pub type Handle = *mut HandleImpl;")
 	for i := 0; i < len(componentdefinition.Classes); i++ {
 		class := componentdefinition.Classes[i]
-		w.Writeln("pub type %sHandle = *mut HandleImpl;", class.ClassName)
+		w.Writeln("pub type %sHandle =Handle;", class.ClassName)
 	}
 
 	if len(componentdefinition.Enums) > 0 {
