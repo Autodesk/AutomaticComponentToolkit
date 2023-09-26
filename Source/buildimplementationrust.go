@@ -637,6 +637,8 @@ func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, 
 			} else {
 				argsString += fmt.Sprintf(", %s", OName)
 			}
+		} else {
+			returnName = "_return_" + toSnakeCase(param.ParamName)
 		}
 	}
 	if returnName != "" {
@@ -647,6 +649,10 @@ func writeRustMethodWrapper(method ComponentDefinitionMethod, w LanguageWriter, 
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		err := writeRustParameterConversionOutPost(param, w, errorprefix)
+		if err != nil {
+			return err
+		}
+		err = writeRustParameterConversionReturn(param, w, errorprefix)
 		if err != nil {
 			return err
 		}
@@ -706,7 +712,7 @@ func writeRustParameterConversionArg(param ComponentDefinitionParam, w LanguageW
 			w.Writeln("let %s = &mut %s;", OName, SName)
 		}
 	case "bool", "pointer", "struct", "basicarray", "structarray":
-		//return fmt.Errorf("Conversion of type %s for parameter %s not supported", param.ParamType, IName)
+		return "", fmt.Errorf("Conversion of type %s for parameter %s not supported - yet", param.ParamType, IName)
 	default:
 		return "", fmt.Errorf("Conversion of type %s for parameter %s not supported as is unknown", param.ParamType, IName)
 	}
@@ -740,7 +746,58 @@ func writeRustParameterConversionOutPost(param ComponentDefinitionParam, w Langu
 		w.Writeln("let mut %s = unsafe { &mut *%s };", CNRName, CNName)
 		w.Writeln("*%s = %s.len();", CNRName, SLName)
 	case "bool", "pointer", "struct", "basicarray", "structarray":
-		//return fmt.Errorf("Conversion of type %s for parameter %s not supported", param.ParamType, IName)
+		//
+		return fmt.Errorf("Conversion of type %s for parameter %s not supported - yet", param.ParamType, IName)
+	default:
+		return fmt.Errorf("Conversion of type %s for parameter %s not supported as is unknown", param.ParamType, IName)
+	}
+	return nil
+}
+
+func writeRustParameterConversionReturn(param ComponentDefinitionParam, w LanguageWriter, errorprefix string) error {
+	if param.ParamPass != "return" {
+		return nil
+	}
+	// Take the returned variable and send it to output pars
+	IName := toSnakeCase(param.ParamName)
+	RetName := "_return_" + IName
+	switch param.ParamType {
+	case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double":
+		RefName := "_ref_" + IName
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
+		w.Writeln("let mut %s = unsafe{&mut *%s};", RefName, IName)
+		w.Writeln("*%s = %s;", RefName, RetName)
+	case "string":
+		// Check the buffer size and if null
+		BuffSizeName := IName + "_buffer_size"
+		BuffName := IName + "_buffer"
+		BuffSLName := "_buffer_slice_" + IName
+		CNName := IName + "_needed_chars"
+		CNRName := "_" + CNName
+		SLName := "_slice_" + IName
+		w.Writeln("let %s = %s.as_bytes();", SLName, RetName)
+		w.Writeln("if %s > %s.len() { return %s_ERROR_BUFFERTOOSMALL; }", BuffSizeName, SLName, errorprefix)
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", BuffName, errorprefix)
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", CNName, errorprefix)
+		w.Writeln("let mut %s = unsafe {  std::slice::from_raw_parts_mut(%s, %s.len()) };", BuffSLName, BuffName, SLName)
+		w.Writeln("%s.clone_from_slice(%s);", BuffSLName, SLName)
+		w.Writeln("let mut %s = unsafe { &mut *%s };", CNRName, CNName)
+		w.Writeln("*%s = %s.len();", CNRName, SLName)
+	case "class", "optionalclass":
+		HName := "_handle_" + IName
+		RefName := "_ref_" + IName
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
+		w.Writeln("let %s = Box::new(HandleImpl::T%s(%s));", HName, param.ParamClass, RetName)
+		w.Writeln("let mut %s = unsafe{&mut *%s};", RefName, IName)
+		w.Writeln("*%s = Box::into_raw(%s);", RefName, HName)
+	case "bool":
+		RefName := "_ref_" + IName
+		w.Writeln("if %s.is_null() { return %s_ERROR_INVALIDPARAM; }", IName, errorprefix)
+		w.Writeln("let mut %s = unsafe{&mut *%s};", RefName, IName)
+		w.Writeln("*%s = %s as u8;", RefName, RetName)
+	case "pointer", "struct", "basicarray", "structarray":
+		// TODO
+		return fmt.Errorf("Conversion of type %s for parameter %s not supported - yet", param.ParamType, IName)
 	default:
 		return fmt.Errorf("Conversion of type %s for parameter %s not supported as is unknown", param.ParamType, IName)
 	}

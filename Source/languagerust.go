@@ -430,6 +430,12 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 				return RustParamOutTypeName, nil
 			}
 		}
+		if param.ParamPass == "return" {
+			if isPlain {
+				RustParamOutTypeName := fmt.Sprintf("*mut %s", RustParamTypeName)
+				return RustParamOutTypeName, nil
+			}
+		}
 	}
 	return RustParamTypeName, nil
 }
