@@ -443,7 +443,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 	w.Writeln("  class function T%sPolymorphicFactory<_T, _B>.Make(Wrapper: T%sWrapper; Handle: T%sHandle): _T;", NameSpace, NameSpace, NameSpace)
 	w.Writeln("  var")
 	w.Writeln("    ClassTypeId: QWord;")
-    w.Writeln("    Obj: T%sBase;", strings.ToUpper(NameSpace))
+	w.Writeln("    Obj: T%sBase;", strings.ToUpper(NameSpace))
 	w.Writeln("  begin")
 	w.Writeln("    Result := nil;")
 	w.Writeln("    Wrapper.CheckError(nil, Wrapper.%sBase_ClassTypeIdFunc(handle, ClassTypeId));", NameSpace)
@@ -461,7 +461,7 @@ func buildDynamicPascalImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("  function T%sPolymorphicFactoryMake%s(Wrapper: T%sWrapper; Handle: T%sHandle): %s;", NameSpace, class.ClassName, NameSpace, NameSpace, fullClassName)
 		w.Writeln("  begin")
 		w.Writeln("    Result := T%sPolymorphicFactory<%s, %s>.Make(Wrapper, Handle);", NameSpace, fullClassName, fullClassName)
-		w.Writeln("  end;")	
+		w.Writeln("  end;")
 	}
 	w.Writeln("")
 	w.Writeln("(*************************************************************************************************************************")
@@ -916,9 +916,9 @@ func writePascalClassMethodImplementation(method ComponentDefinitionMethod, w La
 				}
 				defineCommands = append(defineCommands, "A"+param.ParamName+"Handle: T"+paramNameSpace+"Handle;")
 				initCommands = append(initCommands, fmt.Sprintf("if Assigned(A%s) then", param.ParamName))
-				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A" + param.ParamName + ".TheHandle")
+				initCommands = append(initCommands, "A"+param.ParamName+"Handle := A"+param.ParamName+".TheHandle")
 				initCommands = append(initCommands, fmt.Sprintf("else"))
-				if (param.ParamType == "optionalclass") {
+				if param.ParamType == "optionalclass" {
 					initCommands = append(initCommands, "A"+param.ParamName+"Handle := nil;")
 				} else {
 					initCommands = append(initCommands, fmt.Sprintf("  raise E%sException.CreateCustomMessage(%s_ERROR_INVALIDPARAM, 'A%s is a nil value.');", NameSpace, strings.ToUpper(NameSpace), param.ParamName))

@@ -814,7 +814,6 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	implw.Writeln("")
 
 	return nil
-
 }
 
 func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, implw LanguageWriter, NameSpace string, BaseName string) error {

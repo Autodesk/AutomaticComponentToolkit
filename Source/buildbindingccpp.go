@@ -115,7 +115,7 @@ func BuildBindingCExplicit(component ComponentDefinition, outputFolder string, o
 }
 
 // BuildBindingCppImplicit builds dynamic C++-bindings of a library's API in form of implicitly linked functions handles.
-func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string, outputFolderExample string, 
+func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string, outputFolderExample string,
 	outputFolderDocumentation string, indentString string, ClassIdentifier string) error {
 	forceRecreation := false
 	ExplicitLinking := false
@@ -170,19 +170,17 @@ func BuildBindingCppImplicit(component ComponentDefinition, outputFolder string,
 		}
 	}
 
-	if (outputFolderDocumentation != "") {
+	if outputFolderDocumentation != "" {
 
 		err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
 		if err != nil {
 			return err
 		}
-		
-	}
 
+	}
 
 	return nil
 }
-
 
 func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string,
 	headerOnly bool, useCPPTypes bool) error {
@@ -201,7 +199,7 @@ func buildDynamicCCPPHeader(component ComponentDefinition, w LanguageWriter, Nam
 		w.Writeln("#include \"%s_types.h\"", BaseName)
 	}
 	w.Writeln("")
-	for _, subComponent := range(component.ImportedComponentDefinitions) {
+	for _, subComponent := range component.ImportedComponentDefinitions {
 		if useCPPTypes {
 			w.Writeln("#include \"%s_types.hpp\"", subComponent.BaseName)
 		} else {
@@ -284,14 +282,14 @@ func buildDynamicCInitTableCode(component ComponentDefinition, w LanguageWriter,
 	global := component.Global
 
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
 	w.Writeln("if (pWrapperTable == %s)", nullPtrStr)
 	w.Writeln("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace))
 	w.Writeln("")
-	
+
 	w.Writeln("pWrapperTable->m_LibraryHandle = %s;", nullPtrStr)
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -316,7 +314,7 @@ func buildDynamicCInitTableCode(component ComponentDefinition, w LanguageWriter,
 
 func buildDynamicCReleaseTableCode(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, initWrapperFunctionName string, useStrictC bool) error {
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
@@ -340,12 +338,12 @@ func buildDynamicCReleaseTableCode(component ComponentDefinition, w LanguageWrit
 
 func writeLoadingOfMethodFromSymbolLookupMethod(w LanguageWriter, methodName string, NameSpace string, useStrictC bool) {
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
 	w.Writeln("eLookupError = (*pLookup)(\"%s_%s\", (void**)&(pWrapperTable->m_%s));", strings.ToLower(NameSpace), strings.ToLower(methodName), methodName)
-		
+
 	w.Writeln("if ( (eLookupError != 0) || (pWrapperTable->m_%s == %s) )", methodName, nullPtrStr)
 	w.Writeln("  return %s_ERROR_COULDNOTFINDLIBRARYEXPORT;", strings.ToUpper(NameSpace))
 	w.Writeln("")
@@ -354,7 +352,7 @@ func writeLoadingOfMethodFromSymbolLookupMethod(w LanguageWriter, methodName str
 // WriteLoadingOfMethod the loading of a method from a library into a LanguagWriter
 func WriteLoadingOfMethod(class ComponentDefinitionClass, method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, useStrictC bool) {
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
@@ -369,12 +367,11 @@ func WriteLoadingOfMethod(class ComponentDefinitionClass, method ComponentDefini
 	w.Writeln("")
 }
 
-
 func buildDynamicCLoadTableFromSymbolLookupMethodCode(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, useStrictC bool) error {
 	global := component.Global
 
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
@@ -388,8 +385,7 @@ func buildDynamicCLoadTableFromSymbolLookupMethodCode(component ComponentDefinit
 	w.Writeln("SymbolLookupType pLookup = (SymbolLookupType)pSymbolLookupMethod;")
 	w.Writeln("")
 	w.Writeln("%sResult eLookupError = %s_SUCCESS;", NameSpace, strings.ToUpper(NameSpace))
-	
-	
+
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		for j := 0; j < len(class.Methods); j++ {
@@ -415,7 +411,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 	global := component.Global
 
 	nullPtrStr := "nullptr"
-	if (useStrictC) {
+	if useStrictC {
 		nullPtrStr = "NULL"
 	}
 
@@ -432,7 +428,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 	w.Writeln("while ((pLibraryFileName[nLength] != 0) && (nLength < MAX_PATH))")
 	w.Writeln("  nLength++;")
 	w.Writeln("int nBufferSize = nLength * 2 + 2;")
-	if (!useStrictC) {
+	if !useStrictC {
 		w.Writeln("std::vector<wchar_t> wsLibraryFileName(nBufferSize);")
 		w.Writeln("int nResult = MultiByteToWideChar(CP_UTF8, 0, pLibraryFileName, nLength, &wsLibraryFileName[0], nBufferSize);")
 		w.Writeln("if (nResult == 0)")
@@ -451,7 +447,7 @@ func buildDynamicCLoadTableCode(component ComponentDefinition, w LanguageWriter,
 		w.Writeln("HMODULE hLibrary = LoadLibraryW(wsLibraryFileName);")
 		w.Writeln("free(wsLibraryFileName);")
 	}
-	
+
 	w.Writeln("if (hLibrary == 0) ")
 	w.Writeln("  return %s_ERROR_COULDNOTLOADLIBRARY;", strings.ToUpper(NameSpace))
 	w.Writeln("#else // _WIN32")
@@ -496,7 +492,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
 
 	w.Writeln("#ifdef _WIN32")
-	if (!useStrictC) {
+	if !useStrictC {
 		w.Writeln("#include <vector>")
 	}
 	w.Writeln("#include <windows.h>")
@@ -504,7 +500,7 @@ func buildDynamicCImplementation(component ComponentDefinition, w LanguageWriter
 	w.Writeln("#else // _WIN32")
 	w.Writeln("#include <dlfcn.h>")
 	w.Writeln("#include <stdlib.h>")
-		w.Writeln("#endif // _WIN32")
+	w.Writeln("#endif // _WIN32")
 
 	w.Writeln("")
 	w.Writeln("%sResult Init%sWrapperTable(s%sDynamicWrapperTable * pWrapperTable)", NameSpace, NameSpace, NameSpace)
@@ -586,7 +582,7 @@ func getDynamicCPPMethodParameters(method ComponentDefinitionMethod, NameSpace s
 
 func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string) error {
 	parameters, returntype, err := getDynamicCPPMethodParameters(method, NameSpace, ClassIdentifier, ClassName)
-	if (err!= nil) {
+	if err != nil {
 		return err
 	}
 	w.Writeln("  inline %s %s(%s);", returntype, method.MethodName, parameters)
@@ -599,7 +595,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	WASMPrefix := ""
 	WASMCast := ""
 	WASMCastp := ""
-	if (forWASM) {
+	if forWASM {
 		WASMPrefix = "_"
 		WASMCast = "(uint64_t)"
 		WASMCastp = "(uint64_t)&"
@@ -610,9 +606,9 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	parameters := ""
 	returntype := "void"
 
-	callParameters := ""	// parameters for call of the C-function
+	callParameters := "" // parameters for call of the C-function
 
-	requiresInitCall := false 
+	requiresInitCall := false
 	initCallParameters := "" // usually used to check sizes of buffers
 
 	checkErrorCodeBegin := ""
@@ -631,7 +627,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 		if ExplicitLinking {
 			CMethodName = fmt.Sprintf("m_pWrapper->m_WrapperTable.m_%s_%s", ClassName, method.MethodName)
 		} else {
-			CMethodName = fmt.Sprintf("%s%s_%s_%s",  WASMPrefix, strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
+			CMethodName = fmt.Sprintf("%s%s_%s_%s", WASMPrefix, strings.ToLower(NameSpace), strings.ToLower(ClassName), strings.ToLower(method.MethodName))
 		}
 		callParameters = WASMCastp + "m_pHandle"
 		initCallParameters = callParameters
@@ -658,7 +654,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	for _, param := range method.Params {
 		variableName := getBindingCppVariableName(param)
 
-		callParameter := ""		// parameter of the actual call of the C-function
+		callParameter := ""     // parameter of the actual call of the C-function
 		initCallParameter := "" // parameter of an
 
 		switch param.ParamPass {
@@ -716,7 +712,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				requiresInitCall = true
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesNeeded%s = 0;", NameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
-				if (forWASM) {
+				if forWASM {
 					initCallParameter = fmt.Sprintf("%sbytesWritten%s, %s&bytesNeeded%s, 0", WASMCastp, param.ParamName, WASMCast, param.ParamName)
 				} else {
 					initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
@@ -738,7 +734,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				initCallParameter = callParameter
 
 				CPPClass := fmt.Sprintf("%s%s%s", cppClassPrefix, ClassIdentifier, param.ParamClass)
-				if (param.ParamType == "optionalclass") {
+				if param.ParamType == "optionalclass" {
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("  p%s = std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", param.ParamName, CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 					postCallCodeLines = append(postCallCodeLines, fmt.Sprintf("} else {"))
@@ -757,7 +753,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsNeeded%s = 0;", NameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsWritten%s = 0;", NameSpace, param.ParamName))
 
-				if (forWASM) {
+				if forWASM {
 					initCallParameter = fmt.Sprintf("%s&elementsWritten%s, %s&elementsNeeded%s, 0", WASMCast, param.ParamName, WASMCast, param.ParamName)
 				} else {
 					initCallParameter = fmt.Sprintf("0, &elementsNeeded%s, nullptr", param.ParamName)
@@ -786,7 +782,7 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesNeeded%s = 0;", NameSpace, param.ParamName))
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint32 bytesWritten%s = 0;", NameSpace, param.ParamName))
 
-				if (forWASM) {
+				if forWASM {
 					initCallParameter = fmt.Sprintf("%s&bytesWritten%s, %s&bytesNeeded%s, 0", WASMCast, param.ParamName, WASMCast, param.ParamName)
 				} else {
 					initCallParameter = fmt.Sprintf("0, &bytesNeeded%s, nullptr", param.ParamName)
@@ -819,12 +815,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					CPPClass = paramNameSpaceCPP + CPPClass
 					makeSharedParameter = makeSharedParameter + "->m_p" + paramNameSpace + "Wrapper.get()"
 				}
-				
+
 				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%sHandle h%s = (%sHandle)nullptr;", paramNameSpace, param.ParamName, NameSpace))
 				callParameter = fmt.Sprintf("%s&h%s", WASMCast, param.ParamName)
 				initCallParameter = callParameter
-				
-				if (param.ParamType == "optionalclass") {
+
+				if param.ParamType == "optionalclass" {
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (h%s) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("} else {"))
@@ -834,11 +830,24 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("if (!h%s) {", param.ParamName))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("  %s%s_ERROR_INVALIDPARAM%s;", checkErrorCodeBegin, strings.ToUpper(NameSpace), checkErrorCodeEnd))
 					returnCodeLines = append(returnCodeLines, fmt.Sprintf("}"))
-					returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 				}
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return std::shared_ptr<%s>(dynamic_cast<%s*>(%s->polymorphicFactory(h%s)));", CPPClass, CPPClass, makeSharedParameter, param.ParamName))
 
 			case "basicarray":
-				return fmt.Errorf("can not return basicarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
+				requiresInitCall = true
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s %s;", returntype, variableName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsNeeded%s = 0;", NameSpace, param.ParamName))
+				definitionCodeLines = append(definitionCodeLines, fmt.Sprintf("%s_uint64 elementsWritten%s = 0;", NameSpace, param.ParamName))
+
+				if forWASM {
+					initCallParameter = fmt.Sprintf("%s&elementsWritten%s, %s&elementsNeeded%s, 0", WASMCast, param.ParamName, WASMCast, param.ParamName)
+				} else {
+					initCallParameter = fmt.Sprintf("0, &elementsNeeded%s, nullptr", param.ParamName)
+				}
+				functionCodeLines = append(functionCodeLines, fmt.Sprintf("%s.resize((size_t) elementsNeeded%s);", variableName, param.ParamName))
+				callParameter = fmt.Sprintf("%selementsNeeded%s, %s&elementsWritten%s, %s%s.data()", WASMCastp, param.ParamName, WASMCast, param.ParamName, WASMCast, variableName)
+
+				returnCodeLines = append(returnCodeLines, fmt.Sprintf("return %s;", variableName))
 
 			case "structarray":
 				return fmt.Errorf("can not return structarray \"%s\" for %s.%s(%s)", param.ParamPass, ClassName, method.MethodName, param.ParamName)
@@ -886,12 +895,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 	w.Writeln("    %s%s(%s)%s;", checkErrorCodeBegin, CMethodName, callParameters, checkErrorCodeEnd)
 	w.Writelns("    ", postCallCodeLines)
 
-	if (len(implementationLines) >0) {
+	if len(implementationLines) > 0 {
 		w.Writeln("    ")
 		w.Writelns("    ", implementationLines)
 	}
 
-	if (len(returnCodeLines) >0) {
+	if len(returnCodeLines) > 0 {
 		w.Writeln("    ")
 		w.Writelns("    ", returnCodeLines)
 	}
@@ -954,7 +963,6 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	return nil
 }
 
-
 func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w LanguageWriter, NameSpace string, cppClassPrefix string, ClassIdentifier string) {
 	w.Writeln("/*************************************************************************************************************************")
 	w.Writeln(" Forward Declaration of all classes")
@@ -965,7 +973,7 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 		className := cppClassPrefix + ClassIdentifier + class.ClassName
 		w.Writeln("class %s;", className)
 	}
-	if (strings.Compare(ClassIdentifier, NameSpace) != 0) {
+	if strings.Compare(ClassIdentifier, NameSpace) != 0 {
 		w.Writeln("")
 		w.Writeln("/*************************************************************************************************************************")
 		w.Writeln(" Declaration of deprecated class types")
@@ -988,8 +996,8 @@ func buildBindingCPPAllForwardDeclarations(component ComponentDefinition, w Lang
 		className := cppClassPrefix + ClassIdentifier + class.ClassName
 		w.Writeln("typedef std::shared_ptr<%s> P%s%s;", className, ClassIdentifier, class.ClassName)
 	}
-	
-	if (strings.Compare(ClassIdentifier, NameSpace) != 0) {
+
+	if strings.Compare(ClassIdentifier, NameSpace) != 0 {
 		w.Writeln("")
 		w.Writeln("/*************************************************************************************************************************")
 		w.Writeln(" Declaration of deprecated shared pointer types")
@@ -1037,7 +1045,7 @@ func writeCPPInputVector(w LanguageWriter, NameSpace string, ClassIdentifier str
 	w.Writeln("  }")
 	w.Writeln("  ")
 	w.Writeln("};")
-	if (strings.Compare(ClassIdentifier, NameSpace) != 0) {
+	if strings.Compare(ClassIdentifier, NameSpace) != 0 {
 		w.Writeln("")
 		w.Writeln("// declare deprecated class name")
 		w.Writeln("template<typename T>")
@@ -1098,13 +1106,12 @@ func writeWrapperLifeTimeHandling(w LanguageWriter, cppClassPrefix string, Class
 	}
 }
 
-
 func decomposeParamClassNameCPP(paramClassName string) (string, string, error) {
 	paramNameSpace, paramClassName, err := decomposeParamClassName(paramClassName)
-	if (err != nil) {
+	if err != nil {
 		return "", "", err
 	}
-	if (len(paramNameSpace) >0 ) {
+	if len(paramNameSpace) > 0 {
 		paramNameSpace = paramNameSpace + "::"
 	}
 	return paramNameSpace, paramClassName, err
@@ -1138,15 +1145,15 @@ func getBindingCppParamType(paramType string, paramClass string, NameSpace strin
 		}
 		return fmt.Sprintf("std::vector<%s>", cppBasicType)
 	case "structarray":
-		typeName := paramNameSpace + "s"+paramClassName
+		typeName := paramNameSpace + "s" + paramClassName
 		if isInput {
 			return fmt.Sprintf("C%sInputVector<%s>", ClassIdentifier, typeName)
 		}
 		return fmt.Sprintf("std::vector<%s>", typeName)
 	case "enum":
-		return fmt.Sprintf(paramNameSpace + "e"+paramClassName)
+		return fmt.Sprintf(paramNameSpace + "e" + paramClassName)
 	case "struct":
-		return fmt.Sprintf(paramNameSpace + "s"+paramClassName)
+		return fmt.Sprintf(paramNameSpace + "s" + paramClassName)
 	case "class", "optionalclass":
 		if isInput {
 			return fmt.Sprintf("%sclassParam<%s%s%s%s>", paramNameSpace, paramNameSpace, cppClassPrefix, ClassIdentifier, paramClassName)
@@ -1197,7 +1204,7 @@ func getCPPInheritanceSpecifier(component ComponentDefinition, class ComponentDe
 		if class.ParentClass == "" {
 			cppParentClassName = cppClassPrefix + ClassIdentifier + component.Global.BaseClassName
 		} else {
-			cppParentClassName = cppClassPrefix + ClassIdentifier+ class.ParentClass
+			cppParentClassName = cppClassPrefix + ClassIdentifier + class.ParentClass
 		}
 		inheritanceSpecifier = fmt.Sprintf(": public %s ", cppParentClassName)
 	}
@@ -1276,7 +1283,7 @@ func writeExceptionClass(w LanguageWriter, NameSpace string, errors ComponentDef
 	w.Writeln("  {")
 	w.Writeln("    return m_errorMessage.c_str();")
 	w.Writeln("  }")
-	w.Writeln("");
+	w.Writeln("")
 	w.Writeln("  const char* getErrorMessage() const noexcept")
 	w.Writeln("  {")
 	w.Writeln("    return m_originalErrorMessage.c_str();")
@@ -1286,22 +1293,22 @@ func writeExceptionClass(w LanguageWriter, NameSpace string, errors ComponentDef
 	w.Writeln("  {")
 	w.Writeln("    switch(getErrorCode()) {")
 	w.Writeln("      case %s_SUCCESS: return \"SUCCESS\";", strings.ToUpper(NameSpace))
-	for _, errorDef := range(errors.Errors) {
+	for _, errorDef := range errors.Errors {
 		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Name)
 	}
 	w.Writeln("    }")
-	w.Writeln("    return \"UNKNOWN\";");
+	w.Writeln("    return \"UNKNOWN\";")
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  const char* getErrorDescription() const noexcept")
 	w.Writeln("  {")
 	w.Writeln("    switch(getErrorCode()) {")
 	w.Writeln("      case %s_SUCCESS: return \"success\";", strings.ToUpper(NameSpace))
-	for _, errorDef := range(errors.Errors) {
+	for _, errorDef := range errors.Errors {
 		w.Writeln("      case %s_ERROR_%s: return \"%s\";", strings.ToUpper(NameSpace), errorDef.Name, errorDef.Description)
 	}
 	w.Writeln("    }")
-	w.Writeln("    return \"unknown error\";");
+	w.Writeln("    return \"unknown error\";")
 	w.Writeln("  }")
 	w.Writeln("")
 
@@ -1314,7 +1321,7 @@ func writeExceptionClass(w LanguageWriter, NameSpace string, errors ComponentDef
 	w.Writeln("    if (msg.empty()) {")
 	w.Writeln("      msg = getErrorDescription();")
 	w.Writeln("    }")
-	w.Writeln("    return std::string(\"Error: \") + getErrorName() + \": \" + msg;")
+	w.Writeln("    return std::string(getErrorName()) + \": \" + msg;")
 	w.Writeln("  }")
 
 	w.Writeln("};")
@@ -1401,7 +1408,7 @@ func writeClassDeclarations(w LanguageWriter, component ComponentDefinition, cpp
 			}
 		}
 
-		for _, method :=  range class.Methods {
+		for _, method := range class.Methods {
 			err := writeDynamicCPPMethodDeclaration(method, w, NameSpace, ClassIdentifier, cppClassName)
 			if err != nil {
 				return err
@@ -1412,12 +1419,11 @@ func writeClassDeclarations(w LanguageWriter, component ComponentDefinition, cpp
 	return nil
 }
 
-
 func writePolymorphicFactoryImplementation(w LanguageWriter, component ComponentDefinition, NameSpace string, cppClassPrefix string, ClassIdentifier string, ExplicitLinking bool, forWASM bool) {
 	WASMPrefix := ""
 	WASMCast := ""
 	WASMCastp := ""
-	if (forWASM) {
+	if forWASM {
 		WASMPrefix = "_"
 		WASMCast = "(uint64_t)"
 		WASMCastp = "(uint64_t)&"
@@ -1455,7 +1461,6 @@ func writePolymorphicFactoryImplementation(w LanguageWriter, component Component
 	w.Writeln("}")
 }
 
-
 func writeCheckErrorImplementation(w LanguageWriter, ErrorMethodName string, ClassIdentifier string, cppBaseClassName string, NameSpace string) {
 	w.Writeln("  inline void C%sWrapper::CheckError(%s * pBaseClass, %sResult nResult)", ClassIdentifier, cppBaseClassName, NameSpace)
 	w.Writeln("  {")
@@ -1479,14 +1484,14 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	baseClass := component.baseClass()
 	cppBaseClassName := cppClassPrefix + ClassIdentifier + baseClass.ClassName
 
-	sIncludeGuard := "";
-	
+	sIncludeGuard := ""
+
 	if ExplicitLinking {
 		sIncludeGuard = "__" + strings.ToUpper(NameSpace) + "_CPPHEADER_DYNAMIC"
 	} else {
 		sIncludeGuard = "__" + strings.ToUpper(NameSpace) + "_CPPHEADER_IMPLICIT"
 	}
-	
+
 	if useCPPTypes {
 		sIncludeGuard += "_CPP"
 	}
@@ -1495,15 +1500,15 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
-	
+
 	if ExplicitLinking {
 		w.Writeln("#include \"%s_dynamic.h\"", BaseName)
 	} else {
 		w.Writeln("#include \"%s_abi.hpp\"", BaseName)
 	}
-	
+
 	w.Writeln("")
-	for _, subComponent := range(component.ImportedComponentDefinitions) {
+	for _, subComponent := range component.ImportedComponentDefinitions {
 		w.Writeln("#include \"%s_dynamic.hpp\"", subComponent.BaseName)
 	}
 	w.Writeln("")
@@ -1541,9 +1546,9 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("class %s%sWrapper {", cppClassPrefix, ClassIdentifier)
 	w.Writeln("public:")
 	w.Writeln("  ")
-	
+
 	writeWrapperLifeTimeHandling(w, cppClassPrefix, ClassIdentifier, ExplicitLinking)
-	
+
 	w.Writeln("  ")
 	w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
 	w.Writeln("")
@@ -1567,14 +1572,13 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 
 	if len(component.ImportedComponentDefinitions) > 0 {
 		w.Writeln("  // Injected Components")
-		for _, subComponent := range(component.ImportedComponentDefinitions) {
+		for _, subComponent := range component.ImportedComponentDefinitions {
 			subNameSpace := subComponent.NameSpace
 			w.Writeln("  %s::PWrapper m_p%sWrapper;", subNameSpace, subNameSpace)
 		}
 		w.Writeln("")
 	}
-	
-	
+
 	w.Writeln("  ")
 	writeCheckBinaryVersion(w, NameSpace, component)
 
@@ -1598,7 +1602,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 
 	err := writeClassDeclarations(w, component, cppClassPrefix, ClassIdentifier, NameSpace, BaseName)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 
@@ -1609,16 +1613,16 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		if err != nil {
 			return err
 		}
-		
+
 		implementationLines := make([]string, 0)
-		if (isSpecialFunction == eSpecialMethodInjection) {
+		if isSpecialFunction == eSpecialMethodInjection {
 			implementationLines = append(implementationLines, "bool bNameSpaceFound = false;")
 			sParamName := "s" + method.Params[0].ParamName
-			for _, subComponent := range(component.ImportedComponentDefinitions) {
+			for _, subComponent := range component.ImportedComponentDefinitions {
 				theNameSpace := subComponent.NameSpace
 				implementationLines = append(implementationLines, fmt.Sprintf("if (%s == \"%s\") {", sParamName, theNameSpace))
 				implementationLines = append(implementationLines, fmt.Sprintf("  if (m_p%sWrapper != nullptr) {", theNameSpace))
-				implementationLines = append(implementationLines, fmt.Sprintf("    throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\");", NameSpace, strings.ToUpper(NameSpace), sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("    throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\");", NameSpace, strings.ToUpper(NameSpace), sParamName))
 				implementationLines = append(implementationLines, fmt.Sprintf("  }"))
 
 				implementationLines = append(implementationLines, fmt.Sprintf("  m_p%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
@@ -1626,7 +1630,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 				implementationLines = append(implementationLines, fmt.Sprintf("}"))
 			}
 			implementationLines = append(implementationLines, "if (!bNameSpaceFound)")
-			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
+			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
 		}
 
 		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, false)
@@ -1639,7 +1643,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	w.Writeln("")
 	writeCheckErrorImplementation(w, component.Global.ErrorMethod, ClassIdentifier, cppBaseClassName, NameSpace)
 	w.Writeln("")
-	
+
 	if ExplicitLinking {
 		w.AddIndentationLevel(1)
 		writeWrapperTableHandling(w, component, NameSpace, cppClassPrefix, ClassIdentifier, BaseName)
@@ -1655,7 +1659,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking, false)
+			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, false)
 			if err != nil {
 				return err
 			}
@@ -1735,24 +1739,23 @@ func BuildBindingCppExplicit(component ComponentDefinition, outputFolder string,
 			dyncppcmake.WriteCMakeLicenseHeader(component,
 				fmt.Sprintf("This is an autogenerated CMake Project that demonstrates the\n usage of the Dynamic C++ bindings of %s", libraryname),
 				true)
-				buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, outputFolderExample, ExplicitLinking)
+			buildCppDynamicExampleCMake(component, dyncppcmake, outputFolder, outputFolderExample, ExplicitLinking)
 		} else {
 			log.Printf("Omitting recreation of C++Dynamic example file \"%s\"", DynamicCPPCMake)
 		}
 	}
-	
-	if (outputFolderDocumentation != "") {
+
+	if outputFolderDocumentation != "" {
 
 		err = BuildCCPPDocumentation(component, outputFolderDocumentation, ClassIdentifier)
 		if err != nil {
 			return err
 		}
-		
+
 	}
 
 	return nil
 }
-
 
 // BuildBindingCppwasmtimeHost builds headeronly C++-bindings of a library's API in form of explicitly loaded function handles.
 // it maps all C-functions to functions objects that can be linked into a wasmtime module
@@ -1769,8 +1772,8 @@ func BuildBindingCppwasmtimeHost(component ComponentDefinition, outputFolder str
 		return err
 	}
 	wasmhosthppfile.WriteCLicenseHeader(component,
-		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s.", libraryname) +
-		fmt.Sprintf("It loads the functions exported by the component and wraps them with C++ function objects\nthat can be linked into a wasmtime module."),
+		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s.", libraryname)+
+			fmt.Sprintf("It loads the functions exported by the component and wraps them with C++ function objects\nthat can be linked into a wasmtime module."),
 		true)
 	err = buildCppwasmHostHeader(component, wasmhosthppfile, namespace, baseName, ClassIdentifier)
 	if err != nil {
@@ -1785,7 +1788,7 @@ func BuildBindingCppwasmtimeHost(component ComponentDefinition, outputFolder str
 // It imports the component's functions exported by the host and creates a C++ wrapper\n that can be used within a wasmtime module like the regular C++ bindings of that component.
 func BuildBindingCppwasmtimeGuest(component ComponentDefinition, outputFolder string, outputFolderExample string,
 	outputFolderDocumentation string, indentString string, ClassIdentifier string) error {
-	
+
 	namespace := component.NameSpace
 	libraryname := component.LibraryName
 	baseName := component.BaseName
@@ -1797,8 +1800,8 @@ func BuildBindingCppwasmtimeGuest(component ComponentDefinition, outputFolder st
 		return err
 	}
 	wasmguesthppfile.WriteCLicenseHeader(component,
-		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s.", libraryname) +
-		fmt.Sprintf("It imports the component's functions exported by the host and creates a C++ wrapper\n that can be used within a wasmtime module like the regular C++ bindings of that component."),
+		fmt.Sprintf("This is an autogenerated C++-Header file in order to allow an easy\n use of %s.", libraryname)+
+			fmt.Sprintf("It imports the component's functions exported by the host and creates a C++ wrapper\n that can be used within a wasmtime module like the regular C++ bindings of that component."),
 		true)
 	err = buildCppwasmGuestHeader(component, wasmguesthppfile, namespace, baseName, ClassIdentifier)
 	if err != nil {
@@ -1809,21 +1812,20 @@ func BuildBindingCppwasmtimeGuest(component ComponentDefinition, outputFolder st
 	return nil
 }
 
-func cParamIsPointer(cParam CParameter) (bool) {
+func cParamIsPointer(cParam CParameter) bool {
 	if len(cParam.ParamType) == 0 {
 		return false
 	}
 	return cParam.ParamType[len(cParam.ParamType)-1:] == "*"
 }
 
-
-func writeWasmtimeImport(w LanguageWriter, NameSpace string, method ComponentDefinitionMethod, methodName string, className string ) (error) {
+func writeWasmtimeImport(w LanguageWriter, NameSpace string, method ComponentDefinitionMethod, methodName string, className string) error {
 	wasmtimeParams := ""
 	first := true
-	
+
 	var allCParams []CParameter
-	if (className != "") {
-		allCParams = make([]CParameter,1)
+	if className != "" {
+		allCParams = make([]CParameter, 1)
 		allCParams[0].ParamName = "hHandle"
 		allCParams[0].ParamType = NameSpace + "Handle"
 	}
@@ -1835,7 +1837,7 @@ func writeWasmtimeImport(w LanguageWriter, NameSpace string, method ComponentDef
 		}
 		allCParams = append(allCParams, cParams...)
 	}
-	for i:=0; i < len(allCParams); i++ {
+	for i := 0; i < len(allCParams); i++ {
 		if !first {
 			wasmtimeParams += ", "
 		}
@@ -1843,22 +1845,22 @@ func writeWasmtimeImport(w LanguageWriter, NameSpace string, method ComponentDef
 		wasmtimeParams += "uint64_t"
 	}
 
-	if (className != "") {
+	if className != "" {
 		className = className + "_"
 	}
 	w.Writeln("  __attribute__((import_module(\"\"), import_name(\"%s\"))) int32_t %s(%s);", methodName, methodName, wasmtimeParams)
 	return nil
 }
 
-func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDefinitionMethod, methodName string, className string ) (error) {
+func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDefinitionMethod, methodName string, className string) error {
 	wasmtimeParams := ""
 	cParameters := ""
 	var lines []string
 	first := true
-	
+
 	var allCParams []CParameter
-	if (className != "") {
-		allCParams = make([]CParameter,1)
+	if className != "" {
+		allCParams = make([]CParameter, 1)
 		allCParams[0].ParamName = "hHandle"
 		allCParams[0].ParamType = NameSpace + "Handle"
 	}
@@ -1878,7 +1880,7 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 		first = false
 		wasmtimeParams += "uint64_t w" + cParam.ParamName
 		cParameters += cParam.ParamName
-		
+
 		pointerString := ""
 		if !cParamIsPointer(cParam) {
 			pointerString = "*"
@@ -1886,10 +1888,10 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 		// ensure memory access does not go outside of WASM linear memory
 		lines = append(lines, fmt.Sprintf("if (w%s + sizeof(%s) >= nMemorySize)", cParam.ParamName, cParam.ParamType))
 		lines = append(lines, fmt.Sprintf("  return %s_ERROR_INVALIDPARAM;", strings.ToUpper(NameSpace)))
-		lines = append(lines, fmt.Sprintf("%s %s = %s( (%s %s)(_pData + w%s) );" , cParam.ParamType, cParam.ParamName, pointerString, cParam.ParamType, pointerString, cParam.ParamName))
+		lines = append(lines, fmt.Sprintf("%s %s = %s( (%s %s)(_pData + w%s) );", cParam.ParamType, cParam.ParamName, pointerString, cParam.ParamType, pointerString, cParam.ParamName))
 		if cParamIsPointer(cParam) {
 			// a nullptr in the WASM module is conveyed to the host as a 0 offset in WASM linear memory
-			lines = append(lines, fmt.Sprintf("if (w%s == 0)" , cParam.ParamName))
+			lines = append(lines, fmt.Sprintf("if (w%s == 0)", cParam.ParamName))
 			lines = append(lines, fmt.Sprintf("{"))
 			lines = append(lines, fmt.Sprintf("  %s = nullptr;", cParam.ParamName))
 			lines = append(lines, fmt.Sprintf("}"))
@@ -1902,14 +1904,14 @@ func writeWasmtimeLambda(w LanguageWriter, NameSpace string, method ComponentDef
 	w.Writeln("    uint8_t* _pData = data.data();")
 	w.Writeln("    const uint64_t nMemorySize = data.size();")
 	w.Writeln("    ")
-	
+
 	w.Writelns("    ", lines)
-	
-	if (className != "") {
+
+	if className != "" {
 		className = className + "_"
 	}
 	w.Writeln("    %sResult result = this->m_WrapperTable.m_%s%s(%s);", NameSpace, className, method.MethodName, cParameters)
-	
+
 	w.Writeln("    return result;")
 	w.Writeln("  };")
 	w.Writeln("  ")
@@ -1938,10 +1940,9 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("#endif // _WIN32")
 	w.Writeln("")
 
-
 	w.Writeln("#include \"%s_dynamic.h\"", BaseName)
-	
-	if len(component.ImportedComponentDefinitions)>0 {
+
+	if len(component.ImportedComponentDefinitions) > 0 {
 		return fmt.Errorf("C++ wasmtime bindings to not support imported components yet")
 	}
 	w.Writeln("")
@@ -1964,7 +1965,7 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("class %s%sWrapper {", cppClassPrefix, ClassIdentifier)
 	w.Writeln("public:")
 	w.Writeln("  ")
-	
+
 	w.Writeln("  explicit %s%sWrapper(void* pSymbolLookupMethod)", cppClassPrefix, ClassIdentifier)
 	w.Writeln("  {")
 	w.Writeln("    CheckError(initWrapperTable(&m_WrapperTable));")
@@ -2023,9 +2024,9 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 	w.Writeln("  s%sDynamicWrapperTable m_WrapperTable;", NameSpace)
 	w.Writeln("  wasmtime::Memory* m_pMemory;")
 	w.Writeln("  ")
-	
+
 	// writeCheckBinaryVersion(w, NameSpace, component)
-	
+
 	w.Writeln("  ")
 	w.Writeln("  %sResult initWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
 	w.Writeln("  %sResult releaseWrapperTable(s%sDynamicWrapperTable * pWrapperTable);", NameSpace, NameSpace)
@@ -2034,16 +2035,15 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 
 	w.Writeln("};")
 	w.Writeln("")
-	
+
 	writeWrapperTableHandling(w, component, NameSpace, cppClassPrefix, ClassIdentifier, BaseName)
 
 	w.Writeln("")
 
-
 	w.Writeln("inline void %s%sWrapper::linkComponentToWASM(wasmtime::Linker& linker, wasmtime::Store& store)", cppClassPrefix, ClassIdentifier)
 	w.Writeln("{")
 	var functionNames []string
-	
+
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 		methodName := "_" + strings.ToLower(NameSpace) + "_" + strings.ToLower(method.MethodName)
@@ -2061,7 +2061,7 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			methodName := "_" + strings.ToLower(NameSpace) + "_" + strings.ToLower(class.ClassName) + "_" + strings.ToLower(method.MethodName)
-			
+
 			err := writeWasmtimeLambda(w, NameSpace, method, methodName, class.ClassName)
 			if err != nil {
 				return err
@@ -2088,12 +2088,12 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 
 func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, NameSpace string, BaseName string, ClassIdentifier string) error {
 	cppClassPrefix := "C"
-	
+
 	baseClass := component.baseClass()
 	cppBaseClassName := cppClassPrefix + ClassIdentifier + baseClass.ClassName
 
 	sIncludeGuard := "__" + strings.ToUpper(NameSpace) + "_CPPHEADER_IMPLICIT_CPP"
-	
+
 	w.Writeln("#ifndef %s", sIncludeGuard)
 	w.Writeln("#define %s", sIncludeGuard)
 	w.Writeln("")
@@ -2101,10 +2101,10 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
 	w.Writeln("")
 	w.Writeln("#include <emscripten.h>")
-	
+
 	w.Writeln("")
-	
-	if len(component.ImportedComponentDefinitions)>0 {
+
+	if len(component.ImportedComponentDefinitions) > 0 {
 		return fmt.Errorf("C++ wasmtime bindings to not support imported components yet")
 	}
 
@@ -2120,7 +2120,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 	for j := 0; j < len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 		methodName := "_" + strings.ToLower(NameSpace) + "_" + strings.ToLower(method.MethodName)
-		
+
 		err := writeWasmtimeImport(w, NameSpace, method, methodName, "")
 		if err != nil {
 			return err
@@ -2132,7 +2132,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
 			methodName := "_" + strings.ToLower(NameSpace) + "_" + strings.ToLower(class.ClassName) + "_" + strings.ToLower(method.MethodName)
-			
+
 			err := writeWasmtimeImport(w, NameSpace, method, methodName, class.ClassName)
 			if err != nil {
 				return err
@@ -2163,14 +2163,14 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 	w.Writeln("class %s%sWrapper {", cppClassPrefix, ClassIdentifier)
 	w.Writeln("public:")
 	w.Writeln("  ")
-	
+
 	writeWrapperLifeTimeHandling(w, cppClassPrefix, ClassIdentifier, false)
-	
+
 	w.Writeln("  ")
 	w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
 	w.Writeln("")
 
-	for _ , method := range component.Global.Methods {
+	for _, method := range component.Global.Methods {
 		err := writeDynamicCPPMethodDeclaration(method, w, NameSpace, ClassIdentifier, "Wrapper")
 		if err != nil {
 			return err
@@ -2194,7 +2194,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 	w.Writeln("")
 
 	err := writeClassDeclarations(w, component, cppClassPrefix, ClassIdentifier, NameSpace, BaseName)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 
@@ -2208,16 +2208,16 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 		if err != nil {
 			return err
 		}
-		
+
 		implementationLines := make([]string, 0)
-		if (isSpecialFunction == eSpecialMethodInjection) {
+		if isSpecialFunction == eSpecialMethodInjection {
 			implementationLines = append(implementationLines, "bool bNameSpaceFound = false;")
 			sParamName := "s" + method.Params[0].ParamName
-			for _, subComponent := range(component.ImportedComponentDefinitions) {
+			for _, subComponent := range component.ImportedComponentDefinitions {
 				theNameSpace := subComponent.NameSpace
 				implementationLines = append(implementationLines, fmt.Sprintf("if (%s == \"%s\") {", sParamName, theNameSpace))
 				implementationLines = append(implementationLines, fmt.Sprintf("  if (m_p%sWrapper != nullptr) {", theNameSpace))
-				implementationLines = append(implementationLines, fmt.Sprintf("    throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\");", NameSpace, strings.ToUpper(NameSpace), sParamName) )
+				implementationLines = append(implementationLines, fmt.Sprintf("    throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Library with namespace \" + %s + \" is already registered.\");", NameSpace, strings.ToUpper(NameSpace), sParamName))
 				implementationLines = append(implementationLines, fmt.Sprintf("  }"))
 
 				implementationLines = append(implementationLines, fmt.Sprintf("  m_p%sWrapper = %s::CWrapper::loadLibraryFromSymbolLookupMethod(p%s);", theNameSpace, theNameSpace, method.Params[1].ParamName))
@@ -2225,7 +2225,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 				implementationLines = append(implementationLines, fmt.Sprintf("}"))
 			}
 			implementationLines = append(implementationLines, "if (!bNameSpaceFound)")
-			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName ))
+			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
 		}
 
 		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, true)
@@ -2247,7 +2247,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string,0), false, true, false, useCPPTypes, ExplicitLinking, true)
+			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, true)
 			if err != nil {
 				return err
 			}
@@ -2264,18 +2264,17 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 	return nil
 }
 
-
 func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, ClassIdentifier string, ExplicitLinking bool) {
 	NameSpace := componentdefinition.NameSpace
 	BaseName := componentdefinition.BaseName
 
 	w.Writeln("#include <iostream>")
-	if (ExplicitLinking) {
+	if ExplicitLinking {
 		w.Writeln("#include \"%s_dynamic.hpp\"", strings.ToLower(BaseName))
 	} else {
 		w.Writeln("#include \"%s_implicit.hpp\"", strings.ToLower(BaseName))
 	}
-	
+
 	w.Writeln("")
 	w.Writeln("")
 
@@ -2283,22 +2282,22 @@ func buildDynamicCppExample(componentdefinition ComponentDefinition, w LanguageW
 	w.Writeln("{")
 	w.Writeln("  try")
 	w.Writeln("  {")
-	if (ExplicitLinking) {
+	if ExplicitLinking {
 		w.Writeln("    std::string libpath = (\"\"); // TODO: put the location of the %s-library file here.", NameSpace)
-		w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, ClassIdentifier, BaseName,)
+		w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary(libpath + \"/%s.\"); // TODO: add correct suffix of the library", NameSpace, ClassIdentifier, BaseName)
 	} else {
 		w.Writeln("    auto wrapper = %s::C%sWrapper::loadLibrary();", NameSpace, ClassIdentifier)
 	}
 	w.Writeln("    %s_uint32 nMajor, nMinor, nMicro;", NameSpace)
 	w.Writeln("    wrapper->%s(nMajor, nMinor, nMicro);", componentdefinition.Global.VersionMethod)
 	w.Writeln("    std::cout << \"%s.Version = \" << nMajor << \".\" << nMinor << \".\" << nMicro;", NameSpace)
-	if len(componentdefinition.Global.PrereleaseMethod)>0 {
+	if len(componentdefinition.Global.PrereleaseMethod) > 0 {
 		w.Writeln("    std::string sPreReleaseInfo;")
 		w.Writeln("    if (wrapper->%s(sPreReleaseInfo)) {", componentdefinition.Global.PrereleaseMethod)
 		w.Writeln("      std::cout << \"-\" << sPreReleaseInfo;")
 		w.Writeln("    }")
 	}
-	if len(componentdefinition.Global.BuildinfoMethod)>0 {
+	if len(componentdefinition.Global.BuildinfoMethod) > 0 {
 		w.Writeln("    std::string sBuildInfo;")
 		w.Writeln("    if (wrapper->%s(sBuildInfo)) {", componentdefinition.Global.BuildinfoMethod)
 		w.Writeln("      std::cout << \"+\" << sBuildInfo;")
@@ -2331,7 +2330,7 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 	}
 
 	bindingFolder, err := filepath.Rel(outputFolderExample, outputFolder)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 	bindingFolder = strings.Replace(bindingFolder, "\\", "/", -1)
@@ -2341,7 +2340,7 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 	w.Writeln("project(%s)", projectName)
 	w.Writeln("set(CMAKE_CXX_STANDARD 11)")
 	w.Writeln("add_executable(%s \"${CMAKE_CURRENT_SOURCE_DIR}/%s_example.cpp\")", projectName, NameSpace)
-	if (ExplicitLinking || (len(componentdefinition.ImportedComponentDefinitions)>0)) {
+	if ExplicitLinking || (len(componentdefinition.ImportedComponentDefinitions) > 0) {
 		w.Writeln("if (UNIX)")
 		w.Writeln("  target_link_libraries(%s ${CMAKE_DL_LIBS})", projectName)
 		w.Writeln("endif (UNIX)")
@@ -2351,12 +2350,11 @@ func buildCppDynamicExampleCMake(componentdefinition ComponentDefinition, w Lang
 		w.Writeln("target_link_libraries(%s ${%sLOCATION})", projectName, strings.ToUpper(BaseName))
 	}
 	w.Writeln("target_include_directories(%s PRIVATE \"${%s}\")", projectName, cmakeBindingFolder)
-	for _, subComponent := range(componentdefinition.ImportedComponentDefinitions) {
+	for _, subComponent := range componentdefinition.ImportedComponentDefinitions {
 		w.Writeln("target_include_directories(%s PRIVATE \"${%s}/../../../%s_component/Bindings/CppDynamic\")", projectName, cmakeBindingFolder, subComponent.NameSpace)
 	}
 	return nil
 }
-
 
 func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWriter, outputFolder string, ClassIdentifier string) error {
 	NameSpace := componentdefinition.NameSpace
@@ -2365,7 +2363,7 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	w.Writeln("#include <stdio.h>")
 	w.Writeln("#include <stdlib.h>")
 	w.Writeln("#include \"%s_dynamic.h\"", strings.ToLower(BaseName))
-	
+
 	w.Writeln("")
 	w.Writeln("")
 	w.Writeln("void releaseWrapper(s%sDynamicWrapperTable* pWrapperTable) {", NameSpace)
@@ -2404,12 +2402,12 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 	w.Writeln("  }")
 	w.Writeln("  printf_s(\"%s.Version = %%d.%%d.%%d\", nMajor, nMinor, nMicro);", NameSpace)
 	w.Writeln("  ")
-	if len(componentdefinition.Global.PrereleaseMethod)>0 || len(componentdefinition.Global.BuildinfoMethod)>0 {
+	if len(componentdefinition.Global.PrereleaseMethod) > 0 || len(componentdefinition.Global.BuildinfoMethod) > 0 {
 		w.Writeln("  %s_uint32 nBufferRequired = 0;", NameSpace)
 		w.Writeln("  %s_uint8* theString = NULL;", NameSpace)
 		w.Writeln("  bool bHasInfo = false;", NameSpace)
 	}
-	if len(componentdefinition.Global.PrereleaseMethod)>0 {
+	if len(componentdefinition.Global.PrereleaseMethod) > 0 {
 		w.Writeln("  eResult = sWrapperTable.m_%s(&bHasInfo, 0, &nBufferRequired, theString);", componentdefinition.Global.PrereleaseMethod)
 		w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 		w.Writeln("	   releaseWrapper(&sWrapperTable);")
@@ -2420,7 +2418,7 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 		w.Writeln("    theString[nBufferRequired] = 0;")
 		w.Writeln("    eResult = sWrapperTable.m_%s(&bHasInfo, nBufferRequired + 1, &nBufferRequired, theString);", componentdefinition.Global.PrereleaseMethod)
 		w.Writeln("    if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
-		w.Writeln("      printf_s(\"Failed to get prerelease information\\n\"");
+		w.Writeln("      printf_s(\"Failed to get prerelease information\\n\"")
 		w.Writeln("      releaseWrapper(&sWrapperTable);")
 		w.Writeln("      free(theString);")
 		w.Writeln("      return eResult;")
@@ -2431,7 +2429,7 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 		w.Writeln("  }")
 		w.Writeln("  ")
 	}
-	if len(componentdefinition.Global.BuildinfoMethod)>0 {
+	if len(componentdefinition.Global.BuildinfoMethod) > 0 {
 		w.Writeln("  eResult = sWrapperTable.m_%s(&bHasInfo, 0, &nBufferRequired, theString);", componentdefinition.Global.BuildinfoMethod)
 		w.Writeln("  if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
 		w.Writeln("	   releaseWrapper(&sWrapperTable);")
@@ -2442,7 +2440,7 @@ func buildDynamicCExample(componentdefinition ComponentDefinition, w LanguageWri
 		w.Writeln("    theString[nBufferRequired] = 0;")
 		w.Writeln("    eResult = sWrapperTable.m_%s(&bHasInfo, nBufferRequired + 1, &nBufferRequired, theString);", componentdefinition.Global.BuildinfoMethod)
 		w.Writeln("    if (%s_SUCCESS != eResult) {", strings.ToUpper(NameSpace))
-		w.Writeln("      printf_s(\"Failed to get build information\\n\"");
+		w.Writeln("      printf_s(\"Failed to get build information\\n\"")
 		w.Writeln("      releaseWrapper(&sWrapperTable);")
 		w.Writeln("      free(theString);")
 		w.Writeln("      return eResult;")
@@ -2482,7 +2480,7 @@ func buildCDynamicExampleCMake(componentdefinition ComponentDefinition, w Langua
 	}
 
 	bindingFolder, err := filepath.Rel(outputFolderExample, outputFolder)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 	bindingFolder = strings.Replace(bindingFolder, "\\", "/", -1)
@@ -2493,15 +2491,15 @@ func buildCDynamicExampleCMake(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("project(%s C)", projectName)
 	w.Writeln("")
 	bindingSource := ""
-	if (ExplicitLinking) {
-		bindingSource = "\"${"+cmakeBindingFolder+"}/"+strings.ToLower(NameSpace)+"_dynamic.cc\""
+	if ExplicitLinking {
+		bindingSource = "\"${" + cmakeBindingFolder + "}/" + strings.ToLower(NameSpace) + "_dynamic.cc\""
 		w.Writeln("SET_SOURCE_FILES_PROPERTIES(%s PROPERTIES LANGUAGE C)", bindingSource)
 		bindingSource += "\n"
 	}
 
 	w.Writeln("add_executable(%s\n  \"${CMAKE_CURRENT_SOURCE_DIR}/%s_example.c\"\n  %s\n)", projectName, NameSpace, bindingSource)
 	w.Writeln("set_property(TARGET %s PROPERTY C_STANDARD 99)", projectName)
-	if (ExplicitLinking) {
+	if ExplicitLinking {
 		w.Writeln("if (UNIX)")
 		w.Writeln("  target_link_libraries(%s ${CMAKE_DL_LIBS})", projectName)
 		w.Writeln("endif (UNIX)")
