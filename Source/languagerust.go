@@ -99,9 +99,9 @@ func writeRustBaseTypeDefinitions(componentdefinition ComponentDefinition, w Lan
 	for i := 0; i < len(componentdefinition.Classes); i++ {
 		class := componentdefinition.Classes[i]
 		if i != len(componentdefinition.Classes)-1 {
-			w.Writeln("T%s(Box<dyn %s>),", class.ClassName, class.ClassName)
+			w.Writeln("T%s(u64, Box<dyn %s>),", class.ClassName, class.ClassName)
 		} else {
-			w.Writeln("T%s(Box<dyn %s>)", class.ClassName, class.ClassName)
+			w.Writeln("T%s(u64, Box<dyn %s>)", class.ClassName, class.ClassName)
 		}
 	}
 	w.AddIndentationLevel(-1)
@@ -424,7 +424,7 @@ func generateRustParameterType(param ComponentDefinitionParam, isPlain bool) (st
 		} else {
 			switch param.ParamPass {
 			case "out":
-				RustParamTypeName = "&mut str"
+				RustParamTypeName = "&mut String"
 			case "in":
 				RustParamTypeName = "&str"
 			case "return":
