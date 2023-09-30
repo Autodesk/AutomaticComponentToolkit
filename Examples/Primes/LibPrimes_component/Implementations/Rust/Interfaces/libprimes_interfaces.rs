@@ -222,21 +222,7 @@ pub trait Wrapper {
   // * @param[out] error_message - Message of the last error
   // * @param[return] has_error - Is there a last error to query
   //
-  fn get_last_error(instance : & dyn Base, error_message : &mut String) -> bool;
-  
-  // acquire_instance
-  //
-  // Acquire shared ownership of an Instance
-  // * @param[in] instance - Instance Handle
-  //
-  fn acquire_instance(instance : & dyn Base);
-  
-  // release_instance
-  //
-  // Releases shared ownership of an Instance
-  // * @param[in] instance - Instance Handle
-  //
-  fn release_instance(instance : & dyn Base);
+  fn get_last_error(instance : &mut dyn Base, error_message : &mut String) -> bool;
   
   // create_factorization_calculator
   //

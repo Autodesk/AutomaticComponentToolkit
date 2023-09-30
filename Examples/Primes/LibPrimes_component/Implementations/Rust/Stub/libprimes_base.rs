@@ -60,7 +60,15 @@ impl Base for CBase {
   // * @param[return] class_type_id - Class type as a 64 bits integer
   //
   fn class_type_id(&mut self) -> u64 {
-    unimplemented!();
+    0
   }
 }
 
+
+impl CBase {
+  pub fn new() -> CBase {
+    CBase {
+      last_error : None
+    }
+  }
+}

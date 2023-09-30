@@ -19,7 +19,8 @@ use libprimes_calculator::CCalculator;
 
 // Stub struct to implement the FactorizationCalculator trait
 pub struct CFactorizationCalculator {
-  parent : CCalculator
+  parent : CCalculator,
+  prime_factors : Vec<PrimeFactor>
 }
 
 // Implementation of parent traits via parent
@@ -49,7 +50,26 @@ impl Calculator for CFactorizationCalculator {
   // Performs the specific calculation of this Calculator
   //
   fn calculate(&mut self) {
-    self.parent.calculate()
+    self.prime_factors.clear();
+    let mut val = self.get_value();
+    let mut n  = 0_u64;
+    while n < val {
+      if self.parent.progress_abort() {
+        return;
+      }
+      let mut prime_factor = PrimeFactor {
+        prime : n,
+        multiplicity : 0
+      };
+      while val % n == 0 {
+        val = val / n;
+        prime_factor.multiplicity += 1;
+      }
+      if prime_factor.multiplicity > 0 {
+        self.prime_factors.push(prime_factor)
+      }
+      n += 1
+    }
   }
   
   // set_progress_callback
@@ -69,7 +89,7 @@ impl Base for CFactorizationCalculator {
   // * @param[return] class_type_id - Class type as a 64 bits integer
   //
   fn class_type_id(&mut self) -> u64 {
-    self.parent.class_type_id()
+    2
   }
   
   // get_last_error_message
@@ -109,7 +129,15 @@ impl FactorizationCalculator for CFactorizationCalculator {
   // * @param[out] prime_factors - The prime factors of this number
   //
   fn get_prime_factors(&mut self, _prime_factors : &mut Vec<PrimeFactor>) {
-    unimplemented!();
+    *_prime_factors = self.prime_factors.clone()
   }
 }
 
+impl CFactorizationCalculator {
+  pub fn new() -> CFactorizationCalculator {
+    CFactorizationCalculator {
+      parent : CCalculator::new(),
+      prime_factors : Vec::new()
+    }
+  }
+}

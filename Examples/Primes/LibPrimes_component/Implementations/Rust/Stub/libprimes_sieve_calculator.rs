@@ -19,7 +19,8 @@ use libprimes_calculator::CCalculator;
 
 // Stub struct to implement the SieveCalculator trait
 pub struct CSieveCalculator {
-  parent : CCalculator
+  parent : CCalculator,
+  primes : Vec<u64>
 }
 
 // Implementation of parent traits via parent
@@ -49,7 +50,25 @@ impl Calculator for CSieveCalculator {
   // Performs the specific calculation of this Calculator
   //
   fn calculate(&mut self) {
-    self.parent.calculate()
+    self.primes.clear();
+    let val = self.get_value();
+    let mut sieved : Vec<bool> = vec![false; (val+1) as usize];
+    sieved[0] = true;
+    sieved[1] = true;
+    let val_sqrt = (val as f64).sqrt() as u64 + 1;
+    for i in 2_u64..val_sqrt {
+      if self.parent.progress_abort() {
+        return
+      }
+      if !sieved[i as usize] {
+        self.primes.push(i);
+        let mut mul : u64 = i*i;
+        while mul <= val {
+          sieved[mul as usize] = true;
+          mul *= i;
+        }
+      }
+    }
   }
   
   // set_progress_callback
@@ -69,7 +88,7 @@ impl Base for CSieveCalculator {
   // * @param[return] class_type_id - Class type as a 64 bits integer
   //
   fn class_type_id(&mut self) -> u64 {
-    self.parent.class_type_id()
+    3
   }
   
   // get_last_error_message
@@ -109,7 +128,15 @@ impl SieveCalculator for CSieveCalculator {
   // * @param[out] primes - The primes lower or equal to the sieve's value
   //
   fn get_primes(&mut self, _primes : &mut Vec<u64>) {
-    unimplemented!();
+    *_primes = self.primes.clone()
   }
 }
 
+impl CSieveCalculator {
+  pub fn new() -> CSieveCalculator {
+    CSieveCalculator {
+      parent : CCalculator::new(),
+      primes : Vec::new()
+    }
+  }
+}

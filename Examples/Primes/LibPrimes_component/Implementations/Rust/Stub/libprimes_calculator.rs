@@ -19,7 +19,9 @@ use libprimes_base::CBase;
 
 // Stub struct to implement the Calculator trait
 pub struct CCalculator {
-  parent : CBase
+  parent : CBase,
+  value : u64,
+  progress_callback : ProgressCallback
 }
 
 // Implementation of parent traits via parent
@@ -32,7 +34,7 @@ impl Base for CCalculator {
   // * @param[return] class_type_id - Class type as a 64 bits integer
   //
   fn class_type_id(&mut self) -> u64 {
-    self.parent.class_type_id()
+    1
   }
   
   // get_last_error_message
@@ -72,7 +74,7 @@ impl Calculator for CCalculator {
   // * @param[return] value - The current value of this Calculator
   //
   fn get_value(&mut self) -> u64 {
-    unimplemented!();
+    self.value
   }
   
   // set_value
@@ -81,7 +83,7 @@ impl Calculator for CCalculator {
   // * @param[in] value - The value to be factorized
   //
   fn set_value(&mut self, _value : u64) {
-    unimplemented!();
+    self.value = _value;
   }
   
   // calculate
@@ -98,7 +100,29 @@ impl Calculator for CCalculator {
   // * @param[in] progress_callback - The progress callback
   //
   fn set_progress_callback(&mut self, _progress_callback : ProgressCallback) {
-    unimplemented!();
+    self.progress_callback = _progress_callback
   }
 }
 
+
+unsafe extern "C" fn dummy_progress(_par : f32, _val : *mut u8) {
+
+} 
+
+impl CCalculator {
+  pub fn new() -> CCalculator {
+    CCalculator {
+      parent : CBase::new(),
+      value : 0,
+      progress_callback : dummy_progress
+    }
+  }
+
+  pub fn progress_abort(&self) -> bool {
+    let mut res : u8 = 0;
+    unsafe {
+      (self.progress_callback)(0_f32, &mut res as *mut u8)
+    } 
+    res != 0
+  }
+}

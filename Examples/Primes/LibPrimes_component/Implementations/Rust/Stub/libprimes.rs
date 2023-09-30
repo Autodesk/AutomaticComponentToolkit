@@ -15,6 +15,8 @@ Interface version: 1.2.0
 
 
 use libprimes_interfaces::*;
+use libprimes_sieve_calculator::CSieveCalculator;
+use libprimes_factorization_calculator::CFactorizationCalculator;
 
 // Wrapper struct to implement the wrapper trait for global methods
 pub struct CWrapper;
@@ -30,7 +32,9 @@ impl Wrapper for CWrapper {
   // * @param[out] micro - returns the micro version of this library
   //
   fn get_version(_major : &mut u32, _minor : &mut u32, _micro : &mut u32) {
-    unimplemented!();
+    *_major = 1;
+    *_minor = 1;
+    *_micro = 1;
   }
   
   // get_last_error
@@ -40,26 +44,8 @@ impl Wrapper for CWrapper {
   // * @param[out] error_message - Message of the last error
   // * @param[return] has_error - Is there a last error to query
   //
-  fn get_last_error(_instance : & dyn Base, _error_message : &mut String) -> bool {
-    unimplemented!();
-  }
-  
-  // acquire_instance
-  //
-  // Acquire shared ownership of an Instance
-  // * @param[in] instance - Instance Handle
-  //
-  fn acquire_instance(_instance : & dyn Base) {
-    unimplemented!();
-  }
-  
-  // release_instance
-  //
-  // Releases shared ownership of an Instance
-  // * @param[in] instance - Instance Handle
-  //
-  fn release_instance(_instance : & dyn Base) {
-    unimplemented!();
+  fn get_last_error(_instance : &mut dyn Base, _error_message : &mut String) -> bool {
+    _instance.get_last_error_message(_error_message)
   }
   
   // create_factorization_calculator
@@ -68,7 +54,7 @@ impl Wrapper for CWrapper {
   // * @param[return] instance - New FactorizationCalculator instance
   //
   fn create_factorization_calculator() -> Box<dyn FactorizationCalculator> {
-    unimplemented!();
+    Box::new(CFactorizationCalculator::new())
   }
   
   // create_sieve_calculator
@@ -77,7 +63,7 @@ impl Wrapper for CWrapper {
   // * @param[return] instance - New SieveCalculator instance
   //
   fn create_sieve_calculator() -> Box<dyn SieveCalculator> {
-    unimplemented!();
+    Box::new(CSieveCalculator::new())
   }
   
   // set_journal

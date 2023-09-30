@@ -46,8 +46,8 @@ pub fn libprimes_getversion(major : *mut u32, minor : *mut u32, micro : *mut u32
 pub fn libprimes_getlasterror(instance : BaseHandle, error_message_buffer_size : usize, error_message_needed_chars : *mut usize, error_message_buffer : *mut u8, has_error : *mut u8) -> i32 {
   // Convert parameter instance to be used as an argument
   if instance.is_null() { return LIBPRIMES_ERROR_INVALIDPARAM; }
-  let _handle_instance = unsafe {&*instance};
-  let _optional_instance = _handle_instance.as_base();
+  let _handle_instance = unsafe {&mut *instance};
+  let _optional_instance = _handle_instance.as_mut_base();
   if _optional_instance.is_none() { return LIBPRIMES_ERROR_INVALIDPARAM; }
   let _instance = _optional_instance.unwrap();
   
