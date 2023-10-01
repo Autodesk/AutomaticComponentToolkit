@@ -19,6 +19,7 @@
 	<implementations>
 		<implementation language="Cpp" indentation="tabs"/>
 		<implementation language="Pascal" indentation="2spaces" stubidentifier="impl"/>
+		<implementation language="Rust" indentation="2spaces"/>
 	</implementations>
 	
 	<errors>
@@ -45,6 +46,9 @@
 	</functiontype>
 
 	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
 	</class>
 	
 	<class name="Calculator" parent="Base">
@@ -74,7 +78,8 @@
 	</class>
 
 	<global baseclassname="Base" acquiremethod="AcquireInstance"
-		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError" journalmethod="SetJournal">
+		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError" journalmethod="SetJournal"
+		classtypeidmethod="ClassTypeId">
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
 			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />

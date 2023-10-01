@@ -547,6 +547,29 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				}
 			}
 
+		case "Rust":
+			{
+				outputFolderImplementationProject := outputFolderImplementations + "/Rust"
+				outputFolderImplementationRust := outputFolderImplementations + "/Rust/Interfaces"
+				outputFolderImplementationRustStub := outputFolderImplementations + "/Rust/Stub"
+
+				err = os.MkdirAll(outputFolderImplementationRust, os.ModePerm)
+				if err != nil {
+					return err
+				}
+
+				err = os.MkdirAll(outputFolderImplementationRustStub, os.ModePerm)
+				if err != nil {
+					return err
+				}
+
+				err = BuildImplementationRust(component, outputFolderImplementationRust, outputFolderImplementationRustStub,
+					outputFolderImplementationProject, implementation)
+				if err != nil {
+					return err
+				}
+			}
+
 		case "Fortran":
 			{
 				log.Printf("Implementation in language \"%s\" is not yet supported.", implementation.Language)
