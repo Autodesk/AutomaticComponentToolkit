@@ -739,68 +739,73 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 			element := structinfo.Members[j]
 
 			arraysuffix := ""
-			fixedtag := ""
+			arrayinitialization:= ""
 			multiplier := 1
 			if element.Rows > 0 {
+				arraysuffix = "[]"               
+				arraytypename, err := getCSharpParameterType(element.Type, NameSpace, "", true)
+				if err != nil {
+					return err
+				}
+
 				if element.Columns > 0 {
 					multiplier = element.Rows * element.Columns
-					arraysuffix = fmt.Sprintf("[%d]", multiplier)
+					arrayinitialization = fmt.Sprintf(" = new %s[%d]", arraytypename, multiplier)
 				} else {
 					multiplier = element.Rows
-					arraysuffix = fmt.Sprintf("[%d]", multiplier)
+					arrayinitialization = fmt.Sprintf(" = new %s[%d]", arraytypename, multiplier)
 				}
-				fixedtag = "fixed "
 			}
 
 			switch element.Type {
 			case "uint8":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Byte%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "uint16":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public UInt16%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 2*multiplier
 			case "uint32":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public UInt32%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "uint64":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public UInt64%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "int8":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %ssbyte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Int8%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "int16":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt16 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Int16%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 2*multiplier
 			case "int32":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Int32%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "int64":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Int64%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "bool":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sByte %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Byte%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 1*multiplier
 			case "single":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sSingle %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Single%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 4*multiplier
 			case "double":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sDouble %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Double%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "pointer":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sUInt64 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Uint64%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 8*multiplier
 			case "string":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a string value", NameSpace, structinfo.Name)
 			case "class", "optionalclass":
 				return fmt.Errorf("it is not possible for struct s%s%s to contain a handle value", NameSpace, structinfo.Name)
 			case "enum":
-				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public %sInt32 %s%s;", fieldOffset, fixedtag, element.Name, arraysuffix))
+				memberLines = append(memberLines, fmt.Sprintf("[FieldOffset(%d)] public Int32%s %s%s;", fieldOffset, arraysuffix, element.Name, arrayinitialization))
 				fieldOffset = fieldOffset + 4*multiplier
 			}
 		}
 
 		w.Writeln("    [StructLayout(LayoutKind.Explicit, Size=%d)]", fieldOffset)
-		w.Writeln("    public unsafe struct Internal%s", structinfo.Name)
+		w.Writeln("    public class Internal%s", structinfo.Name)
 		w.Writeln("    {")
 		w.Writelns("      ", memberLines)
 		w.Writeln("    }")
@@ -831,7 +836,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 				parameters = "IntPtr Handle, " + parameters
 			}
 
-			w.Writeln("      public unsafe extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters)
+			w.Writeln("      public extern static Int32 %s_%s (%s);", class.ClassName, method.MethodName, parameters)
 			w.Writeln("")
 
 		}
@@ -854,7 +859,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 	for i := 0; i < len(component.Structs); i++ {
 		structinfo := component.Structs[i]
 
-		w.Writeln("      public unsafe static s%s convertInternalToStruct_%s (Internal%s int%s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
+		w.Writeln("      public static s%s convertInternalToStruct_%s (Internal%s int%s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
 		w.Writeln("      {")
 		w.Writeln("        s%s %s;", structinfo.Name, structinfo.Name)
 
@@ -901,9 +906,9 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("      }")
 		w.Writeln("")
 
-		w.Writeln("      public unsafe static Internal%s convertStructToInternal_%s (s%s %s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
+		w.Writeln("      public static Internal%s convertStructToInternal_%s (s%s %s)", structinfo.Name, structinfo.Name, structinfo.Name, structinfo.Name)
 		w.Writeln("      {")
-		w.Writeln("        Internal%s int%s;", structinfo.Name, structinfo.Name)
+		w.Writeln("        Internal%s int%s = new Internal%s();", structinfo.Name, structinfo.Name, structinfo.Name)
 
 		for j := 0; j < len(structinfo.Members); j++ {
 			element := structinfo.Members[j]
@@ -1257,12 +1262,6 @@ func buildCSharpExampleProject(componentdefinition ComponentDefinition, w Langua
 	w.Writeln("    <StartupObject>%s.%s</StartupObject>", exampleName, exampleName)
 	w.Writeln("    <ApplicationIcon />")
 	w.Writeln("    <Platforms>x64</Platforms>")
-	w.Writeln("  </PropertyGroup>")
-	w.Writeln("  <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">")
-	w.Writeln("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>")
-	w.Writeln("  </PropertyGroup>")
-	w.Writeln("  <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">")
-	w.Writeln("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>")
 	w.Writeln("  </PropertyGroup>")
 	w.Writeln("  <ItemGroup>")
 	w.Writeln("    <Compile Include=\"..\\..\\Bindings\\CSharp\\%s.cs\" Link=\"%s.cs\" />", NameSpace, NameSpace)
