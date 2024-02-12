@@ -1804,7 +1804,6 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 			case "basicarray":
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
-				callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 				if (isClientImpl) {
 					callParameters = callParameters + fmt.Sprintf("%sInputVector(%s, n%sBufferSize)", ClassIdentifier, variableName, param.ParamName) 
 				} else {
