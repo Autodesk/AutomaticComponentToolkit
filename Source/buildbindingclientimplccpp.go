@@ -242,6 +242,14 @@ static typename tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
   );
 }
 
+// Predeclare these functions so we can call them from each other.
+template <typename tCLASS>
+static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr);
+template <typename tCLASS>
+static tCLASS* UnsafeGetWrappedInstance(AbstractCAMExtendedHandle extendedHandle);
+template <typename tCLASS>
+static tCLASS* UnsafeGetWrappedInstance(AbstractCAMHandle handle);
+
 // Given a pointer to a binding object, cast the wrapped handle to a client
 // implementation instance. The caller is responsible for ensuring that the
 // binding object really does wrap a client implementation.
