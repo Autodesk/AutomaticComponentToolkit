@@ -246,9 +246,9 @@ static typename tCLASS::tBINDING_PTR CreateWrappedInstance(tARGS&&... args)
 template <typename tCLASS>
 static tCLASS* UnsafeGetWrappedInstance(typename tCLASS::tBINDING_PTR pBindingPtr);
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance(AbstractCAMExtendedHandle extendedHandle);
+static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}ExtendedHandle extendedHandle);
 template <typename tCLASS>
-static tCLASS* UnsafeGetWrappedInstance(AbstractCAMHandle handle);
+static tCLASS* UnsafeGetWrappedInstance({{.NameSpace}}Handle handle);
 
 // Given a pointer to a binding object, cast the wrapped handle to a client
 // implementation instance. The caller is responsible for ensuring that the
