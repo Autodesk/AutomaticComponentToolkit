@@ -1786,6 +1786,7 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 	for k := 0; k < len(method.Params); k++ {
 		param := method.Params[k]
 		variableName := getCppVariableName(param)
+		cppParamType := getCppParamType(param, NameSpace, true)
 
 		switch param.ParamPass {
 		case "in":
@@ -1805,7 +1806,9 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				if (isClientImpl) {
-					callParameters = callParameters + fmt.Sprintf("%sInputVector(%s, n%sBufferSize)", ClassIdentifier, variableName, param.ParamName) 
+					// note: slicing because we need to chop off the trailing " *".
+					inputVecTypeParam := cppParamType[:len(cppParamType)-2]
+					callParameters = callParameters + fmt.Sprintf("%sInputVector<%s>(%s, n%sBufferSize)", ClassIdentifier, inputVecTypeParam, variableName, param.ParamName) 
 				} else {
 					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 				}
@@ -1813,7 +1816,9 @@ func generatePrePostCallCPPFunctionCode(component ComponentDefinition, method Co
 				checkInputCode = append(checkInputCode, fmt.Sprintf("if ( (!p%sBuffer) && (n%sBufferSize>0))", param.ParamName, param.ParamName))
 				checkInputCode = append(checkInputCode, fmt.Sprintf("  throw %s (%s_ERROR_INVALIDPARAM);", exceptionType, strings.ToUpper(NameSpace)))
 				if (isClientImpl) {
-					callParameters = callParameters + fmt.Sprintf("%sInputVector(%s, n%sBufferSize)", ClassIdentifier, variableName, param.ParamName) 
+					// note: slicing because we need to chop off the trailing " *".
+					inputVecTypeParam := cppParamType[:len(cppParamType)-2]
+					callParameters = callParameters + fmt.Sprintf("%sInputVector<%s>(%s, n%sBufferSize)", ClassIdentifier, inputVecTypeParam, variableName, param.ParamName) 
 				} else {
 					callParameters = callParameters + fmt.Sprintf("n%sBufferSize, ", param.ParamName) + variableName
 				}
