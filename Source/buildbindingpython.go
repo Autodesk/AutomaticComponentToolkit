@@ -41,6 +41,15 @@ import (
 	"strings"
 )
 
+// Keep a map of reserved keywords in Python
+var pythonReservedKeywords = map[string]bool{
+	"False": true, "None": true, "True": true, "and": true, "as": true, "assert": true, "async": true,
+	"await": true, "break": true, "class": true, "continue": true, "def": true, "del": true, "elif": true,
+	"else": true, "except": true, "finally": true, "for": true, "from": true, "global": true, "if": true,
+	"import": true, "in": true, "is": true, "lambda": true, "nonlocal": true, "not": true, "or": true,
+	"pass": true, "raise": true, "return": true, "try": true, "while": true, "with": true, "yield": true,
+}
+
 // BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of explicitly loaded
 // functions handles.
 func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
@@ -179,7 +188,12 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 			w.Writeln("class %s(CTypesEnum):", enum.Name)
 			for j:= 0; j<len(enum.Options); j++ {
 				option := enum.Options[j]
-				w.Writeln("  %s = %d", option.Name, option.Value)
+				if pythonReservedKeywords[option.Name] {
+					log.Printf("Invalid enum datatype as \"%s\" is a reserved keyword in Python. Replacing it with \"%s\"", option.Name, enum.Name + option.Name)
+					w.Writeln("  %s = %d", enum.Name + option.Name, option.Value)
+				} else {
+					w.Writeln("  %s = %d", option.Name, option.Value)
+				}
 			}
 		}
 		w.Writeln("")
