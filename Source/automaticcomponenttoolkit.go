@@ -732,10 +732,13 @@ func main() {
 	
 	err = createComponent(component, outfolderBase, bindingsDirectoryOverride, interfacesDirectoryOverride, stubDirectoryOverride, suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
 	if (err != nil) {
-		log.Println("Fatal error")
-		log.Fatal(err)
+		if err == ErrPythonBuildFailed {
+			log.Println("Python binding generation failed (Due to usage of reserved keywords)")
+		} else {
+			log.Println("Fatal error")
+			log.Fatal(err)
+		}
 	} else {
 		log.Println("Success")
 	}
-
 }
