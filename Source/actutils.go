@@ -34,11 +34,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"errors"
+	"fmt"
+	"log"
 	"os"
 )
+
+var (
+	ErrPythonBuildFailed   = errors.New("failed to build dynamic Python implementation")
+	ErrFileDeletionFailed     = errors.New("failed to write to output file")
+	ErrReservedKeyword    = errors.New("failed to generate bindings as you are using a reserved keyword")
+)
+
+// Keep a map of reserved keywords in Python
+var pythonReservedKeywords = map[string]bool{
+	"False": true, "None": true, "True": true, "and": true, "as": true, "assert": true, "async": true,
+	"await": true, "break": true, "class": true, "continue": true, "def": true, "del": true, "elif": true,
+	"else": true, "except": true, "finally": true, "for": true, "from": true, "global": true, "if": true,
+	"import": true, "in": true, "is": true, "lambda": true, "nonlocal": true, "not": true, "or": true,
+	"pass": true, "raise": true, "return": true, "try": true, "while": true, "with": true, "yield": true,
+}
 
 // FileExists returns true if and only if the file in a given path exists
 func FileExists(path string) (bool) {
 	_, err := os.Stat(path); 
 	return !os.IsNotExist(err);
+}
+
+// ReservedKeywordExit logs the formatted error, deletes the partially created file, and returns a named error.
+func ReservedKeywordExit(bindingPath string, format string, a ...interface{}) error {
+	// Format the message using variadic arguments
+	msg := fmt.Sprintf(format, a...)
+
+	// Log the error message
+	log.Printf("%s", msg)
+
+	// Attempt to delete the partially created file
+	log.Printf("Deleting partially created binding file: %s", bindingPath)
+	err := os.Remove(bindingPath)
+	if err != nil {
+		// Log and return a wrapped error with context
+		log.Printf("Failed to delete incomplete file %s: %v", bindingPath, err)
+		return fmt.Errorf("%w: %v", ErrFileDeletionFailed, err)
+	}
+
+	log.Printf("Deleted binding file")
+
+	// Return the reserved keyword error
+	return ErrReservedKeyword
 }

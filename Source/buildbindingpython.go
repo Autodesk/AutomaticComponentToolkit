@@ -41,6 +41,10 @@ import (
 	"strings"
 )
 
+// Store the python file path
+var pythonBindingFile = "";
+
+
 // BuildBindingPythonDynamic builds dynamic Python bindings of a library's API in form of explicitly loaded
 // functions handles.
 func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
@@ -50,6 +54,7 @@ func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFo
 	libraryname := componentdefinition.LibraryName
 	
 	DynamicPythonImpl := path.Join(outputFolder, namespace+".py");
+	pythonBindingFile = DynamicPythonImpl;
 	log.Printf("Creating \"%s\"", DynamicPythonImpl)
 	dynpythonfile, err := CreateLanguageFile (DynamicPythonImpl, indentString)
 	if err != nil {
@@ -62,6 +67,9 @@ func BuildBindingPythonDynamic(componentdefinition ComponentDefinition, outputFo
 	
 	err = buildDynamicPythonImplementation(componentdefinition, dynpythonfile)
 	if err != nil {
+		if err == ErrReservedKeyword {
+			return ErrPythonBuildFailed
+		}
 		return err;
 	}
 	
@@ -141,6 +149,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  SUCCESS = 0")
 	for i := 0; i<len(componentdefinition.Errors.Errors); i++ {
 		merror := componentdefinition.Errors.Errors[i]
+		if pythonReservedKeywords[merror.Name] {
+			return ReservedKeywordExit(pythonBindingFile, "Error code uses a reserved keyword : %s", merror.Name)
+		}
 		w.Writeln("  %s = %d", merror.Name, merror.Code)
 	}
 	w.Writeln("")
@@ -174,12 +185,20 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 		for i := 0; i<len(componentdefinition.Enums); i++ {
 			enum := componentdefinition.Enums[i]
+			if pythonReservedKeywords[enum.Name] {
+				return ReservedKeywordExit(pythonBindingFile, "Class name for enum uses a reserved keyword : %s", enum.Name)
+			}
 			w.Writeln("'''Definition of %s", enum.Name)
 			w.Writeln("'''")
 			w.Writeln("class %s(CTypesEnum):", enum.Name)
 			for j:= 0; j<len(enum.Options); j++ {
 				option := enum.Options[j]
-				w.Writeln("  %s = %d", option.Name, option.Value)
+				if pythonReservedKeywords[option.Name] {
+					log.Printf("Invalid enum datatype as \"%s\" is a reserved keyword in Python. Replacing it with \"%s\"", option.Name, enum.Name + option.Name)
+					w.Writeln("  %s = %d", enum.Name + option.Name, option.Value)
+				} else {
+					w.Writeln("  %s = %d", option.Name, option.Value)
+				}
 			}
 		}
 		w.Writeln("")
@@ -190,6 +209,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("'''")
 		for i := 0; i<len(componentdefinition.Structs); i++ {
 			_struct := componentdefinition.Structs[i]
+			if pythonReservedKeywords[_struct.Name] {
+				return ReservedKeywordExit(pythonBindingFile, "Class name for the structure uses a reserved keyword : %s", _struct.Name)
+			}
 			w.Writeln("'''Definition of %s", _struct.Name)
 			w.Writeln("'''")
 			w.Writeln("class %s(ctypes.Structure):", _struct.Name)
@@ -231,6 +253,9 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 		w.Writeln("'''")
 		for i := 0; i<len(componentdefinition.Functions); i++ {
 			_func := componentdefinition.Functions[i]
+			if pythonReservedKeywords[_func.FunctionName] {
+				return ReservedKeywordExit(pythonBindingFile, "Function type definition uses a reserved keyword : %s", _func.FunctionName)
+			}
 			w.Writeln("'''Definition of %s", _func.FunctionName)
 			w.Writeln("    %s", _func.FunctionDescription)
 			w.Writeln("'''")
@@ -423,7 +448,9 @@ func writeFunctionTableMethod(method ComponentDefinitionMethod, w LanguageWriter
 	if err != nil {
 		return err
 	}
-
+	if pythonReservedKeywords[linearMethodName] {
+		return ReservedKeywordExit(pythonBindingFile, "Method name uses a reserved keyword : %s", linearMethodName)
+	}
 	w.Writeln("err = symbolLookupMethod(ctypes.c_char_p(str.encode(\"%s\")), methodAddress)", linearMethodName)
 	w.Writeln("if err != 0:")
 	w.Writeln("  raise E%sException(ErrorCodes.COULDNOTLOADLIBRARY, str(err))", NameSpace)
@@ -723,7 +750,9 @@ func generateCTypesParameter(param ComponentDefinitionParam, className string, m
 
 func writePythonClass(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string) error {
 	pythonBaseClassName := fmt.Sprintf("%s", component.Global.BaseClassName)
-
+	if pythonReservedKeywords[pythonBaseClassName] {
+		return ReservedKeywordExit(pythonBindingFile, "Class implementation name uses a reserved keyword : %s", pythonBaseClassName)
+	}
 	w.Writeln("''' Class Implementation for %s",  class.ClassName)
 	w.Writeln("'''")
 	
@@ -737,8 +766,14 @@ func writePythonClass(component ComponentDefinition, class ComponentDefinitionCl
 		w.Writeln("class %s(%s):", class.ClassName, parentClass)
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    %s.__init__(self, handle, wrapper)", parentClass)
+		if pythonReservedKeywords[class.ClassName] || pythonReservedKeywords[parentClass] {
+			return ReservedKeywordExit(pythonBindingFile, "Class implementation name uses a reserved keyword : %s, %s", class.ClassName, parentClass)
+		}
 
 	} else {
+		if pythonReservedKeywords[class.ClassName] {
+			return ReservedKeywordExit(pythonBindingFile, "Class implementation name uses a reserved keyword : %s", class.ClassName)
+		}
 		w.Writeln("class %s:", class.ClassName)
 		w.Writeln("  def __init__(self, handle, wrapper):")
 		w.Writeln("    if not handle or not wrapper:")
@@ -974,7 +1009,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 	}
 	
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
-	
+	if pythonReservedKeywords[method.MethodName] {
+		return ReservedKeywordExit(pythonBindingFile, "Method name uses a reserved keyword : %s", method.MethodName)
+	}
 	w.Writeln("  def %s(self%s):", method.MethodName, pythonInParams)
 	w.Writelns("    ", preCallLines)
 	if (doCheckCall) {
