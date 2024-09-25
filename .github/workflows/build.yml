@@ -4,7 +4,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - run: ./build.sh
@@ -12,7 +12,7 @@ jobs:
   build-macos:
     runs-on: macos-10.15
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - run: ./build.sh
@@ -20,48 +20,48 @@ jobs:
   build-windows:
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - run: ./build.bat
         working-directory: ./Build 
       - name: Upload Windows 64bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.win64.exe
           path: act.win64.exe
       - name: Upload Windows 32bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.win32.exe
           path: act.win32.exe
       - name: Upload MacOS Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.darwin
           path: act.darwin
       - name: Upload MacOS ARM Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.arm.darwin
           path: act.arm.darwin
       - name: Upload Linux 32bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.linux32
           path: act.linux32
       - name: Upload Linux ARM 32bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.arm.linux32
           path: act.arm.linux32
       - name: Upload Linux 64bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.linux64
           path: act.linux64
       - name: Upload Linux ARM 64bit Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: act.arm.linux64
           path: act.arm.linux64
