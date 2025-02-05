@@ -38,7 +38,7 @@ _There are much more efficient algorithms and more suitable software packages to
 # 2. Requirements
  - CMake
  - A C++ compiler / development environment. This tutorial was tested with Visual Studio 2017, but should also work with `GCC` and `make` or other development tools.
- - ACT: This tutorial is tested to work with release 1.6.0 of ACT. You can get it from [the releases page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
+ - ACT: This tutorial is tested to work with release 1.8.0-alpha of ACT. You can get it from [the releases page](https://github.com/Autodesk/AutomaticComponentToolkit/releases).
 Decide on a location for your tutorial's component to live in, and download the binary for your platform into this folder. Alternatively, stick it somwhere in your `$PATH`.
 
 
