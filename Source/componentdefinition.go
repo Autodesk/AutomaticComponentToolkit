@@ -90,6 +90,7 @@ type ComponentDefinitionClass struct {
 	ClassName string `xml:"name,attr"`
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
+	ArrayReturnOption string `xml:"arrayReturnOption,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -531,6 +532,9 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
 			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
 		}
+		if len(class.ArrayReturnOption) > 0 && !arrayReturnOptionIsValid(class.ArrayReturnOption) {
+			return fmt.Errorf("invalid class array return option \"%s\" in class \"%s\"", class.ArrayReturnOption, class.ClassName)
+		}
 		collision, hashExists := classTypeIdIndex[classTypeHash]
 		if hashExists {
 			return fmt.Errorf ("Classes \"%s\" and \"%s\" have a collision in their Class Type Id. Change class name.", classes[collision].ClassName, class.ClassName);
@@ -794,6 +798,15 @@ func descriptionIsValid(description string) bool {
 		return IsValidMethodDescription(description);
 	}
 	return false;
+}
+
+func arrayReturnOptionIsValid(arrayReturnOption string) bool {
+	switch arrayReturnOption {
+	case "ThreadSafe":
+		return true
+	}
+
+	return false
 }
 
 func isScalarType(typeStr string) bool {
