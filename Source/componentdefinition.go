@@ -62,6 +62,13 @@ const (
 	eSpecialMethodBuildinfo = 9
 )
 
+type ThreadSafetyOption int
+const (
+	eThreadSafetyNone = 0
+	eThreadSafetySoft = 1
+	eThreadSafetyStrict = 2
+)
+
 // ComponentDefinitionParam definition of a method parameter used in the component's API
 type ComponentDefinitionParam struct {
 	ComponentDiffableElement
@@ -90,6 +97,7 @@ type ComponentDefinitionClass struct {
 	ClassName string `xml:"name,attr"`
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
+	ThreadSafetyOption string `xml:"threadsafetyoption,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -796,6 +804,14 @@ func descriptionIsValid(description string) bool {
 	return false;
 }
 
+func threadSafetyOptionIsValid(threadSafetyOption string) bool {
+	switch threadSafetyOption {
+			case "none", "strict", "soft":
+		return true
+	}
+	return false
+}
+
 func isScalarType(typeStr string) bool {
 	switch (typeStr) {
 		case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "bool", "single", "double", "pointer":
@@ -1403,6 +1419,33 @@ func (component *ComponentDefinition) countMaxOutParameters() (uint32) {
 	}
 
 	return maxOutParameters;
+}
+
+func (class * ComponentDefinitionClass ) eThreadSafetyOption() (ThreadSafetyOption) {
+	switch class.ThreadSafetyOption {
+		case "strict":
+			return eThreadSafetyStrict
+		case "soft":
+			return eThreadSafetySoft
+		case "none":
+			return eThreadSafetyNone
+	}
+	return eThreadSafetyNone
+}
+
+func (class *ComponentDefinitionClass) isThreadSafe() (bool) {
+	return class.eThreadSafetyOption() != eThreadSafetyNone
+}
+
+func (component *ComponentDefinition) isMultiThreadedEnv() (bool) {
+	classes := component.Classes
+	for i := 0; i < len(classes); i++ {
+		class := classes[i]
+			if class.isThreadSafe() {
+				return true
+		}
+	}
+	return false;
 }
 
 func (component *ComponentDefinition) classTypeIdMethod() (ComponentDefinitionMethod) {
