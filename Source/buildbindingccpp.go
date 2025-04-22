@@ -591,8 +591,8 @@ func writeDynamicCPPMethodDeclaration(method ComponentDefinitionMethod, w Langua
 }
 
 func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace string, ClassIdentifier string, ClassName string,
-	implementationLines []string, isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool, forWASM bool) error {
-
+	implementationLines []string, isGlobal bool, includeComments bool, doNotThrow bool, useCPPTypes bool, ExplicitLinking bool, forWASM bool, multiThreadedEnv bool, classThreadSafetyOption ThreadSafetyOption) error {
+	
 	WASMPrefix := ""
 	WASMCast := ""
 	WASMCastp := ""
@@ -614,6 +614,15 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 	checkErrorCodeBegin := ""
 	checkErrorCodeEnd := ")"
+
+	if multiThreadedEnv {
+		if classThreadSafetyOption == eThreadSafetyStrict {
+			checkErrorCodeEnd = ", true)"
+		} else {
+			checkErrorCodeEnd = ", false)"
+		}
+	}
+
 	makeSharedParameter := ""
 
 	if isGlobal {
@@ -858,6 +867,12 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 		initCallParameters = initCallParameters + initCallParameter
 	}
 
+	addThreadSafeCalls := multiThreadedEnv && ((classThreadSafetyOption == eThreadSafetySoft && requiresInitCall) || classThreadSafetyOption == eThreadSafetyStrict)
+
+	if addThreadSafeCalls {
+		checkErrorCodeEnd = ", true)"
+	}
+
 	w.Writeln("  ")
 	if includeComments {
 		w.Writeln("  /**")
@@ -876,9 +891,15 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 
 	w.Writeln("  {")
 	w.Writelns("    ", definitionCodeLines)
+
+	if addThreadSafeCalls {
+		w.Writeln("    m_pWrapper->%s(this);", getLockInstanceMethodName())
+	}
+
 	if requiresInitCall {
 		w.Writeln("    %s%s(%s)%s;", checkErrorCodeBegin, CMethodName, initCallParameters, checkErrorCodeEnd)
 	}
+
 	w.Writelns("    ", functionCodeLines)
 	w.Writeln("    %s%s(%s)%s;", checkErrorCodeBegin, CMethodName, callParameters, checkErrorCodeEnd)
 	w.Writelns("    ", postCallCodeLines)
@@ -888,10 +909,15 @@ func writeDynamicCPPMethod(method ComponentDefinitionMethod, w LanguageWriter, N
 		w.Writelns("    ", implementationLines)
 	}
 
+	if addThreadSafeCalls {
+		w.Writeln("    m_pWrapper->%s(this);", getUnlockInstanceMethodName())
+	}
+
 	if len(returnCodeLines) > 0 {
 		w.Writeln("    ")
 		w.Writelns("    ", returnCodeLines)
 	}
+
 	w.Writeln("  }")
 
 	return nil
@@ -906,10 +932,18 @@ func writeDynamicCppBaseClassMethods(component ComponentDefinition, baseClass Co
 	w.Writeln("  %sHandle m_pHandle;", NameSpace)
 	w.Writeln("")
 	w.Writeln("  /* Checks for an Error code and raises Exceptions */")
-	w.Writeln("  void CheckError(%sResult nResult)", NameSpace)
+	if component.isMultiThreadedEnv() {
+		w.Writeln("  void CheckError(%sResult nResult, bool unlockIfError)", NameSpace)
+	} else {
+		w.Writeln("  void CheckError(%sResult nResult)", NameSpace)
+	}
 	w.Writeln("  {")
 	w.Writeln("    if (m_pWrapper != nullptr)")
-	w.Writeln("      m_pWrapper->CheckError(this, nResult);")
+	if component.isMultiThreadedEnv() {
+		w.Writeln("      m_pWrapper->CheckError(this, nResult, unlockIfError);")
+	} else {
+		w.Writeln("      m_pWrapper->CheckError(this, nResult);")
+	}
 	w.Writeln("  }")
 	w.Writeln("public:")
 	w.Writeln("  /**")
@@ -1450,13 +1484,22 @@ func writePolymorphicFactoryImplementation(w LanguageWriter, component Component
 	w.Writeln("}")
 }
 
-func writeCheckErrorImplementation(w LanguageWriter, ErrorMethodName string, ClassIdentifier string, cppBaseClassName string, NameSpace string) {
-	w.Writeln("  inline void C%sWrapper::CheckError(%s * pBaseClass, %sResult nResult)", ClassIdentifier, cppBaseClassName, NameSpace)
+func writeCheckErrorImplementation(w LanguageWriter, ErrorMethodName string, ClassIdentifier string, cppBaseClassName string, NameSpace string, multiThreadedEnv bool) {
+	if multiThreadedEnv {
+		w.Writeln("  inline void C%sWrapper::CheckError(%s * pBaseClass, %sResult nResult, bool unlockIfError)", ClassIdentifier, cppBaseClassName, NameSpace)
+	} else {
+		w.Writeln("  inline void C%sWrapper::CheckError(%s * pBaseClass, %sResult nResult)", ClassIdentifier, cppBaseClassName, NameSpace)
+	}
 	w.Writeln("  {")
 	w.Writeln("    if (nResult != 0) {")
 	w.Writeln("      std::string sErrorMessage;")
 	w.Writeln("      if (pBaseClass != nullptr) {")
 	w.Writeln("        %s(pBaseClass, sErrorMessage);", ErrorMethodName)
+	if multiThreadedEnv {
+		w.Writeln("        if (unlockIfError) {")
+		w.Writeln("          %s(pBaseClass);", getUnlockInstanceMethodName())
+		w.Writeln("        }")
+	}
 	w.Writeln("      }")
 	w.Writeln("      throw E%sException(nResult, sErrorMessage);", NameSpace)
 	w.Writeln("    }")
@@ -1539,7 +1582,11 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	writeWrapperLifeTimeHandling(w, cppClassPrefix, ClassIdentifier, ExplicitLinking)
 
 	w.Writeln("  ")
-	w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
+	if component.isMultiThreadedEnv() {
+		w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult, bool unlockIfError = false);", cppBaseClassName, NameSpace)
+	} else {
+		w.Writeln("  inline void CheckError(%s * pBaseClass, %sResult nResult);", cppBaseClassName, NameSpace)
+	}
 	w.Writeln("")
 
 	for j := 0; j < len(global.Methods); j++ {
@@ -1622,7 +1669,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
 		}
 
-		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, false)
+		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, false, false, eThreadSafetyNone)
 		if err != nil {
 			return err
 		}
@@ -1630,7 +1677,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 	}
 
 	w.Writeln("")
-	writeCheckErrorImplementation(w, component.Global.ErrorMethod, ClassIdentifier, cppBaseClassName, NameSpace)
+	writeCheckErrorImplementation(w, component.Global.ErrorMethod, ClassIdentifier, cppBaseClassName, NameSpace, component.isMultiThreadedEnv())
 	w.Writeln("")
 
 	if ExplicitLinking {
@@ -1648,7 +1695,7 @@ func buildCppHeader(component ComponentDefinition, w LanguageWriter, NameSpace s
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, false)
+			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, false, component.isMultiThreadedEnv(), class.eThreadSafetyOption())
 			if err != nil {
 				return err
 			}
@@ -1934,6 +1981,7 @@ func buildCppwasmHostHeader(component ComponentDefinition, w LanguageWriter, Nam
 	if len(component.ImportedComponentDefinitions) > 0 {
 		return fmt.Errorf("C++ wasmtime bindings to not support imported components yet")
 	}
+
 	w.Writeln("")
 
 	w.Writeln("namespace %sWASM {", NameSpace)
@@ -2217,14 +2265,14 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 			implementationLines = append(implementationLines, fmt.Sprintf("  throw E%sException(%s_ERROR_COULDNOTLOADLIBRARY, \"Unknown namespace \" + %s);", NameSpace, strings.ToUpper(NameSpace), sParamName))
 		}
 
-		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, true)
+		err = writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, "Wrapper", implementationLines, true, true, false, useCPPTypes, ExplicitLinking, true, false, eThreadSafetyNone)
 		if err != nil {
 			return err
 		}
 	}
 
 	w.Writeln("")
-	writeCheckErrorImplementation(w, component.Global.ErrorMethod, ClassIdentifier, cppBaseClassName, NameSpace)
+	writeCheckErrorImplementation(w, component.Global.ErrorMethod, ClassIdentifier, cppBaseClassName, NameSpace, false)
 	w.Writeln("")
 
 	for i := 0; i < len(component.Classes); i++ {
@@ -2236,7 +2284,7 @@ func buildCppwasmGuestHeader(component ComponentDefinition, w LanguageWriter, Na
 		w.Writeln("   */")
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
-			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, true)
+			err := writeDynamicCPPMethod(method, w, NameSpace, ClassIdentifier, class.ClassName, make([]string, 0), false, true, false, useCPPTypes, ExplicitLinking, true, false, eThreadSafetyNone)
 			if err != nil {
 				return err
 			}

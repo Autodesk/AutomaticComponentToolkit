@@ -584,7 +584,7 @@ func printUsageInfo() {
 }
 
 func main() {
-	ACTVersion := "1.8.0-alpha"
+	ACTVersion := "1.8.1-alpha"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
 		printUsageInfo()
@@ -683,6 +683,11 @@ func main() {
 	err = component.CheckComponentDefinition()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	addExtraGlobalMethodsResult := component.addExtraGlobalMethods();
+	if addExtraGlobalMethodsResult != nil {
+		log.Printf("%s", *addExtraGlobalMethodsResult)
 	}
 
 	if mode == eACTModeDiff {
