@@ -584,7 +584,7 @@ func printUsageInfo() {
 }
 
 func main() {
-	ACTVersion := "1.8.0-develop"
+	ACTVersion := "1.8.1-develop"
 	fmt.Fprintln(os.Stdout, "Automatic Component Toolkit v"+ACTVersion)
 	if len(os.Args) < 2 {
 		printUsageInfo()
@@ -683,6 +683,11 @@ func main() {
 	err = component.CheckComponentDefinition()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	addExtraBaseClassMethods := component.addExtraBaseClassMethods()
+	if addExtraBaseClassMethods != nil {
+		log.Printf("%s", *addExtraBaseClassMethods)
 	}
 
 	if mode == eACTModeDiff {
