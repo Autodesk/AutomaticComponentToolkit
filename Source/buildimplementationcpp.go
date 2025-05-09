@@ -770,11 +770,11 @@ func buildCPPGetSymbolAddressMethod(component ComponentDefinition, w LanguageWri
 }
 
 func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, doJournal bool) error {
-	w.Writeln("#include \"%s_abi.hpp\"", strings.ToLower(BaseName))
-	w.Writeln("#include \"%s_interfaces.hpp\"", strings.ToLower(BaseName))
-	w.Writeln("#include \"%s_interfaceexception.hpp\"", strings.ToLower(BaseName))
+	w.Writeln("#include \"%s_abi.hpp\"", BaseName)
+	w.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
+	w.Writeln("#include \"%s_interfaceexception.hpp\"", BaseName)
 	if (doJournal) {
-		w.Writeln("#include \"%s_interfacejournal.hpp\"", strings.ToLower(BaseName))
+		w.Writeln("#include \"%s_interfacejournal.hpp\"", BaseName)
 	}
 	w.Writeln("")
 	w.Writeln("#include <map>")
