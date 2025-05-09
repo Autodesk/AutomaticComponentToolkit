@@ -43,7 +43,7 @@ import (
 )
 
 // BuildImplementationCPP builds C++ interface classes, implementation stubs and wrapper code that maps to the C-header
-func BuildImplementationCPP(component ComponentDefinition, outputFolder string, stubOutputFolder string, projectOutputFolder string, implementation ComponentDefinitionImplementation, suppressStub bool, suppressInterfaces bool) error {
+func BuildImplementationCPP(component ComponentDefinition, outputFolder string, stubOutputFolder string, projectOutputFolder string, implementation ComponentDefinitionImplementation, suppressStub bool, suppressInterfaces bool, suppressCmake bool) error {
 	forceRecreation := false
 
 	doJournal := len (component.Global.JournalMethod) > 0;
@@ -169,7 +169,7 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 			log.Printf("Omitting recreation of implementation stub \"%s\"", IntfWrapperStubName)
 		}
 
-		if ( len(projectOutputFolder) > 0 ) {
+		if ( !suppressCmake && len(projectOutputFolder) > 0 ) {
 			CMakeListsFileName := path.Join(projectOutputFolder, "CMakeLists.txt");
 			if forceRecreation || !FileExists(CMakeListsFileName) {
 				log.Printf("Creating CMake-Project \"%s\" for CPP Implementation", CMakeListsFileName)

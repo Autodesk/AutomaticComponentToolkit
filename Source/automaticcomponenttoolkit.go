@@ -48,13 +48,13 @@ const (
 	eACTModeDiff     = 1
 )
 
-func createComponent(component ComponentDefinition, outfolderBase string, bindingsDirectoryOverride string, interfacesDirectoryOverride string, stubDirectoryOverride string, suppressBindings bool, suppressStub bool, suppressInterfaces bool, suppressSubcomponents bool, suppressLicense bool, suppressExamples bool) (error) {
+func createComponent(component ComponentDefinition, outfolderBase string, bindingsDirectoryOverride string, interfacesDirectoryOverride string, stubDirectoryOverride string, suppressBindings bool, suppressStub bool, suppressInterfaces bool, suppressSubcomponents bool, suppressLicense bool, suppressExamples bool, suppressCmake bool) (error) {
 
 	log.Printf("Creating Component \"%s\"", component.LibraryName)
 	
 	if (!suppressSubcomponents) {	
 		for _, subComponent := range component.ImportedComponentDefinitions {
-			err := createComponent(subComponent, outfolderBase, "", "", "", suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
+			err := createComponent(subComponent, outfolderBase, "", "", "", suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples, suppressCmake)
 			if (err != nil) {
 				return err
 			}
@@ -506,7 +506,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 				}
 
 				err = BuildImplementationCPP(component, outputFolderImplementationCpp, outputFolderImplementationCppStub,
-					outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces)
+					outputFolderImplementationProject, implementation, suppressStub, suppressInterfaces, suppressCmake)
 				if err != nil {
 					return err
 				}
@@ -578,6 +578,7 @@ func printUsageInfo() {
 	fmt.Fprintln(os.Stdout, "  -suppressinterfaces: do not generate the contents of the interfaces-folder")
 	fmt.Fprintln(os.Stdout, "  -suppresssubcomponents: do not generate any files for subcomponents")
 	fmt.Fprintln(os.Stdout, "  -suppressexamples: do not generate any examples")
+	fmt.Fprintln(os.Stdout, "  -suppresscmake: do not generate CMakeLists.txt file for C++ implementation. It only takes effect if -suppressstub argument is not set.")	
 	fmt.Fprintln(os.Stdout, "  ")
 	fmt.Fprintln(os.Stdout, "Tutorials, info and source-code on: https://github.com/Autodesk/AutomaticComponentToolkit/ .")
 	fmt.Fprintln(os.Stdout, "ACT stops now.")
@@ -616,6 +617,7 @@ func main() {
 	suppressInterfaces := false;
 	suppressSubcomponents := false;
 	suppressExamples := false;
+	suppressCmake := false;
 	
 	if len(os.Args) >= 4 {
 		for idx := 2; idx < len(os.Args); idx ++ {
@@ -667,6 +669,9 @@ func main() {
 				suppressExamples = true;
 			}
 			
+			if os.Args[idx] == "-suppresscmake" {
+				suppressCmake = true;
+			}
 		}
 	}
 	if mode == eACTModeGenerate {
@@ -730,7 +735,7 @@ func main() {
 	// 	}
 	// }
 	
-	err = createComponent(component, outfolderBase, bindingsDirectoryOverride, interfacesDirectoryOverride, stubDirectoryOverride, suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples)
+	err = createComponent(component, outfolderBase, bindingsDirectoryOverride, interfacesDirectoryOverride, stubDirectoryOverride, suppressBindings, suppressStub, suppressInterfaces, suppressSubcomponents, suppressLicense, suppressExamples, suppressCmake)
 	if (err != nil) {
 		if err == ErrPythonBuildFailed {
 			log.Println("Python binding generation failed (Due to usage of reserved keywords)")
