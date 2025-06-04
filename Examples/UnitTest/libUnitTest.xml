@@ -29,6 +29,8 @@
 		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
 		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
 		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8"
+			   description="the version of the binary interface does not match the bindings interface"/>
 	</errors>
 
 	<enum name="TestEnum" >
@@ -43,8 +45,13 @@
 		<member name="Z" type="double"/>
 	</struct>	
 	
+	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
+	</class>
 	
-	<class name="TestClass">
+	<class name="TestClass" parent="Base" description="A class for unit testing purposes">
 		<method name="Value" description="Returns the value of the number">
 			<param name="Value" type="double" pass="return" description="Returns the new value of this number" />
 		</method>
@@ -109,23 +116,37 @@
 		
 	</class>
 		
-	<global releasemethod="ReleaseInstance" journalmethod="SetJournal" versionmethod="GetLibraryVersion">
-		<method name="CreateTestClass" description="Creates a new Test Class instance">
-			<param name="Instance" type="handle" class="TestClass" pass="return" description="New TestClass instance" />
+	<global baseclassname="Base" stringoutclassname="Base" 
+			releasemethod="ReleaseInstance" acquiremethod="AcquireInstance"
+			versionmethod="GetVersion" errormethod="GetLastError" 
+			injectionmethod="InjectComponent" symbollookupmethod="GetSymbolLookupMethod" 
+			classtypeidmethod="ClassTypeId"
+			>
+		<method name="GetVersion" description="retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library"/>
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library"/>
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library"/>
 		</method>
-				
-		<method name="ReleaseInstance" description="Releases the memory of an Instance">
-			<param name="Instance" type="handle" class="BaseClass" pass="in" description="Instance Handle" />
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle"/>
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error"/>
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query"/>
 		</method>
-
-		<method name="GetLibraryVersion" description = "retrieves the current version of the library.">
-			<param name="Major" type="uint32" pass="out" description="returns the major version of the library" />
-			<param name="Minor" type="uint32" pass="out" description="returns the minor version of the library" />
-			<param name="Micro" type="uint32" pass="out" description="returns the micro version of the library" />
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle"/>
 		</method>
-		
-		<method name="SetJournal" description="Handles Library Journaling">
-			<param name="FileName" type="string" pass="in" description="Journal FileName" />
+		<method name="AcquireInstance" description="Acquires shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle"/>
+		</method>
+		<method name="InjectComponent" description="Injects an imported component for usage within this component">
+			<param name="NameSpace" type="string" pass="in" description="NameSpace of the injected component" />
+			<param name="SymbolAddressMethod" type="pointer" pass="in" description="Address of the SymbolAddressMethod of the injected component" />
+		</method>
+		<method name="GetSymbolLookupMethod" description="Returns the address of the SymbolLookupMethod">
+			<param name="SymbolLookupMethod" type="pointer" pass="return" description="Address of the SymbolAddressMethod" />
+		</method>
+		<method name="CreateTestClasss" description="Create a new TestClass instance">
+			<param name="Instance" type="class" class="TestClass" pass="return" description="New TestClass instance"/>
 		</method>
 	</global>
 		

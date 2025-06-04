@@ -6,6 +6,7 @@ libprimes_releaseinstance
 libprimes_createfactorizationcalculator
 libprimes_createsievecalculator
 libprimes_setjournal
+libprimes_base_classtypeid
 libprimes_calculator_getvalue
 libprimes_calculator_setvalue
 libprimes_calculator_calculate
