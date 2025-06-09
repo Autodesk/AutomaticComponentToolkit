@@ -232,7 +232,19 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 				}
+			case "WASM":
+				{
+					outputFolderBindingWASM := outputFolderBindings + "/WASM"
+					err = os.MkdirAll(outputFolderBindingWASM, os.ModePerm)
+					if err != nil {
+						return err
+					}
 
+					err := BuildWASMBinding(component, outputFolderBindingWASM, "", indentString)
+					if err != nil {
+						return err
+					}
+				}
 			case "Go":
 				{
 					outputFolderBindingGo := outputFolderBindings + "/Go"
