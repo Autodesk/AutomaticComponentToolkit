@@ -1351,6 +1351,11 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
+
+			if method.isExtraBaseClassmethod() {
+				continue;
+			}
+
 			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
