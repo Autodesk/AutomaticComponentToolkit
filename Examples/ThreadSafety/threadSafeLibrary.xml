@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://schemas.autodesk.com/netfabb/automaticcomponenttoolkit/2018" 
+	libraryname="Thread-safe library" namespace="LibThreadSafe" copyright="Thread-safe library developers" year="2025" basename="libthreadsafe"
+	version="1.0.0">
+	<license>
+		<line value="All rights reserved." />
+	</license>
+	
+	<bindings>
+		<binding language="CppDynamic" indentation="tabs" />
+	</bindings>
+	<implementations>
+		<implementation language="Cpp" indentation="tabs"/>
+	</implementations>
+	
+	<errors>
+		<error name="NOTIMPLEMENTED" code="1" description="functionality not implemented" />
+		<error name="INVALIDPARAM" code="2" description="an invalid parameter was passed" />
+		<error name="INVALIDCAST" code="3" description="a type cast failed" />
+		<error name="BUFFERTOOSMALL" code="4" description="a provided buffer is too small" />
+		<error name="GENERICEXCEPTION" code="5" description="a generic exception occurred" />
+		<error name="COULDNOTLOADLIBRARY" code="6" description="the library could not be loaded" />
+		<error name="COULDNOTFINDLIBRARYEXPORT" code="7" description="a required exported symbol could not be found in the library" />
+		<error name="INCOMPATIBLEBINARYVERSION" code="8" description="the version of the binary interface does not match the bindings interface" />
+		<error name="NORESULTAVAILABLE" code="9" description="no result is available" />
+		<error name="CALCULATIONABORTED" code="10" description="a calculation has been aborted" />
+	</errors>
+
+	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return" description="Class type as a 64 bits integer" />
+		</method>
+	</class>
+		
+	<class name="StringReturner" threadsafetyoption="none">
+                <method name="GetString" description="Returns a string">
+			<param name="Value" type="string" pass="return"/>
+		</method>
+		<method name="ThreadSafetyCheck" description="Function that may crash when called from different threads at the same time">
+		</method>
+	</class>
+
+	<class name="SoftStringReturner" threadsafetyoption="soft">
+                <method name="GetString" description="Returns a string">
+			<param name="Value" type="string" pass="return"/>
+		</method>
+		<method name="ThreadSafetyCheck" description="Function that may crash when called from different threads at the same time">
+		</method>
+	</class>
+
+	<class name="StrictStringReturner" threadsafetyoption="strict">
+                <method name="GetString" description="Returns a string">
+			<param name="Value" type="string" pass="return"/>
+		</method>
+		<method name="ThreadSafetyCheck" description="Function that shouldn't crash when called from different threads at the same time">
+		</method>
+	</class>
+	
+	<global baseclassname="Base" stringoutclassname="Base" acquiremethod="AcquireInstance"
+		releasemethod="ReleaseInstance" versionmethod="GetVersion" errormethod="GetLastError" classtypeidmethod="ClassTypeId">
+		<method name="GetVersion" description = "retrieves the binary version of this library.">
+			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />
+			<param name="Minor" type="uint32" pass="out" description="returns the minor version of this library" />
+			<param name="Micro" type="uint32" pass="out" description="returns the micro version of this library" />
+		</method>
+		<method name="GetLastError" description="Returns the last error recorded on this object">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+			<param name="ErrorMessage" type="string" pass="out" description="Message of the last error" />
+			<param name="HasError" type="bool" pass="return" description="Is there a last error to query" />
+		</method>
+		<method name="AcquireInstance" description="Acquire shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="ReleaseInstance" description="Releases shared ownership of an Instance">
+			<param name="Instance" type="class" class="Base" pass="in" description="Instance Handle" />
+		</method>
+		<method name="CreateStringReturner" description="Creates a new StringReturner instance">
+			<param name="Instance" type="class" class="StringReturner" pass="return" description="New StringReturner instance" />
+		</method>
+		<method name="CreateSoftStringReturner" description="Creates a new SoftStringReturner instance">
+			<param name="Instance" type="class" class="SoftStringReturner" pass="return" description="New SoftStringReturner instance" />
+		</method>
+		<method name="CreateStrictStringReturner" description="Creates a new StrictStringReturner instance">
+			<param name="Instance" type="class" class="StrictStringReturner" pass="return" description="New StrictStringReturner instance" />
+		</method>
+	</global>
+</component>
