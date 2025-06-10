@@ -22,14 +22,13 @@ To address the thread safety issue described above, a new parameter called `thre
 This parameter ensures thread safety by adding mutex locking mechanisms on the library implementation side.
 
 ### 2.2. Details
-The ThreadSafetyOption parameter can be set to either `none`, `soft` or `strict` values. Here is the difference them:
+The `ThreadSafetyOption` parameter can be set to `none`, `soft` or `strict` value. Here is the difference between them:
 - `none`: Does nothing.
 - `soft`: The binding side will call the lock mechanism only when a string is returned from an API function.
 - `strict`: The binding side will call the lock mechanism every time, regardless of what is returned from the function.
 
-When the ThreadSafetyOption attribute in the LibraryManager component class is set to `soft` or `strict`,
+When the `ThreadSafetyOption` attribute in the component class is set to `soft` or `strict`,
 the implementation will derive from a base class that includes mutex locking mechanisms.
-This approach ensures that the mutexes are locked and unlocked on the implementation side.
 This solution ensures thread safety both when a single pointer on the binding side is shared across threads,
 and when different pointers that point to the same object on the implementation side are used in different threads.
 Additionally, error handling mechanisms are in place to unlock the mutex in case of exception propagation, preventing deadlocks.
@@ -44,7 +43,7 @@ In the `threadSafeLibrary.xml` file, there are three classes defined with the sa
 ```xml
 <class name="StringReturner" threadsafetyoption="none">
 	<method name="GetString" description="Returns a string">
-			<param name="Value" type="string" pass="return"/>
+		<param name="Value" type="string" pass="return"/>
 	</method>
 	<method name="ThreadSafetyCheck" description="Function that may crash when called from different threads at the same time"></method>
 </class>
@@ -62,7 +61,7 @@ In the `threadSafeLibrary.xml` file, there are three classes defined with the sa
 </class>
 ```
 
-Each class contains the following methods:
+Each class has the following methods:
 - `GetString` which simply returns a random string.
 - `ThreadSafetyCheck` which returns nothing but may crash when executed from different threads simultaneously, as no thread safety mechanism is provided in the library implementation.
 
@@ -113,8 +112,10 @@ int main()
 ```
 
 Executing `testStringReturn` and `testThreadSafetyCheck` with `stringReturner` will crash because there is no thread safety mechanism enabled for this instance.
+
 Executing `testStringReturn` with `softStringReturner` will work as expected. However, it will crash on `testThreadSafetyCheck` because with the `soft`
 value of the `threadsafetyoption` parameter, the thread safety mechanism will lock the instance on the library side only when executing functions that return strings.
+
 Executing `testStringReturn` or `testThreadSafetyCheck` on `strictStringReturner` will work as expected in both cases because with the `strict` value of
 the `threadsafetyoption`, the instance on the implementation side will be locked during each function execution.
 
