@@ -46,11 +46,10 @@ void testThreadSafetyCheck(ArrayReturner& returner)
 
 int main()
 {
-	std::string libpath = ("C:/Users/uck/Dev/Repos/ActTask/MyFork/AutomaticComponentToolkit/Examples/ThreadSafety/LibThreadSafe_component/Implementations/Cpp/out/build/x64-Debug"); // TODO: put the location of the LibThreadSafe-library file here.
-	auto wrapper = LibThreadSafe::CWrapper::loadLibrary(libpath + "/libthreadsafe.dll"); // TODO: add correct suffix of the library
+	std::string libpath = (""); // TODO: put the location of the LibThreadSafe-library file here.
+	auto wrapper = LibThreadSafe::CWrapper::loadLibrary(libpath + ""); // TODO: add correct suffix of the library
 
 	LibThreadSafe::PStringReturner stringReturner = wrapper->CreateStringReturner();
 	LibThreadSafe::PSoftStringReturner softStringReturner = wrapper->CreateSoftStringReturner();
 	LibThreadSafe::PStrictStringReturner strictStringReturner = wrapper->CreateStrictStringReturner();
-	testThreadSafetyCheck(strictStringReturner);
 }
