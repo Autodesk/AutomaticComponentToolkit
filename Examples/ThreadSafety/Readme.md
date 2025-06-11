@@ -22,7 +22,7 @@ To address the thread safety issue described above, a new parameter called `thre
 This parameter ensures thread safety by adding mutex locking mechanisms on the library implementation side.
 
 ### 2.2. Details
-The `ThreadSafetyOption` parameter can be set to `none`, `soft` or `strict` value. Here is the difference between them:
+The `ThreadSafetyOption` parameter can be set to `none`, `soft` or `strict` value:
 - `none`: Does nothing.
 - `soft`: The binding side will call the lock mechanism only when a string is returned from an API function.
 - `strict`: The binding side will call the lock mechanism every time, regardless of what is returned from the function.
@@ -54,7 +54,7 @@ In the `threadSafeLibrary.xml` file, there are three classes defined with the sa
 	<method name="ThreadSafetyCheck" description="Function that may crash when called from different threads at the same time"></method>
 </class>
 <class name="StrictStringReturner" threadsafetyoption="strict">
-    <method name="GetString" description="Returns a string">
+	<method name="GetString" description="Returns a string">
 		<param name="Value" type="string" pass="return"/>
 	</method>
 	<method name="ThreadSafetyCheck" description="Function that shouldn't crash when called from different threads at the same time"></method>

@@ -22,7 +22,7 @@ using namespace LibThreadSafe::Impl;
 
 std::string CStringReturner::GetString()
 {
-	throw std::string("Get random string");
+	return std::string("Get random string");
 }
 
 void CStringReturner::ThreadSafetyCheck()
