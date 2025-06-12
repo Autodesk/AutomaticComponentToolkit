@@ -22,12 +22,12 @@ To address the thread safety issue described above, a new parameter called `thre
 This parameter ensures thread safety by adding mutex locking mechanisms on the library implementation side.
 
 ### 2.2. Details
-The `ThreadSafetyOption` parameter can be set to `none`, `soft` or `strict` value:
+The `threadsafetyoption` parameter can be set to `none`, `soft` or `strict` value:
 - `none`: Does nothing. When used in child class ACT will copy `ThreadSafetyOption` from parent.
 - `soft`: The binding side will call the lock mechanism only when a string is returned from an API function.
 - `strict`: The binding side will call the lock mechanism every time, regardless of what is returned from the function.
 
-When the `ThreadSafetyOption` attribute in the component class is set to `soft` or `strict`,
+When the `threadsafetyoption` attribute in the component class is set to `soft` or `strict`,
 the implementation will derive from a base class that includes mutex locking mechanisms.
 This solution ensures thread safety both when a single pointer on the binding side is shared across threads,
 and when different pointers that point to the same object on the implementation side are used in different threads.
