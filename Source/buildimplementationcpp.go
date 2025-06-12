@@ -354,16 +354,14 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 	parentClassString := " "
-	if (!component.isBaseClass(class)) {
+	if !component.isBaseClass(class) {
 		parentClassString = " : public virtual "
-		if (class.ParentClass == "") {
-			if (class.isThreadSafe()) {
-				parentClassString += fmt.Sprintf("I%s ", getWithMutexClassName(ClassIdentifier, component.Global.BaseClassName))
-			} else {
-				parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
-			}
+		parentName := class.ParentClass
+
+		if parentName == component.Global.BaseClassName && component.getRealThreadSafetyOption(&class) != eThreadSafetyNone {
+			parentClassString += fmt.Sprintf("I%s ", getWithMutexClassName(ClassIdentifier, parentName))
 		} else {
-			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, parentName)
 		}
 	}
 	

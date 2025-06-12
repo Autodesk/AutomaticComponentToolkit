@@ -23,7 +23,7 @@ This parameter ensures thread safety by adding mutex locking mechanisms on the l
 
 ### 2.2. Details
 The `ThreadSafetyOption` parameter can be set to `none`, `soft` or `strict` value:
-- `none`: Does nothing.
+- `none`: Does nothing. When used in child class ACT will copy `ThreadSafetyOption` from parent.
 - `soft`: The binding side will call the lock mechanism only when a string is returned from an API function.
 - `strict`: The binding side will call the lock mechanism every time, regardless of what is returned from the function.
 
@@ -32,6 +32,12 @@ the implementation will derive from a base class that includes mutex locking mec
 This solution ensures thread safety both when a single pointer on the binding side is shared across threads,
 and when different pointers that point to the same object on the implementation side are used in different threads.
 Additionally, error handling mechanisms are in place to unlock the mutex in case of exception propagation, preventing deadlocks.
+
+### 2.3 Rules
+* The base class can have the `threadsafetyoption` parameter set to `soft` or `strict`.
+* If a child class has the `threadsafetyoption` parameter set to `soft` or `strict`,
+its parent class must also have the `threadsafetyoption` parameter set to `soft` or `strict`, or the parent must be the base class.
+* The `threadsafetyoption` parameter in a child class cannot be less strict than the parent's `threadsafetyoption` parameter.
 
 # 3. Example
 ### 3.1. Component definition

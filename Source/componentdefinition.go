@@ -69,6 +69,19 @@ const (
 	eThreadSafetyStrict = 2
 )
 
+func (option ThreadSafetyOption) String() string {
+	switch option {
+	case eThreadSafetyNone:
+		return "None"
+	case eThreadSafetySoft:
+		return "Soft"
+	case eThreadSafetyStrict:
+		return "Strict"
+	default:
+		return "Unknown"
+	}
+}
+
 // ComponentDefinitionParam definition of a method parameter used in the component's API
 type ComponentDefinitionParam struct {
 	ComponentDiffableElement
@@ -369,6 +382,21 @@ func (component *ComponentDefinition) addExtraBaseClassMethods() *string {
 	return nil
 }
 
+func (component *ComponentDefinition) getParent(class *ComponentDefinitionClass) *ComponentDefinitionClass {
+	parentName := class.ParentClass
+	if parentName == "" {
+		return nil
+	}
+
+	for i := range component.Classes {
+		if component.Classes[i].ClassName == parentName {
+			return &component.Classes[i]
+		}
+	}
+
+	return nil
+}
+
 func (method *ComponentDefinitionMethod) isExtraBaseClassmethod() bool {
 	return method.MethodName == getLockInstanceMethodName() || method.MethodName == getUnlockInstanceMethodName()
 }
@@ -549,9 +577,19 @@ func (component *ComponentDefinition) checkClasses() (error) {
 	classTypeIdIndex := make(map[uint64]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
+		if !component.isBaseClass(class) {
+			if class.ParentClass == "" {
+				class.ParentClass = component.Global.BaseClassName
+				classes[i] = class
+			}
+		}
+
 		classTypeHash, _ := class.classTypeId(component.NameSpace);
-		if component.isBaseClass(class) && class.isThreadSafe() {
-			return fmt.Errorf("thread safety option for base class can't be enabled")
+		if class.isThreadSafe() {
+			err := checkThreadSafetyHierarchy(component, &class)
+			if err != nil {
+				return err
+			}
 		}
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
@@ -574,6 +612,7 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
 		classTypeIdIndex[classTypeHash] = i
+
 	}
 
 	// Check parent class definitions
@@ -622,6 +661,26 @@ func (component *ComponentDefinition) checkFunctionTypes() (error) {
 		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
 		(*functionNameList)[function.FunctionName] = true
 	}
+	return nil
+}
+
+func checkThreadSafetyHierarchy(component *ComponentDefinition, class *ComponentDefinitionClass) error {
+	classOption := class.eThreadSafetyOption()
+	parent := component.getParent(class)
+	for parent != nil {
+		parentOption := parent.eThreadSafetyOption()
+
+		if classOption != eThreadSafetyNone && parentOption == eThreadSafetyNone && !component.isBaseClass(*parent) {
+			return fmt.Errorf("class \"%s\" has threadSafetyOption = \"%s\", but its parent \"%s\" is not base \"%s\" class and has threadSafetyOption = \"%s\"",
+				class.ClassName, classOption, parent.ClassName, component.Global.BaseClassName, parentOption)
+		}
+
+		if classOption < parentOption && (!component.isBaseClass(*parent) || parentOption != eThreadSafetyNone) {
+			return fmt.Errorf("class \"%s\" has threadSafetyOption = \"%s\", but its parent \"%s\" has threadSafetyOption = \"%s\"", class.ClassName, classOption, parent.ClassName, parentOption)
+		}
+		parent = component.getParent(parent)
+	}
+
 	return nil
 }
 
@@ -1429,6 +1488,25 @@ func (method *ComponentDefinitionMethod) getArrayOutParameters() ([]string) {
 	}
 	
 	return outParameters;
+}
+
+func (component *ComponentDefinition) getRealThreadSafetyOption(class *ComponentDefinitionClass) ThreadSafetyOption {
+	option := class.eThreadSafetyOption()
+	if option != eThreadSafetyNone {
+		return option
+	}
+
+	parent := component.getParent(class)
+	for parent != nil {
+		parentOption := parent.eThreadSafetyOption()
+		if parentOption != eThreadSafetyNone {
+			return parentOption
+		}
+
+		parent = component.getParent(parent)
+	}
+
+	return eThreadSafetyNone
 }
 
 func (class *ComponentDefinitionClass) eThreadSafetyOption() ThreadSafetyOption {
