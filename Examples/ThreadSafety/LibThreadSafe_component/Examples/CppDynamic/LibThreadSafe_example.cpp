@@ -47,7 +47,7 @@ void testThreadSafetyCheck(ArrayReturner& returner)
 int main()
 {
 	std::string libpath = (""); // TODO: put the location of the LibThreadSafe-library file here.
-	auto wrapper = LibThreadSafe::CWrapper::loadLibrary(libpath + ""); // TODO: add correct suffix of the library
+	auto wrapper = LibThreadSafe::CWrapper::loadLibrary(libpath + "libthreadsafe."); // TODO: add correct suffix of the library
 
 	LibThreadSafe::PStringReturner stringReturner = wrapper->CreateStringReturner();
 	LibThreadSafe::PSoftStringReturner softStringReturner = wrapper->CreateSoftStringReturner();
