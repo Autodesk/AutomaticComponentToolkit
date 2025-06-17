@@ -60,27 +60,34 @@ func ResolveCppType(paramType string) string {
 
 // Check if a static wrapper is needed
 func NeedsStaticWrapper(m ComponentDefinitionMethod) bool {
-	hasInput := false
+	// 1) Skip methods with out-params or callbacks entirely
 	for _, p := range m.Params {
-		if p.ParamPass == "out" || p.ParamPass == "return" || p.ParamType == "functiontype" {
-			return false // disqualify for static wrapper
-		}
-		if p.ParamPass == "" {
-			hasInput = true
-		}
-	}
-	return hasInput
-}
-
-// Check if an out param wrapper is needed (produces a JSON essentially)
-func NeedsOutParamWrapper(m ComponentDefinitionMethod) bool {
-	for _, p := range m.Params {
-		if p.ParamType == "functiontype" {
+		if p.ParamPass == "out" || p.ParamType == "functiontype" {
 			return false
 		}
 	}
+	// 2) If it returns a struct or structarray, wrap it
 	for _, p := range m.Params {
-		if p.ParamPass == "out" {
+		if p.ParamPass == "return" &&
+			(p.ParamType == "struct" || p.ParamType == "structarray") {
+			return true
+		}
+	}
+	// 3) If it takes a struct/structarray as input, wrap it
+	for _, p := range m.Params {
+		if (p.ParamPass == "" || p.ParamPass == "in") &&
+			(p.ParamType == "struct" || p.ParamType == "structarray") {
+			return true
+		}
+	}
+	// otherwise no wrapper needed
+	return false
+}
+
+// Returns true if we need to emit an out-param wrapper
+func NeedsOutParamWrapper(m ComponentDefinitionMethod) bool {
+	for _, p := range m.Params {
+		if p.ParamPass == "out" && p.ParamType != "functiontype" {
 			return true
 		}
 	}
