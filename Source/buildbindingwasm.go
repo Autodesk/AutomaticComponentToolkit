@@ -1,7 +1,37 @@
+/*++
+
+Copyright (C) 2024 Autodesk Inc. (Original Author)
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--*/
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-// buildbindingwasm.go
-// functions to generate dynamic Python3-bindings of a library's API in form of explicitly loaded
-// function handles.
+// buildwasmbindingwasm.go
+// functions to generate WASM bindings which rely on emscripten
+// It produces a bindings.cpp file which needs to be compiled using emcc / em++ and needs cpp bindings
+// in path
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 package main
@@ -13,9 +43,51 @@ import (
 	"strings"
 )
 
-// Store the python file path
+// Store the wasm binding path (could be useful later)
 var wasmBindingFile = ""
 
+// Type mapping (More things should move here)
+func ResolveCppType(paramType string) string {
+	switch paramType {
+	case "string":
+		return "std::string"
+	case "bool":
+		return "bool"
+	default:
+		return fmt.Sprintf("Lib3MF_%s", paramType)
+	}
+}
+
+// Check if a static wrapper is needed
+func NeedsStaticWrapper(m ComponentDefinitionMethod) bool {
+	hasInput := false
+	for _, p := range m.Params {
+		if p.ParamPass == "out" || p.ParamPass == "return" || p.ParamType == "functiontype" {
+			return false // disqualify for static wrapper
+		}
+		if p.ParamPass == "" {
+			hasInput = true
+		}
+	}
+	return hasInput
+}
+
+// Check if an out param wrapper is needed (produces a JSON essentially)
+func NeedsOutParamWrapper(m ComponentDefinitionMethod) bool {
+	for _, p := range m.Params {
+		if p.ParamType == "functiontype" {
+			return false
+		}
+	}
+	for _, p := range m.Params {
+		if p.ParamPass == "out" {
+			return true
+		}
+	}
+	return false
+}
+
+// Generate wrapper structs
 func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 	var builder strings.Builder
 
@@ -28,10 +100,9 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 			if m.Type == "enum" {
 				typeString = fmt.Sprintf("e%s", m.Class)
 			} else {
-				typeString = fmt.Sprintf("Lib3MF_%s", m.Type)
+				typeString = ResolveCppType(m.Type)
 			}
 
-			// Determine if the member is an array
 			if m.Rows > 0 || m.Columns > 0 {
 				if m.Rows > 0 && m.Columns > 0 {
 					// 2D Array
@@ -76,7 +147,7 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 			if m.Type == "enum" {
 				typeString = fmt.Sprintf("e%s", m.Class)
 			} else {
-				typeString = fmt.Sprintf("Lib3MF_%s", m.Type)
+				typeString = ResolveCppType(m.Type)
 			}
 
 			if m.Rows > 0 || m.Columns > 0 {
@@ -114,21 +185,16 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 	return builder.String()
 }
 
-// GenerateCppHeader generates the header part of the C++ file as a string
+// Generate necessary Cpp headers
 func GenerateCppHeader(componentdefinition ComponentDefinition) string {
 	var builder strings.Builder
 
-	// Write the standard includes
 	builder.WriteString("#include <iostream>\n")
 	builder.WriteString("#include <vector>\n")
 	builder.WriteString("#include <string>\n")
 	builder.WriteString("#include <emscripten.h>\n")
 	builder.WriteString("#include <emscripten/bind.h>\n")
-
-	// Use the BaseName to generate the #include for the implicit header
 	builder.WriteString(fmt.Sprintf("#include \"Cpp/%s_implicit.hpp\"\n", componentdefinition.BaseName))
-
-	// Namespace usage
 	builder.WriteString("\n")
 	builder.WriteString("using namespace emscripten;\n")
 	builder.WriteString(fmt.Sprintf("using namespace %s;\n\n", componentdefinition.NameSpace))
@@ -136,66 +202,92 @@ func GenerateCppHeader(componentdefinition ComponentDefinition) string {
 	return builder.String()
 }
 
-func GenerateStaticMethodWrappers(component ComponentDefinition) string {
+// A common function to generate method wrappers (struct, struct arrays, class pointers and globals)
+func generateMethodWrappers(
+	component ComponentDefinition,
+	isOutParam bool,
+) string {
 	var result strings.Builder
 
-	for _, class := range component.Classes {
-		className := class.ClassName
-		for _, method := range class.Methods {
-			// Skip methods with out-params
-			hasOutParam := false
-			for _, param := range method.Params {
-				if param.ParamPass == "out" {
-					hasOutParam = true
-					break
-				}
-			}
-			if hasOutParam {
-				continue
-			}
+	emitOne := func(method ComponentDefinitionMethod, className string, isGlobal bool) {
+		// 1. Predicate check
+		if isOutParam && !NeedsOutParamWrapper(method) {
+			return
+		}
+		if !isOutParam && !NeedsStaticWrapper(method) {
+			return
+		}
 
-			methodName := method.MethodName
-			result.WriteString("static ")
+		// 2. Skip functiontype and callback
+		for _, p := range method.Params {
+			if p.ParamType == "functiontype" {
+				return
+			}
+		}
 
-			// Determine return type
-			returnType := "void"
+		methodName := method.MethodName
+		// Return type
+		var returnType string
+		if isOutParam {
+			returnType = "emscripten::val"
+		} else {
+			returnType = "void"
 			for _, p := range method.Params {
 				if p.ParamPass == "return" {
 					if p.ParamType == "struct" {
 						returnType = fmt.Sprintf("s%sWrapper", p.ParamClass)
+					} else if p.ParamType == "class" || p.ParamType == "handle" {
+						returnType = fmt.Sprintf("P%s", p.ParamClass)
+					} else if p.ParamType == "basicarray" {
+						returnType = fmt.Sprintf("std::vector<Lib3MF_%s>", p.ParamClass)
 					} else {
-						returnType = fmt.Sprintf("Lib3MF_%s", p.ParamType)
+						returnType = ResolveCppType(p.ParamType)
 					}
 					break
 				}
 			}
+		}
 
-			// Function signature
-			result.WriteString(fmt.Sprintf("%s wrap_%s_%s(C%s &self", returnType, className, methodName, className))
-
-			// Parameter list
-			var paramList []string
-			for _, p := range method.Params {
-				if p.ParamPass == "return" {
-					continue
-				}
-				var param string
-				switch p.ParamType {
-				case "struct":
-					param = fmt.Sprintf("const s%sWrapper& %s", p.ParamClass, p.ParamName)
-				case "structarray":
-					param = fmt.Sprintf("const std::vector<s%sWrapper>& %s", p.ParamClass, p.ParamName)
-				default:
-					param = fmt.Sprintf("Lib3MF_%s %s", p.ParamType, p.ParamName)
-				}
-				paramList = append(paramList, param)
+		// Function name and signature
+		result.WriteString("static ")
+		result.WriteString(returnType)
+		result.WriteString(" wrap_")
+		result.WriteString(className)
+		result.WriteString("_")
+		result.WriteString(methodName)
+		result.WriteString("(")
+		// For class: CClass &self
+		result.WriteString(fmt.Sprintf("C%s &self", className))
+		// Params (excluding return and (if out) out-params)
+		var paramList []string
+		for _, p := range method.Params {
+			if p.ParamPass == "return" || (isOutParam && p.ParamPass == "out") {
+				continue
 			}
-			if len(paramList) > 0 {
-				result.WriteString(", " + strings.Join(paramList, ", "))
+			switch p.ParamType {
+			case "struct":
+				paramList = append(paramList, fmt.Sprintf("const s%sWrapper& %s", p.ParamClass, p.ParamName))
+			case "structarray":
+				paramList = append(paramList, fmt.Sprintf("const std::vector<s%sWrapper>& %s", p.ParamClass, p.ParamName))
+			case "basicarray":
+				paramList = append(paramList, fmt.Sprintf("std::vector<Lib3MF_%s>& %s", p.ParamClass, p.ParamName))
+			case "enum":
+				paramList = append(paramList, fmt.Sprintf("const e%s& %s", p.ParamClass, p.ParamName))
+			case "class":
+				paramList = append(paramList, fmt.Sprintf("P%s& %s", p.ParamClass, p.ParamName))
+			default:
+				paramList = append(paramList, fmt.Sprintf("const %s& %s", ResolveCppType(p.ParamType), p.ParamName))
 			}
-			result.WriteString(") {\n")
+		}
+		// Append param list (comma logic)
+		if len(paramList) > 0 {
+			result.WriteString(", ")
+			result.WriteString(strings.Join(paramList, ", "))
+		}
+		result.WriteString(") {\n")
 
-			// structarray conversion
+		// structarray conversion
+		if !isOutParam {
 			for _, p := range method.Params {
 				if p.ParamType == "structarray" {
 					result.WriteString(fmt.Sprintf("    std::vector<s%s> converted_%s;\n", p.ParamClass, p.ParamName))
@@ -203,13 +295,43 @@ func GenerateStaticMethodWrappers(component ComponentDefinition) string {
 					result.WriteString(fmt.Sprintf("    for (const auto& w : %s) converted_%s.push_back(w.toStruct());\n", p.ParamName, p.ParamName))
 				}
 			}
+		}
 
-			// Compose call
-			var callArgs []string
+		if isOutParam {
+			result.WriteString("    emscripten::val output = emscripten::val::object();\n")
+			// Out param declarations
 			for _, p := range method.Params {
-				if p.ParamPass == "return" {
-					continue
+				if p.ParamPass == "out" {
+					paramType := ""
+					if p.ParamType == "struct" {
+						paramType = fmt.Sprintf("s%sWrapper", p.ParamClass)
+					} else if p.ParamType == "structarray" {
+						paramType = fmt.Sprintf("std::vector<s%s>", p.ParamClass)
+					} else if p.ParamType == "basicarray" {
+						paramType = fmt.Sprintf("std::vector<Lib3MF_%s>", p.ParamClass)
+					} else if p.ParamType == "enum" {
+						paramType = fmt.Sprintf("e%s", p.ParamClass)
+					} else {
+						paramType = ResolveCppType(p.ParamType)
+					}
+					result.WriteString(fmt.Sprintf("    %s %s;\n", paramType, p.ParamName))
 				}
+			}
+		}
+
+		// Compose call args
+		var callArgs []string
+		for _, p := range method.Params {
+			if p.ParamPass == "return" {
+				continue
+			}
+			if isOutParam && p.ParamPass == "out" {
+				if p.ParamType == "struct" {
+					callArgs = append(callArgs, fmt.Sprintf("%s.value", p.ParamName))
+				} else {
+					callArgs = append(callArgs, p.ParamName)
+				}
+			} else {
 				switch p.ParamType {
 				case "struct":
 					callArgs = append(callArgs, fmt.Sprintf("%s.toStruct()", p.ParamName))
@@ -219,106 +341,14 @@ func GenerateStaticMethodWrappers(component ComponentDefinition) string {
 					callArgs = append(callArgs, p.ParamName)
 				}
 			}
-			callExpr := fmt.Sprintf("self.%s(%s)", methodName, strings.Join(callArgs, ", "))
-
-			// Return or void
-			if returnType != "void" {
-				result.WriteString(fmt.Sprintf("    auto result = %s;\n", callExpr))
-				if strings.HasPrefix(returnType, "s") { // wrapper
-					result.WriteString(fmt.Sprintf("    %s wrapper;\n", returnType))
-					result.WriteString("    wrapper.value = result;\n")
-					result.WriteString("    return wrapper;\n")
-				} else {
-					result.WriteString("    return result;\n")
-				}
-			} else {
-				result.WriteString(fmt.Sprintf("    %s;\n", callExpr))
-			}
-			result.WriteString("}\n\n")
 		}
-	}
 
-	return result.String()
-}
+		// Call expr (class/global)
+		var callExpr string
+		callExpr = fmt.Sprintf("self.%s(%s)", methodName, strings.Join(callArgs, ", "))
 
-func GenerateOutParamMethodWrappers(component ComponentDefinition) string {
-	var result strings.Builder
-
-	for _, class := range component.Classes {
-		className := class.ClassName
-		for _, method := range class.Methods {
-			// Check if method has at least one out-param
-			hasOutParam := false
-			for _, param := range method.Params {
-				if param.ParamPass == "out" {
-					hasOutParam = true
-					break
-				}
-			}
-			if !hasOutParam {
-				continue
-			}
-
-			methodName := method.MethodName
-			result.WriteString("static emscripten::val ")
-			result.WriteString(fmt.Sprintf("wrap_%s_%s(C%s &self", className, methodName, className))
-
-			// Parameter list (no out params)
-			var paramList []string
-			for _, p := range method.Params {
-				if p.ParamPass == "return" || p.ParamPass == "out" {
-					continue
-				}
-				var param string
-				switch p.ParamType {
-				case "struct":
-					param = fmt.Sprintf("const s%sWrapper& %s", p.ParamClass, p.ParamName)
-				default:
-					param = fmt.Sprintf("Lib3MF_%s %s", p.ParamType, p.ParamName)
-				}
-				paramList = append(paramList, param)
-			}
-			if len(paramList) > 0 {
-				result.WriteString(", " + strings.Join(paramList, ", "))
-			}
-			result.WriteString(") {\n")
-
-			// Create output object
-			result.WriteString("    emscripten::val output = emscripten::val::object();\n")
-
-			// Create local variables for out-params
-			for _, p := range method.Params {
-				if p.ParamPass == "out" {
-					var paramType string
-					if p.ParamType == "struct" {
-						paramType = fmt.Sprintf("s%s", p.ParamClass)
-					} else {
-						paramType = fmt.Sprintf("Lib3MF_%s", p.ParamType)
-					}
-					result.WriteString(fmt.Sprintf("    %s %s;\n", paramType, p.ParamName))
-				}
-			}
-
-			// Compose call arguments
-			var callArgs []string
-			for _, p := range method.Params {
-				switch {
-				case p.ParamPass == "return":
-					continue
-				case p.ParamPass == "out":
-					if p.ParamType == "struct" {
-						callArgs = append(callArgs, fmt.Sprintf("%s", p.ParamName+".value"))
-					} else {
-						callArgs = append(callArgs, p.ParamName)
-					}
-				case p.ParamType == "struct":
-					callArgs = append(callArgs, fmt.Sprintf("%s.toStruct()", p.ParamName))
-				default:
-					callArgs = append(callArgs, p.ParamName)
-				}
-			}
-
-			// Compose call statement
+		// Output assignment
+		if isOutParam {
 			var returnVar string
 			for _, p := range method.Params {
 				if p.ParamPass == "return" {
@@ -330,45 +360,86 @@ func GenerateOutParamMethodWrappers(component ComponentDefinition) string {
 				returnType := "std::string"
 				for _, p := range method.Params {
 					if p.ParamPass == "return" && p.ParamType != "string" {
-						returnType = fmt.Sprintf("Lib3MF_%s", p.ParamType)
+						returnType = ResolveCppType(p.ParamType)
 						break
 					}
 				}
-				result.WriteString(fmt.Sprintf("    %s %s = self.%s(%s);\n", returnType, returnVar, methodName, strings.Join(callArgs, ", ")))
+				result.WriteString(fmt.Sprintf("    %s %s = %s;\n", returnType, returnVar, callExpr))
 				result.WriteString(fmt.Sprintf("    output.set(\"return\", %s);\n", returnVar))
 			} else {
-				result.WriteString(fmt.Sprintf("    self.%s(%s);\n", methodName, strings.Join(callArgs, ", ")))
+				result.WriteString(fmt.Sprintf("    %s;\n", callExpr))
 			}
-
-			// Populate output object
 			for _, p := range method.Params {
 				if p.ParamPass == "out" {
 					result.WriteString(fmt.Sprintf("    output.set(\"%s\", %s);\n", p.ParamName, p.ParamName))
 				}
 			}
-
 			result.WriteString("    return output;\n")
-			result.WriteString("}\n\n")
+		} else {
+			retType := "void"
+			for _, p := range method.Params {
+				if p.ParamPass == "return" {
+					if p.ParamType == "struct" {
+						retType = fmt.Sprintf("s%sWrapper", p.ParamClass)
+					} else {
+						retType = ResolveCppType(p.ParamType)
+					}
+					break
+				}
+			}
+			if retType != "void" {
+				result.WriteString(fmt.Sprintf("    auto result = %s;\n", callExpr))
+				if strings.HasPrefix(retType, "s") {
+					result.WriteString(fmt.Sprintf("    %s wrapper;\n", retType))
+					result.WriteString("    wrapper.value = result;\n")
+					result.WriteString("    return wrapper;\n")
+				} else {
+					result.WriteString("    return result;\n")
+				}
+			} else {
+				result.WriteString(fmt.Sprintf("    %s;\n", callExpr))
+			}
 		}
+		result.WriteString("}\n\n")
 	}
 
+	// Instance methods
+	for _, class := range component.Classes {
+		for _, method := range class.Methods {
+			emitOne(method, class.ClassName, false)
+		}
+	}
+	// Global methods
+	for _, method := range component.Global.Methods {
+		emitOne(method, "Wrapper", true)
+	}
 	return result.String()
 }
 
+
+// Call to generate static method wrappers
+func GenerateStaticMethodWrappers(component ComponentDefinition) string {
+	return generateMethodWrappers(component, false)
+}
+
+// Call to generate out param method wrappers
+func GenerateOutParamMethodWrappers(component ComponentDefinition) string {
+	return generateMethodWrappers(component, true)
+}
+
+// Actual binding block
 func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	var result strings.Builder
 
 	result.WriteString("// ================== Emscripten Bindings ==================\n")
 	result.WriteString("EMSCRIPTEN_BINDINGS(" + component.BaseName + ") {\n")
 
-	// Register std::vector for struct wrappers
 	result.WriteString("    // Register JS bindings for struct-array wrappers\n")
 	for _, s := range component.Structs {
 		result.WriteString(fmt.Sprintf("    register_vector<s%sWrapper>(\"std::vector<s%s>\");\n", s.Name, s.Name))
 	}
 	result.WriteString("\n")
 
-	// Enums
 	if len(component.Enums) > 0 {
 		result.WriteString("    // Enums\n")
 		for _, e := range component.Enums {
@@ -381,7 +452,6 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 		result.WriteString("\n")
 	}
 
-	// Struct classes
 	result.WriteString("    // Structs as exposed JS classes\n")
 	for _, s := range component.Structs {
 		result.WriteString(fmt.Sprintf("    class_<s%sWrapper>(\"s%s\")\n", s.Name, s.Name))
@@ -389,15 +459,15 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 		result.WriteString(fmt.Sprintf("        .class_function(\"fromStruct\", &s%sWrapper::fromStruct)\n", s.Name))
 
 		for _, m := range s.Members {
-			if m.Rows > 0 || m.Columns > 0 { // array case
-				if m.Rows > 0 && m.Columns > 0 { // 2D
+			if m.Rows > 0 || m.Columns > 0 {
+				if m.Rows > 0 && m.Columns > 0 {
 					for i := 0; i < m.Columns; i++ {
 						for j := 0; j < m.Rows; j++ {
 							result.WriteString(fmt.Sprintf("        .function(\"get_%s_%d_%d\", &s%sWrapper::get_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
 							result.WriteString(fmt.Sprintf("        .function(\"set_%s_%d_%d\", &s%sWrapper::set_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
 						}
 					}
-				} else { // 1D
+				} else {
 					size := m.Rows
 					if m.Rows == 0 {
 						size = m.Columns
@@ -407,7 +477,7 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 						result.WriteString(fmt.Sprintf("        .function(\"set_%s%d\", &s%sWrapper::set_%s%d)\n", m.Name, i, s.Name, m.Name, i))
 					}
 				}
-			} else { // single value
+			} else {
 				result.WriteString(fmt.Sprintf("        .function(\"get_%s\", &s%sWrapper::get_%s)\n", m.Name, s.Name, m.Name))
 				result.WriteString(fmt.Sprintf("        .function(\"set_%s\", &s%sWrapper::set_%s)\n", m.Name, s.Name, m.Name))
 			}
@@ -416,7 +486,6 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	}
 	result.WriteString("\n")
 
-	// Class bindings
 	result.WriteString("    // Binding Methods\n")
 	for _, cls := range component.Classes {
 		base := fmt.Sprintf("C%s", cls.ClassName)
@@ -428,19 +497,55 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 		result.WriteString(fmt.Sprintf("        .smart_ptr<std::shared_ptr<%s>>(\"shared_ptr<%s>\")\n", base, base))
 
 		for _, method := range cls.Methods {
-			// Here we assume you'll use the generated static wrappers if out-params, or direct bindings
-			// For now, we’ll default to direct C++ methods; refine further if needed
-			result.WriteString(fmt.Sprintf("        .function(\"%s\", &C%s::%s)\n", method.MethodName, cls.ClassName, method.MethodName))
+			skip := false
+			for _, p := range method.Params {
+				if p.ParamType == "functiontype" {
+					skip = true
+					break
+				}
+			}
+			if skip {
+				result.WriteString(fmt.Sprintf("        // .function(\"%s\", &wrap_%s_%s) // Skipped due to callback\n", method.MethodName, cls.ClassName, method.MethodName))
+				continue
+			}
+
+			wrapperName := fmt.Sprintf("wrap_%s_%s", cls.ClassName, method.MethodName)
+			if NeedsStaticWrapper(method) || NeedsOutParamWrapper(method) {
+				result.WriteString(fmt.Sprintf("        .function(\"%s\", &%s)\n", method.MethodName, wrapperName))
+			} else {
+				result.WriteString(fmt.Sprintf("        .function(\"%s\", &C%s::%s)\n", method.MethodName, cls.ClassName, method.MethodName))
+			}
 		}
 		result.WriteString("    ;\n")
 	}
 
-	// Global methods in CWrapper
 	result.WriteString("    // CWrapper global bindings\n")
 	result.WriteString("    class_<CWrapper>(\"CWrapper\")\n")
 	result.WriteString("        .constructor<>()\n")
 	for _, method := range component.Global.Methods {
-		result.WriteString(fmt.Sprintf("        .function(\"%s\", &CWrapper::%s)\n", method.MethodName, method.MethodName))
+		if method.MethodName == "GetSymbolLookupMethod" {
+			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &CWrapper::%s) // Explicitly skipped\n", method.MethodName, method.MethodName))
+			continue
+		}
+
+		skip := false
+		for _, p := range method.Params {
+			if p.ParamType == "functiontype" {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &wrap_Wrapper_%s) // Skipped due to callback\n", method.MethodName, method.MethodName))
+			continue
+		}
+
+		wrapperName := fmt.Sprintf("wrap_Wrapper_%s", method.MethodName)
+		if NeedsStaticWrapper(method) || NeedsOutParamWrapper(method) {
+			result.WriteString(fmt.Sprintf("        .function(\"%s\", &%s)\n", method.MethodName, wrapperName))
+		} else {
+			result.WriteString(fmt.Sprintf("        .function(\"%s\", &CWrapper::%s)\n", method.MethodName, method.MethodName))
+		}
 	}
 	result.WriteString("    ;\n")
 
@@ -448,7 +553,7 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	return result.String()
 }
 
-// BuildWASMBinding generates the WASM C++ binding file.
+// Assembly the binding to a single Cpp
 func BuildWASMBinding(componentdefinition ComponentDefinition, outputFolder string, outputFolderExample string, indentString string) error {
 	// Step 1: Generate the header block
 	header := GenerateCppHeader(componentdefinition)
@@ -462,7 +567,7 @@ func BuildWASMBinding(componentdefinition ComponentDefinition, outputFolder stri
 	// Step 4: Static Method Wrappers for out-params
 	outParamWrappers := GenerateOutParamMethodWrappers(componentdefinition)
 
-	// Step 5: Generate the Emscripten bindings block
+	// Step 5: Generate the Emscripten bindings block (currently commented out)
 	bindingsBlock := GenerateEmscriptenBindings(componentdefinition)
 
 	// Determine the output filename based on the library's base name
@@ -474,6 +579,10 @@ func BuildWASMBinding(componentdefinition ComponentDefinition, outputFolder stri
 		return fmt.Errorf("failed to create file %s: %w", outputFileName, err)
 	}
 	defer file.Close()
+
+	// Write license header
+	writeLicenseHeaderEx(file, componentdefinition, "C++ Emscripten wrapper for WebAssembly", true, "/*", "*/")
+
 
 	// Write the header
 	if _, err := file.WriteString(header); err != nil {
@@ -495,12 +604,12 @@ func BuildWASMBinding(componentdefinition ComponentDefinition, outputFolder stri
 		return fmt.Errorf("failed to write out-param static wrappers: %w", err)
 	}
 
-	// Write the Emscripten bindings block
+	// Write the Emscripten bindings block (disabled for now)
 	if _, err := file.WriteString(bindingsBlock); err != nil {
 		return fmt.Errorf("failed to write Emscripten bindings block: %w", err)
 	}
 
 	// Done
-	fmt.Printf("Successfully generated %s\n", outputFileName)
+	fmt.Printf("Successfully generated WASM bindings with name : %s\n", outputFileName)
 	return nil
 }
