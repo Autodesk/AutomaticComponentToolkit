@@ -76,7 +76,7 @@ func NeedsStaticWrapper(m ComponentDefinitionMethod) bool {
 	// 3) If it takes a struct/structarray as input, wrap it
 	for _, p := range m.Params {
 		if (p.ParamPass == "" || p.ParamPass == "in") &&
-			(p.ParamType == "struct" || p.ParamType == "structarray") {
+			(p.ParamType == "struct" || p.ParamType == "structarray" || p.ParamType == "class" || p.ParamType == "optionalclass") {
 			return true
 		}
 	}
@@ -243,7 +243,7 @@ func generateMethodWrappers(
 				if p.ParamPass == "return" {
 					if p.ParamType == "struct" {
 						returnType = fmt.Sprintf("s%sWrapper", p.ParamClass)
-					} else if p.ParamType == "class" || p.ParamType == "handle" {
+					} else if p.ParamType == "class" || p.ParamType == "optionalclass" {
 						returnType = fmt.Sprintf("P%s", p.ParamClass)
 					} else if p.ParamType == "basicarray" {
 						returnType = fmt.Sprintf("std::vector<Lib3MF_%s>", p.ParamClass)
@@ -280,7 +280,7 @@ func generateMethodWrappers(
 				paramList = append(paramList, fmt.Sprintf("std::vector<Lib3MF_%s>& %s", p.ParamClass, p.ParamName))
 			case "enum":
 				paramList = append(paramList, fmt.Sprintf("const e%s& %s", p.ParamClass, p.ParamName))
-			case "class":
+			case "class", "optionalclass":
 				paramList = append(paramList, fmt.Sprintf("P%s& %s", p.ParamClass, p.ParamName))
 			default:
 				paramList = append(paramList, fmt.Sprintf("const %s& %s", ResolveCppType(p.ParamType), p.ParamName))
@@ -344,6 +344,10 @@ func generateMethodWrappers(
 					callArgs = append(callArgs, fmt.Sprintf("%s.toStruct()", p.ParamName))
 				case "structarray":
 					callArgs = append(callArgs, fmt.Sprintf("converted_%s", p.ParamName))
+				case "class", "optionalclass":
+					callArgs = append(callArgs,
+						fmt.Sprintf("classParam(%s)", p.ParamName),
+					)
 				default:
 					callArgs = append(callArgs, p.ParamName)
 				}
@@ -531,18 +535,18 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	result.WriteString("        .constructor<>()\n")
 	for _, method := range component.Global.Methods {
 		if method.MethodName == "GetSymbolLookupMethod" {
-			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &CWrapper::%s) // Explicitly skipped\n", method.MethodName, method.MethodName))
+			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &CWrapper::%s) // Explicitly skipped (Returns a void pointer)\n", method.MethodName, method.MethodName))
 			continue
 		}
 
-		skip := false
+		skipCallback := false
 		for _, p := range method.Params {
 			if p.ParamType == "functiontype" {
-				skip = true
+				skipCallback = true
 				break
 			}
 		}
-		if skip {
+		if skipCallback {
 			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &wrap_Wrapper_%s) // Skipped due to callback\n", method.MethodName, method.MethodName))
 			continue
 		}
