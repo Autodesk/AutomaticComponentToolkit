@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --*/
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // buildwasmbindingwasm.go
 // functions to generate WASM bindings which rely on emscripten
@@ -47,15 +46,25 @@ import (
 var wasmBindingFile = ""
 
 // Type mapping (More things should move here)
-func ResolveCppType(paramType string) string {
+func ResolveCppType(paramType string, componentdefinition ComponentDefinition) string {
 	switch paramType {
 	case "string":
 		return "std::string"
 	case "bool":
 		return "bool"
 	default:
-		return fmt.Sprintf("Lib3MF_%s", paramType)
+		return fmt.Sprintf("%s_%s", componentdefinition.LibraryName, paramType)
 	}
+}
+
+// shouldSkipMethod checks if a method should be skipped based on its parameter names.
+func shouldSkipMethod(method ComponentDefinitionMethod) bool {
+	for _, param := range method.Params {
+		if param.ParamName == "SymbolLookupMethod" || param.ParamName == "SymbolAddressMethod" {
+			return true // Found a parameter that triggers the skip, so we can return immediately.
+		}
+	}
+	return false // No parameters matched, do not skip.
 }
 
 // Check if a static wrapper is needed
@@ -107,7 +116,7 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 			if m.Type == "enum" {
 				typeString = fmt.Sprintf("e%s", m.Class)
 			} else {
-				typeString = ResolveCppType(m.Type)
+				typeString = ResolveCppType(m.Type, componentdefinition)
 			}
 
 			if m.Rows > 0 || m.Columns > 0 {
@@ -154,7 +163,7 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 			if m.Type == "enum" {
 				typeString = fmt.Sprintf("e%s", m.Class)
 			} else {
-				typeString = ResolveCppType(m.Type)
+				typeString = ResolveCppType(m.Type, componentdefinition)
 			}
 
 			if m.Rows > 0 || m.Columns > 0 {
@@ -246,9 +255,9 @@ func generateMethodWrappers(
 					} else if p.ParamType == "class" || p.ParamType == "optionalclass" {
 						returnType = fmt.Sprintf("P%s", p.ParamClass)
 					} else if p.ParamType == "basicarray" {
-						returnType = fmt.Sprintf("std::vector<Lib3MF_%s>", p.ParamClass)
+						returnType = fmt.Sprintf("std::vector<%s_%s>", component.LibraryName, p.ParamClass)
 					} else {
-						returnType = ResolveCppType(p.ParamType)
+						returnType = ResolveCppType(p.ParamType, component)
 					}
 					break
 				}
@@ -277,13 +286,13 @@ func generateMethodWrappers(
 			case "structarray":
 				paramList = append(paramList, fmt.Sprintf("const std::vector<s%sWrapper>& %s", p.ParamClass, p.ParamName))
 			case "basicarray":
-				paramList = append(paramList, fmt.Sprintf("std::vector<Lib3MF_%s>& %s", p.ParamClass, p.ParamName))
+				paramList = append(paramList, fmt.Sprintf("std::vector<%s_%s>& %s", component.LibraryName, p.ParamClass, p.ParamName))
 			case "enum":
 				paramList = append(paramList, fmt.Sprintf("const e%s& %s", p.ParamClass, p.ParamName))
 			case "class", "optionalclass":
 				paramList = append(paramList, fmt.Sprintf("P%s& %s", p.ParamClass, p.ParamName))
 			default:
-				paramList = append(paramList, fmt.Sprintf("const %s& %s", ResolveCppType(p.ParamType), p.ParamName))
+				paramList = append(paramList, fmt.Sprintf("const %s& %s", ResolveCppType(p.ParamType, component), p.ParamName))
 			}
 		}
 		// Append param list (comma logic)
@@ -315,11 +324,15 @@ func generateMethodWrappers(
 					} else if p.ParamType == "structarray" {
 						paramType = fmt.Sprintf("std::vector<s%s>", p.ParamClass)
 					} else if p.ParamType == "basicarray" {
-						paramType = fmt.Sprintf("std::vector<Lib3MF_%s>", p.ParamClass)
+						paramType = fmt.Sprintf("std::vector<%s_%s>", component.LibraryName, p.ParamClass)
 					} else if p.ParamType == "enum" {
 						paramType = fmt.Sprintf("e%s", p.ParamClass)
+					} else if p.ParamType == "class" {
+						paramType = fmt.Sprintf("P%s", p.ParamClass)
+					} else if p.ParamType == "optionalclass" {
+						paramType = fmt.Sprintf("P%s", p.ParamClass)
 					} else {
-						paramType = ResolveCppType(p.ParamType)
+						paramType = ResolveCppType(p.ParamType, component)
 					}
 					result.WriteString(fmt.Sprintf("    %s %s;\n", paramType, p.ParamName))
 				}
@@ -371,7 +384,7 @@ func generateMethodWrappers(
 				returnType := "std::string"
 				for _, p := range method.Params {
 					if p.ParamPass == "return" && p.ParamType != "string" {
-						returnType = ResolveCppType(p.ParamType)
+						returnType = ResolveCppType(p.ParamType, component)
 						break
 					}
 				}
@@ -393,7 +406,7 @@ func generateMethodWrappers(
 					if p.ParamType == "struct" {
 						retType = fmt.Sprintf("s%sWrapper", p.ParamClass)
 					} else {
-						retType = ResolveCppType(p.ParamType)
+						retType = ResolveCppType(p.ParamType, component)
 					}
 					break
 				}
@@ -427,7 +440,6 @@ func generateMethodWrappers(
 	return result.String()
 }
 
-
 // Call to generate static method wrappers
 func GenerateStaticMethodWrappers(component ComponentDefinition) string {
 	return generateMethodWrappers(component, false)
@@ -443,13 +455,7 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	var result strings.Builder
 
 	result.WriteString("// ================== Emscripten Bindings ==================\n")
-	result.WriteString("EMSCRIPTEN_BINDINGS(" + component.BaseName + ") {\n")
-
-	result.WriteString("    // Register JS bindings for struct-array wrappers\n")
-	for _, s := range component.Structs {
-		result.WriteString(fmt.Sprintf("    register_vector<s%sWrapper>(\"std::vector<s%s>\");\n", s.Name, s.Name))
-	}
-	result.WriteString("\n")
+	result.WriteString("EMSCRIPTEN_BINDINGS(" + component.LibraryName + ") {\n")
 
 	if len(component.Enums) > 0 {
 		result.WriteString("    // Enums\n")
@@ -463,39 +469,47 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 		result.WriteString("\n")
 	}
 
-	result.WriteString("    // Structs as exposed JS classes\n")
-	for _, s := range component.Structs {
-		result.WriteString(fmt.Sprintf("    class_<s%sWrapper>(\"s%s\")\n", s.Name, s.Name))
-		result.WriteString("        .constructor<>()\n")
-		result.WriteString(fmt.Sprintf("        .class_function(\"fromStruct\", &s%sWrapper::fromStruct)\n", s.Name))
+	if len(component.Structs) > 0 {
+		result.WriteString("    // Register JS bindings for struct-array wrappers\n")
+		for _, s := range component.Structs {
+			result.WriteString(fmt.Sprintf("    register_vector<s%sWrapper>(\"std::vector<s%s>\");\n", s.Name, s.Name))
+		}
+		result.WriteString("\n")
 
-		for _, m := range s.Members {
-			if m.Rows > 0 || m.Columns > 0 {
-				if m.Rows > 0 && m.Columns > 0 {
-					for i := 0; i < m.Columns; i++ {
-						for j := 0; j < m.Rows; j++ {
-							result.WriteString(fmt.Sprintf("        .function(\"get_%s_%d_%d\", &s%sWrapper::get_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
-							result.WriteString(fmt.Sprintf("        .function(\"set_%s_%d_%d\", &s%sWrapper::set_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
+		result.WriteString("    // Structs as exposed JS classes\n")
+		for _, s := range component.Structs {
+			result.WriteString(fmt.Sprintf("    class_<s%sWrapper>(\"s%s\")\n", s.Name, s.Name))
+			result.WriteString("        .constructor<>()\n")
+			result.WriteString(fmt.Sprintf("        .class_function(\"fromStruct\", &s%sWrapper::fromStruct)\n", s.Name))
+
+			for _, m := range s.Members {
+				if m.Rows > 0 || m.Columns > 0 {
+					if m.Rows > 0 && m.Columns > 0 {
+						for i := 0; i < m.Columns; i++ {
+							for j := 0; j < m.Rows; j++ {
+								result.WriteString(fmt.Sprintf("        .function(\"get_%s_%d_%d\", &s%sWrapper::get_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
+								result.WriteString(fmt.Sprintf("        .function(\"set_%s_%d_%d\", &s%sWrapper::set_%s_%d_%d)\n", m.Name, i, j, s.Name, m.Name, i, j))
+							}
+						}
+					} else {
+						size := m.Rows
+						if m.Rows == 0 {
+							size = m.Columns
+						}
+						for i := 0; i < size; i++ {
+							result.WriteString(fmt.Sprintf("        .function(\"get_%s%d\", &s%sWrapper::get_%s%d)\n", m.Name, i, s.Name, m.Name, i))
+							result.WriteString(fmt.Sprintf("        .function(\"set_%s%d\", &s%sWrapper::set_%s%d)\n", m.Name, i, s.Name, m.Name, i))
 						}
 					}
 				} else {
-					size := m.Rows
-					if m.Rows == 0 {
-						size = m.Columns
-					}
-					for i := 0; i < size; i++ {
-						result.WriteString(fmt.Sprintf("        .function(\"get_%s%d\", &s%sWrapper::get_%s%d)\n", m.Name, i, s.Name, m.Name, i))
-						result.WriteString(fmt.Sprintf("        .function(\"set_%s%d\", &s%sWrapper::set_%s%d)\n", m.Name, i, s.Name, m.Name, i))
-					}
+					result.WriteString(fmt.Sprintf("        .function(\"get_%s\", &s%sWrapper::get_%s)\n", m.Name, s.Name, m.Name))
+					result.WriteString(fmt.Sprintf("        .function(\"set_%s\", &s%sWrapper::set_%s)\n", m.Name, s.Name, m.Name))
 				}
-			} else {
-				result.WriteString(fmt.Sprintf("        .function(\"get_%s\", &s%sWrapper::get_%s)\n", m.Name, s.Name, m.Name))
-				result.WriteString(fmt.Sprintf("        .function(\"set_%s\", &s%sWrapper::set_%s)\n", m.Name, s.Name, m.Name))
 			}
+			result.WriteString("    ;\n")
 		}
-		result.WriteString("    ;\n")
+		result.WriteString("\n")
 	}
-	result.WriteString("\n")
 
 	result.WriteString("    // Binding Methods\n")
 	for _, cls := range component.Classes {
@@ -534,7 +548,7 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	result.WriteString("    class_<CWrapper>(\"CWrapper\")\n")
 	result.WriteString("        .constructor<>()\n")
 	for _, method := range component.Global.Methods {
-		if method.MethodName == "GetSymbolLookupMethod" {
+		if shouldSkipMethod(method) {
 			result.WriteString(fmt.Sprintf("        // .function(\"%s\", &CWrapper::%s) // Explicitly skipped (Returns a void pointer)\n", method.MethodName, method.MethodName))
 			continue
 		}
@@ -593,7 +607,6 @@ func BuildWASMBinding(componentdefinition ComponentDefinition, outputFolder stri
 
 	// Write license header
 	writeLicenseHeaderEx(file, componentdefinition, "C++ Emscripten wrapper for WebAssembly", true, "/*", "*/")
-
 
 	// Write the header
 	if _, err := file.WriteString(header); err != nil {
