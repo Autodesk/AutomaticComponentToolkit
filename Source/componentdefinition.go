@@ -62,6 +62,26 @@ const (
 	eSpecialMethodBuildinfo = 9
 )
 
+type ThreadSafetyOption int
+const (
+	eThreadSafetyNone   = 0
+	eThreadSafetySoft   = 1
+	eThreadSafetyStrict = 2
+)
+
+func (option ThreadSafetyOption) String() string {
+	switch option {
+	case eThreadSafetyNone:
+		return "None"
+	case eThreadSafetySoft:
+		return "Soft"
+	case eThreadSafetyStrict:
+		return "Strict"
+	default:
+		return "Unknown"
+	}
+}
+
 // ComponentDefinitionParam definition of a method parameter used in the component's API
 type ComponentDefinitionParam struct {
 	ComponentDiffableElement
@@ -90,6 +110,7 @@ type ComponentDefinitionClass struct {
 	ClassName string `xml:"name,attr"`
 	ClassDescription string `xml:"description,attr"`
 	ParentClass string `xml:"parent,attr"`
+	ThreadSafetyOption string `xml:"threadsafetyoption,attr"`
 	Methods   []ComponentDefinitionMethod `xml:"method"`
 }
 
@@ -345,6 +366,41 @@ func ReadComponentDefinition(FileName string, ACTVersion string) (ComponentDefin
 	return component, nil
 }
 
+func (component *ComponentDefinition) addExtraBaseClassMethods() *string {
+	if component.isMultiThreadedEnv() {
+		for i := 0; i < len(component.Classes); i++ {
+			class := component.Classes[i]
+			if component.isBaseClass(class) {
+				msg := fmt.Sprintf("Mutli threaded implementation detected, adding %s, %s", getLockInstanceMethodName(), getUnlockInstanceMethodName())
+				class.Methods = append(class.Methods, LockInstanceMethod(), UnlockInstanceMethod())
+				component.Classes[i] = class
+				return &msg
+			}
+		}
+	}
+
+	return nil
+}
+
+func (component *ComponentDefinition) getParent(class *ComponentDefinitionClass) *ComponentDefinitionClass {
+	parentName := class.ParentClass
+	if parentName == "" {
+		return nil
+	}
+
+	for i := range component.Classes {
+		if component.Classes[i].ClassName == parentName {
+			return &component.Classes[i]
+		}
+	}
+
+	return nil
+}
+
+func (method *ComponentDefinitionMethod) isExtraBaseClassmethod() bool {
+	return method.MethodName == getLockInstanceMethodName() || method.MethodName == getUnlockInstanceMethodName()
+}
+
 func getIndentationString(str string) string {
 	if str == "tabs" {
 		return "\t";
@@ -521,7 +577,20 @@ func (component *ComponentDefinition) checkClasses() (error) {
 	classTypeIdIndex := make(map[uint64]int, 0)
 	for i := 0; i < len(classes); i++ {
 		class := classes[i];
+		if !component.isBaseClass(class) {
+			if class.ParentClass == "" {
+				class.ParentClass = component.Global.BaseClassName
+				classes[i] = class
+			}
+		}
+
 		classTypeHash, _ := class.classTypeId(component.NameSpace);
+		if class.isThreadSafe() {
+			err := checkThreadSafetyHierarchy(component, &class)
+			if err != nil {
+				return err
+			}
+		}
 		if !nameIsValidIdentifier(class.ClassName) {
 			return fmt.Errorf ("invalid class name \"%s\"", class.ClassName);
 		}
@@ -530,6 +599,9 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		}
 		if len(class.ClassDescription) > 0 && !descriptionIsValid(class.ClassDescription) {
 			return fmt.Errorf ("invalid class description \"%s\" in class \"%s\"", class.ClassDescription, class.ClassName);
+		}
+		if len(class.ThreadSafetyOption) > 0 && !threadSafetyOptionIsValid(class.ThreadSafetyOption) {
+			return fmt.Errorf("invalid class thread safety option \"%s\" in class \"%s\"", class.ThreadSafetyOption, class.ClassName)
 		}
 		collision, hashExists := classTypeIdIndex[classTypeHash]
 		if hashExists {
@@ -540,6 +612,7 @@ func (component *ComponentDefinition) checkClasses() (error) {
 		(*classNameList)[class.ClassName] = true
 		classNameIndex[class.ClassName] = i
 		classTypeIdIndex[classTypeHash] = i
+
 	}
 
 	// Check parent class definitions
@@ -568,7 +641,7 @@ func (component *ComponentDefinition) checkClasses() (error) {
 	return nil
 }
 
-func (component *ComponentDefinition) checkFunctionTypes() ( error) {
+func (component *ComponentDefinition) checkFunctionTypes() (error) {
 	functions := component.Functions
 	var functionNameList = &component.NameMapsLookup.functionTypeMap
 
@@ -588,6 +661,26 @@ func (component *ComponentDefinition) checkFunctionTypes() ( error) {
 		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
 		(*functionNameList)[function.FunctionName] = true
 	}
+	return nil
+}
+
+func checkThreadSafetyHierarchy(component *ComponentDefinition, class *ComponentDefinitionClass) error {
+	classOption := class.eThreadSafetyOption()
+	parent := component.getParent(class)
+	for parent != nil {
+		parentOption := parent.eThreadSafetyOption()
+
+		if classOption != eThreadSafetyNone && parentOption == eThreadSafetyNone && !component.isBaseClass(*parent) {
+			return fmt.Errorf("class \"%s\" has threadSafetyOption = \"%s\", but its parent \"%s\" is not base \"%s\" class and has threadSafetyOption = \"%s\"",
+				class.ClassName, classOption, parent.ClassName, component.Global.BaseClassName, parentOption)
+		}
+
+		if classOption < parentOption && (!component.isBaseClass(*parent) || parentOption != eThreadSafetyNone) {
+			return fmt.Errorf("class \"%s\" has threadSafetyOption = \"%s\", but its parent \"%s\" has threadSafetyOption = \"%s\"", class.ClassName, classOption, parent.ClassName, parentOption)
+		}
+		parent = component.getParent(parent)
+	}
+
 	return nil
 }
 
@@ -794,6 +887,14 @@ func descriptionIsValid(description string) bool {
 		return IsValidMethodDescription(description);
 	}
 	return false;
+}
+
+func threadSafetyOptionIsValid(threadSafetyOption string) bool {
+	switch threadSafetyOption {
+	case "none", "strict", "soft":
+		return true
+	}
+	return false
 }
 
 func isScalarType(typeStr string) bool {
@@ -1272,6 +1373,32 @@ func (component *ComponentDefinition) isBaseClass(class ComponentDefinitionClass
 	return class.ClassName == component.Global.BaseClassName
 }
 
+func getLockInstanceMethodName() string {
+	return "_lockInstance"
+}
+
+// LockInstanceMethod returns the xml definition of the LockInstanceMethod
+func LockInstanceMethod() ComponentDefinitionMethod {
+	var method ComponentDefinitionMethod
+	source := fmt.Sprintf(`<method name="%s" description = "If thread safety for class in library is enabled it should lock object for calling thread">
+	</method>`, getLockInstanceMethodName())
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
+func getUnlockInstanceMethodName() string {
+	return "_unlockInstance"
+}
+
+// UnlockInstanceMethod returns the xml definition of the UnlockInstanceMethod
+func UnlockInstanceMethod() ComponentDefinitionMethod {
+	var method ComponentDefinitionMethod
+	source := fmt.Sprintf(`<method name="%s" description = "If thread safety for class in library is enabled it should unlock object for other threads">
+	</method>`, getUnlockInstanceMethodName())
+	xml.Unmarshal([]byte(source), &method)
+	return method
+}
+
 func (component *ComponentDefinition) baseClass() (ComponentDefinitionClass) {
 	for i := 0; i < len(component.Classes); i++ {
 		if (component.isBaseClass(component.Classes[i])) {
@@ -1363,6 +1490,52 @@ func (method *ComponentDefinitionMethod) getArrayOutParameters() ([]string) {
 	return outParameters;
 }
 
+func (component *ComponentDefinition) getRealThreadSafetyOption(class *ComponentDefinitionClass) ThreadSafetyOption {
+	option := class.eThreadSafetyOption()
+	if option != eThreadSafetyNone {
+		return option
+	}
+
+	parent := component.getParent(class)
+	for parent != nil {
+		parentOption := parent.eThreadSafetyOption()
+		if parentOption != eThreadSafetyNone {
+			return parentOption
+		}
+
+		parent = component.getParent(parent)
+	}
+
+	return eThreadSafetyNone
+}
+
+func (class *ComponentDefinitionClass) eThreadSafetyOption() ThreadSafetyOption {
+	switch class.ThreadSafetyOption {
+	case "strict":
+		return eThreadSafetyStrict
+	case "soft":
+		return eThreadSafetySoft
+	case "none":
+		return eThreadSafetyNone
+	}
+	return eThreadSafetyNone
+}
+
+func (class *ComponentDefinitionClass) isThreadSafe() bool {
+	return class.eThreadSafetyOption() != eThreadSafetyNone
+}
+
+func (component *ComponentDefinition) isMultiThreadedEnv() bool {
+	classes := component.Classes
+	for i := 0; i < len(classes); i++ {
+		class := classes[i]
+		if class.isThreadSafe() {
+			return true
+		}
+	}
+
+	return false
+}
 
 func (class *ComponentDefinitionClass) countMaxOutParameters() (uint32) {
 

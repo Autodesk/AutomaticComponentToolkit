@@ -314,6 +314,39 @@ func writeSharedPtrTemplate(component ComponentDefinition, w LanguageWriter, Cla
 	w.Writeln("")
 }
 
+func getWithMutexClassName(ClassIdentifier string, ClassName string) (string) {
+	return ClassIdentifier + ClassName + "WithMutex"
+}
+
+func writeBaseInterfaceWithMutexClass(baseClass ComponentDefinitionClass, w LanguageWriter, ClassIdentifier string) {
+	baseClassName:= "I" + baseClass.ClassName
+	className := "I" + getWithMutexClassName(ClassIdentifier, baseClass.ClassName)
+	lockInstanceMethod := LockInstanceMethod()
+	unlockInstanceMethod := UnlockInstanceMethod()
+
+	w.Writeln("")
+	w.Writeln("/**")
+	w.Writeln(" Definition of a class with mutex for %s", baseClassName)
+	w.Writeln("*/")
+	w.Writeln("class %s : public virtual %s", className, baseClassName)
+	w.Writeln("{")
+	w.Writeln("private:")
+	w.Writeln("  std::mutex m_mutex;")
+	w.Writeln("public:")
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::%s - %s", className, lockInstanceMethod.MethodName, lockInstanceMethod.MethodDescription)
+	w.Writeln("  */")
+	w.Writeln("  virtual void %s() { m_mutex.lock(); }", lockInstanceMethod.MethodName)	
+	w.Writeln("")
+	w.Writeln("  /**")
+	w.Writeln("  * %s::%s - %s", className, unlockInstanceMethod.MethodName, unlockInstanceMethod.MethodDescription)
+	w.Writeln("  */")
+	w.Writeln("  virtual void %s() { m_mutex.unlock();}", unlockInstanceMethod.MethodName)	
+	w.Writeln("};")
+	w.Writeln("")
+}
+
 func writeCPPClassInterface(component ComponentDefinition, class ComponentDefinitionClass, w LanguageWriter, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string) (error) {
 	w.Writeln("")
 	w.Writeln("/*************************************************************************************************************************")
@@ -321,12 +354,14 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	w.Writeln("**************************************************************************************************************************/")
 	w.Writeln("")
 	parentClassString := " "
-	if (!component.isBaseClass(class)) {
+	if !component.isBaseClass(class) {
 		parentClassString = " : public virtual "
-		if (class.ParentClass == "") {
-			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, component.Global.BaseClassName)
+		parentName := class.ParentClass
+
+		if parentName == component.Global.BaseClassName && component.getRealThreadSafetyOption(&class) != eThreadSafetyNone {
+			parentClassString += fmt.Sprintf("I%s ", getWithMutexClassName(ClassIdentifier, parentName))
 		} else {
-			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, class.ParentClass)
+			parentClassString += fmt.Sprintf("I%s%s ", ClassIdentifier, parentName)
 		}
 	}
 	
@@ -334,9 +369,8 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 	w.Writeln("class %s%s{", classInterfaceName, parentClassString)
 
 	if (component.isStringOutBaseClass(class)) {
-		w.Writeln("private:")
-		w.Writeln("  std::unique_ptr<ParameterCache> m_ParameterCache;")
-	
+		w.Writeln("protected:")
+		w.Writeln("  std::unique_ptr<ParameterCache> m_ParameterCache;")	
 	}
 
 	w.Writeln("public:")
@@ -411,7 +445,23 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		w.Writeln("  {")	
 		w.Writeln("    return m_ParameterCache.get();")	
 		w.Writeln("  }")	
-		w.Writeln("")			
+		w.Writeln("")
+		
+		if component.isMultiThreadedEnv() {
+			lockInstanceMethod := LockInstanceMethod()
+			w.Writeln("  /**")
+			w.Writeln("  * %s::%s - %s", classInterfaceName, lockInstanceMethod.MethodName, lockInstanceMethod.MethodDescription)
+			w.Writeln("  */")
+			w.Writeln("  virtual void %s() {}", lockInstanceMethod.MethodName)		
+			w.Writeln("")
+
+			unlockInstanceMethod := UnlockInstanceMethod()
+			w.Writeln("  /**")
+			w.Writeln("  * %s::%s - %s", classInterfaceName, unlockInstanceMethod.MethodName, unlockInstanceMethod.MethodDescription)
+			w.Writeln("  */")
+			w.Writeln("  virtual void %s() {}", unlockInstanceMethod.MethodName)		
+			w.Writeln("")
+		}
 	}
 
 	if (component.isBaseClass(class)) {
@@ -440,6 +490,11 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 		if method.MethodName == component.Global.ClassTypeIdMethod {
 			continue
 		}
+
+		if component.isBaseClass(class) && method.isExtraBaseClassmethod() {
+			continue
+		}
+
 		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, w.IndentString, false, true, true)
 		if err != nil {
 			return err
@@ -452,6 +507,9 @@ func writeCPPClassInterface(component ComponentDefinition, class ComponentDefini
 
 	if component.isBaseClass(class) {
 		writeSharedPtrTemplate(component, w, ClassIdentifier)
+		if component.isMultiThreadedEnv() {
+			writeBaseInterfaceWithMutexClass(class, w, ClassIdentifier)
+		}
 	}
 
 	w.Writeln("")
@@ -535,6 +593,9 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 
 	w.Writeln("#include <string>")
 	w.Writeln("#include <memory>")
+	if component.isMultiThreadedEnv() {
+		w.Writeln("#include <mutex>")
+	}
 	w.Writeln("")
 	w.Writeln("#include \"%s_types.hpp\"", BaseName)
 	w.Writeln("")
@@ -1288,6 +1349,11 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 
 		for j := 0; j < len(class.Methods); j++ {
 			method := class.Methods[j]
+
+			if method.isExtraBaseClassmethod() {
+				continue;
+			}
+
 			methodstring, implementationdeclaration, err := buildCPPInterfaceMethodDeclaration(method, class.ClassName, NameSpace, ClassIdentifier, BaseName, stubimplw.IndentString, false, false, false)
 			if err != nil {
 				return err
