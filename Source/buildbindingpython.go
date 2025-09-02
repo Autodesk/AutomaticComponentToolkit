@@ -854,7 +854,166 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 		}
 
 		switch param.ParamPass {
-			case  "out", "return":
+			case "out":
+			// For 'out' parameters, we need to:
+			// 1. Add them to the function signature (as optional input parameters)
+			// 2. Add them to the return values for backwards compatibility
+			if (cArguments != "") {
+				cArguments = cArguments + ", ";
+			}
+			if (cCheckArguments != "") {
+				cCheckArguments = cCheckArguments + ", "
+			}
+			pythonInParams = pythonInParams + ", ";
+			
+			switch param.ParamType {
+			case "class", "optionalclass": {
+				// Add to function signature for the out parameter with default value
+				pythonInParams = pythonInParams + param.ParamName + "Object = None"
+				
+				// Prepare the handle for the C call with improved None checking
+				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = ctypes.c_void_p()", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("if %sObject is not None:", param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("  %sHandle = ctypes.c_void_p(%sObject._handle)", param.ParamName, param.ParamName))
+				if (param.ParamType == "class") {
+					preCallLines = append(preCallLines, fmt.Sprintf("else:"))
+					preCallLines = append(preCallLines, fmt.Sprintf("  %sHandle = ctypes.c_void_p()", param.ParamName))
+				}
+				
+				newArgument := fmt.Sprintf("%sHandle", param.ParamName)
+				cArguments = cArguments + newArgument
+				cCheckArguments = cCheckArguments + newArgument
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				theWrapperReference := wrapperReference
+				subNameSpace, _, _ := decomposeParamClassName(param.ParamClass)
+				if len(subNameSpace) > 0 {
+					theWrapperReference = theWrapperReference + "._" + subNameSpace + "Wrapper"
+					subNameSpace = subNameSpace + "."
+				}
+				postCallLines = append(postCallLines, fmt.Sprintf("if %sHandle.value:", param.ParamName))
+				postCallLines = append(postCallLines,
+					fmt.Sprintf("  %sObject = %s._polymorphicFactory(%sHandle.value)",
+					param.ParamName, theWrapperReference, param.ParamName))
+				postCallLines = append(postCallLines, fmt.Sprintf("else:"))
+				if (param.ParamType == "optionalclass") {
+					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))
+				} else {
+					postCallLines = append(postCallLines, fmt.Sprintf("  %sObject = None", param.ParamName))
+				}
+				
+				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
+			}
+			case "string": {
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(str.encode(%s) if %s else None)", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName))
+				
+				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = (ctypes.c_char * (%s.value))()", cParams[2].ParamName, cParams[1].ParamName))
+				doCheckCall = true
+				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + cParams[2].ParamName + ".value.decode()"
+			}
+			case "basicarray": {
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s) if %s else 0)(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
+
+				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = (%s * %s.value)()", cParams[2].ParamName, cParams[2].ParamCallType, cParams[1].ParamName))
+				doCheckCall = true
+
+				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + fmt.Sprintf("list(%s)", cParams[2].ParamName)
+			}
+			case "structarray": {
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s) if %s else 0)(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
+
+				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
+				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = (%s * %s.value)()", cParams[2].ParamName, cParams[2].ParamCallType, cParams[1].ParamName))
+				doCheckCall = true
+
+				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + fmt.Sprintf("list(%s)", cParams[2].ParamName)
+			}
+			case "enum": {
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = ctypes.c_int32(%s if %s else 0)", cParams[0].ParamName, param.ParamName, param.ParamName))
+				cArguments = cArguments + cParams[0].ParamName
+				cCheckArguments = cCheckArguments  + cParams[0].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + cParams[0].ParamName + ".value"
+			}
+			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s if %s is not None else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
+				cArguments = cArguments + cParams[0].ParamName
+				cCheckArguments = cCheckArguments  + cParams[0].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + cParams[0].ParamName + ".value"
+			case "struct": {
+				// Add to function signature with default value
+				pythonInParams = pythonInParams + param.ParamName + " = None"
+				
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s if %s else %s())", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName, cParams[0].ParamCallType))
+				cArguments = cArguments + cParams[0].ParamName
+				cCheckArguments = cCheckArguments  + cParams[0].ParamName
+				
+				// Add backwards compatibility - return the out parameter
+				if (retVals != "") {
+					retVals = retVals + ", ";
+				}
+				retVals = retVals + cParams[0].ParamName
+			}
+			default:
+				return fmt.Errorf("Invalid parameter of type \"%s\" used as pass=\"%s\"", param.ParamType, param.ParamPass)
+			}
+		case "return":
 			if (cArguments != "") {
 				cArguments = cArguments + ", ";
 			}
