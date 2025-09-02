@@ -36,6 +36,7 @@ type
       procedure RegisterErrorMessage(const AErrorMessage: String);
       procedure IncRefCount();
       function DecRefCount(): Boolean;
+      function ClassTypeId(): QWord; virtual;
   end;
 
 implementation
@@ -84,6 +85,11 @@ begin
     self.Destroy();
   end;
    result := false;
+end;
+
+function TCalculatorBase.ClassTypeId(): QWord;
+begin
+  result := 0; // Base class type ID
 end;
 
 end.

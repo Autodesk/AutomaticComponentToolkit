@@ -30,6 +30,7 @@ type
     public
       function GetValue(): Double;
       procedure SetValue(const AValue: Double);
+      function ClassTypeId(): QWord; override;
   end;
 
 implementation
@@ -42,6 +43,11 @@ end;
 procedure TCalculatorVariable.SetValue(const AValue: Double);
 begin
   FValue := AValue;
+end;
+
+function TCalculatorVariable.ClassTypeId(): QWord;
+begin
+  result := 1; // Variable class type ID
 end;
 
 end.

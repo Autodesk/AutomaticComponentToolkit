@@ -37,6 +37,7 @@ type
       procedure ClearVariables();
       function Multiply(): TObject;
       function Add(): TObject;
+      function ClassTypeId(): QWord; override;
   end;
 
 implementation
@@ -114,6 +115,11 @@ begin
   AResVar := TCalculatorVariable.Create();
   AResVar.SetValue(ResVal);
   result := AResVar;
+end;
+
+function TCalculatorCalculator.ClassTypeId(): QWord;
+begin
+  result := 2; // Calculator class type ID
 end;
 
 end.
