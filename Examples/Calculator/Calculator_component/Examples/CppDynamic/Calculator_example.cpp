@@ -22,7 +22,15 @@ int main()
 	try
 	{
 		std::string libpath = (""); // TODO: put the location of the Calculator-library file here.
-		auto wrapper = Calculator::CWrapper::loadLibrary(libpath + "/calculator."); // TODO: add correct suffix of the library
+		auto wrapper = Calculator::CWrapper::loadLibrary(libpath + "calculator."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		); // TODO: add correct suffix of the library
 		Calculator_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "Calculator.Version = " << nMajor << "." << nMinor << "." << nMicro;
