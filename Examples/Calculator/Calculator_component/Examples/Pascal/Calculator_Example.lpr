@@ -47,8 +47,8 @@ var
   ACalculator: TCalculatorCalculator;
 begin
   writeln ('loading DLL');
-  ALibPath := ''; // TODO add the location of the shared library binary here
-  ACalculatorWrapper := TCalculatorWrapper.Create (ALibPath + '/' + 'calculator.'); // TODO add the extension of the shared library file here
+  ALibPath := '.'; // TODO add the location of the shared library binary here
+  ACalculatorWrapper := TCalculatorWrapper.Create (ALibPath + '/' + 'calculator.dll'); // TODO add the extension of the shared library file here
   try
     writeln ('loading DLL Done');
     ACalculatorWrapper.GetVersion(AMajor, AMinor, AMicro);
