@@ -14,6 +14,7 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
 
 RUN dnf -y install dnf-plugins-core dnf-plugin-config-manager && dnf -y update
 RUN dnf -y install epel-release && dnf -y config-manager --set-enabled powertools
+RUN dnf -y install libatomic
 
 # Tooling
 RUN dnf -y install gcc-toolset-9-gcc gcc-toolset-9-gcc-c++ cmake ninja-build git curl
@@ -67,7 +68,9 @@ RUN if [ -n "$USER_ID" ]; then \
     fi
 
 # Sanity check (now python3 == 3.9; don't rely on EMSDK_PYTHON which emsdk_env clears)
-RUN bash -lc "source ${EMSDK}/emsdk_env.sh && python3 --version && emcc --version && em++ --version && node --version"
+RUN bash -lc "source ${EMSDK}/emsdk_env.sh && \
+  python3 --version && emcc --version && em++ --version && node --version && \
+  /opt/emsdk/upstream/bin/wasm-opt --version"
 
 # Your repo should provide this script; it will source the env before running any command.
 ENTRYPOINT ["./entrypoint.sh"]
