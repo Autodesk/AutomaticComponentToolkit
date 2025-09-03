@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#set -euxo pipefail
+set -euxo pipefail
 
 startingpath="$(pwd)"
 basepath="$(cd "$(dirname "$0")" && pwd)"
