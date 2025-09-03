@@ -20,8 +20,9 @@ RUN dnf -y install gcc-toolset-9-gcc gcc-toolset-9-gcc-c++ cmake ninja-build git
 
 # ---- Python 3.9 (required by recent emscripten) ----
 RUN dnf -y module enable python39 && \
-    dnf -y install python39 python39-pip
-ENV EMSDK_PYTHON=/usr/bin/python3.9
+    dnf -y install python39 python39-pip && \
+    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2 && \
+    alternatives --set python3 /usr/bin/python3.9
 
 # (optional) ICU runtime/headers if you need them
 # RUN dnf -y install libicu libicu-devel
@@ -65,8 +66,8 @@ RUN if [ -n "$USER_ID" ]; then \
       echo "source ${EMSDK}/emsdk_env.sh" >> /home/user/.bash_profile ; \
     fi
 
-# Sanity check (uses Python 3.9 via EMSDK_PYTHON)
-RUN bash -lc "source ${EMSDK}/emsdk_env.sh && echo Using: \$EMSDK_PYTHON && \$EMSDK_PYTHON --version && emcc --version && em++ --version && node --version"
+# Sanity check (now python3 == 3.9; don't rely on EMSDK_PYTHON which emsdk_env clears)
+RUN bash -lc "source ${EMSDK}/emsdk_env.sh && python3 --version && emcc --version && em++ --version && node --version"
 
 # Your repo should provide this script; it will source the env before running any command.
 ENTRYPOINT ["./entrypoint.sh"]
