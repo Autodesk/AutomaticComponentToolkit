@@ -5,12 +5,12 @@ from pathlib import Path
 import uuid
 import shutil
 
-def find_emxx():
+def find_prog(name):
     from shutil import which
-    emxx = which("em++") or which("emcc")
-    if not emxx:
-        sys.exit("error: could not find 'em++/emcc' on PATH. Run emsdk_env first.")
-    return emxx
+    p = which(name)
+    if not p:
+        sys.exit(f"error: could not find '{name}' on PATH.")
+    return p
 
 def main():
     script_dir = Path(__file__).parent.resolve()          # .../Examples/WASM
@@ -53,7 +53,7 @@ def main():
     out_js = script_dir / f"{wasm_base}.js"
     out_wasm = script_dir / f"{wasm_base}.wasm"
 
-    emxx = find_emxx()
+    emxx = find_prog("em++")
 
     compile_flags = [
         "-std=c++17",
@@ -99,12 +99,29 @@ def main():
 
     try:
         shutil.rmtree(build_dir)
-    except Exception as _:
-        # non-fatal
+    except Exception:
         pass
 
     print(f"\n✓ Built {out_js.name} and {out_wasm.name} into {script_dir}")
-    print("Run your example with:\n  node example.mjs")
+
+    # Run all .mjs examples in this folder
+    node = find_prog("node")
+    mjs_files = sorted(script_dir.glob("*.mjs"))
+    if not mjs_files:
+        print("No .mjs files found to run.")
+        return
+
+    print("\nRunning .mjs examples:")
+    for mjs in mjs_files:
+        print(f"  node {mjs.name}")
+        try:
+            # inherit stdio so you see example output live
+            subprocess.check_call([node, str(mjs)], cwd=script_dir)
+        except subprocess.CalledProcessError as e:
+            print(f"\nExample failed: {mjs.name} (exit {e.returncode})", file=sys.stderr)
+            sys.exit(e.returncode)
+
+    print("\n✓ All .mjs examples ran successfully.")
 
 if __name__ == "__main__":
     main()
