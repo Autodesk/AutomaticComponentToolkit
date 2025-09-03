@@ -53,7 +53,7 @@ func ResolveCppType(paramType string, componentdefinition ComponentDefinition) s
 	case "bool":
 		return "bool"
 	default:
-		return fmt.Sprintf("%s_%s", componentdefinition.LibraryName, paramType)
+		return fmt.Sprintf("%s_%s", componentdefinition.NameSpace, paramType)
 	}
 }
 
@@ -255,7 +255,7 @@ func generateMethodWrappers(
 					} else if p.ParamType == "class" || p.ParamType == "optionalclass" {
 						returnType = fmt.Sprintf("P%s", p.ParamClass)
 					} else if p.ParamType == "basicarray" {
-						returnType = fmt.Sprintf("std::vector<%s_%s>", component.LibraryName, p.ParamClass)
+						returnType = fmt.Sprintf("std::vector<%s_%s>", component.NameSpace, p.ParamClass)
 					} else {
 						returnType = ResolveCppType(p.ParamType, component)
 					}
@@ -286,7 +286,7 @@ func generateMethodWrappers(
 			case "structarray":
 				paramList = append(paramList, fmt.Sprintf("const std::vector<s%sWrapper>& %s", p.ParamClass, p.ParamName))
 			case "basicarray":
-				paramList = append(paramList, fmt.Sprintf("std::vector<%s_%s>& %s", component.LibraryName, p.ParamClass, p.ParamName))
+				paramList = append(paramList, fmt.Sprintf("std::vector<%s_%s>& %s", component.NameSpace, p.ParamClass, p.ParamName))
 			case "enum":
 				paramList = append(paramList, fmt.Sprintf("const e%s& %s", p.ParamClass, p.ParamName))
 			case "class", "optionalclass":
@@ -324,7 +324,7 @@ func generateMethodWrappers(
 					} else if p.ParamType == "structarray" {
 						paramType = fmt.Sprintf("std::vector<s%s>", p.ParamClass)
 					} else if p.ParamType == "basicarray" {
-						paramType = fmt.Sprintf("std::vector<%s_%s>", component.LibraryName, p.ParamClass)
+						paramType = fmt.Sprintf("std::vector<%s_%s>", component.NameSpace, p.ParamClass)
 					} else if p.ParamType == "enum" {
 						paramType = fmt.Sprintf("e%s", p.ParamClass)
 					} else if p.ParamType == "class" {
@@ -455,7 +455,7 @@ func GenerateEmscriptenBindings(component ComponentDefinition) string {
 	var result strings.Builder
 
 	result.WriteString("// ================== Emscripten Bindings ==================\n")
-	result.WriteString("EMSCRIPTEN_BINDINGS(" + component.LibraryName + ") {\n")
+	result.WriteString("EMSCRIPTEN_BINDINGS(" + component.NameSpace + ") {\n")
 
 	if len(component.Enums) > 0 {
 		result.WriteString("    // Enums\n")
