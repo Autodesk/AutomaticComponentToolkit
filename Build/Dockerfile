@@ -7,7 +7,7 @@ LABEL maintainer="Andrii Anpilogov (andrii.anpilogov@autodesk.com)"
 
 RUN [ -e /etc/yum.conf ] && sed -i '/tsflags=nodocs/d' /etc/yum.conf || true
 
-# CentOS 8 vault repos
+# Vault repos for CentOS 8
 RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
     sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* && \
     yum update -y
@@ -16,7 +16,15 @@ RUN dnf -y install dnf-plugins-core dnf-plugin-config-manager && dnf -y update
 RUN dnf -y install epel-release && dnf -y config-manager --set-enabled powertools
 
 # Tooling
-RUN dnf -y install gcc-toolset-9-gcc gcc-toolset-9-gcc-c++ cmake ninja-build git python3 python3-pip
+RUN dnf -y install gcc-toolset-9-gcc gcc-toolset-9-gcc-c++ cmake ninja-build git curl
+
+# ---- Python 3.9 (required by recent emscripten) ----
+RUN dnf -y module enable python39 && \
+    dnf -y install python39 python39-pip
+ENV EMSDK_PYTHON=/usr/bin/python3.9
+
+# (optional) ICU runtime/headers if you need them
+# RUN dnf -y install libicu libicu-devel
 
 # Free Pascal 3.0.4
 RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm' \
@@ -24,6 +32,7 @@ RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/
 
 # Go
 RUN (cd /opt && curl -O -L https://golang.org/dl/go1.17.2.linux-amd64.tar.gz && tar zxvf go1.17.2.linux-amd64.tar.gz)
+ENV PATH="${PATH}:/opt/go/bin"
 
 # Java & Mono
 RUN dnf -y install java-11-openjdk-devel
@@ -34,31 +43,30 @@ RUN rpm --import https://download.mono-project.com/repo/xamarin.gpg \
 # General tools
 RUN dnf -y install glibc-common glibc-utils less passwd tar vim-minimal vim-enhanced which sudo bash-completion mc yum-utils && yum clean all
 
-# Shell env for GCC toolset & Go
+# Enable GCC toolset in shells
 RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /etc/bashrc
-ENV PATH="${PATH}:/opt/go/bin"
 
 # ---- Emscripten SDK (emsdk) ----
 ENV EMSDK=/opt/emsdk
 RUN git clone https://github.com/emscripten-core/emsdk.git ${EMSDK} && \
     bash -lc "cd ${EMSDK} && ./emsdk install latest && ./emsdk activate latest"
 
-# Source emsdk env in interactive shells + user shell
+# Source emsdk env in interactive shells
 RUN echo "source ${EMSDK}/emsdk_env.sh" >> /etc/bashrc
 
-# Create user (only if USER_ID provided)
+# Create user (if requested)
 RUN if [ -n "$USER_ID" ]; then \
       groupadd -g ${GROUP_ID:-1000} docker && \
       useradd -ms /bin/bash --uid $USER_ID -g docker -G wheel user && \
       printf 'user:user' | chpasswd && \
       printf 'user ALL= NOPASSWD: ALL\n' >> /etc/sudoers && \
       echo 'source /opt/rh/gcc-toolset-9/enable' >> /home/user/.bash_profile && \
-      echo 'export PATH=$PATH:/opt/go/bin' >> /home/user/.bash_profile && \
+      echo "export EMSDK_PYTHON=${EMSDK_PYTHON}" >> /home/user/.bash_profile && \
       echo "source ${EMSDK}/emsdk_env.sh" >> /home/user/.bash_profile ; \
     fi
 
-# (Optional) sanity check in build-time shell that sourcing works
-RUN bash -lc "source ${EMSDK}/emsdk_env.sh && emcc --version && em++ --version && node --version"
+# Sanity check (uses Python 3.9 via EMSDK_PYTHON)
+RUN bash -lc "source ${EMSDK}/emsdk_env.sh && echo Using: \$EMSDK_PYTHON && \$EMSDK_PYTHON --version && emcc --version && em++ --version && node --version"
 
-# Your repo should provide this
+# Your repo should provide this script; it will source the env before running any command.
 ENTRYPOINT ["./entrypoint.sh"]
