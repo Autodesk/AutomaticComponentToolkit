@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-// buildwasmbindingwasm.go
+// buildbindingwasm.go
 // functions to generate WASM bindings which rely on emscripten
 // It produces a bindings.cpp file which needs to be compiled using emcc / em++ and needs cpp bindings
 // in path
