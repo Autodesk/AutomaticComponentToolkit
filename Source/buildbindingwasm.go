@@ -172,7 +172,7 @@ func GenerateStructWrappers(componentdefinition ComponentDefinition) string {
 					for i := 0; i < m.Rows; i++ {
 						for j := 0; j < m.Columns; j++ {
 							builder.WriteString(fmt.Sprintf("        wrapper.value.m_%s[%d][%d] = js[\"%s_%d_%d\"].as<%s>();\n",
-								m.Name, j, i, m.Name, i, j, typeString))
+								m.Name, j, i, m.Name, j, i, typeString))
 						}
 					}
 				} else {
