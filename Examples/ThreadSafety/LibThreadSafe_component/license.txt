@@ -1,0 +1,5 @@
+Copyright (C) 2025 Thread-safe library developers
+
+All rights reserved.
+
+
