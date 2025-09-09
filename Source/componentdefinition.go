@@ -480,7 +480,7 @@ func (component *ComponentDefinition) checkErrors() error {
 }
 
 func errorDescriptionIsValid (name string) bool {
-	var IsValidIdentifier = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_+\\-:,.=!/ ]*$").MatchString
+	var IsValidIdentifier = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_+\\-:,.=!/#@%$* ]*$").MatchString
 
 	if (name != "") {
 		return IsValidIdentifier(name);
@@ -882,7 +882,7 @@ func nameIsValidIdentifier(name string) bool {
 }
 
 func descriptionIsValid(description string) bool {
-	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()'; |]*$").MatchString
+	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()';&#@%$* |]*$").MatchString
 	if (description != "") {
 		return IsValidMethodDescription(description);
 	}
