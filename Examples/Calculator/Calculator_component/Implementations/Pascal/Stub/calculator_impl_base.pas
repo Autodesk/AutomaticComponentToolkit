@@ -36,7 +36,7 @@ type
       procedure RegisterErrorMessage(const AErrorMessage: String);
       procedure IncRefCount();
       function DecRefCount(): Boolean;
-      function ClassTypeId(): QWord; virtual;
+      function ClassTypeId(): QWord; Virtual; Abstract;
   end;
 
 implementation
@@ -68,7 +68,6 @@ end;
 
 procedure TCalculatorBase.RegisterErrorMessage(const AErrorMessage: String);
 begin
-  FMessages.Clear();
   FMessages.Add(AErrorMessage);
 end;
 
@@ -79,17 +78,18 @@ end;
 
 function TCalculatorBase.DecRefCount(): Boolean;
 begin
-  dec(FReferenceCount);
-  if (FReferenceCount = 0) then begin
-    result := true;
-    self.Destroy();
-  end;
-   result := false;
-end;
-
-function TCalculatorBase.ClassTypeId(): QWord;
-begin
-  result := 0; // Base class type ID
+  if (FReferenceCount > 0) then
+  begin
+    dec(FReferenceCount);
+    if (FReferenceCount = 0) then begin
+      self.Destroy();
+      result := true;
+    end
+    else
+      result := false;
+  end
+  else
+    result := false; // Already at 0, don't double-destroy
 end;
 
 end.

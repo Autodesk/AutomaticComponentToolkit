@@ -14,6 +14,7 @@ Interface version: 1.0.0
 *)
 
 program CalculatorPascalTest;
+{$mode objfpc}{$H+}
 
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}

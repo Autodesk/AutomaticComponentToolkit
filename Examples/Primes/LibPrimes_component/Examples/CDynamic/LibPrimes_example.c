@@ -19,41 +19,49 @@ Interface version: 1.2.0
 
 void releaseWrapper(sLibPrimesDynamicWrapperTable* pWrapperTable) {
 	LibPrimesResult eResult = ReleaseLibPrimesWrapperTable(pWrapperTable);
-	printf_s("Failed releasing wrapper table\n");
+	printf("Failed releasing wrapper table\n");
 }
 
 int main()
 {
-	// TODO: put a path the LibPrimes-library file here.
-	const char* libpath = "";
+	// TODO: put a path to LibPrimes binary file here:
+	const char* libpath = "libprimes."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+	;
 	sLibPrimesDynamicWrapperTable sWrapperTable;
 	LibPrimesResult eResult = LIBPRIMES_SUCCESS;
 	
 	eResult = InitLibPrimesWrapperTable(&sWrapperTable);
 	if (LIBPRIMES_SUCCESS != eResult) {
-		printf_s("Failed initializing wrapper table\n");
+		printf("Failed initializing wrapper table\n");
 		return eResult;
 	}
 	
 	eResult = LoadLibPrimesWrapperTable(&sWrapperTable, libpath);
 	if (LIBPRIMES_SUCCESS != eResult) {
-		printf_s("Failed loading libprimes-binary\n");
+		printf("Failed loading libprimes-binary\n");
 		return eResult;
 	}
 	LibPrimes_uint32 nMajor, nMinor, nMicro;
 	eResult = sWrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro);
 	if (LIBPRIMES_SUCCESS != eResult) {
-		printf_s("Failed to get version\n");
+		printf("Failed to get version\n");
 		releaseWrapper(&sWrapperTable);
 		return eResult;
 	}
-	printf_s("LibPrimes.Version = %d.%d.%d", nMajor, nMinor, nMicro);
+	printf("LibPrimes.Version = %d.%d.%d", nMajor, nMinor, nMicro);
 	
-	printf_s("\n");
+	printf("\n");
 	
 	eResult = ReleaseLibPrimesWrapperTable(&sWrapperTable);
 	if (LIBPRIMES_SUCCESS != eResult) {
-		printf_s("Failed releasing wrapper table\n");
+		printf("Failed releasing wrapper table\n");
 		return eResult;
 	}
 	

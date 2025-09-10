@@ -32,7 +32,7 @@ type
 **************************************************************************************************************************)
 
 ICalculatorBase = interface
-  ['{606128A4-C847-4057-A841-4B8871165F63}']
+  ['{C214B605-F0FB-481A-BD3E-3CFF478EF3C5}']
 
   function GetLastErrorMessage(out AErrorMessage: String): Boolean;
   procedure ClearErrorMessages();
@@ -48,7 +48,7 @@ end;
 **************************************************************************************************************************)
 
 ICalculatorVariable = interface(ICalculatorBase)
-  ['{1E683C18-EFC4-4772-AB4B-6A055D74C97F}']
+  ['{5C7138D7-DD48-4F7A-9888-FBF2998C807F}']
 
   function GetValue(): Double;
   procedure SetValue(const AValue: Double);
@@ -60,7 +60,7 @@ end;
 **************************************************************************************************************************)
 
 ICalculatorCalculator = interface(ICalculatorBase)
-  ['{65CB20D4-1384-4F17-BB4D-0F556E2EA955}']
+  ['{665BE1D3-F168-4479-AB9D-173D25300D09}']
 
   procedure EnlistVariable(AVariable: TObject);
   function GetEnlistedVariable(const AIndex: Cardinal): TObject;

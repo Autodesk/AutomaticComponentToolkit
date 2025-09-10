@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euxo pipefail
+
+cd "$(dirname "$0")"
+source ../../../../../Build/build.inc
 
 JnaJar="jna-5.5.0.jar"
 Classpath=".:${JnaJar}:../../Bindings/Java9/"
@@ -18,12 +22,15 @@ else
 fi
 
 echo "Download JNA"
-wget http://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar
+[ -f jna-5.5.0.jar ] || curl -O https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.5.0/jna-5.5.0.jar
 
 echo "Compile Java bindings"
-javac -classpath "${JnaJar}" ../../Bindings/Java9/libprimes/*.java
+javac -encoding UTF8 -classpath "${JnaJar}" ../../Bindings/Java9/libprimes/*.java
 echo "Compile Java example"
-javac -classpath $Classpath LibPrimes_Example.java
+javac -encoding UTF8 -classpath $Classpath LibPrimes_Example.java
 
-echo "Execute example"
-java -classpath $Classpath LibPrimes_Example
+echo "Test C++ library"
+java -ea -classpath $Classpath LibPrimes_Example $PWD/../../Implementations/Cpp/build/libprimes$OSLIBEXT
+
+echo "Test Pascal library"
+java -ea -classpath $Classpath LibPrimes_Example $PWD/../../Implementations/Pascal/build/libprimes$OSLIBEXT

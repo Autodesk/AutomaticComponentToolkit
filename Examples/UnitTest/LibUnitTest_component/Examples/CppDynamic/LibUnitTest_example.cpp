@@ -22,7 +22,15 @@ int main()
 	try
 	{
 		std::string libpath = (""); // TODO: put the location of the LibUnitTest-library file here.
-		auto wrapper = LibUnitTest::CWrapper::loadLibrary(libpath + "/libunittest."); // TODO: add correct suffix of the library
+		auto wrapper = LibUnitTest::CWrapper::loadLibrary(libpath + "libunittest."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		);
 		LibUnitTest_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
 		std::cout << "LibUnitTest.Version = " << nMajor << "." << nMinor << "." << nMicro;

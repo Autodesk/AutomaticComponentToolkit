@@ -34,6 +34,9 @@ namespace Impl {
 
 class CTestClass : public virtual ITestClass, public virtual CBase {
 private:
+	LibUnitTest_double m_Value;
+	LibUnitTest_int64 m_IntValue;
+	std::string m_StringValue;
 
 	/**
 	* Put private members here.
@@ -46,6 +49,7 @@ protected:
 	*/
 
 public:
+	CTestClass() : m_Value(0.0), m_IntValue(0), m_StringValue("") {}
 
 	/**
 	* Put additional public members here. They will not be visible in the external API.
@@ -55,6 +59,8 @@ public:
 	/**
 	* Public member functions to implement.
 	*/
+
+	LibUnitTest_uint64 ClassTypeId() override;
 
 	LibUnitTest_double Value() override;
 

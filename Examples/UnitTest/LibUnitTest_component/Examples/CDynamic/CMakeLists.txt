@@ -20,10 +20,12 @@ set(CMAKE_CURRENT_BINDING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/CDynami
 
 project(LibUnitTestExample_CDynamic C)
 
-SET_SOURCE_FILES_PROPERTIES("${CMAKE_CURRENT_BINDING_DIR}/libunittest_dynamic.cc" PROPERTIES LANGUAGE C)
+file(COPY "${CMAKE_CURRENT_BINDING_DIR}/libunittest_dynamic.cc" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/libunittest_dynamic.cc" "${CMAKE_CURRENT_BINARY_DIR}/libunittest_dynamic.c")
+
 add_executable(LibUnitTestExample_CDynamic
   "${CMAKE_CURRENT_SOURCE_DIR}/LibUnitTest_example.c"
-  "${CMAKE_CURRENT_BINDING_DIR}/libunittest_dynamic.cc"
+  "${CMAKE_CURRENT_BINARY_DIR}/libunittest_dynamic.c"
 
 )
 set_property(TARGET LibUnitTestExample_CDynamic PROPERTY C_STANDARD 99)

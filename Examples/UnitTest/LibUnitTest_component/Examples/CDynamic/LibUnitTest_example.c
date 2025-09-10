@@ -21,42 +21,50 @@ Interface version: 1.0.0
 void releaseWrapper(sLibUnitTestDynamicWrapperTable* pWrapperTable) {
 	LibUnitTestResult eResult = ReleaseLibUnitTestWrapperTable(pWrapperTable);
 	if (LIBUNITTEST_SUCCESS != eResult) {
-		printf_s("Failed to release wrapper table\n");
+		printf("Failed to release wrapper table\n");
 	}
 }
 
 int main()
 {
 	// TODO: put a path to ACT UnitTest FrameWork binary file here:
-	const char* libpath = "";
+	const char* libpath = "libunittest."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+	;
 	sLibUnitTestDynamicWrapperTable sWrapperTable;
 	LibUnitTestResult eResult = LIBUNITTEST_SUCCESS;
 	
 	eResult = InitLibUnitTestWrapperTable(&sWrapperTable);
 	if (LIBUNITTEST_SUCCESS != eResult) {
-		printf_s("Failed to initialize wrapper table\n");
+		printf("Failed to initialize wrapper table\n");
 		return eResult;
 	}
 	
 	eResult = LoadLibUnitTestWrapperTable(&sWrapperTable, libpath);
 	if (LIBUNITTEST_SUCCESS != eResult) {
-		printf_s("Failed to load libunittest-binary\n");
+		printf("Failed to load libunittest-binary\n");
 		return eResult;
 	}
 	LibUnitTest_uint32 nMajor, nMinor, nMicro;
 	eResult = sWrapperTable.m_GetVersion(&nMajor, &nMinor, &nMicro);
 	if (LIBUNITTEST_SUCCESS != eResult) {
-		printf_s("Failed to get version\n");
+		printf("Failed to get version\n");
 		releaseWrapper(&sWrapperTable);
 		return eResult;
 	}
-	printf_s("LibUnitTest.Version = %d.%d.%d", nMajor, nMinor, nMicro);
+	printf("LibUnitTest.Version = %d.%d.%d", nMajor, nMinor, nMicro);
 	
-	printf_s("\n");
+	printf("\n");
 	
 	eResult = ReleaseLibUnitTestWrapperTable(&sWrapperTable);
 	if (LIBUNITTEST_SUCCESS != eResult) {
-		printf_s("Failed to release wrapper table\n");
+		printf("Failed to release wrapper table\n");
 		return eResult;
 	}
 	

@@ -61,6 +61,6 @@ bool CBase::DecRefCount()
 
 LibUnitTest_uint64 CBase::ClassTypeId()
 {
-	throw ELibUnitTestInterfaceException(LIBUNITTEST_ERROR_NOTIMPLEMENTED);
+	return 0; // Base class type ID
 }
 

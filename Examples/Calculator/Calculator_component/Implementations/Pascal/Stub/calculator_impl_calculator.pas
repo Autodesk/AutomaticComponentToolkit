@@ -20,24 +20,24 @@ uses
   calculator_impl_base,
   calculator_impl_variable,
   Classes,
-  sysutils,
-  contnrs;
+  sysutils;
 
 type
   TCalculatorCalculator = class(TCalculatorBase, ICalculatorCalculator)
     private
-      FVariableList : TObjectList;
+      FVariables: TList;
+
     protected
 
     public
       constructor Create();
       destructor Destroy(); override;
+      function ClassTypeId(): QWord; Override;
       procedure EnlistVariable(AVariable: TObject);
       function GetEnlistedVariable(const AIndex: Cardinal): TObject;
       procedure ClearVariables();
       function Multiply(): TObject;
       function Add(): TObject;
-      function ClassTypeId(): QWord; override;
   end;
 
 implementation
@@ -45,81 +45,104 @@ implementation
 constructor TCalculatorCalculator.Create();
 begin
   inherited Create();
-  FVariableList := TObjectList.Create(False);
+  FVariables := TList.Create();
 end;
 
 destructor TCalculatorCalculator.Destroy();
 begin
-  ClearVariables();
-  FreeAndNil(FVariableList);
+  if Assigned(FVariables) then
+  begin
+    ClearVariables(); // This will properly decrement reference counts
+    FVariables.Free();
+  end;
   inherited Destroy();
-end;
-
-procedure TCalculatorCalculator.EnlistVariable(AVariable: TObject);
-var
-  AVar: TCalculatorVariable;
-begin
-  AVar := (AVariable as TCalculatorVariable);
-  AVar.IncRefCount();
-  FVariableList.Add(AVar);
-end;
-
-function TCalculatorCalculator.GetEnlistedVariable(const AIndex: Cardinal): TObject;
-begin
-  if AIndex >= FVariableList.Count then begin
-    raise ECalculatorException.CreateCustomMessage(CALCULATOR_ERROR_INVALIDPARAM, 'Invalid Index');
-  end;
-  result := FVariableList[AIndex];
-  (result as TCalculatorVariable).IncRefCount();
-end;
-
-procedure TCalculatorCalculator.ClearVariables();
-var
-  AVar: TCalculatorVariable;
-  I: integer;
-begin
-  For I := 0 to FVariableList.Count - 1 do begin
-    AVar := (FVariableList[I] as TCalculatorVariable);
-    AVar.DecRefCount();
-  end;
-  FVariableList.Clear;
-end;
-
-function TCalculatorCalculator.Multiply(): TObject;
-var
-  AVar, AResVar: TCalculatorVariable;
-  I: integer;
-  ResVal : double;
-begin
-  ResVal := 1.0;
-  For I := 0 to FVariableList.Count - 1 do begin
-    AVar := (FVariableList[I] as TCalculatorVariable);
-    ResVal := ResVal * AVar.GetValue();
-  end;
-  AResVar := TCalculatorVariable.Create();
-  AResVar.SetValue(ResVal);
-  result := AResVar;
-end;
-
-function TCalculatorCalculator.Add(): TObject;
-var
-  AVar, AResVar: TCalculatorVariable;
-  I: integer;
-  ResVal : double;
-begin
-  ResVal := 0.0;
-  For I := 0 to FVariableList.Count - 1 do begin
-    AVar := (FVariableList[I] as TCalculatorVariable);
-    ResVal := ResVal + AVar.GetValue();
-  end;
-  AResVar := TCalculatorVariable.Create();
-  AResVar.SetValue(ResVal);
-  result := AResVar;
 end;
 
 function TCalculatorCalculator.ClassTypeId(): QWord;
 begin
-  result := 2; // Calculator class type ID
+  Result := QWord($5FA5D809D8A728B0); // First 64 bits of SHA1 of a string: "Calculator::Calculator"
+end;
+
+procedure TCalculatorCalculator.EnlistVariable(AVariable: TObject);
+begin
+  if not Assigned(AVariable) then
+    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDPARAM);
+  if not (AVariable is TCalculatorVariable) then
+    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDCAST);
+  
+  // Increment reference count since we're holding a reference
+  (AVariable as ICalculatorBase).IncRefCount();
+  FVariables.Add(AVariable);
+end;
+
+function TCalculatorCalculator.GetEnlistedVariable(const AIndex: Cardinal): TObject;
+begin
+  if AIndex >= Cardinal(FVariables.Count) then
+    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDPARAM);
+  Result := TObject(FVariables[AIndex]);
+  
+  // Increment reference count since C++ will manage this returned object
+  if Assigned(Result) then
+    (Result as ICalculatorBase).IncRefCount();
+end;
+
+procedure TCalculatorCalculator.ClearVariables();
+var
+  I: Integer;
+  Variable: TObject;
+begin
+  // Decrement reference count for all variables before clearing
+  for I := 0 to FVariables.Count - 1 do
+  begin
+    Variable := TObject(FVariables[I]);
+    if Assigned(Variable) and (Variable is TCalculatorBase) then
+    begin
+      try
+        (Variable as ICalculatorBase).DecRefCount();
+      except
+        // Ignore exceptions during cleanup to prevent cascade failures
+      end;
+    end;
+  end;
+  FVariables.Clear();
+end;
+
+function TCalculatorCalculator.Multiply(): TObject;
+var
+  I: Integer;
+  ResultValue: Double;
+  Variable: TCalculatorVariable;
+begin
+  if FVariables.Count = 0 then
+    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDPARAM);
+  
+  ResultValue := 1.0;
+  for I := 0 to FVariables.Count - 1 do
+  begin
+    Variable := TCalculatorVariable(FVariables[I]);
+    ResultValue := ResultValue * Variable.GetValue();
+  end;
+  
+  Result := TCalculatorVariable.Create(ResultValue);
+end;
+
+function TCalculatorCalculator.Add(): TObject;
+var
+  I: Integer;
+  ResultValue: Double;
+  Variable: TCalculatorVariable;
+begin
+  if FVariables.Count = 0 then
+    raise ECalculatorException.Create(CALCULATOR_ERROR_INVALIDPARAM);
+  
+  ResultValue := 0.0;
+  for I := 0 to FVariables.Count - 1 do
+  begin
+    Variable := TCalculatorVariable(FVariables[I]);
+    ResultValue := ResultValue + Variable.GetValue();
+  end;
+  
+  Result := TCalculatorVariable.Create(ResultValue);
 end;
 
 end.

@@ -9,7 +9,7 @@ Abstract: This is the class declaration of TLibUnitTestBase
 *)
 
 {$MODE DELPHI}
-unit libunittest_implementation_base;
+unit libunittest_impl_base;
 
 interface
 

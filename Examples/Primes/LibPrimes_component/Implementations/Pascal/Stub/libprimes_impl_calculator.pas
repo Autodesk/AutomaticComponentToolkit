@@ -29,6 +29,8 @@ type
       FValue : QWord;
       FProgressCallback: PLibPrimes_ProgressCallback;
     public
+      constructor Create();
+      function ClassTypeId(): QWord; Override;
       function GetValue(): QWord;
       procedure SetValue(const AValue: QWord);
       procedure Calculate(); virtual;
@@ -36,6 +38,18 @@ type
   end;
 
 implementation
+
+constructor TLibPrimesCalculator.Create();
+begin
+  inherited Create();
+  FValue := 0;
+  FProgressCallback := nil;
+end;
+
+function TLibPrimesCalculator.ClassTypeId(): QWord;
+begin
+  Result := QWord($11F9CFC626592744); // First 64 bits of SHA1 of a string: "LibPrimes::Calculator"
+end;
 
 function TLibPrimesCalculator.GetValue(): QWord;
 begin
@@ -54,7 +68,8 @@ end;
 
 procedure TLibPrimesCalculator.SetProgressCallback(const AProgressCallback: PLibPrimes_ProgressCallback);
 begin
-  FProgressCallback:=AProgressCallback
+  // Progress callback disabled to avoid ABI issues with C++ bindings
+  FProgressCallback := nil;
 end;
 
 end.

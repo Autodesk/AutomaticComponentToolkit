@@ -16,6 +16,7 @@ Interface version: 1.0.0
 #include "libunittest_abi.hpp"
 #include "libunittest_interfaces.hpp"
 #include "libunittest_interfaceexception.hpp"
+#include "libunittest_testclass.hpp"
 
 using namespace LibUnitTest;
 using namespace LibUnitTest::Impl;
@@ -48,7 +49,7 @@ void CWrapper::AcquireInstance(IBase* pInstance)
 
 ITestClass * CWrapper::CreateTestClasss()
 {
-	throw ELibUnitTestInterfaceException(LIBUNITTEST_ERROR_NOTIMPLEMENTED);
+	return new CTestClass();
 }
 
 

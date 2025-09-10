@@ -14,6 +14,7 @@ Interface version: 1.0.0
 *)
 
 program LibUnitTestPascalTest;
+{$mode objfpc}{$H+}
 
 uses
     {$IFDEF UNIX}{$IFDEF UseCThreads}
@@ -41,16 +42,140 @@ var
     AMajor, AMinor, AMicro: Cardinal;
     AVersionString: string;
     ALibPath: string;
+    ATestClass: TLIBUNITTESTTestClass;
+    
+    // UnitTest1 variables (unsigned integers)
+    InValue1: Byte;
+    InValue2: Word;
+    InValue3: Cardinal;
+    InValue4: QWord;
+    OutValue1: Byte;
+    OutValue2: Word;
+    OutValue3: Cardinal;
+    OutValue4: QWord;
+    
+    // UnitTest2 variables (signed integers)
+    InInt1: ShortInt;
+    InInt2: SmallInt;
+    InInt3: LongInt;
+    InInt4: Int64;
+    OutInt1: ShortInt;
+    OutInt2: SmallInt;
+    OutInt3: LongInt;
+    OutInt4: Int64;
+    
+    // UnitTest3 variables (bool, float, double, enum)
+    InBool: Boolean;
+    InSingle: Single;
+    InDouble: Double;
+    InEnum: TLibUnitTestTestEnum;
+    OutBool: Boolean;
+    OutSingle: Single;
+    OutDouble: Double;
+    OutEnum: TLibUnitTestTestEnum;
+    
+    // UnitTest4 variables (string)
+    InString, OutString, ReturnString: string;
 begin
-    writeln('loading DLL');
-    ALibPath := ''; // TODO add the location of the shared library binary here
-    ALibUnitTestWrapper := TLibUnitTestWrapper.Create(ALibPath + '/' + 'libunittest.'); // TODO add the extension of the shared library file here
+    writeln ('loading DLL');
+    if ParamCount > 0 then
+        ALibPath := ParamStr(1)
+    else
+        ALibPath := '.'; // TODO add the location of the shared library binary here
+    ALibUnitTestWrapper := TLibUnitTestWrapper.Create (ALibPath + '/' + 'libunittest.dll'); // TODO add the extension of the shared library file here
     try
-        writeln('loading DLL Done');
+        writeln ('loading DLL Done');
         ALibUnitTestWrapper.GetVersion(AMajor, AMinor, AMicro);
         AVersionString := Format('LibUnitTest.version = %d.%d.%d', [AMajor, AMinor, AMicro]);
         writeln(AVersionString);
+        writeln;
+        
+        // Create a test class instance
+        writeln('Creating TestClass instance...');
+        ATestClass := ALibUnitTestWrapper.CreateTestClasss();
+        try
+            writeln('TestClass created successfully');
+            writeln;
+            
+            // Test basic value operations
+            writeln('=== Testing basic value operations ===');
+            ATestClass.SetValue(42.5);
+            writeln(Format('Set value to 42.5, got back: %.2f', [ATestClass.Value()]));
+            
+            ATestClass.SetValueInt(100);
+            writeln(Format('Set value to 100 (int), got back: %.2f', [ATestClass.Value()]));
+            
+            ATestClass.SetValueString('3.14159');
+            writeln(Format('Set value to "3.14159" (string), got back: %.5f', [ATestClass.Value()]));
+            writeln;
+            
+            // Test UnitTest1: unsigned integers
+            writeln('=== Testing UnitTest1 (unsigned integers) ===');
+            InValue1 := 255;
+            InValue2 := 65535;
+            InValue3 := 4294967295;
+            InValue4 := 18446744073709551615;
+            
+            ATestClass.UnitTest1(InValue1, InValue2, InValue3, InValue4, 
+                                OutValue1, OutValue2, OutValue3, OutValue4);
+            
+            writeln(Format('uint8: %d -> %d (match: %s)', [InValue1, OutValue1, BoolToStr(InValue1 = OutValue1, True)]));
+            writeln(Format('uint16: %d -> %d (match: %s)', [InValue2, OutValue2, BoolToStr(InValue2 = OutValue2, True)]));
+            writeln(Format('uint32: %d -> %d (match: %s)', [InValue3, OutValue3, BoolToStr(InValue3 = OutValue3, True)]));
+            writeln(Format('uint64: %d -> %d (match: %s)', [InValue4, OutValue4, BoolToStr(InValue4 = OutValue4, True)]));
+            writeln;
+            
+            // Test UnitTest2: signed integers
+            writeln('=== Testing UnitTest2 (signed integers) ===');
+            InInt1 := -128;
+            InInt2 := -32768;
+            InInt3 := -2147483648;
+            InInt4 := -9223372036854775808;
+            
+            ATestClass.UnitTest2(InInt1, InInt2, InInt3, InInt4,
+                                OutInt1, OutInt2, OutInt3, OutInt4);
+            
+            writeln(Format('int8: %d -> %d (match: %s)', [InInt1, OutInt1, BoolToStr(InInt1 = OutInt1, True)]));
+            writeln(Format('int16: %d -> %d (match: %s)', [InInt2, OutInt2, BoolToStr(InInt2 = OutInt2, True)]));
+            writeln(Format('int32: %d -> %d (match: %s)', [InInt3, OutInt3, BoolToStr(InInt3 = OutInt3, True)]));
+            writeln(Format('int64: %d -> %d (match: %s)', [InInt4, OutInt4, BoolToStr(InInt4 = OutInt4, True)]));
+            writeln;
+            
+            // Test UnitTest3: bool, float, double, enum
+            writeln('=== Testing UnitTest3 (bool, float, double, enum) ===');
+            InBool := True;
+            InSingle := 3.14159;
+            InDouble := 2.71828182845904523536;
+            InEnum := eTestEnumOption20;
+            
+            ATestClass.UnitTest3(InBool, InSingle, InDouble, InEnum,
+                                OutBool, OutSingle, OutDouble, OutEnum);
+            
+            writeln(Format('bool: %s -> %s (match: %s)', [BoolToStr(InBool, True), BoolToStr(OutBool, True), BoolToStr(InBool = OutBool, True)]));
+            writeln(Format('single: %.5f -> %.5f (match: %s)', [InSingle, OutSingle, BoolToStr(Abs(InSingle - OutSingle) < 0.0001, True)]));
+            writeln(Format('double: %.15f -> %.15f (match: %s)', [InDouble, OutDouble, BoolToStr(Abs(InDouble - OutDouble) < 0.000000000000001, True)]));
+            writeln(Format('enum: %d -> %d (match: %s)', [Ord(InEnum), Ord(OutEnum), BoolToStr(InEnum = OutEnum, True)]));
+            writeln;
+            
+            // Test UnitTest4: string
+            writeln('=== Testing UnitTest4 (string) ===');
+            InString := 'Hello, LibUnitTest Pascal!';
+            ReturnString := ATestClass.UnitTest4(InString, OutString);
+            
+            writeln(Format('Input string: "%s"', [InString]));
+            writeln(Format('Output string: "%s"', [OutString]));
+            writeln(Format('Return string: "%s"', [ReturnString]));
+            writeln(Format('Input == Output: %s', [BoolToStr(InString = OutString, True)]));
+            writeln(Format('Input == Return: %s', [BoolToStr(InString = ReturnString, True)]));
+            writeln;
+            
+            writeln('=== All tests completed successfully! ===');
+            
+        finally
+            FreeAndNil(ATestClass);
+        end;
     finally
+        FreeAndNil(ATestClass);
         FreeAndNil(ALibUnitTestWrapper);
     end;
 end;

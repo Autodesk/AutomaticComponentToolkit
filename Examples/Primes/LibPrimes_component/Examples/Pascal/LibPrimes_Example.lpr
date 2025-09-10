@@ -14,7 +14,7 @@ Interface version: 1.2.0
 *)
 
 program LibPrimesPascalTest;
-
+{$mode objfpc}{$H+}
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
@@ -43,8 +43,8 @@ var
   ALibPath: string;
 begin
   writeln ('loading DLL');
-  ALibPath := ''; // TODO add the location of the shared library binary here
-  ALibPrimesWrapper := TLibPrimesWrapper.Create (ALibPath + '/' + 'libprimes.'); // TODO add the extension of the shared library file here
+  ALibPath := '.'; // TODO add the location of the shared library binary here
+  ALibPrimesWrapper := TLibPrimesWrapper.Create (ALibPath + '/' + 'libprimes.dll');
   try
     writeln ('loading DLL Done');
     ALibPrimesWrapper.GetVersion(AMajor, AMinor, AMicro);

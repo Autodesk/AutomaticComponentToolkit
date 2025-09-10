@@ -28,17 +28,68 @@ type
     protected
 
     public
+      constructor Create();
       destructor Destroy(); override;
-      procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
+      function ClassTypeId(): QWord; Override;
       procedure Calculate(); override;
+      procedure GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
   end;
 
 implementation
+
+constructor TLibPrimesFactorizationCalculator.Create();
+begin
+  inherited Create();
+  SetLength(FPrimeFactors, 0);
+end;
 
 destructor TLibPrimesFactorizationCalculator.Destroy();
 begin
   SetLength(FPrimeFactors, 0);
   inherited Destroy();
+end;
+
+function TLibPrimesFactorizationCalculator.ClassTypeId(): QWord;
+begin
+  Result := QWord($6C7A0FD2ECC65118); // First 64 bits of SHA1 of a string: "LibPrimes::FactorizationCalculator"
+end;
+
+procedure TLibPrimesFactorizationCalculator.Calculate();
+var
+  AValue: QWord;
+  I: QWord;
+  APFCount: QWord;
+  APrimeFactor: TLibPrimesPrimeFactor;
+begin
+  SetLength(FPrimeFactors, 0);
+
+  APFCount := 0;
+  AValue := FValue;
+  I := 2;
+  while (I * I <= AValue) and (AValue > 1)
+  do begin
+    APrimeFactor.FMultiplicity:=0;
+    APrimeFactor.FPrime:=I;
+    while (AValue mod i = 0) do begin
+      inc(APrimeFactor.FMultiplicity);
+      AValue := AValue div I;
+    end;
+    if (APrimeFactor.FMultiplicity > 0) then begin
+      inc(APFCount);
+      SetLength(FPrimeFactors, APFCount);
+      FPrimeFactors[APFCount-1] := APrimeFactor;
+    end;
+    inc(I);
+  end;
+  
+  // If AValue is still greater than 1, it's a prime factor itself
+  if (AValue > 1) then begin
+    APrimeFactor.FMultiplicity := 1;
+    APrimeFactor.FPrime := AValue;
+    inc(APFCount);
+    SetLength(FPrimeFactors, APFCount);
+    FPrimeFactors[APFCount-1] := APrimeFactor;
+  end;
 end;
 
 procedure TLibPrimesFactorizationCalculator.GetPrimeFactors(const APrimeFactorsCount: QWord; PPrimeFactorsNeededCount: PQWord; APrimeFactors: PLibPrimesPrimeFactor);
@@ -60,42 +111,4 @@ begin
   end;
 end;
 
-procedure TLibPrimesFactorizationCalculator.Calculate();
-var
-  AValue: QWord;
-  I: QWord;
-  APFCount: QWord;
-  APrimeFactor: TLibPrimesPrimeFactor;
-  AShouldAbort: Byte;
-begin
-  SetLength(FPrimeFactors, 0);
-
-  APFCount := 0;
-  AValue := FValue;
-  I := 2;
-  while I < AValue
-  do begin
-    if (assigned(FProgressCallback)) then begin
-    	AShouldAbort := 0;
-			FProgressCallback(1 - 1.0*AValue / FValue, AShouldAbort);
-			if (AShouldAbort <> 0) then
-				raise ELibPrimesException.Create(LIBPRIMES_ERROR_CALCULATIONABORTED);
-    end;
-
-    APrimeFactor.FMultiplicity:=0;
-    APrimeFactor.FPrime:=I;
-    while (AValue mod i = 0) do begin
-      inc(APrimeFactor.FMultiplicity);
-      AValue := AValue div I;
-    end;
-    if (APrimeFactor.FMultiplicity > 0) then begin
-      inc(APFCount);
-      SetLength(FPrimeFactors, APFCount);
-      FPrimeFactors[APFCount-1] := APrimeFactor;
-    end;
-    inc(I);
-  end;
-end;
-
 end.
-

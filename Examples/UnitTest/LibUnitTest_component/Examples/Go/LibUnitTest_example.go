@@ -17,13 +17,23 @@ Interface version: 1.0.0
 package main
 
 import (
+	"os"
 	"fmt"
 	"log"
-	"../../Bindings/Go"
+	libunittest "../../Bindings/Go"
 )
 
 func main() {
-	nMajor, nMinor, nMicro, err := GetVersion()
+	if len(os.Args) < 2 {
+		log.Fatal("Please provide library path as argument")
+	}
+	
+	wrapper, err := libunittest.LoadLibrary(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	nMajor, nMinor, nMicro, err := wrapper.GetVersion()
 	if err != nil {
 		log.Fatal(err)
 	}
