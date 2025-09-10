@@ -38,6 +38,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -845,8 +846,20 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 		cCheckArguments = "self._handle"
 	}
 	doCheckCall := false
-	for k:=0; k<len(method.Params); k++ {
-		param := method.Params[k]
+
+		// Sort parameters to ensure "in" parameters come before "out" parameters
+	// This creates a copy of the slice to avoid modifying the original
+	sortedParams := make([]ComponentDefinitionParam, len(method.Params))
+	copy(sortedParams, method.Params)
+
+	// Sort by ParamPass: "in" first, then "return", then "out"
+	sort.Slice(sortedParams, func(i, j int) bool {
+		orderMap := map[string]int{"in": 0, "out": 1, "return": 2}
+		return orderMap[sortedParams[i].ParamPass] < orderMap[sortedParams[j].ParamPass]
+	})
+
+	for k := 0; k < len(sortedParams); k++ {
+		param := sortedParams[k]
 		
 		cParams, err := generateCTypesParameter(param, ClassName, method.MethodName, NameSpace)
 		if (err != nil) {
