@@ -38,7 +38,6 @@ import (
 	"fmt"
 	"log"
 	"path"
-	"sort"
 	"strings"
 )
 
@@ -847,19 +846,13 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 	}
 	doCheckCall := false
 
-		// Sort parameters to ensure "in" parameters come before "out" parameters
-	// This creates a copy of the slice to avoid modifying the original
-	sortedParams := make([]ComponentDefinitionParam, len(method.Params))
-	copy(sortedParams, method.Params)
+	// First pass: Process parameters in original order to maintain C ABI parameter order
+	// but collect Python in/out signature components separately
+	var inParamsSig []string
+	var outParamsSig []string
 
-	// Sort by ParamPass: "in" first, then "return", then "out"
-	sort.Slice(sortedParams, func(i, j int) bool {
-		orderMap := map[string]int{"in": 0, "out": 1, "return": 2}
-		return orderMap[sortedParams[i].ParamPass] < orderMap[sortedParams[j].ParamPass]
-	})
-
-	for k := 0; k < len(sortedParams); k++ {
-		param := sortedParams[k]
+	for k := 0; k < len(method.Params); k++ {
+		param := method.Params[k]
 		
 		cParams, err := generateCTypesParameter(param, ClassName, method.MethodName, NameSpace)
 		if (err != nil) {
@@ -880,9 +873,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			pythonInParams = pythonInParams + ", ";
 			
 			switch param.ParamType {
-			case "class", "optionalclass": {
-				// Add to function signature for the out parameter with default value
-				pythonInParams = pythonInParams + param.ParamName + "Object = None"
+			case "class", "optionalclass":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+"Object = None")
 				
 				// Prepare the handle for the C call with improved None checking
 				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = ctypes.c_void_p()", param.ParamName))
@@ -920,9 +913,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				
 				retVals = retVals + fmt.Sprintf("%sObject", param.ParamName)
 			}
-			case "string": {
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+			case "string":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
@@ -940,9 +933,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				}
 				retVals = retVals + cParams[2].ParamName + ".value.decode()"
 			}
-			case "basicarray": {
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+			case "basicarray":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
@@ -961,9 +954,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				}
 				retVals = retVals + fmt.Sprintf("list(%s)", cParams[2].ParamName)
 			}
-			case "structarray": {
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+			case "structarray":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
@@ -982,9 +975,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				}
 				retVals = retVals + fmt.Sprintf("list(%s)", cParams[2].ParamName)
 			}
-			case "enum": {
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+			case "enum":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = ctypes.c_int32(%s if %s else 0)", cParams[0].ParamName, param.ParamName, param.ParamName))
 				cArguments = cArguments + cParams[0].ParamName
@@ -997,8 +990,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				retVals = retVals + cParams[0].ParamName + ".value"
 			}
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+				outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s if %s is not None else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				cArguments = cArguments + cParams[0].ParamName
@@ -1009,9 +1001,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 					retVals = retVals + ", ";
 				}
 				retVals = retVals + cParams[0].ParamName + ".value"
-			case "struct": {
-				// Add to function signature with default value
-				pythonInParams = pythonInParams + param.ParamName + " = None"
+			case "struct":
+				{
+					outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s if %s else %s())", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName, cParams[0].ParamCallType))
 				cArguments = cArguments + cParams[0].ParamName
@@ -1151,41 +1143,44 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			switch param.ParamType {
 			case "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "single", "double", "bool", "pointer":
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
-				pythonInParams = pythonInParams + param.ParamName
+				inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + cParams[0].ParamName
-				cCheckArguments = cCheckArguments  + cParams[0].ParamName
-			case "enum": {
-				pythonInParams = pythonInParams + param.ParamName
+				cCheckArguments = cCheckArguments + cParams[0].ParamName
+			case "enum":
+				{
+					inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + param.ParamName
 				cCheckArguments = cCheckArguments  + param.ParamName
 			}
 			case "string": {
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(str.encode(%s))", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
-				pythonInParams = pythonInParams + param.ParamName
+					inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + cParams[0].ParamName
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName
 			}
 			case "basicarray": {
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s))", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s))(*%s)", cParams[1].ParamName, cParams[1].ParamCallType, param.ParamName, param.ParamName))
-				pythonInParams = pythonInParams + param.ParamName
+					inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName + ", " + cParams[1].ParamName
 			}
 			case "structarray": {
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s))", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s))(*%s)", cParams[1].ParamName, cParams[1].ParamCallType, param.ParamName, param.ParamName))
-				pythonInParams = pythonInParams + param.ParamName
+					inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + cParams[0].ParamName + ", " + cParams[1].ParamName
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName + ", " + cParams[1].ParamName
 			}
-			case "struct": {
-				pythonInParams = pythonInParams + param.ParamName
+			case "struct":
+				{
+					inParamsSig = append(inParamsSig, param.ParamName)
 				cArguments = cArguments + param.ParamName
 				cCheckArguments = cCheckArguments  + param.ParamName
 			}
-			case "class", "optionalclass": {
-				pythonInParams = pythonInParams + param.ParamName + "Object"
+			case "class", "optionalclass":
+				{
+					inParamsSig = append(inParamsSig, param.ParamName+"Object")
 				preCallLines = append(preCallLines, fmt.Sprintf("%sHandle = None", param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("if %sObject:", param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("  %sHandle = %sObject._handle", param.ParamName, param.ParamName))
@@ -1196,8 +1191,9 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				cArguments = cArguments + param.ParamName + "Handle"
 				cCheckArguments = cCheckArguments  + param.ParamName + "Handle"
 			}
-			case "functiontype": {
-				pythonInParams = pythonInParams + param.ParamName + "Func"
+			case "functiontype":
+				{
+					inParamsSig = append(inParamsSig, param.ParamName+"Func")
 				cArguments = cArguments + param.ParamName + "Func"
 				cCheckArguments = cCheckArguments  + param.ParamName + "Func"
 			}
@@ -1206,6 +1202,17 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 			}
 
 		}
+	}
+
+	// Build the final Python method signature: in parameters first, then out parameters
+	var allSigParams []string
+	allSigParams = append(allSigParams, inParamsSig...)
+	allSigParams = append(allSigParams, outParamsSig...)
+
+	if len(allSigParams) > 0 {
+		pythonInParams = ", " + strings.Join(allSigParams, ", ")
+	} else {
+		pythonInParams = ""
 	}
 	
 	exportName := GetCExportName(NameSpace, ClassName, method, isGlobal)
