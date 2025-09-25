@@ -1097,7 +1097,7 @@ func buildBindingCSharpImplementation(component ComponentDefinition, w LanguageW
 		w.Writeln("")
 	}
 
-	w.Writeln("  class Wrapper")
+	w.Writeln("  public class Wrapper")
 	w.Writeln("  {")
 
 	w.Writeln("    private static void CheckError (Int32 errorCode)")

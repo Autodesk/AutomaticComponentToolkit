@@ -226,3 +226,159 @@ RTTIResult LoadRTTIWrapperTable(sRTTIDynamicWrapperTable * pWrapperTable, const 
 	return RTTI_SUCCESS;
 }
 
+RTTIHandle loadRTTILibrary (const char * pFileName)
+{
+	RTTIResult nResult;
+	sRTTIDynamicWrapperTable * pWrapperTable = (sRTTIDynamicWrapperTable *) malloc (sizeof (sRTTIDynamicWrapperTable));
+	if (pWrapperTable != NULL) {
+		nResult = InitRTTIWrapperTable (pWrapperTable);
+		if (nResult != RTTI_SUCCESS) {
+			free (pWrapperTable);
+			return 0;
+		}
+
+		nResult = LoadRTTIWrapperTable (pWrapperTable, pFileName);
+		if (nResult != RTTI_SUCCESS) {
+			free (pWrapperTable);
+			return 0;
+		}
+
+		return (RTTIHandle) pWrapperTable;
+	}
+}
+
+void unloadRTTILibrary (RTTIHandle nLibraryHandle)
+{
+	sRTTIDynamicWrapperTable * pWrapperTable = (sRTTIDynamicWrapperTable *) malloc (sizeof (sRTTIDynamicWrapperTable));
+	if (pWrapperTable != NULL) {
+		ReleaseRTTIWrapperTable (pWrapperTable);
+		free (pWrapperTable);
+	}
+}
+
+
+RTTIResult CCall_rtti_base_classtypeid(RTTIHandle libraryHandle, RTTI_Base pBase, RTTI_uint64 * pClassTypeId)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_Base_ClassTypeId (pBase, pClassTypeId);
+}
+
+
+RTTIResult CCall_rtti_animal_name(RTTIHandle libraryHandle, RTTI_Animal pAnimal, const RTTI_uint32 nResultBufferSize, RTTI_uint32* pResultNeededChars, char * pResultBuffer)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_Animal_Name (pAnimal, nResultBufferSize, pResultNeededChars, pResultBuffer);
+}
+
+
+RTTIResult CCall_rtti_tiger_roar(RTTIHandle libraryHandle, RTTI_Tiger pTiger)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_Tiger_Roar (pTiger);
+}
+
+
+RTTIResult CCall_rtti_animaliterator_getnextanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AnimalIterator_GetNextAnimal (pAnimalIterator, pAnimal);
+}
+
+
+RTTIResult CCall_rtti_animaliterator_getnextoptinalanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AnimalIterator_GetNextOptinalAnimal (pAnimalIterator, pAnimal, pError);
+}
+
+
+RTTIResult CCall_rtti_animaliterator_getnextmandatoryanimal(RTTIHandle libraryHandle, RTTI_AnimalIterator pAnimalIterator, RTTI_Animal * pAnimal, bool * pError)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AnimalIterator_GetNextMandatoryAnimal (pAnimalIterator, pAnimal, pError);
+}
+
+
+RTTIResult CCall_rtti_zoo_iterator(RTTIHandle libraryHandle, RTTI_Zoo pZoo, RTTI_AnimalIterator * pIterator)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_Zoo_Iterator (pZoo, pIterator);
+}
+
+
+RTTIResult CCall_rtti_getversion(RTTIHandle libraryHandle, RTTI_uint32 * pMajor, RTTI_uint32 * pMinor, RTTI_uint32 * pMicro)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_GetVersion (pMajor, pMinor, pMicro);
+}
+
+
+RTTIResult CCall_rtti_getlasterror(RTTIHandle libraryHandle, RTTI_Base pInstance, const RTTI_uint32 nErrorMessageBufferSize, RTTI_uint32* pErrorMessageNeededChars, char * pErrorMessageBuffer, bool * pHasError)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_GetLastError (pInstance, nErrorMessageBufferSize, pErrorMessageNeededChars, pErrorMessageBuffer, pHasError);
+}
+
+
+RTTIResult CCall_rtti_releaseinstance(RTTIHandle libraryHandle, RTTI_Base pInstance)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_ReleaseInstance (pInstance);
+}
+
+
+RTTIResult CCall_rtti_acquireinstance(RTTIHandle libraryHandle, RTTI_Base pInstance)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_AcquireInstance (pInstance);
+}
+
+
+RTTIResult CCall_rtti_injectcomponent(RTTIHandle libraryHandle, const char * pNameSpace, RTTI_pvoid pSymbolAddressMethod)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_InjectComponent (pNameSpace, pSymbolAddressMethod);
+}
+
+
+RTTIResult CCall_rtti_getsymbollookupmethod(RTTIHandle libraryHandle, RTTI_pvoid * pSymbolLookupMethod)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_GetSymbolLookupMethod (pSymbolLookupMethod);
+}
+
+
+RTTIResult CCall_rtti_createzoo(RTTIHandle libraryHandle, RTTI_Zoo * pInstance)
+{
+	if (libraryHandle == 0) 
+		return RTTI_ERROR_INVALIDCAST;
+	sRTTIDynamicWrapperTable * wrapperTable = (sRTTIDynamicWrapperTable *) libraryHandle;
+	return wrapperTable->m_CreateZoo (pInstance);
+}
+
