@@ -1005,7 +1005,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				{
 				outParamsSig = append(outParamsSig, param.ParamName+" = None")
 				
-				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(%s if %s else %s())", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName, cParams[0].ParamCallType))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s if %s is not None else %s()", cParams[0].ParamName, param.ParamName, param.ParamName, cParams[0].ParamCallType))
 				cArguments = cArguments + cParams[0].ParamName
 				cCheckArguments = cCheckArguments  + cParams[0].ParamName
 				
