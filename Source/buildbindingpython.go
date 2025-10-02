@@ -138,6 +138,26 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 	w.Writeln("  def GetErrorMessage(self):")
 	w.Writeln("    return self._message")
+	w.Writeln("  ")
+	w.Writeln("  def GetErrorName(self):")
+	w.Writeln("    if self._code == ErrorCodes.SUCCESS:")
+	w.Writeln("      return 'SUCCESS'")
+	for _, errorDef := range componentdefinition.Errors.Errors {
+		w.Writeln("    elif self._code == ErrorCodes.%s:", errorDef.Name)
+		w.Writeln("      return '%s'", errorDef.Name)
+	}
+	w.Writeln("    else:")
+	w.Writeln("      return 'UNKNOWN'")
+	w.Writeln("  ")
+	w.Writeln("  def GetErrorDescription(self):")
+	w.Writeln("    if self._code == ErrorCodes.SUCCESS:")
+	w.Writeln("      return 'success'")
+	for _, errorDef := range componentdefinition.Errors.Errors {
+		w.Writeln("    elif self._code == ErrorCodes.%s:", errorDef.Name)
+		w.Writeln("      return '%s'", errorDef.Description)
+	}
+	w.Writeln("    else:")
+	w.Writeln("      return 'unknown error'")
 	w.Writeln("")
 
 
