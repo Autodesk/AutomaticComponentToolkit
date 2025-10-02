@@ -132,6 +132,12 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("    if self._message:")
 	w.Writeln("      return '%sException ' + str(self._code) + ': '+ str(self._message)", NameSpace)
 	w.Writeln("    return '%sException ' + str(self._code)", NameSpace)
+	w.Writeln("  ")
+	w.Writeln("  def GetErrorCode(self):")
+	w.Writeln("    return self._code")
+	w.Writeln("  ")
+	w.Writeln("  def GetErrorMessage(self):")
+	w.Writeln("    return self._message")
 	w.Writeln("")
 
 
