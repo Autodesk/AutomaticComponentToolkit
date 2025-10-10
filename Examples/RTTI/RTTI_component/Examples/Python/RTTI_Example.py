@@ -20,6 +20,43 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", 
 import RTTI
 
 
+def test_exception_methods():
+	"""Test the new exception methods using assert statements"""
+	print("Testing RTTI Exception Methods...")
+	
+	# Test with a non-existent library to trigger an exception
+	try:
+		wrapper = RTTI.Wrapper(libraryName="nonexistent_library")
+		assert False, "Should have thrown an exception!"
+	except RTTI.ERTTIException as e:
+		print("+ Successfully caught ERTTIException")
+		
+		# Test the new methods with assertions
+		error_code = e.get_error_code()
+		error_message = e.get_error_message()
+		error_name = e.get_error_name()
+		error_description = e.get_error_description()
+		
+		# Assertions for method functionality
+		assert error_code == RTTI.ErrorCodes.COULDNOTLOADLIBRARY, f"Expected error code 6, got {error_code}"
+		assert error_name == "COULDNOTLOADLIBRARY", f"Expected 'COULDNOTLOADLIBRARY', got '{error_name}'"
+		assert error_description == "the library could not be loaded", f"Expected library load error description, got '{error_description}'"
+		assert "nonexistent_library" in error_message, f"Expected library name in message, got '{error_message}'"
+		
+		# Test properties (alternative access)
+		assert e.error_code == error_code, "Property error_code should match method get_error_code()"
+		assert e.error_message == error_message, "Property error_message should match method get_error_message()"
+		assert e.error_name == error_name, "Property error_name should match method get_error_name()"
+		assert e.error_description == error_description, "Property error_description should match method get_error_description()"
+		
+		# Test string representation
+		exception_str = str(e)
+		assert "RTTIException" in exception_str, f"String representation should contain 'RTTIException', got '{exception_str}'"
+		assert str(error_code) in exception_str, f"String representation should contain error code, got '{exception_str}'"
+		
+		print("+ All exception method tests passed!")
+
+
 def main():
 	libpath = '' # TODO add the location of the shared library binary here
 	wrapper = RTTI.Wrapper(libraryName = os.path.join(libpath, "rtti"))
@@ -96,7 +133,21 @@ def main():
 	animal = iter.GetNextAnimal(); assert not animal
 
 if __name__ == "__main__":
+	# Test exception methods first (before main, as it uses a non-existent library)
+	print("Testing Exception Methods:")
+	print("-" * 30)
+	test_exception_methods()
+	print()
+	
+	# Then run the main example
+	print("Running Main RTTI Example:")
+	print("-" * 30)
 	try:
 		main()
 	except RTTI.ERTTIException as e:
-		print(e)
+		print("RTTI Exception occurred:")
+		print(f"  Error Code: {e.get_error_code()}")
+		print(f"  Error Message: '{e.get_error_message()}'")
+		print(f"  Error Name: {e.get_error_name()}")
+		print(f"  Error Description: {e.get_error_description()}")
+		print(f"  Full Exception: {e}")

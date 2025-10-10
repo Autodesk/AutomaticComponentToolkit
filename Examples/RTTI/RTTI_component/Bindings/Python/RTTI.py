@@ -32,6 +32,80 @@ class ERTTIException(Exception):
 		if self._message:
 			return 'RTTIException ' + str(self._code) + ': '+ str(self._message)
 		return 'RTTIException ' + str(self._code)
+	
+	def get_error_code(self):
+		"""Returns the error code"""
+		return self._code
+	
+	def get_error_message(self):
+		"""Returns the custom error message"""
+		return self._message
+	
+	def get_error_name(self):
+		"""Returns the error name (constant name)"""
+		if self._code == ErrorCodes.SUCCESS:
+			return 'SUCCESS'
+		elif self._code == ErrorCodes.NOTIMPLEMENTED:
+			return 'NOTIMPLEMENTED'
+		elif self._code == ErrorCodes.INVALIDPARAM:
+			return 'INVALIDPARAM'
+		elif self._code == ErrorCodes.INVALIDCAST:
+			return 'INVALIDCAST'
+		elif self._code == ErrorCodes.BUFFERTOOSMALL:
+			return 'BUFFERTOOSMALL'
+		elif self._code == ErrorCodes.GENERICEXCEPTION:
+			return 'GENERICEXCEPTION'
+		elif self._code == ErrorCodes.COULDNOTLOADLIBRARY:
+			return 'COULDNOTLOADLIBRARY'
+		elif self._code == ErrorCodes.COULDNOTFINDLIBRARYEXPORT:
+			return 'COULDNOTFINDLIBRARYEXPORT'
+		elif self._code == ErrorCodes.INCOMPATIBLEBINARYVERSION:
+			return 'INCOMPATIBLEBINARYVERSION'
+		else:
+			return 'UNKNOWN'
+	
+	def get_error_description(self):
+		"""Returns the error description (human-readable)"""
+		if self._code == ErrorCodes.SUCCESS:
+			return 'success'
+		elif self._code == ErrorCodes.NOTIMPLEMENTED:
+			return 'functionality not implemented'
+		elif self._code == ErrorCodes.INVALIDPARAM:
+			return 'an invalid parameter was passed'
+		elif self._code == ErrorCodes.INVALIDCAST:
+			return 'a type cast failed'
+		elif self._code == ErrorCodes.BUFFERTOOSMALL:
+			return 'a provided buffer is too small'
+		elif self._code == ErrorCodes.GENERICEXCEPTION:
+			return 'a generic exception occurred'
+		elif self._code == ErrorCodes.COULDNOTLOADLIBRARY:
+			return 'the library could not be loaded'
+		elif self._code == ErrorCodes.COULDNOTFINDLIBRARYEXPORT:
+			return 'a required exported symbol could not be found in the library'
+		elif self._code == ErrorCodes.INCOMPATIBLEBINARYVERSION:
+			return 'the version of the binary interface does not match the bindings interface'
+		else:
+			return 'unknown error'
+	
+	@property
+	def error_code(self):
+		"""Property to access error code"""
+		return self._code
+	
+	@property
+	def error_message(self):
+		"""Property to access custom error message"""
+		return self._message
+	
+	@property
+	def error_name(self):
+		"""Property to access error name"""
+		return self.get_error_name()
+	
+	@property
+	def error_description(self):
+		"""Property to access error description"""
+		return self.get_error_description()
 
 '''Definition of binding API version
 '''
