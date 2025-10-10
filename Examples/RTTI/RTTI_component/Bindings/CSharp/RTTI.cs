@@ -19,6 +19,126 @@ using System.Runtime.InteropServices;
 
 namespace RTTI {
 
+	/// <summary>
+	/// Exception class for RTTI errors
+	/// </summary>
+	public class RTTIException : Exception
+	{
+		private readonly int _errorCode;
+		private readonly string _errorMessage;
+
+		/// <summary>
+		/// Initializes a new instance of the RTTIException class
+		/// </summary>
+		/// <param name="errorCode">The error code</param>
+		/// <param name="errorMessage">The error message</param>
+		public RTTIException(int errorCode, string errorMessage = "") : base(FormatMessage(errorCode, errorMessage))
+		{
+			_errorCode = errorCode;
+			_errorMessage = errorMessage;
+		}
+
+		/// <summary>
+		/// Gets the error code
+		/// </summary>
+		public int ErrorCode => _errorCode;
+
+		/// <summary>
+		/// Gets the custom error message
+		/// </summary>
+		public string ErrorMessage => _errorMessage;
+
+		/// <summary>
+		/// Gets the error name (constant name)
+		/// </summary>
+		public string ErrorName
+		{
+			get
+			{
+				switch (_errorCode)
+				{
+					case 0: return "SUCCESS";
+					case 1: return "NOTIMPLEMENTED";
+					case 2: return "INVALIDPARAM";
+					case 3: return "INVALIDCAST";
+					case 4: return "BUFFERTOOSMALL";
+					case 5: return "GENERICEXCEPTION";
+					case 6: return "COULDNOTLOADLIBRARY";
+					case 7: return "COULDNOTFINDLIBRARYEXPORT";
+					case 8: return "INCOMPATIBLEBINARYVERSION";
+					default: return "UNKNOWN";
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets the error description (human-readable)
+		/// </summary>
+		public string ErrorDescription
+		{
+			get
+			{
+				switch (_errorCode)
+				{
+					case 0: return "success";
+					case 1: return "functionality not implemented";
+					case 2: return "an invalid parameter was passed";
+					case 3: return "a type cast failed";
+					case 4: return "a provided buffer is too small";
+					case 5: return "a generic exception occurred";
+					case 6: return "the library could not be loaded";
+					case 7: return "a required exported symbol could not be found in the library";
+					case 8: return "the version of the binary interface does not match the bindings interface";
+					default: return "unknown error";
+				}
+			}
+		}
+
+		private static string FormatMessage(int errorCode, string errorMessage)
+		{
+			string errorName = GetErrorName(errorCode);
+			string errorDesc = GetErrorDescription(errorCode);
+			if (!string.IsNullOrEmpty(errorMessage))
+				return $"RTTIException {errorName} ({errorCode}): {errorDesc} - {errorMessage}";
+			else
+				return $"RTTIException {errorName} ({errorCode}): {errorDesc}";
+		}
+
+		private static string GetErrorName(int errorCode)
+		{
+			switch (errorCode)
+			{
+				case 0: return "SUCCESS";
+				case 1: return "NOTIMPLEMENTED";
+				case 2: return "INVALIDPARAM";
+				case 3: return "INVALIDCAST";
+				case 4: return "BUFFERTOOSMALL";
+				case 5: return "GENERICEXCEPTION";
+				case 6: return "COULDNOTLOADLIBRARY";
+				case 7: return "COULDNOTFINDLIBRARYEXPORT";
+				case 8: return "INCOMPATIBLEBINARYVERSION";
+				default: return "UNKNOWN";
+			}
+		}
+
+		private static string GetErrorDescription(int errorCode)
+		{
+			switch (errorCode)
+			{
+				case 0: return "success";
+				case 1: return "functionality not implemented";
+				case 2: return "an invalid parameter was passed";
+				case 3: return "a type cast failed";
+				case 4: return "a provided buffer is too small";
+				case 5: return "a generic exception occurred";
+				case 6: return "the library could not be loaded";
+				case 7: return "a required exported symbol could not be found in the library";
+				case 8: return "the version of the binary interface does not match the bindings interface";
+				default: return "unknown error";
+			}
+		}
+	}
+
 
 	namespace Internal {
 
@@ -89,7 +209,7 @@ namespace RTTI {
 					}
 				}
 
-				throw new Exception(sMessage + "(# " + errorCode + ")");
+				throw new RTTIException(errorCode, sMessage);
 			}
 
 			/**
