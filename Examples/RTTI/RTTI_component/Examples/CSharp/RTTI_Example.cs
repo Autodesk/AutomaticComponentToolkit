@@ -19,8 +19,68 @@ namespace RTTI_Example
 {
 	class RTTI_Example
 	{
+		static void TestExceptionMethods()
+		{
+			Console.WriteLine("Testing RTTI Exception Methods...");
+
+			// Test by calling a method with invalid parameters to trigger an exception
+			try
+			{
+				// This should throw an ERTTIException with INVALIDPARAM error
+				// Manually throw an exception to test the exception properties
+				throw new RTTI.ERTTIException(2, "rtti exception");
+			}
+			catch (RTTI.ERTTIException ex)
+			{
+				Console.WriteLine("+ Successfully caught ERTTIException");
+
+				// Test the new exception properties
+				int errorCode = ex.ErrorCode;
+				string errorMessage = ex.ErrorMessage;
+				string errorName = ex.ErrorName;
+				string errorDescription = ex.ErrorDescription;
+				string baseMessage = ex.Message;  // Base exception message from Exception class
+
+				Console.WriteLine($"  Error Code: {errorCode}");
+				Console.WriteLine($"  Error Message (custom): '{errorMessage}'");
+				Console.WriteLine($"  Error Name: {errorName}");
+				Console.WriteLine($"  Error Description: {errorDescription}");
+				Console.WriteLine($"  Base Message: '{baseMessage}'");
+
+				// Verify error details - expecting INVALIDPARAM (code 2)
+				if (errorCode != 2)
+					throw new Exception($"Expected error code 2 (INVALIDPARAM), got {errorCode}");
+				if (errorName != "INVALIDPARAM")
+					throw new Exception($"Expected 'INVALIDPARAM', got '{errorName}'");
+				if (errorDescription != "an invalid parameter was passed")
+					throw new Exception($"Expected invalid parameter error description, got '{errorDescription}'");
+
+				// Test string representation
+				string exceptionStr = ex.ToString();
+				if (!exceptionStr.Contains("ERTTIException"))
+					throw new Exception($"String representation should contain 'ERTTIException', got '{exceptionStr}'");
+				if (!exceptionStr.Contains(errorCode.ToString()))
+					throw new Exception($"String representation should contain error code, got '{exceptionStr}'");
+
+				Console.WriteLine("+ All exception property tests passed!");
+			}
+		}
+
 		static void Main()
 		{
+			Console.WriteLine("RTTI C# Example with Exception Testing");
+			Console.WriteLine("==================================================");
+			Console.WriteLine();
+
+			// Test exception methods first
+			Console.WriteLine("Testing Exception Methods:");
+			Console.WriteLine("------------------------------");
+			TestExceptionMethods();
+			Console.WriteLine();
+
+			// Then run the main example
+			Console.WriteLine("Running Main RTTI Example:");
+			Console.WriteLine("------------------------------");
 			try
 			{
 				UInt32 nMajor, nMinor, nMicro;
@@ -96,9 +156,21 @@ namespace RTTI_Example
 				if (!(Animal.GetHandle() != IntPtr.Zero)) throw new Exception("Wrong data");
 				if (!(Animal.Name().Equals("Gary Giraffe"))) throw new Exception("Wrong data");
 				if (!(Animal is RTTI.CGiraffe)) throw new Exception("Wrong data");
-				
+
 				Animal = Iterator.GetNextAnimal();
 				if (!(Animal.GetHandle() == IntPtr.Zero)) throw new Exception("Wrong data");
+
+				Console.WriteLine("+ Main example completed successfully!");
+			}
+			catch (RTTI.ERTTIException ex)
+			{
+				Console.WriteLine("RTTI Exception occurred:");
+				Console.WriteLine($"  Error Code: {ex.ErrorCode}");
+				Console.WriteLine($"  Error Message: '{ex.ErrorMessage}'");
+				Console.WriteLine($"  Error Name: {ex.ErrorName}");
+				Console.WriteLine($"  Error Description: {ex.ErrorDescription}");
+				Console.WriteLine($"  Full Exception: {ex}");
+				System.Environment.Exit(1);
 			}
 			catch (Exception e)
 			{
