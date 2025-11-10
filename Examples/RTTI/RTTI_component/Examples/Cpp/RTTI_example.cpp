@@ -102,7 +102,7 @@ int main()
 
 		// Test GetNextOptionalAnimal - class out parameter with bool return
 		std::cout << std::endl;
-		std::cout << "Testing GetNextOptinalAnimal:" << std::endl;
+		std::cout << "Testing GetNextOptionalAnimal:" << std::endl;
 		auto iter2 = zoo->Iterator();
 		PAnimal optionalAnimal;
 		bool hasError;
