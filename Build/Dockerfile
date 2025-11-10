@@ -29,8 +29,10 @@ RUN dnf -y module enable python39 && \
 # RUN dnf -y install libicu libicu-devel
 
 # Free Pascal 3.0.4
-RUN (cd /opt && curl -O -L 'http://downloads.sourceforge.net/project/freepascal/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm' \
-    && rpm -i fpc-3.0.4-1.x86_64.rpm)
+RUN cd /opt && \
+    curl -L -o fpc-3.0.4-1.x86_64.rpm 'https://sourceforge.net/projects/freepascal/files/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm/download' && \
+    rpm -i fpc-3.0.4-1.x86_64.rpm && \
+    rm -f fpc-3.0.4-1.x86_64.rpm
 
 # Go
 RUN (cd /opt && curl -O -L https://golang.org/dl/go1.17.2.linux-amd64.tar.gz && tar zxvf go1.17.2.linux-amd64.tar.gz)
