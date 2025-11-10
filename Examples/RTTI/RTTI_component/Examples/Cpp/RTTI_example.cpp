@@ -99,6 +99,48 @@ int main()
 		
 		animal = iter->GetNextAnimal();
 		assert(animal == nullptr);
+
+		// Test GetNextOptionalAnimal - class out parameter with bool return
+		std::cout << std::endl;
+		std::cout << "Testing GetNextOptionalAnimal:" << std::endl;
+		auto iter2 = zoo->Iterator();
+		PAnimal optionalAnimal;
+		bool hasError;
+		
+		hasError = iter2->GetNextOptinalAnimal(optionalAnimal);
+		assert(hasError == true);
+		assert(optionalAnimal != nullptr);
+		std::cout << "  Got animal: " << optionalAnimal->Name() << std::endl;
+		assert(std::dynamic_pointer_cast<CGiraffe>(optionalAnimal) != nullptr);
+		
+		hasError = iter2->GetNextOptinalAnimal(optionalAnimal);
+		assert(hasError == true);
+		assert(optionalAnimal != nullptr);
+		std::cout << "  Got animal: " << optionalAnimal->Name() << std::endl;
+		assert(std::dynamic_pointer_cast<CTiger>(optionalAnimal) != nullptr);
+		
+		std::cout << "✓ GetNextOptinalAnimal test passed" << std::endl;
+
+		// Test GetNextMandatoryAnimal - class out parameter with bool return
+		std::cout << std::endl;
+		std::cout << "Testing GetNextMandatoryAnimal:" << std::endl;
+		auto iter3 = zoo->Iterator();
+		PAnimal mandatoryAnimal;
+		
+		hasError = iter3->GetNextMandatoryAnimal(mandatoryAnimal);
+		assert(hasError == true);
+		assert(mandatoryAnimal != nullptr);
+		std::cout << "  Got animal: " << mandatoryAnimal->Name() << std::endl;
+		assert(std::dynamic_pointer_cast<CGiraffe>(mandatoryAnimal) != nullptr);
+		
+		hasError = iter3->GetNextMandatoryAnimal(mandatoryAnimal);
+		assert(hasError == true);
+		assert(mandatoryAnimal != nullptr);
+		std::cout << "  Got animal: " << mandatoryAnimal->Name() << std::endl;
+		assert(std::dynamic_pointer_cast<CTiger>(mandatoryAnimal) != nullptr);
+		
+		std::cout << "✓ GetNextMandatoryAnimal test passed" << std::endl;
+		std::cout << std::endl;
 	}
 	catch (std::exception &e)
 	{

@@ -973,7 +973,7 @@ func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpac
 		
 			cppParamType := getCppParamType(param, NameSpace, true);
 			if param.ParamType == "class" || param.ParamType == "optionalclass" {
-				cppParamType = fmt.Sprintf("I%s%s*", ClassIdentifier, BaseClassName)
+				cppParamType = fmt.Sprintf("I%s%s*", ClassIdentifier, param.ParamClass)
 			}
 			result += cppParamType;
 		}
