@@ -30,7 +30,17 @@ RUN dnf -y module enable python39 && \
 
 # Free Pascal 3.0.4
 RUN cd /opt && \
-    curl -L -o fpc-3.0.4-1.x86_64.rpm 'https://sourceforge.net/projects/freepascal/files/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm/download' && \
+    curl -L -H "Accept: */*" -H "Accept-Language: en-US,en;q=0.9" \
+         -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+         -o fpc-3.0.4-1.x86_64.rpm \
+         'https://sourceforge.net/projects/freepascal/files/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm/download' && \
+    FILE_SIZE=$(stat -c%s fpc-3.0.4-1.x86_64.rpm 2>/dev/null || echo 0) && \
+    if [ "$FILE_SIZE" -lt 1000000 ]; then \
+        echo "Downloaded file too small ($FILE_SIZE bytes), trying alternative URL..."; \
+        rm -f fpc-3.0.4-1.x86_64.rpm; \
+        curl -L -f -o fpc-3.0.4-1.x86_64.rpm 'http://downloads.sourceforge.net/project/freepascal/Linux/3.0.4/fpc-3.0.4-1.x86_64.rpm'; \
+    fi && \
+    [ $(stat -c%s fpc-3.0.4-1.x86_64.rpm) -gt 1000000 ] && \
     rpm -i fpc-3.0.4-1.x86_64.rpm && \
     rm -f fpc-3.0.4-1.x86_64.rpm
 
