@@ -989,7 +989,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
-				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s) if %s else 0)(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*(len(%s) if %s else 0))(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
 
 				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
 				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))
@@ -1010,7 +1010,7 @@ func writeMethod(method ComponentDefinitionMethod, w LanguageWriter, NameSpace s
 				
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(len(%s) if %s else 0)", cParams[0].ParamName, cParams[0].ParamCallType, param.ParamName, param.ParamName))
 				preCallLines = append(preCallLines, fmt.Sprintf("%s = %s(0)", cParams[1].ParamName, cParams[1].ParamCallType))
-				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*len(%s) if %s else 0)(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
+				preCallLines = append(preCallLines, fmt.Sprintf("%s = (%s*(len(%s) if %s else 0))(*%s if %s else [])", cParams[2].ParamName, cParams[2].ParamCallType, param.ParamName, param.ParamName, param.ParamName, param.ParamName))
 
 				cCheckArguments = cCheckArguments + cParams[0].ParamName + ", " + cParams[1].ParamName + ", " + cParams[2].ParamName
 				checkCallLines = append(checkCallLines, fmt.Sprintf("%s = %s(%s.value)", cParams[0].ParamName, cParams[0].ParamCallType, cParams[1].ParamName))

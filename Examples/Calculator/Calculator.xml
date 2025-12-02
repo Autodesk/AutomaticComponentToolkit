@@ -28,6 +28,10 @@
 	</errors>
 	
 	<class name="Base">
+		<method name="ClassTypeId" description="Get Class Type Id">
+			<param name="ClassTypeId" type="uint64" pass="return"
+				description="Class type as a 64 bits integer" />
+		</method>
 	</class>
 	
 	<class name="Variable" parent="Base" description="A variable number">
@@ -61,7 +65,7 @@
 		</method>
 	</class>
 	
-	<global baseclassname="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance" versionmethod="GetVersion" errormethod="GetLastError">
+	<global baseclassname="Base" releasemethod="ReleaseInstance" acquiremethod="AcquireInstance" versionmethod="GetVersion" errormethod="GetLastError" classtypeidmethod="ClassTypeId">
 		
 		<method name="GetVersion" description = "retrieves the binary version of this library.">
 			<param name="Major" type="uint32" pass="out" description="returns the major version of this library" />

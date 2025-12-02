@@ -42,8 +42,27 @@ RUN rpm --import https://download.mono-project.com/repo/xamarin.gpg \
     && dnf config-manager --add-repo https://download.mono-project.com/repo/centos8-stable.repo \
     && dnf -y install mono-complete
 
-# General tools
-RUN dnf -y install glibc-common glibc-utils less passwd tar vim-minimal vim-enhanced which sudo bash-completion mc yum-utils && yum clean all
+# .NET
+RUN dnf -y install wget \
+    && wget https://packages.microsoft.com/config/centos/8/packages-microsoft-prod.rpm \
+    && rpm -Uvh packages-microsoft-prod.rpm \
+    && dnf -y install dotnet-sdk-6.0
+
+# General purpose tools
+RUN dnf -y install \
+           glibc-common \
+           glibc-utils \
+           less \
+           passwd \
+           tar \
+           vim-minimal \
+           vim-enhanced \
+           which \
+           sudo \
+           bash-completion \
+           mc \
+           yum-utils \
+           && yum clean all
 
 # Enable GCC toolset in shells
 RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /etc/bashrc

@@ -11,7 +11,7 @@ echo "Build C++ Implicit example"
 [ -d build ] && rm -rf build
 mkdir build
 pushd build 
-cmake -H.. -B. -DCMAKE_BUILD_TYPE=Debug -G Ninja
+cmake -H.. -B. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 
 echo "Test C++ library"

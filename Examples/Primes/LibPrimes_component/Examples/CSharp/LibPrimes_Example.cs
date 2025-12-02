@@ -45,8 +45,6 @@ namespace LibPrimes_Example
 			{
 				Console.WriteLine("Exception: " + e.Message);
 			}
-			Console.WriteLine("Press any key to exit.");
-			Console.ReadKey();
 		}
 	}
 }

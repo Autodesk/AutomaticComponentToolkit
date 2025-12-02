@@ -5,6 +5,7 @@ calculator_releaseinstance
 calculator_acquireinstance
 calculator_createvariable
 calculator_createcalculator
+calculator_base_classtypeid
 calculator_variable_getvalue
 calculator_variable_setvalue
 calculator_calculator_enlistvariable

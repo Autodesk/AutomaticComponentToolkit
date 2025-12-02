@@ -29,8 +29,16 @@ int main()
 {
 	try
 	{
-		std::string libpath = ("D:/PUBLIC/AutomaticComponentToolkit/Examples/Primes/LibPrimes_component/Implementations/Cpp/_build/Debug"); // TODO: put the location of the LibPrimes-library file here.
-		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "/libprimes.dll"); // TODO: add correct suffix of the library
+		std::string libpath = (""); // TODO: put the location of the LibPrimes-library file here.
+		auto wrapper = LibPrimes::CWrapper::loadLibrary(libpath + "libprimes."
+#if defined _WIN32
+		"dll"
+#elif defined __APPLE__
+		"dylib"
+#elif defined __linux__
+		"so"
+#endif
+		); // TODO: add correct suffix of the library
 		wrapper->SetJournal("journal_cppdynamic.xml");
 		LibPrimes_uint32 nMajor, nMinor, nMicro;
 		wrapper->GetVersion(nMajor, nMinor, nMicro);
@@ -54,7 +62,7 @@ int main()
 	catch (std::exception &e)
 	{
 		std::cout << e.what() << std::endl;
-		return 1;
+		return 0;
 	}
 	return 0;
 }

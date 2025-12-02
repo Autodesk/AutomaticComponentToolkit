@@ -18,9 +18,8 @@ import libprimes.*;
 
 public class LibPrimes_Example {
 
-	public static String libpath = ""; // TODO add the location of the shared library binary here
-
 	public static void main(String[] args) throws LibPrimesException {
+		String libpath = args[0];
 		LibPrimesWrapper wrapper = new LibPrimesWrapper(libpath);
 		
 		LibPrimesWrapper.GetVersionResult version = wrapper.getVersion();

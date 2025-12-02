@@ -16,9 +16,10 @@ Interface version: 1.0.0
 
 cmake_minimum_required(VERSION 3.5)
 
+set(CMAKE_CURRENT_BINDING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/Cpp)
 project(LibPrimesExample_CPPImplicit)
 set(CMAKE_CXX_STANDARD 11)
 add_executable(LibPrimesExample_CPPImplicit "${CMAKE_CURRENT_SOURCE_DIR}/LibPrimes_example.cpp")
-find_library(LIBPRIMESLOCATION libprimes "${CMAKE_CURRENT_SOURCE_DIR}/../../Implementations/*/*/*")
-target_link_libraries(LibPrimesExample_CPPImplicit ${LIBPRIMESLOCATION})
-target_include_directories(LibPrimesExample_CPPImplicit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../Bindings/Cpp")
+find_library(LIBPRIMES_LIB_LOCATION libprimes PATHS "../../Implementations/Cpp/build" "../../Implementations/Cpp/build/Debug" "../../Implementations/Pascal/build")
+target_link_libraries(LibPrimesExample_CPPImplicit ${LIBPRIMES_LIB_LOCATION})
+target_include_directories(LibPrimesExample_CPPImplicit PRIVATE "${CMAKE_CURRENT_BINDING_DIR}")
