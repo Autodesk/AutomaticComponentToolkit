@@ -1061,13 +1061,13 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	// Write wrapper functions
 	for j:=0; j<len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
-		w.Writeln("  protected Function %s_%s;", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
+		w.Writeln("  protected com.sun.jna.Function %s_%s;", strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
 	}
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		for j:=0; j<len(class.Methods); j++ {
 			method := class.Methods[j]
-			w.Writeln("  protected Function %s_%s_%s;", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
+			w.Writeln("  protected com.sun.jna.Function %s_%s_%s;", strings.ToLower(NameSpace), strings.ToLower(class.ClassName), strings.ToLower(method.MethodName))
 		}
 	}
 	w.Writeln("")
@@ -1097,7 +1097,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("  }")
 	w.Writeln("")
 	w.Writeln("  public %s(Pointer lookupPointer) throws %sException {", JavaWrapperName, NameSpace)
-	w.Writeln("    Function lookupMethod = Function.getFunction(lookupPointer);")
+	w.Writeln("    com.sun.jna.Function lookupMethod = com.sun.jna.Function.getFunction(lookupPointer);")
 	for j:=0; j<len(component.Global.Methods); j++ {
 		method := component.Global.Methods[j]
 		w.Writeln("    %s_%s = loadFunctionByLookup(lookupMethod, \"%s_%s\");", strings.ToLower(NameSpace), strings.ToLower(method.MethodName), strings.ToLower(NameSpace), strings.ToLower(method.MethodName))
@@ -1137,7 +1137,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("    }")
 	w.Writeln("  }")
 	w.Writeln("")
-	w.Writeln("  private Function loadFunctionByLookup(Function lookupMethod, String functionName) throws %sException {", NameSpace)
+	w.Writeln("  private com.sun.jna.Function loadFunctionByLookup(com.sun.jna.Function lookupMethod, String functionName) throws %sException {", NameSpace)
 	w.Writeln("    byte[] bytes = functionName.getBytes(StandardCharsets.UTF_8);")
 	w.Writeln("    Memory name = new Memory(bytes.length+1);")
 	w.Writeln("    name.write(0, bytes, 0, bytes.length);")
@@ -1145,7 +1145,7 @@ func buildJavaWrapper(component ComponentDefinition, w LanguageWriter, indent st
 	w.Writeln("    Pointer address = new Memory(8);")
 	w.Writeln("    java.lang.Object[] addressParam = new java.lang.Object[]{name, address};")
 	w.Writeln("    checkError(null, lookupMethod.invokeInt(addressParam));")
-	w.Writeln("    return Function.getFunction(address.getPointer(0));")
+	w.Writeln("    return com.sun.jna.Function.getFunction(address.getPointer(0));")
 	w.Writeln("  }")
 	w.Writeln("")
 	for _, subComponent := range(component.ImportedComponentDefinitions) {
