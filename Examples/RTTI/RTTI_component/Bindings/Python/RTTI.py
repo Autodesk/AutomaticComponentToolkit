@@ -327,10 +327,14 @@ class Wrapper:
 			raise ERTTIException(ErrorCodes.INCOMPATIBLEBINARYVERSION)
 	
 	def checkError(self, instance, errorCode):
-		if errorCode != ErrorCodes.SUCCESS.value:
+		ec = globals().get('ErrorCodes')
+		if ec is None:
+			# Interpreter shutdown: ErrorCodes may already be cleared; avoid noisy teardown
+			return
+		if errorCode != ec.SUCCESS.value:
 			if instance:
 				if instance._wrapper != self:
-					raise ERTTIException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')
+					raise ERTTIException(ec.INVALIDCAST, 'invalid wrapper call')
 			message,_ = self.GetLastError(instance)
 			raise ERTTIException(errorCode, message)
 	

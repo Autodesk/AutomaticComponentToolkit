@@ -402,10 +402,14 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 
 	
 	w.Writeln("  def checkError(self, instance, errorCode):")
-	w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
+	w.Writeln("    ec = globals().get('ErrorCodes')")
+	w.Writeln("    if ec is None:")
+	w.Writeln("      # Interpreter shutdown: ErrorCodes may already be cleared; avoid noisy teardown")
+	w.Writeln("      return")
+	w.Writeln("    if errorCode != ec.SUCCESS.value:")
 	w.Writeln("      if instance:")
 	w.Writeln("        if instance._wrapper != self:")
-	w.Writeln("          raise E%sException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace)
+	w.Writeln("          raise E%sException(ec.INVALIDCAST, 'invalid wrapper call')", NameSpace)
 	w.Writeln("      message,_ = self.%s(instance)", componentdefinition.Global.ErrorMethod)
 	w.Writeln("      raise E%sException(errorCode, message)", NameSpace)
 	w.Writeln("  ")
