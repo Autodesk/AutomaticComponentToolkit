@@ -22,17 +22,17 @@ namespace RTTI {
 	/// <summary>
 	/// Exception class for RTTI errors
 	/// </summary>
-	public class RTTIException : Exception
+	public class ERTTIException : Exception
 	{
 		private readonly int _errorCode;
 		private readonly string _errorMessage;
 
 		/// <summary>
-		/// Initializes a new instance of the RTTIException class
+		/// Initializes a new instance of the ERTTIException class
 		/// </summary>
 		/// <param name="errorCode">The error code</param>
 		/// <param name="errorMessage">The error message</param>
-		public RTTIException(int errorCode, string errorMessage = "") : base(FormatMessage(errorCode, errorMessage))
+		public ERTTIException(int errorCode, string errorMessage = "") : base(FormatMessage(errorCode, errorMessage))
 		{
 			_errorCode = errorCode;
 			_errorMessage = errorMessage;
@@ -99,9 +99,9 @@ namespace RTTI {
 			string errorName = GetErrorName(errorCode);
 			string errorDesc = GetErrorDescription(errorCode);
 			if (!string.IsNullOrEmpty(errorMessage))
-				return $"RTTIException {errorName} ({errorCode}): {errorDesc} - {errorMessage}";
+				return $"ERTTIException {errorName} ({errorCode}): {errorDesc} - {errorMessage}";
 			else
-				return $"RTTIException {errorName} ({errorCode}): {errorDesc}";
+				return $"ERTTIException {errorName} ({errorCode}): {errorDesc}";
 		}
 
 		private static string GetErrorName(int errorCode)
@@ -209,7 +209,7 @@ namespace RTTI {
 					}
 				}
 
-				throw new RTTIException(errorCode, sMessage);
+				throw new ERTTIException(errorCode, sMessage);
 			}
 
 			/**
