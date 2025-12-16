@@ -47,13 +47,15 @@ A consumer of your component only needs to include the language binding relevant
 
 You are probably best of starting of with our extensive [Tutorial](Examples/Primes/Tutorial.md).
 
-Alternatively to 1) build ACT from source ([master](../../tree/master) for a released vesion, [develop](../../tree/develop) for the latest developments):
+Alternatively to 1) build ACT from source ([master](../../tree/master) for a released version, [develop](../../tree/develop) for the latest developments):
 1. Install go https://golang.org/doc/install
 2. Build automaticcomponenttoolkit.go:
 <br/>`Build\build.bat` on Windows or <br/>`Build\build.sh` on Unix
 
 ## Language Support
-ACT supports generation of bindings or implementation stubs for C++, C, Pascal, Golang, NodeJS and Python3. However, not all features of the IDL are yet supported by the individual binding or implementation language:
+ACT supports generation of bindings or implementation stubs for C++, C, Pascal, Golang, NodeJS, Python3, Java (versions 8 and 9), C#, JavaScript (via WebAssembly/WASM), and C++ wasmtime bindings. However, not all features of the IDL are yet supported by the individual binding or implementation language:
+
+>**Note:** For Java bindings, specify the Java version using the `version` attribute: "8" or "1.8" for Java 8, "9" or "1.9" for Java 9. If not specified, Java 9 is the default.
   
 #### Feature Matrix: Bindings
 | Binding         |         Status                                             | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Error Message Propagation | Injection | API Documentation |
@@ -66,9 +68,10 @@ ACT supports generation of bindings or implementation stubs for C++, C, Pascal, 
 | Python3         | ![](Documentation/images/Tick.png) complete (but not very pythonic) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        | + | - |
 | Golang         | ![](Documentation/images/Tick.png) mature                  | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        | + | - |
 | NodeJS          | ![](Documentation/images/O.png) partial support            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |     ?    |      ?      |     -     |         +        | - | - |
-| C#              | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |      -     |      -      |     -     |         +        | - | - |
-| Java            | ![](Documentation/images/Tick.png) experimental            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |    in,out  |    in,out   |    in     |         +        | + | - |
-| PHP             | ![](Documentation/images/X.png) not implemented            | Win, Linux, MacOS | -         | -             |       -       |       -       |      -        |       -    |      -      |     -     |         -        | - | - |
+| C#              | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |     -     |         +        | - | - |
+| Java            | ![](Documentation/images/Tick.png) experimental (Java 8/9) | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |    in,out  |    in,out   |    in     |         +        | + | - |
+| WASM (JavaScript) | ![](Documentation/images/O.png) experimental            | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |     -     |         +        | - | - |
+| C++ wasmtime    | ![](Documentation/images/O.png) experimental               | Win, Linux, MacOS | in,return | in,out,return | in,out,return | in,out,return | in,out,return |   in,out   |    in,out   |    in     |         +        | - | - |
 
 #### Feature Matrix: Implementation Stubs
 | Implementation |         Status                                        | Operating Systems |   class   |  scalar type  |     struct    |  enumeration  |     string    | basicarray | structarray | Callbacks | Journaling | Error Message Propagation | Injection |

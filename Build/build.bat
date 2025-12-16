@@ -11,7 +11,7 @@ echo "Build act.win64.exe"
 go build -o ..\act.win64.exe %Sources%
 
 echo "Patching properties of act.win64.exe"
-..\build\verpatch ..\act.win64.exe /high /va 1.8.0 /pv "1.8.0-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
+..\build\verpatch ..\act.win64.exe /high /va 1.8.1 /pv "1.8.1-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
 
 set GOOS=windows
 set GOARCH=386
@@ -19,7 +19,7 @@ echo "Build act.win32.exe"
 go build -o ..\act.win32.exe %Sources%
 
 echo "Patching properties of act.win32.exe"
-..\build\verpatch ..\act.win32.exe /high /va 1.8.0 /pv "1.8.0-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
+..\build\verpatch ..\act.win32.exe /high /va 1.8.1 /pv "1.8.1-develop" /s copyright "(c) 2018-2019 ACT Developers" /s desc "ACT is a code generator for software components" /s productName "Automatic Component Toolkit"
 
 set GOOS=linux
 set GOARCH=amd64
