@@ -323,7 +323,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 	w.Writeln("  ")
 
 	w.Writeln("  def checkError(self, instance, errorCode):")
-	w.Writeln("    if errorCode != ErrorCodes.SUCCESS.value:")
+	w.Writeln("    if errorCode != 0:")
 	w.Writeln("      if instance:")
 	w.Writeln("        if instance._wrapper != self:")
 	w.Writeln("          raise E%sException(ErrorCodes.INVALIDCAST, 'invalid wrapper call')", NameSpace)
