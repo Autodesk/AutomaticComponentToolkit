@@ -476,6 +476,13 @@ func diffGlobal(path string, globalA ComponentDefinitionGlobal, globalB Componen
 		change.NewValue = globalB.JournalMethod
 		changes = append(changes, change)
 	}
+	if globalA.StringOutClass != globalB.StringOutClass {
+		var change ComponentDiffAttributeChange
+		change.Path = pathA + "/stringoutclass"
+		change.OldValue = globalA.StringOutClass
+		change.NewValue = globalB.StringOutClass
+		changes = append(changes, change)
+	}
 	if globalA.ReleaseMethod != globalB.ReleaseMethod {
 		var change ComponentDiffAttributeChange
 		change.Path = pathA + "/releasemethod"
