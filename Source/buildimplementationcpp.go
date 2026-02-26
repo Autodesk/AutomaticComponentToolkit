@@ -574,7 +574,7 @@ func buildCPPInterfaceWrapperMethods(component ComponentDefinition, class Compon
 
 	for j := 0; j < len(class.Methods); j++ {
 		method := class.Methods[j]
-		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, component.Global.BaseClassName, false, doJournal, eSpecialMethodNone)
+		err := writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, class.ClassName, component.Global.StringOutClass, false, doJournal, eSpecialMethodNone)
 		if err != nil {
 			return err
 		}
@@ -666,7 +666,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		journalParameter = fmt.Sprintf(", C%sInterfaceJournalEntry * pJournalEntry = nullptr", NameSpace)
 	}
 
-	IBaseClassName := "I" + ClassIdentifier + component.Global.BaseClassName
+	IBaseClassName := "I" + ClassIdentifier + component.Global.StringOutClass
 	registerErrorMethod := RegisterErrorMessageMethod()
 	w.Writeln("%sResult handle%sException(%s * pIBaseClass, E%sInterfaceException & Exception%s)", NameSpace, NameSpace, IBaseClassName, NameSpace, journalParameter)
 	w.Writeln("{")
@@ -759,7 +759,7 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 		}
 
 		// Write Static function implementation
-		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, "Wrapper", component.Global.BaseClassName, true, doMethodJournal, isSpecialFunction)
+		err = writeCImplementationMethod(component, method, w, BaseName, NameSpace, ClassIdentifier, "Wrapper", component.Global.StringOutClass, true, doMethodJournal, isSpecialFunction)
 		if err != nil {
 			return err
 		}

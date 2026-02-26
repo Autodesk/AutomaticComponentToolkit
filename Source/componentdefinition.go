@@ -116,6 +116,7 @@ type ComponentDefinitionGlobal struct {
 	ComponentDiffableElement
 	XMLName            xml.Name                    `xml:"global"`
 	BaseClassName      string                      `xml:"baseclassname,attr"`
+	StringOutClass     string                      `xml:"stringoutclass,attr"`
 	ErrorMethod        string                      `xml:"errormethod,attr"`
 	ReleaseMethod      string                      `xml:"releasemethod,attr"`
 	AcquireMethod      string                      `xml:"acquiremethod,attr"`
@@ -972,6 +973,10 @@ func (component *ComponentDefinition) CheckComponentDefinition() error {
 	if component.Global.BaseClassName == "" {
 		return errors.New("No base class name specified")
 	}
+	// Default StringOutClass to BaseClassName if not specified
+	if component.Global.StringOutClass == "" {
+		component.Global.StringOutClass = component.Global.BaseClassName
+	}
 	found := 0
 	for i := 0; i < len(component.Classes); i++ {
 		if component.Classes[i].ClassName == component.Global.BaseClassName {
@@ -982,6 +987,18 @@ func (component *ComponentDefinition) CheckComponentDefinition() error {
 		return errors.New("Specified base class not found")
 	} else if found > 1 {
 		return errors.New("Base clase defined more than once")
+	}
+	// Validate StringOutClass references an existing class
+	if component.Global.StringOutClass != component.Global.BaseClassName {
+		foundStringOut := 0
+		for i := 0; i < len(component.Classes); i++ {
+			if component.Classes[i].ClassName == component.Global.StringOutClass {
+				foundStringOut++
+			}
+		}
+		if foundStringOut == 0 {
+			return errors.New("Specified stringoutclass not found")
+		}
 	}
 	return nil
 }
@@ -1103,10 +1120,15 @@ func CheckHeaderSpecialFunction(method ComponentDefinitionMethod, global Compone
 			return eSpecialMethodNone, errors.New("Error method does not match the expected function template")
 		}
 
+		// Use StringOutClass if specified, otherwise fall back to BaseClassName
+		errorMethodClass := global.StringOutClass
+		if errorMethodClass == "" {
+			errorMethodClass = global.BaseClassName
+		}
 		if (method.Params[0].ParamType != "class") || (method.Params[0].ParamPass != "in") ||
 			(method.Params[1].ParamType != "string") || (method.Params[1].ParamPass != "out") ||
 			(method.Params[2].ParamType != "bool") || (method.Params[2].ParamPass != "return") ||
-			(method.Params[0].ParamClass != global.BaseClassName) {
+			(method.Params[0].ParamClass != errorMethodClass) {
 			return eSpecialMethodNone, errors.New("Error method does not match the expected function template")
 		}
 

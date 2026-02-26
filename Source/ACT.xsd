@@ -161,6 +161,9 @@
 		<xs:attribute name="baseclassname" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;baseclassname&gt; must match a class with the same name and specifies the name of a class that is the base class for all classes of the generated component.</xs:documentation></xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="stringoutclass" type="ST_Name" use="optional">
+			<xs:annotation><xs:documentation xml:lang="en">The &lt;stringoutclass&gt; specifies the class used for the error method's instance parameter. Defaults to &lt;baseclassname&gt; if not specified.</xs:documentation></xs:annotation>
+		</xs:attribute>
 		<xs:attribute name="acquiremethod" type="ST_Name" use="required">
 			<xs:annotation><xs:documentation xml:lang="en">The &lt;acquiremethod&gt; must match a method with the same name and the correct signature.</xs:documentation></xs:annotation>
 		</xs:attribute>
