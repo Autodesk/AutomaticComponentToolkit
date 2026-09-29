@@ -483,7 +483,7 @@ func errorDescriptionIsValid (name string) bool {
 	var IsValidIdentifier = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_+\\-:,.=!/#@%$* ]*$").MatchString
 
 	if (name != "") {
-		return IsValidIdentifier(name);
+		return IsValidIdentifier(name) && commentTextIsSafe(name);
 	}
 	
 	return false;
@@ -507,6 +507,9 @@ func checkOptions(options[] ComponentDefinitionEnumOption) (error) {
 		if optionLowerNameList[strings.ToLower(option.Name)] {
 			return fmt.Errorf("duplicate option name \"%s\"", option.Name);
 		}
+		if !commentTextIsSafe(option.Description) {
+			return fmt.Errorf("invalid description for option \"%s\"", option.Name)
+		}
 		optionValueList[option.Value] = true
 		optionLowerNameList[strings.ToLower(option.Name)] = true
 	}
@@ -526,6 +529,9 @@ func (component *ComponentDefinition) checkEnums() (error) {
 		
 		if (enumLowerNameList[strings.ToLower(enum.Name)]) {
 			return fmt.Errorf("duplicate enum name \"%s\"", enum.Name);
+		}
+		if !commentTextIsSafe(enum.Description) {
+			return fmt.Errorf("invalid description for enum \"%s\"", enum.Name)
 		}
 
 		err := checkOptions(enum.Options)
@@ -657,6 +663,11 @@ func (component *ComponentDefinition) checkFunctionTypes() (error) {
 		if len(function.FunctionDescription) > 0 && !descriptionIsValid(function.FunctionDescription) {
 			return fmt.Errorf ("invalid function description \"%s\" in functiontype \"%s\"", function.FunctionDescription, function.FunctionName);
 		}
+		for _, param := range function.Params {
+			if len(param.ParamDescription) > 0 && !descriptionIsValid(param.ParamDescription) {
+				return fmt.Errorf("invalid description for parameter \"%s\" in functiontype \"%s\"", param.ParamName, function.FunctionName)
+			}
+		}
 		
 		functionLowerNameList[strings.ToLower(function.FunctionName)] = true
 		(*functionNameList)[function.FunctionName] = true
@@ -748,7 +759,7 @@ func (component *ComponentDefinition) checkMethod(method ComponentDefinitionMeth
 		if !nameIsValidIdentifier(param.ParamName) {
 			return fmt.Errorf("invalid param name \"%s\" in method \"%s.%s\"", param.ParamName, className, method.MethodName);
 		}
-		if !descriptionIsValid(method.MethodDescription) {
+		if len(param.ParamDescription) > 0 && !descriptionIsValid(param.ParamDescription) {
 			return fmt.Errorf("invalid description for parameter \"%s.%s(... %s ...)\"", className, method.MethodName, param.ParamName);
 		}
 		if (paramNameList[strings.ToLower(param.ParamName)]) {
@@ -884,9 +895,14 @@ func nameIsValidIdentifier(name string) bool {
 func descriptionIsValid(description string) bool {
 	var IsValidMethodDescription = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_\\\\/+\\-:,.=!?()';&#@%$* |]*$").MatchString
 	if (description != "") {
-		return IsValidMethodDescription(description);
+		return IsValidMethodDescription(description) && commentTextIsSafe(description);
 	}
 	return false;
+}
+
+// commentTextIsSafe returns false if s could terminate a C-style or Pascal comment it is written into
+func commentTextIsSafe(s string) bool {
+	return sanitizeCommentText(s, "*/") == s && sanitizeCommentText(s, "*)") == s
 }
 
 func threadSafetyOptionIsValid(threadSafetyOption string) bool {
@@ -1024,6 +1040,14 @@ func (component *ComponentDefinition) checkComponentHeader() (error) {
 	}
 	if !baseNameIsValid(component.BaseName) {
 		return errors.New ("Invalid BaseName");
+	}
+	if headerTextNeedsSanitizing(component.Copyright) {
+		log.Printf("Warning: the copyright of component \"%s\" contains characters that will be sanitized in generated license headers", component.NameSpace)
+	}
+	for i, line := range component.License.Lines {
+		if headerTextNeedsSanitizing(line.Value) {
+			log.Printf("Warning: license line %d of component \"%s\" contains characters that will be sanitized in generated license headers", i+1, component.NameSpace)
+		}
 	}
 	return nil
 }
