@@ -100,7 +100,7 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w LanguageWrite
 	w.Writeln("")
 	w.Writeln("using namespace v8;")
 	w.Writeln("")
-	w.Writeln("void Load%s(const FunctionCallbackInfo<Value>& args)", NameSpace)
+	w.Writeln("void Load%s(const FunctionCallbackInfo<v8::Value>& args)", NameSpace)
 	w.Writeln("{")
 	w.Writeln("  Isolate* isolate = args.GetIsolate();")
 	w.Writeln("  HandleScope scope(isolate);")
@@ -109,6 +109,8 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w LanguageWrite
 	w.Writeln("")
 	w.Writeln("void InitAll(v8::Local<Object> exports, v8::Local<Object> module)")
 	w.Writeln("{")
+	// Each class template inherits from its parent's template, so parents must be initialized first.
+	// checkClasses guarantees that parent classes are defined before their children.
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		w.Writeln("  C%s%s::Init();", NameSpace, class.ClassName)
@@ -122,6 +124,97 @@ func buildNodeAddOnImplementation(component ComponentDefinition, w LanguageWrite
 	w.Writeln("")
 
 	return nil
+}
+
+// getNodeParentClassName returns the IDL parent of a class, or "" for the base class.
+func getNodeParentClassName(component *ComponentDefinition, class ComponentDefinitionClass) string {
+	if component.isBaseClass(class) {
+		return ""
+	}
+	if class.ParentClass != "" {
+		return class.ParentClass
+	}
+	return component.Global.BaseClassName
+}
+
+func getNodeBasicArrayElementCType(elementType string, nameSpace string) (string, error) {
+	return getCParameterTypeName(elementType, nameSpace, "")
+}
+
+func writeNodeReadBasicArrayElement(elementType string, elementClass string, nameSpace string, spacing string, target string, valueName string) (string, error) {
+	code := ""
+	switch elementType {
+	case "uint8":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (unsigned char) %s->Uint32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "uint16":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (unsigned short) %s->Uint32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "uint32":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (unsigned int) %s->Uint32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "uint64":
+		code = fmt.Sprintf("%sif (%s->IsString()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%sv8::String::Utf8Value utf8(isolate, %s);\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (uint64_t) std::stoull(*utf8);\n", spacing, target)
+		code += fmt.Sprintf("%s} else if (%s->IsNumber()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (uint64_t) %s->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+		code += fmt.Sprintf("%s} else throw std::runtime_error(\"Expected string or number in uint64 basicarray element\");\n", spacing)
+	case "int8":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (char) %s->Int32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "int16":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (short) %s->Int32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "int32":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (int) %s->Int32Value(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "int64":
+		code = fmt.Sprintf("%sif (%s->IsString()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%sv8::String::Utf8Value utf8(isolate, %s);\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (int64_t) std::stoll(*utf8);\n", spacing, target)
+		code += fmt.Sprintf("%s} else if (%s->IsNumber()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (int64_t) %s->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+		code += fmt.Sprintf("%s} else throw std::runtime_error(\"Expected string or number in int64 basicarray element\");\n", spacing)
+	case "bool":
+		code = fmt.Sprintf("%sif (!%s->IsBoolean()) throw std::runtime_error(\"Expected boolean in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = %s->BooleanValue(isolate);\n", spacing, target, valueName)
+	case "single":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (float) %s->NumberValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "double":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (double) %s->NumberValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+	case "enum":
+		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (e%s%s) %s->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, nameSpace, elementClass, valueName)
+	default:
+		return "", fmt.Errorf("unsupported basicarray element type \"%s\"", elementType)
+	}
+	return code, nil
+}
+
+func writeNodeBasicArrayElementToV8(elementType string, elementClass string, nameSpace string, spacing string, targetArray string, indexVar string, source string) (string, error) {
+	var valueExpr string
+	switch elementType {
+	case "uint8", "uint16", "uint32":
+		valueExpr = fmt.Sprintf("Integer::NewFromUnsigned(isolate, (unsigned int) %s)", source)
+	case "uint64":
+		valueExpr = fmt.Sprintf("NewUtf8String(isolate, std::to_string(%s).c_str())", source)
+	case "int8", "int16", "int32":
+		valueExpr = fmt.Sprintf("Integer::New(isolate, (int) %s)", source)
+	case "int64":
+		valueExpr = fmt.Sprintf("NewUtf8String(isolate, std::to_string(%s).c_str())", source)
+	case "bool":
+		valueExpr = fmt.Sprintf("Boolean::New(isolate, %s)", source)
+	case "single", "double":
+		valueExpr = fmt.Sprintf("Number::New(isolate, (double) %s)", source)
+	case "enum":
+		valueExpr = fmt.Sprintf("Integer::New(isolate, (int) %s)", source)
+	default:
+		return "", fmt.Errorf("unsupported basicarray element type \"%s\"", elementType)
+	}
+	return fmt.Sprintf("%s%s->Set(isolate->GetCurrentContext(), %s, %s);\n", spacing, targetArray, indexVar, valueExpr), nil
 }
 
 func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw LanguageWriter, NameSpace string, ClassName string, isGlobal bool) error {
@@ -196,7 +289,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sv8::String::Utf8Value sutf8%s(isolate, args[%d]);\n", spacing, param.ParamName, k)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::string s%s = *sutf8%s;\n", spacing, param.ParamName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t n%s = stoull(s%s);\n", spacing, param.ParamName, param.ParamName)
-				callParameter = "(void*) n" + param.ParamName
+				callParameter = "(void*) (uintptr_t) n" + param.ParamName
 				initCallParameter = callParameter
 
 			case "int8":
@@ -235,11 +328,46 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				initCallParameter = callParameter
 
 			case "basicarray":
-				callParameter = "0, nullptr"
+				inputcheckfunction = "IsArray"
+				elemCType, err := getNodeBasicArrayElementCType(param.ParamClass, NameSpace)
+				if err != nil {
+					return err
+				}
+				bufName := "buffer" + param.ParamName
+				idxName := "idx" + param.ParamName
+				elemName := "elem" + param.ParamName
+				countName := "n" + param.ParamName + "Count"
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Context> context%s = isolate->GetCurrentContext();\n", spacing, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Array> arr%s = Local<Array>::Cast(args[%d]);\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t %s = arr%s->Length();\n", spacing, countName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, elemCType, bufName, countName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, countName, idxName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s = arr%s->Get(context%s, %s).ToLocalChecked();\n", spacing, elemName, param.ParamName, param.ParamName, idxName)
+				readElem, err := writeNodeReadBasicArrayElement(param.ParamClass, param.ParamClass, NameSpace, spacing+"  ", fmt.Sprintf("%s[%s]", bufName, idxName), elemName)
+				if err != nil {
+					return err
+				}
+				inputdeclaration = inputdeclaration + readElem
+				inputdeclaration = inputdeclaration + spacing + "}\n"
+				callParameter = fmt.Sprintf("%s, %s.empty() ? nullptr : &%s[0]", countName, bufName, bufName)
 				initCallParameter = callParameter
 
 			case "structarray":
-				callParameter = "0, nullptr"
+				inputcheckfunction = "IsArray"
+				bufName := "buffer" + param.ParamName
+				idxName := "idx" + param.ParamName
+				elemName := "elem" + param.ParamName
+				countName := "n" + param.ParamName + "Count"
+				structCType := fmt.Sprintf("s%s%s", NameSpace, param.ParamClass)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Context> context%s = isolate->GetCurrentContext();\n", spacing, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sLocal<Array> arr%s = Local<Array>::Cast(args[%d]);\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t %s = arr%s->Length();\n", spacing, countName, param.ParamName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, structCType, bufName, countName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, countName, idxName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s = arr%s->Get(context%s, %s).ToLocalChecked();\n", spacing, elemName, param.ParamName, param.ParamName, idxName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  %s[%s] = convertObjectTo%s%s(isolate, %s);\n", spacing, bufName, idxName, NameSpace, param.ParamClass, elemName)
+				inputdeclaration = inputdeclaration + spacing + "}\n"
+				callParameter = fmt.Sprintf("%s, %s.empty() ? nullptr : &%s[0]", countName, bufName, bufName)
 				initCallParameter = callParameter
 
 			case "functiontype":
@@ -248,7 +376,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 
 			case "bool":
 				inputcheckfunction = "IsBoolean"
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%sbool b%s = args[%d]->BooleanValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, param.ParamName, k)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%sbool b%s = args[%d]->BooleanValue(isolate);\n", spacing, param.ParamName, k)
 				callParameter = "b" + param.ParamName
 				initCallParameter = callParameter
 
@@ -305,7 +433,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 
 			var argsvalue string
 			if returnParamCount > 1 {
-				argsvalue = fmt.Sprintf("outObject->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, \"%s\"), ", param.ParamName)
+				argsvalue = fmt.Sprintf("outObject->Set(isolate->GetCurrentContext(), NewUtf8String(isolate, \"%s\"), ", param.ParamName)
 
 			} else {
 				argsvalue = "args.GetReturnValue().Set("
@@ -338,17 +466,25 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter
 
-				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8(isolate, std::to_string(nReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNewUtf8String(isolate, std::to_string(nReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
 
 			case "pointer":
-				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t nReturn%s = 0;\n", spacing, param.ParamName)
-				callParameter = "&nReturn" + param.ParamName
+				pointerCType, err := getCParameterTypeName("pointer", NameSpace, "")
+				if err != nil {
+					return err
+				}
+				returndeclaration = returndeclaration + fmt.Sprintf("%s%s pReturn%s = nullptr;\n", spacing, pointerCType, param.ParamName)
+				callParameter = "&pReturn" + param.ParamName
 				initCallParameter = callParameter
 
-				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8(isolate, std::to_string(nReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNewUtf8String(isolate, std::to_string((uint64_t) (uintptr_t) pReturn%s).c_str()));\n", spacing, argsvalue, param.ParamName)
 
 			case "int8":
-				returndeclaration = returndeclaration + fmt.Sprintf("%schar nReturn%s = 0;\n", spacing, param.ParamName)
+				int8CType, err := getCParameterTypeName("int8", NameSpace, "")
+				if err != nil {
+					return err
+				}
+				returndeclaration = returndeclaration + fmt.Sprintf("%s%s nReturn%s = 0;\n", spacing, int8CType, param.ParamName)
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter
 
@@ -373,7 +509,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				callParameter = "&nReturn" + param.ParamName
 				initCallParameter = callParameter
 
-				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8(isolate, std::to_string(nReturn%s).c_str() ));\n", spacing, argsvalue, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNewUtf8String(isolate, std::to_string(nReturn%s).c_str() ));\n", spacing, argsvalue, param.ParamName)
 
 			case "string":
 				requiresInitCall = true
@@ -387,7 +523,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 
 				callParameter = fmt.Sprintf("bytesNeeded%s, &bytesWritten%s, &buffer%s[0]", param.ParamName, param.ParamName, param.ParamName)
 
-				returncode = returncode + fmt.Sprintf("%s%sString::NewFromUtf8(isolate, &buffer%s[0]));\n", spacing, argsvalue, param.ParamName)
+				returncode = returncode + fmt.Sprintf("%s%sNewUtf8String(isolate, &buffer%s[0]));\n", spacing, argsvalue, param.ParamName)
 
 			case "bool":
 				returndeclaration = returndeclaration + fmt.Sprintf("%sbool bReturn%s = false;\n", spacing, param.ParamName)
@@ -425,12 +561,45 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				returncode = returncode + fmt.Sprintf("%s%sconvert%s%sToObject(isolate, sReturn%s));\n", spacing, argsvalue, NameSpace, param.ParamClass, param.ParamName)
 
 			case "basicarray":
-				callParameter = "0, nullptr, nullptr"
-				initCallParameter = callParameter
+				requiresInitCall = true
+				elemCType, err := getNodeBasicArrayElementCType(param.ParamClass, NameSpace)
+				if err != nil {
+					return err
+				}
+				neededName := "needed" + param.ParamName
+				bufName := "buffer" + param.ParamName
+				arrName := "arr" + param.ParamName
+				idxName := "idx" + param.ParamName
+				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t %s = 0;\n", spacing, neededName)
+				initCallParameter = fmt.Sprintf("0, &%s, nullptr", neededName)
+				functioncode = functioncode + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, elemCType, bufName, neededName)
+				callParameter = fmt.Sprintf("%s, &%s, %s.empty() ? nullptr : &%s[0]", neededName, neededName, bufName, bufName)
+				returncode = returncode + fmt.Sprintf("%sLocal<Array> %s = Array::New(isolate, (int)%s);\n", spacing, arrName, neededName)
+				returncode = returncode + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, neededName, idxName)
+				setElem, err := writeNodeBasicArrayElementToV8(param.ParamClass, param.ParamClass, NameSpace, spacing+"  ", arrName, idxName, fmt.Sprintf("%s[%s]", bufName, idxName))
+				if err != nil {
+					return err
+				}
+				returncode = returncode + setElem
+				returncode = returncode + spacing + "}\n"
+				returncode = returncode + fmt.Sprintf("%s%s%s);\n", spacing, argsvalue, arrName)
 
 			case "structarray":
-				callParameter = "0, nullptr, nullptr"
-				initCallParameter = callParameter
+				requiresInitCall = true
+				neededName := "needed" + param.ParamName
+				bufName := "buffer" + param.ParamName
+				arrName := "arr" + param.ParamName
+				idxName := "idx" + param.ParamName
+				structCType := fmt.Sprintf("s%s%s", NameSpace, param.ParamClass)
+				returndeclaration = returndeclaration + fmt.Sprintf("%suint64_t %s = 0;\n", spacing, neededName)
+				initCallParameter = fmt.Sprintf("0, &%s, nullptr", neededName)
+				functioncode = functioncode + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, structCType, bufName, neededName)
+				callParameter = fmt.Sprintf("%s, &%s, %s.empty() ? nullptr : &%s[0]", neededName, neededName, bufName, bufName)
+				returncode = returncode + fmt.Sprintf("%sLocal<Array> %s = Array::New(isolate, (int)%s);\n", spacing, arrName, neededName)
+				returncode = returncode + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, neededName, idxName)
+				returncode = returncode + fmt.Sprintf("%s  %s->Set(isolate->GetCurrentContext(), %s, convert%s%sToObject(isolate, %s[%s]));\n", spacing, arrName, idxName, NameSpace, param.ParamClass, bufName, idxName)
+				returncode = returncode + spacing + "}\n"
+				returncode = returncode + fmt.Sprintf("%s%s%s);\n", spacing, argsvalue, arrName)
 
 			case "functiontype":
 				callParameter = "nullptr"
@@ -470,7 +639,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 
 	implw.Writeln("")
 
-	implw.Writeln("void C%s%s::%s(const FunctionCallbackInfo<Value>& args) ", NameSpace, ClassName, method.MethodName)
+	implw.Writeln("void C%s%s::%s(const FunctionCallbackInfo<v8::Value>& args) ", NameSpace, ClassName, method.MethodName)
 	implw.Writeln("{")
 	implw.Writeln("    Isolate* isolate = args.GetIsolate();")
 	implw.Writeln("    HandleScope scope(isolate);")
@@ -546,6 +715,41 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 	return nil
 }
 
+// uint64, int64 and pointer members are written to JS as strings to keep full precision,
+// so they must also be accepted as strings when read back.
+// Errors are thrown as C++ exceptions so that the calling method aborts before the C ABI call.
+func writeNodeStructMemberRead(implw LanguageWriter, indent string, valueVar string, target string, memberType string, assignmentOperator string, valueTypeCall string, errorSubject string) {
+	if memberType == "bool" {
+		implw.Writeln("%sif (%s->IsBoolean()) {", indent, valueVar)
+		implw.Writeln("%s  %s = %s->BooleanValue(isolate);", indent, target, valueVar)
+		implw.Writeln("%s} else {", indent)
+		implw.Writeln("%s  throw std::runtime_error(\"%s is not a boolean\");", indent, errorSubject)
+		implw.Writeln("%s}", indent)
+		return
+	}
+
+	implw.Writeln("%sif (%s->IsNumber()) {", indent, valueVar)
+	implw.Writeln("%s  MaybeLocal<Number> localNumber = %s->ToNumber(context);", indent, valueVar)
+	implw.Writeln("%s  %s%slocalNumber.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();", indent, target, assignmentOperator, valueTypeCall)
+	switch memberType {
+	case "uint64":
+		implw.Writeln("%s} else if (%s->IsString()) {", indent, valueVar)
+		implw.Writeln("%s  v8::String::Utf8Value utf8(isolate, %s);", indent, valueVar)
+		implw.Writeln("%s  %s = (uint64_t) std::stoull(*utf8);", indent, target)
+	case "int64":
+		implw.Writeln("%s} else if (%s->IsString()) {", indent, valueVar)
+		implw.Writeln("%s  v8::String::Utf8Value utf8(isolate, %s);", indent, valueVar)
+		implw.Writeln("%s  %s = (int64_t) std::stoll(*utf8);", indent, target)
+	case "pointer":
+		implw.Writeln("%s} else if (%s->IsString()) {", indent, valueVar)
+		implw.Writeln("%s  v8::String::Utf8Value utf8(isolate, %s);", indent, valueVar)
+		implw.Writeln("%s  %s = (void *) (uintptr_t) std::stoull(*utf8);", indent, target)
+	}
+	implw.Writeln("%s} else {", indent)
+	implw.Writeln("%s  throw std::runtime_error(\"%s is not a number\");", indent, errorSubject)
+	implw.Writeln("%s}", indent)
+}
+
 func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw LanguageWriter, NameSpace string) error {
 
 	hasRowVariable := false
@@ -566,7 +770,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	implw.Writeln("/*************************************************************************************************************************")
 	implw.Writeln(" Class s%s%s Conversion", NameSpace, structdefinition.Name)
 	implw.Writeln("**************************************************************************************************************************/")
-	implw.Writeln("s%s%s convertObjectTo%s%s(Isolate* isolate, const Local<Value> & pParamValue)", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name)
+	implw.Writeln("s%s%s convertObjectTo%s%s(Isolate* isolate, const Local<v8::Value> & pParamValue)", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name)
 	implw.Writeln("{")
 	implw.Writeln("  s%s%s s%s;", NameSpace, structdefinition.Name, structdefinition.Name)
 	implw.Writeln("  Local<Context> context = isolate->GetCurrentContext();")
@@ -610,11 +814,12 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	}
 
 	implw.Writeln("")
-	implw.Writeln("  if (pParamValue->IsObject()) {")
-	implw.Writeln("    MaybeLocal<Object> maybeObject = pParamValue->ToObject(context);")
+	implw.Writeln("  if (!pParamValue->IsObject())")
+	implw.Writeln("    throw std::runtime_error(\"expected object parameter for struct %s.\");", structdefinition.Name)
 	implw.Writeln("")
-	implw.Writeln("    if (!maybeObject.IsEmpty()) {")
-	implw.Writeln("      Local<Object> obj = maybeObject.ToLocalChecked();")
+	implw.Writeln("  Local<Object> obj;")
+	implw.Writeln("  if (!pParamValue->ToObject(context).ToLocal(&obj))")
+	implw.Writeln("    throw std::runtime_error(\"invalid object passed for struct %s.\");", structdefinition.Name)
 	implw.Writeln("")
 
 	for i := 0; i < len(structdefinition.Members); i++ {
@@ -622,9 +827,8 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 		member := structdefinition.Members[i]
 		implw.Writeln("      // %s Member", member.Name)
 
-		implw.Writeln("      MaybeLocal<Value> maybeVal%s = obj->Get(context, String::NewFromUtf8(isolate, \"%s\"));", member.Name, member.Name)
-		implw.Writeln("      if (!maybeVal%s.IsEmpty()) {", member.Name)
-		implw.Writeln("        Local<Value> val%s = maybeVal%s.ToLocalChecked();", member.Name, member.Name)
+		implw.Writeln("      Local<v8::Value> val%s;", member.Name)
+		implw.Writeln("      if (obj->Get(context, NewUtf8String(isolate, \"%s\")).ToLocal(&val%s) && !val%s->IsUndefined()) {", member.Name, member.Name, member.Name)
 
 		valueTypeCall := ""
 		assignmentOperator := " = "
@@ -641,7 +845,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			valueTypeCall = "IntegerValue"
 		case "pointer":
 			valueTypeCall = "IntegerValue"
-			assignmentOperator = " = (void *)"
+			assignmentOperator = " = (void *) (uintptr_t) "
 		case "bool":
 			valueTypeCall = "BooleanValue"
 		case "single":
@@ -659,80 +863,57 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			if member.Columns > 0 {
 
 				implw.Writeln("          for (int colIndex = 0; colIndex < %d; colIndex++) {", member.Columns)
-				implw.Writeln("            MaybeLocal<Value> mlocalCol = array%s->Get(context, colIndex);", member.Name)
-				implw.Writeln("            Local<Value> localCol;")
+				implw.Writeln("            MaybeLocal<v8::Value> mlocalCol = array%s->Get(context, colIndex);", member.Name)
+				implw.Writeln("            Local<v8::Value> localCol;")
 				implw.Writeln("            if (mlocalCol.ToLocal(&localCol)) {")
 				implw.Writeln("        	  if (localCol->IsArray()) {")
 				implw.Writeln("                Local<Array> localColArray = Local<Array>::Cast(localCol);")
 				implw.Writeln("                for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", member.Rows)
-				implw.Writeln("                  MaybeLocal<Value> mlocalValue = localColArray->Get(context, rowIndex);")
-				implw.Writeln("                  Local<Value> localValue;")
+				implw.Writeln("                  MaybeLocal<v8::Value> mlocalValue = localColArray->Get(context, rowIndex);")
+				implw.Writeln("                  Local<v8::Value> localValue;")
 				implw.Writeln("                  if (mlocalValue.ToLocal(&localValue)) {")
-				implw.Writeln("                    if (localValue->IsNumber()) {")
-				implw.Writeln("                      MaybeLocal<Number> localNumber = localValue->ToNumber(context);")
-				implw.Writeln("                      s%s.m_%s[colIndex][rowIndex]%slocalNumber.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall)
-				implw.Writeln("                    } else {")
-				implw.Writeln("                      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));", member.Name)
-				implw.Writeln("                    }")
+				writeNodeStructMemberRead(implw, "                    ", "localValue", fmt.Sprintf("s%s.m_%s[colIndex][rowIndex]", structdefinition.Name, member.Name), member.Type, assignmentOperator, valueTypeCall, member.Name+" array entry")
 				implw.Writeln("                  } else {")
-				implw.Writeln("                    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));", member.Name)
+				implw.Writeln("                    throw std::runtime_error(\"%s array entry is invalid\");", member.Name)
 				implw.Writeln("                  }")
 				implw.Writeln("                }")
 				implw.Writeln("              } else {")
-				implw.Writeln("                isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is not an array\" )));", member.Name)
+				implw.Writeln("                throw std::runtime_error(\"%s array entry is not an array\");", member.Name)
 				implw.Writeln("              }")
 				implw.Writeln("            } else {")
-				implw.Writeln("              isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));", member.Name)
+				implw.Writeln("              throw std::runtime_error(\"%s array entry is invalid\");", member.Name)
 				implw.Writeln("            }")
 				implw.Writeln("          }")
 
 			} else {
 
 				implw.Writeln("          for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", member.Rows)
-				implw.Writeln("            MaybeLocal<Value> mlocalValue = array%s->Get(context, rowIndex);", member.Name)
-				implw.Writeln("            Local<Value> localValue;")
+				implw.Writeln("            MaybeLocal<v8::Value> mlocalValue = array%s->Get(context, rowIndex);", member.Name)
+				implw.Writeln("            Local<v8::Value> localValue;")
 				implw.Writeln("            if (mlocalValue.ToLocal(&localValue)) {")
-				implw.Writeln("              if (localValue->IsNumber()) {")
-				implw.Writeln("                MaybeLocal<Number> localNumber = localValue->ToNumber(context);")
-				implw.Writeln("                s%s.m_%s[rowIndex]%slocalNumber.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();", structdefinition.Name, member.Name, assignmentOperator, valueTypeCall)
-				implw.Writeln("              } else {")
-				implw.Writeln("                isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is not a number\" )));", member.Name)
-				implw.Writeln("              }")
+				writeNodeStructMemberRead(implw, "              ", "localValue", fmt.Sprintf("s%s.m_%s[rowIndex]", structdefinition.Name, member.Name), member.Type, assignmentOperator, valueTypeCall, member.Name+" array entry")
 				implw.Writeln("            } else {")
-				implw.Writeln("              isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s array entry is invalid\" )));", member.Name)
+				implw.Writeln("              throw std::runtime_error(\"%s array entry is invalid\");", member.Name)
 				implw.Writeln("            }")
 				implw.Writeln("          }")
 
 			}
 
 			implw.Writeln("        } else {")
-			implw.Writeln("          isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s member is not an array\" )));", member.Name)
+			implw.Writeln("          throw std::runtime_error(\"%s member is not an array\");", member.Name)
 			implw.Writeln("        }")
 
 		} else {
-			implw.Writeln("        if (val%s->IsNumber()) {", member.Name)
-			implw.Writeln("          MaybeLocal<Number> localVal%s = val%s->ToNumber(context);", member.Name, member.Name)
-			implw.Writeln("          s%s.m_%s%slocalVal%s.ToLocalChecked()->%s(isolate->GetCurrentContext()).ToChecked();", structdefinition.Name, member.Name, assignmentOperator, member.Name, valueTypeCall)
-			implw.Writeln("        } else {")
-			implw.Writeln("          isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s member is not a number\" )));", member.Name)
-			implw.Writeln("        }")
+			writeNodeStructMemberRead(implw, "        ", "val"+member.Name, fmt.Sprintf("s%s.m_%s", structdefinition.Name, member.Name), member.Type, assignmentOperator, valueTypeCall, member.Name+" member")
 		}
 
 		implw.Writeln("      } else {")
-		implw.Writeln("        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"%s member not found in object\" )));", member.Name)
+		implw.Writeln("        throw std::runtime_error(\"%s member not found in object\");", member.Name)
 		implw.Writeln("      }")
 		implw.Writeln("")
 
 	}
 
-	implw.Writeln("")
-	implw.Writeln("    } else {")
-	implw.Writeln("      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"invalid object passed.\" )));")
-	implw.Writeln("    }")
-	implw.Writeln("  } else {")
-	implw.Writeln("    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, \"expected object parameter.\" )));")
-	implw.Writeln("  }")
-	implw.Writeln("")
 	implw.Writeln("  return s%s;", structdefinition.Name)
 	implw.Writeln("}")
 	implw.Writeln("")
@@ -741,6 +922,7 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 	implw.Writeln("")
 	implw.Writeln("Local<Object> convert%s%sToObject(Isolate* isolate, s%s%s s%s)", NameSpace, structdefinition.Name, NameSpace, structdefinition.Name, structdefinition.Name)
 	implw.Writeln("{")
+	implw.Writeln("  Local<Context> context = isolate->GetCurrentContext();")
 	implw.Writeln("  Local<Object> returnInstance = Object::New(isolate);")
 
 	for i := 0; i < len(structdefinition.Members); i++ {
@@ -759,12 +941,12 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 			conversionCall = "Integer::New"
 			conversionPostfix = ".m_code"
 		case "uint64", "int64":
-			conversionCall = "String::NewFromUtf8"
+			conversionCall = "NewUtf8String"
 			conversionValue = "std::to_string(" + conversionValue
 			conversionPostfix = ").c_str()"
 		case "pointer":
-			conversionCall = "String::NewFromUtf8"
-			conversionValue = "std::to_string((uint_ptr) " + conversionValue
+			conversionCall = "NewUtf8String"
+			conversionValue = "std::to_string((uint64_t) (uintptr_t) " + conversionValue
 			conversionPostfix = ").c_str()"
 		case "bool":
 			conversionCall = "Boolean::New"
@@ -784,26 +966,26 @@ func buildNodeStructConversion(structdefinition ComponentDefinitionStruct, implw
 				implw.Writeln("  for (int colIndex = 0; colIndex < %d; colIndex++) {", member.Columns)
 				implw.Writeln("    Local<Array> colArray = Array::New(isolate, %d);", member.Rows)
 				implw.Writeln("    for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", member.Rows)
-				implw.Writeln("      colArray->Set(rowIndex, %s(isolate, %s[colIndex][rowIndex]%s));", conversionCall, conversionValue, conversionPostfix)
+				implw.Writeln("      colArray->Set(context, rowIndex, %s(isolate, %s[colIndex][rowIndex]%s));", conversionCall, conversionValue, conversionPostfix)
 				implw.Writeln("    }")
-				implw.Writeln("    new%s->Set(colIndex, colArray);", member.Name)
+				implw.Writeln("    new%s->Set(context, colIndex, colArray);", member.Name)
 				implw.Writeln("  }")
-				implw.Writeln("  returnInstance->Set(String::NewFromUtf8(isolate, \"%s\"), new%s);", member.Name, member.Name)
+				implw.Writeln("  returnInstance->Set(context, NewUtf8String(isolate, \"%s\"), new%s);", member.Name, member.Name)
 				implw.Writeln("")
 
 			} else {
 
 				implw.Writeln("  Local<Array> new%s = Array::New(isolate, %d);", member.Name, member.Rows)
 				implw.Writeln("  for (int rowIndex = 0; rowIndex < %d; rowIndex++) {", member.Rows)
-				implw.Writeln("    new%s->Set(rowIndex, %s(isolate, %s[rowIndex]%s));", member.Name, conversionCall, conversionValue, conversionPostfix)
+				implw.Writeln("    new%s->Set(context, rowIndex, %s(isolate, %s[rowIndex]%s));", member.Name, conversionCall, conversionValue, conversionPostfix)
 				implw.Writeln("  }")
-				implw.Writeln("  returnInstance->Set(String::NewFromUtf8(isolate, \"%s\"), new%s);", member.Name, member.Name)
+				implw.Writeln("  returnInstance->Set(context, NewUtf8String(isolate, \"%s\"), new%s);", member.Name, member.Name)
 				implw.Writeln("")
 
 			}
 
 		} else {
-			implw.Writeln("  returnInstance->Set(String::NewFromUtf8(isolate, \"%s\"), %s (isolate, %s%s));", member.Name, conversionCall, conversionValue, conversionPostfix)
+			implw.Writeln("  returnInstance->Set(context, NewUtf8String(isolate, \"%s\"), %s (isolate, %s%s));", member.Name, conversionCall, conversionValue, conversionPostfix)
 		}
 
 	}
@@ -826,7 +1008,9 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	w.Writeln("#include \"%s_dynamic.h\"", strings.ToLower(NameSpace))
 	w.Writeln("#include <node.h>")
 	w.Writeln("#include <node_object_wrap.h>")
+	w.Writeln("#include <memory>")
 	w.Writeln("#include <string>")
+	w.Writeln("#include <vector>")
 	w.Writeln("#include <stdexcept>")
 	w.Writeln("")
 
@@ -864,10 +1048,15 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 
+		parentWrapperClass := fmt.Sprintf("C%sBaseClass", NameSpace)
+		if parentClassName := getNodeParentClassName(&component, class); parentClassName != "" {
+			parentWrapperClass = fmt.Sprintf("C%s%s", NameSpace, parentClassName)
+		}
+
 		w.Writeln("/*************************************************************************************************************************")
 		w.Writeln(" Class C%s%s ", NameSpace, class.ClassName)
 		w.Writeln("**************************************************************************************************************************/")
-		w.Writeln("class C%s%s : public C%sBaseClass {", NameSpace, class.ClassName, NameSpace)
+		w.Writeln("class C%s%s : public %s {", NameSpace, class.ClassName, parentWrapperClass)
 		w.Writeln("private:")
 		w.Writeln("  static void New(const v8::FunctionCallbackInfo<v8::Value>& args);")
 		w.Writeln("  static v8::Persistent<v8::Function> constructor;")
@@ -884,6 +1073,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 		w.Writeln("  ")
 		w.Writeln("  static void Init();")
 		w.Writeln("  static v8::Local<v8::Object> NewInstance(v8::Local<v8::Object>, %sHandle pHandle);", NameSpace)
+		w.Writeln("  static v8::Persistent<v8::FunctionTemplate> functionTemplate;")
 		w.Writeln("  ")
 		w.Writeln("};")
 		w.Writeln("")
@@ -925,10 +1115,16 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("")
 	implw.Writeln("using namespace v8;")
 	implw.Writeln("")
+	implw.Writeln("static Local<String> NewUtf8String(Isolate* isolate, const char* pValue)")
+	implw.Writeln("{")
+	implw.Writeln("    return String::NewFromUtf8(isolate, pValue, v8::NewStringType::kNormal).ToLocalChecked();")
+	implw.Writeln("}")
+	implw.Writeln("")
 	implw.Writeln("Persistent<Function> C%sWrapper::constructor;", NameSpace)
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
 		implw.Writeln("Persistent<Function> C%s%s::constructor;", NameSpace, class.ClassName)
+		implw.Writeln("Persistent<FunctionTemplate> C%s%s::functionTemplate;", NameSpace, class.ClassName)
 	}
 	implw.Writeln("")
 
@@ -954,7 +1150,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("{")
 	implw.Writeln("    if (isolate != nullptr) {")
 	implw.Writeln("        isolate->ThrowException(Exception::TypeError(")
-	implw.Writeln("            String::NewFromUtf8(isolate, Message.c_str() )));")
+	implw.Writeln("            NewUtf8String(isolate, Message.c_str() )));")
 	implw.Writeln("    }")
 	implw.Writeln("}")
 
@@ -1011,6 +1207,11 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
+		parentClassName := getNodeParentClassName(&component, class)
+		parentWrapperClass := fmt.Sprintf("C%sBaseClass", NameSpace)
+		if parentClassName != "" {
+			parentWrapperClass = fmt.Sprintf("C%s%s", NameSpace, parentClassName)
+		}
 
 		implw.Writeln("/*************************************************************************************************************************")
 		implw.Writeln(" Class C%s%s Implementation", NameSpace, class.ClassName)
@@ -1018,7 +1219,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 		implw.Writeln("")
 
 		implw.Writeln("C%s%s::C%s%s()", NameSpace, class.ClassName, NameSpace, class.ClassName)
-		implw.Writeln("    : C%sBaseClass()", NameSpace)
+		implw.Writeln("    : %s()", parentWrapperClass)
 		implw.Writeln("{")
 		implw.Writeln("}")
 		implw.Writeln("")
@@ -1032,8 +1233,12 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 		implw.Writeln("")
 		implw.Writeln("    // Prepare constructor template")
 		implw.Writeln("    Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);")
-		implw.Writeln("    tpl->SetClassName(String::NewFromUtf8(isolate, \"%s%s\"));", NameSpace, class.ClassName)
+		implw.Writeln("    tpl->SetClassName(NewUtf8String(isolate, \"%s%s\"));", NameSpace, class.ClassName)
 		implw.Writeln("    tpl->InstanceTemplate()->SetInternalFieldCount(NODEWRAPPER_FIELDCOUNT);")
+		if parentClassName != "" {
+			implw.Writeln("    // C%s%s::Init() must have been called before, InitAll initializes parent classes first.", NameSpace, parentClassName)
+			implw.Writeln("    tpl->Inherit(Local<FunctionTemplate>::New(isolate, C%s%s::functionTemplate));", NameSpace, parentClassName)
+		}
 		implw.Writeln("")
 		implw.Writeln("    // Prototype")
 
@@ -1042,12 +1247,13 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 			implw.Writeln("    NODE_SET_PROTOTYPE_METHOD(tpl, \"%s\", %s);", method.MethodName, method.MethodName)
 		}
 
+		implw.Writeln("    functionTemplate.Reset(isolate, tpl);")
 		implw.Writeln("    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());")
 		implw.Writeln("")
 		implw.Writeln("}")
 		implw.Writeln("")
 
-		implw.Writeln("void C%s%s::New(const FunctionCallbackInfo<Value>& args)", NameSpace, class.ClassName)
+		implw.Writeln("void C%s%s::New(const FunctionCallbackInfo<v8::Value>& args)", NameSpace, class.ClassName)
 		implw.Writeln("{")
 		implw.Writeln("    Isolate* isolate = args.GetIsolate();")
 		implw.Writeln("    HandleScope scope(isolate);")
@@ -1070,14 +1276,14 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 		implw.Writeln("Local<Object> C%s%s::NewInstance(Local<Object> pParent, %sHandle pHandle)", NameSpace, class.ClassName, NameSpace)
 		implw.Writeln("{")
 		implw.Writeln("    Isolate* isolate = Isolate::GetCurrent();")
-		implw.Writeln("    HandleScope scope(isolate);")
+		implw.Writeln("    EscapableHandleScope scope(isolate);")
 		implw.Writeln("    Local<Function> cons = Local<Function>::New(isolate, constructor);")
 		implw.Writeln("    Local<Object> instance;")
 		implw.Writeln("    if (cons->NewInstance(isolate->GetCurrentContext()).ToLocal(&instance)) {")
 		implw.Writeln("      instance->SetInternalField(NODEWRAPPER_TABLEINDEX, External::New(isolate, C%sBaseClass::getDynamicWrapperTable(pParent)));", NameSpace)
 		implw.Writeln("      instance->SetInternalField(NODEWRAPPER_HANDLEINDEX, External::New(isolate, pHandle));")
 		implw.Writeln("    }")
-		implw.Writeln("    return instance;")
+		implw.Writeln("    return scope.Escape(instance);")
 		implw.Writeln("}")
 		implw.Writeln("")
 
@@ -1110,7 +1316,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("    Isolate* isolate = Isolate::GetCurrent();")
 	implw.Writeln("    // Prepare constructor template")
 	implw.Writeln("    Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);")
-	implw.Writeln("    tpl->SetClassName(String::NewFromUtf8(isolate, \"%sWrapper\"));", NameSpace)
+	implw.Writeln("    tpl->SetClassName(NewUtf8String(isolate, \"%sWrapper\"));", NameSpace)
 	implw.Writeln("    tpl->InstanceTemplate()->SetInternalFieldCount(NODEWRAPPER_FIELDCOUNT);")
 	implw.Writeln("    ")
 	implw.Writeln("    // Prototype")
@@ -1124,7 +1330,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());")
 	implw.Writeln("}")
 	implw.Writeln("")
-	implw.Writeln("void C%sWrapper::New(const FunctionCallbackInfo<Value>& args)", NameSpace)
+	implw.Writeln("void C%sWrapper::New(const FunctionCallbackInfo<v8::Value>& args)", NameSpace)
 	implw.Writeln("{")
 	implw.Writeln("    Isolate* isolate = args.GetIsolate();")
 	implw.Writeln("    HandleScope scope(isolate);")
@@ -1149,7 +1355,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("            C%sWrapper* obj = new C%sWrapper();", NameSpace, NameSpace)
 
 	implw.Writeln("            Local<Object> newObject = args.This();")
-	implw.Writeln("            std::auto_ptr<s%sDynamicWrapperTable> wrapperTable( new s%sDynamicWrapperTable );", NameSpace, NameSpace)
+	implw.Writeln("            std::unique_ptr<s%sDynamicWrapperTable> wrapperTable( new s%sDynamicWrapperTable );", NameSpace, NameSpace)
 	implw.Writeln("            CheckError(isolate, nullptr, nullptr, Load%sWrapperTable(wrapperTable.get(), sLibraryName.c_str()));", NameSpace)
 	implw.Writeln("            newObject->SetInternalField(NODEWRAPPER_TABLEINDEX, External::New(isolate, wrapperTable.release()));")
 
@@ -1158,7 +1364,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 		enum := component.Enums[i]
 		for j := 0; j < len(enum.Options); j++ {
 			option := enum.Options[j]
-			implw.Writeln("            newObject->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, \"e%s_%s\"), Integer::New(isolate, %d));", enum.Name, option.Name, option.Value)
+			implw.Writeln("            newObject->Set(isolate->GetCurrentContext(), NewUtf8String(isolate, \"e%s_%s\"), Integer::New(isolate, %d));", enum.Name, option.Name, option.Value)
 		}
 	}
 
@@ -1167,7 +1373,7 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("        } else {")
 	implw.Writeln("            // Invoked as plain function `%sWrapper(...)`, turn into construct call.", NameSpace)
 	implw.Writeln("            const int argc = 1;")
-	implw.Writeln("            Local<Value> argv[argc] = { args[0] };")
+	implw.Writeln("            Local<v8::Value> argv[argc] = { args[0] };")
 	implw.Writeln("            Local<Function> cons = Local<Function>::New(isolate, constructor);")
 	implw.Writeln("            args.GetReturnValue().Set(cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked());")
 	implw.Writeln("        }")
@@ -1176,16 +1382,16 @@ func buildNodeWrapperClass(component ComponentDefinition, w LanguageWriter, impl
 	implw.Writeln("    }")
 	implw.Writeln("}")
 	implw.Writeln("")
-	implw.Writeln("Local<Object> C%sWrapper::NewInstance(const FunctionCallbackInfo<Value>& args)", NameSpace)
+	implw.Writeln("Local<Object> C%sWrapper::NewInstance(const FunctionCallbackInfo<v8::Value>& args)", NameSpace)
 	implw.Writeln("{")
 	implw.Writeln("    Isolate* isolate = Isolate::GetCurrent();")
-	implw.Writeln("    HandleScope scope(isolate);")
+	implw.Writeln("    EscapableHandleScope scope(isolate);")
 	implw.Writeln("    Local<Function> cons = Local<Function>::New(isolate, constructor);")
 	implw.Writeln("    Local<Object> instance;")
 	implw.Writeln("    const int argc = 1;")
-	implw.Writeln("    Local<Value> argv[argc] = { args[0] };")
+	implw.Writeln("    Local<v8::Value> argv[argc] = { args[0] };")
 	implw.Writeln("    cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocal(&instance);")
-	implw.Writeln("    return instance;")
+	implw.Writeln("    return scope.Escape(instance);")
 	implw.Writeln("}")
 
 	implw.Writeln("")
