@@ -37,8 +37,7 @@ echo "Build act.darwin"
 go build -o ..\act.darwin %Sources%
 
 set GOOS=darwin
-set GOARCH=arm
-set GOARM=5
+set GOARCH=arm64
 echo "Build act.arm.darwin"
 go build -o ..\act.arm.darwin %Sources%
 
