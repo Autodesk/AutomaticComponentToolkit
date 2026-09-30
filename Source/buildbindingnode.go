@@ -141,7 +141,7 @@ func getNodeBasicArrayElementCType(elementType string, nameSpace string) (string
 	return getCParameterTypeName(elementType, nameSpace, "")
 }
 
-func writeNodeReadBasicArrayElement(elementType string, elementClass string, nameSpace string, spacing string, target string, valueName string) (string, error) {
+func writeNodeReadBasicArrayElement(elementType string, spacing string, target string, valueName string) (string, error) {
 	code := ""
 	switch elementType {
 	case "uint8":
@@ -185,16 +185,20 @@ func writeNodeReadBasicArrayElement(elementType string, elementClass string, nam
 	case "double":
 		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
 		code += fmt.Sprintf("%s%s = (double) %s->NumberValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
-	case "enum":
-		code = fmt.Sprintf("%sif (!%s->IsNumber()) throw std::runtime_error(\"Expected number in basicarray element\");\n", spacing, valueName)
-		code += fmt.Sprintf("%s%s = (e%s%s) %s->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, nameSpace, elementClass, valueName)
+	case "pointer":
+		code = fmt.Sprintf("%sif (%s->IsString()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%sv8::String::Utf8Value utf8(isolate, %s);\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (void *) (uintptr_t) std::stoull(*utf8);\n", spacing, target)
+		code += fmt.Sprintf("%s} else if (%s->IsNumber()) {\n", spacing, valueName)
+		code += fmt.Sprintf("%s%s = (void *) (uintptr_t) %s->IntegerValue(isolate->GetCurrentContext()).ToChecked();\n", spacing, target, valueName)
+		code += fmt.Sprintf("%s} else throw std::runtime_error(\"Expected string or number in pointer basicarray element\");\n", spacing)
 	default:
 		return "", fmt.Errorf("unsupported basicarray element type \"%s\"", elementType)
 	}
 	return code, nil
 }
 
-func writeNodeBasicArrayElementToV8(elementType string, elementClass string, nameSpace string, spacing string, targetArray string, indexVar string, source string) (string, error) {
+func writeNodeBasicArrayElementToV8(elementType string, spacing string, targetArray string, indexVar string, source string) (string, error) {
 	var valueExpr string
 	switch elementType {
 	case "uint8", "uint16", "uint32":
@@ -209,8 +213,8 @@ func writeNodeBasicArrayElementToV8(elementType string, elementClass string, nam
 		valueExpr = fmt.Sprintf("Boolean::New(isolate, %s)", source)
 	case "single", "double":
 		valueExpr = fmt.Sprintf("Number::New(isolate, (double) %s)", source)
-	case "enum":
-		valueExpr = fmt.Sprintf("Integer::New(isolate, (int) %s)", source)
+	case "pointer":
+		valueExpr = fmt.Sprintf("NewUtf8String(isolate, std::to_string((uint64_t) (uintptr_t) %s).c_str())", source)
 	default:
 		return "", fmt.Errorf("unsupported basicarray element type \"%s\"", elementType)
 	}
@@ -342,8 +346,10 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t %s = arr%s->Length();\n", spacing, countName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, elemCType, bufName, countName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, countName, idxName)
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s = arr%s->Get(context%s, %s).ToLocalChecked();\n", spacing, elemName, param.ParamName, param.ParamName, idxName)
-				readElem, err := writeNodeReadBasicArrayElement(param.ParamClass, param.ParamClass, NameSpace, spacing+"  ", fmt.Sprintf("%s[%s]", bufName, idxName), elemName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s;\n", spacing, elemName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  if (!arr%s->Get(context%s, %s).ToLocal(&%s))\n", spacing, param.ParamName, param.ParamName, idxName, elemName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s    throw std::runtime_error(\"Could not read element of array parameter %d (%s)\");\n", spacing, k, param.ParamName)
+				readElem, err := writeNodeReadBasicArrayElement(param.ParamClass, spacing+"  ", fmt.Sprintf("%s[%s]", bufName, idxName), elemName)
 				if err != nil {
 					return err
 				}
@@ -364,7 +370,9 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%suint64_t %s = arr%s->Length();\n", spacing, countName, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sstd::vector<%s> %s((size_t)%s);\n", spacing, structCType, bufName, countName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, countName, idxName)
-				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s = arr%s->Get(context%s, %s).ToLocalChecked();\n", spacing, elemName, param.ParamName, param.ParamName, idxName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  Local<v8::Value> %s;\n", spacing, elemName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  if (!arr%s->Get(context%s, %s).ToLocal(&%s))\n", spacing, param.ParamName, param.ParamName, idxName, elemName)
+				inputdeclaration = inputdeclaration + fmt.Sprintf("%s    throw std::runtime_error(\"Could not read element of array parameter %d (%s)\");\n", spacing, k, param.ParamName)
 				inputdeclaration = inputdeclaration + fmt.Sprintf("%s  %s[%s] = convertObjectTo%s%s(isolate, %s);\n", spacing, bufName, idxName, NameSpace, param.ParamClass, elemName)
 				inputdeclaration = inputdeclaration + spacing + "}\n"
 				callParameter = fmt.Sprintf("%s, %s.empty() ? nullptr : &%s[0]", countName, bufName, bufName)
@@ -576,7 +584,7 @@ func writeNodeMethodImplementation(method ComponentDefinitionMethod, implw Langu
 				callParameter = fmt.Sprintf("%s, &%s, %s.empty() ? nullptr : &%s[0]", neededName, neededName, bufName, bufName)
 				returncode = returncode + fmt.Sprintf("%sLocal<Array> %s = Array::New(isolate, (int)%s);\n", spacing, arrName, neededName)
 				returncode = returncode + fmt.Sprintf("%sfor (uint32_t %s = 0; %s < (uint32_t)%s; %s++) {\n", spacing, idxName, idxName, neededName, idxName)
-				setElem, err := writeNodeBasicArrayElementToV8(param.ParamClass, param.ParamClass, NameSpace, spacing+"  ", arrName, idxName, fmt.Sprintf("%s[%s]", bufName, idxName))
+				setElem, err := writeNodeBasicArrayElementToV8(param.ParamClass, spacing+"  ", arrName, idxName, fmt.Sprintf("%s[%s]", bufName, idxName))
 				if err != nil {
 					return err
 				}
