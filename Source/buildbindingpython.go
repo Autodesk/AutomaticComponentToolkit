@@ -307,7 +307,7 @@ func buildDynamicPythonImplementation(componentdefinition ComponentDefinition, w
 				return ReservedKeywordExit(pythonBindingFile, "Function type definition uses a reserved keyword : %s", _func.FunctionName)
 			}
 			w.Writeln("'''Definition of %s", _func.FunctionName)
-			w.Writeln("    %s", _func.FunctionDescription)
+			w.Writeln("    %s", sanitizeCommentText(_func.FunctionDescription, "'''"))
 			w.Writeln("'''")
 			arguments := "ctypes.c_void_p"
 			for j := 0; j<len(_func.Params); j++ {

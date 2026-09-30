@@ -536,7 +536,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 
 	initCallParameters = callFunctionParameters
 	w.Writeln("  /**")
-	w.Writeln("   * " + method.MethodDescription)
+	w.Writeln("   * %s", sanitizeCommentText(method.MethodDescription, "*/"))
 	w.Writeln("   *")
 
 	OutFieldCount := 0
@@ -563,10 +563,10 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		}
 		if (param.ParamPass == "out" || param.ParamPass == "return") {
 			if OutFieldCount == 1 {
-				w.Writeln("   * @return %s", param.ParamDescription)
+				w.Writeln("   * @return %s", sanitizeCommentText(param.ParamDescription, "*/"))
 			}		
 		} else {
-			w.Writeln("   * @param %s %s", MakeFirstLowerCase(param.ParamName), param.ParamDescription)
+			w.Writeln("   * @param %s %s", MakeFirstLowerCase(param.ParamName), sanitizeCommentText(param.ParamDescription, "*/"))
 		}
 
 		switch param.ParamPass {
@@ -835,7 +835,7 @@ func writeJavaClassMethodImplementation(method ComponentDefinitionMethod, w Lang
 		w.Writeln("  public static class %sResult {", method.MethodName)
 		for _,ReturnParam := range(ReturnTuple) {
 			w.Writeln("    /**")
-			w.Writeln("     * " + ReturnParam.ParamDescription)
+			w.Writeln("     * %s", sanitizeCommentText(ReturnParam.ParamDescription, "*/"))
 			w.Writeln("     */")
 			w.Writeln("    public %s %s;", ReturnParam.ParamType, ReturnParam.ParamName)
 			w.Writeln("")

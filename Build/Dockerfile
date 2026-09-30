@@ -68,9 +68,11 @@ RUN dnf -y install \
 RUN echo "source /opt/rh/gcc-toolset-9/enable" >> /etc/bashrc
 
 # ---- Emscripten SDK (emsdk) ----
+# Emscripten 4.0.22 and later require Python 3.10, which is not available for CentOS 8.
+ARG EMSDK_VERSION=4.0.21
 ENV EMSDK=/opt/emsdk
-RUN git clone https://github.com/emscripten-core/emsdk.git ${EMSDK} && \
-    bash -lc "cd ${EMSDK} && ./emsdk install latest && ./emsdk activate latest"
+RUN git clone --branch ${EMSDK_VERSION} --depth 1 https://github.com/emscripten-core/emsdk.git ${EMSDK} && \
+    bash -lc "cd ${EMSDK} && ./emsdk install ${EMSDK_VERSION} && ./emsdk activate ${EMSDK_VERSION}"
 
 # Source emsdk env in interactive shells
 RUN echo "source ${EMSDK}/emsdk_env.sh" >> /etc/bashrc
