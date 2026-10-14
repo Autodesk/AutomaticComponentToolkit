@@ -844,7 +844,26 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	w.Writeln("")
 
 	if (doJournal) {
-		w.Writeln("P%sInterfaceJournal m_GlobalJournal;", NameSpace)
+		w.Writeln("#include <mutex>")
+		w.Writeln("")
+		w.Writeln("// API calls on other threads read the journal while SetJournal replaces it.")
+		w.Writeln("static P%sInterfaceJournal m_GlobalJournal;", NameSpace)
+		w.Writeln("static std::mutex m_GlobalJournalMutex;")
+		w.Writeln("")
+		w.Writeln("static P%sInterfaceJournal getGlobalJournal()", NameSpace)
+		w.Writeln("{")
+		w.Writeln("  std::lock_guard<std::mutex> lock(m_GlobalJournalMutex);")
+		w.Writeln("  return m_GlobalJournal;")
+		w.Writeln("}")
+		w.Writeln("")
+		w.Writeln("static void setGlobalJournal(P%sInterfaceJournal pJournal)", NameSpace)
+		w.Writeln("{")
+		w.Writeln("  {")
+		w.Writeln("    std::lock_guard<std::mutex> lock(m_GlobalJournalMutex);")
+		w.Writeln("    m_GlobalJournal.swap(pJournal);")
+		w.Writeln("  }")
+		w.Writeln("  // The previous journal is released here, outside the lock; it closes when its last entry is written.")
+		w.Writeln("}")
 		w.Writeln("")
 	}
 
@@ -1018,10 +1037,11 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 	}
 	
 	if (isSpecialFunction == eSpecialMethodJournal) {
-		callCPPFunctionCode = append(callCPPFunctionCode, "m_GlobalJournal = nullptr;")
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("P%sInterfaceJournal pNewJournal;", NameSpace))
 		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("if (s%s != \"\") {", method.Params[0].ParamName))
-		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  m_GlobalJournal = std::make_shared<C%sInterfaceJournal> (s%s);", NameSpace, method.Params[0].ParamName))
+		callCPPFunctionCode = append(callCPPFunctionCode, fmt.Sprintf("  pNewJournal = std::make_shared<C%sInterfaceJournal> (s%s);", NameSpace, method.Params[0].ParamName))
 		callCPPFunctionCode = append(callCPPFunctionCode, "}")
+		callCPPFunctionCode = append(callCPPFunctionCode, "setGlobalJournal(pNewJournal);")
 	} else if (isSpecialFunction == eSpecialMethodInjection) {
 		callCPPFunctionCode = append(callCPPFunctionCode, "")
 		callCPPFunctionCode = append(callCPPFunctionCode, "bool bNameSpaceFound = false;")
@@ -1900,11 +1920,11 @@ func generateJournalFunctionCode(method ComponentDefinitionMethod, NameSpace str
 	journalSuccessFunctionCode := make([]string,0)
 	
 	
-	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("if (m_GlobalJournal.get() != nullptr)  {"))
+	journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("if (P%sInterfaceJournal pActiveJournal = getGlobalJournal())  {", NameSpace))
 	if (isGlobal) {
-		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = m_GlobalJournal->beginStaticFunction(\"%s\");", method.MethodName))
+		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = pActiveJournal->beginStaticFunction(\"%s\");", method.MethodName))
 	} else {
-		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = m_GlobalJournal->beginClassMethod(p%s, \"%s\", \"%s\");", ClassName, ClassName, method.MethodName))
+		journalInitFunctionCode = append(journalInitFunctionCode, fmt.Sprintf("  pJournalEntry = pActiveJournal->beginClassMethod(p%s, \"%s\", \"%s\");", ClassName, ClassName, method.MethodName))
 	}
 	
 	for k := 0; k < len(method.Params); k++ {
@@ -2193,6 +2213,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("**************************************************************************************************************************/");
 	headerw.Writeln("");
 	headerw.Writeln("class C%sInterfaceJournal;", NameSpace);
+	headerw.Writeln("typedef std::shared_ptr<C%sInterfaceJournal> P%sInterfaceJournal;", NameSpace, NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("class C%sInterfaceJournalEntry {", NameSpace);
 	headerw.Writeln("");
@@ -2207,7 +2228,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("      std::string m_sChildXML;");
 	headerw.Writeln("    };");
 	headerw.Writeln("");
-	headerw.Writeln("    C%sInterfaceJournal * m_pJournal;", NameSpace);
+	headerw.Writeln("    P%sInterfaceJournal m_pJournal;", NameSpace);
 	headerw.Writeln("    %sResult m_ErrorCode;", NameSpace);
 	headerw.Writeln("    std::string m_sClassName;");
 	headerw.Writeln("    std::string m_sMethodName;");
@@ -2227,7 +2248,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	
 	headerw.Writeln("");
 	headerw.Writeln("  public:");
-	headerw.Writeln("    C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle);", NameSpace, NameSpace, NameSpace);
+	headerw.Writeln("    C%sInterfaceJournalEntry(P%sInterfaceJournal pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle);", NameSpace, NameSpace, NameSpace);
 	headerw.Writeln("    ~C%sInterfaceJournalEntry();", NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("    void writeSuccess ();");
@@ -2319,7 +2340,8 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("");
 	
 
-	headerw.Writeln("class C%sInterfaceJournal {", NameSpace);
+	headerw.Writeln("// Entries hold a shared reference, so a journal that SetJournal replaces stays open until in-flight calls finish.");
+	headerw.Writeln("class C%sInterfaceJournal : public std::enable_shared_from_this<C%sInterfaceJournal> {", NameSpace, NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("  protected:");
 	headerw.Writeln("");
@@ -2338,8 +2360,6 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	headerw.Writeln("    P%sInterfaceJournalEntry beginStaticFunction (const std::string & sMethodName);", NameSpace);
 	headerw.Writeln("    friend class C%sInterfaceJournalEntry;", NameSpace);
 	headerw.Writeln("};");
-	headerw.Writeln("");
-	headerw.Writeln("typedef std::shared_ptr<C%sInterfaceJournal> P%sInterfaceJournal;", NameSpace, NameSpace);
 	headerw.Writeln("");
 	headerw.Writeln("#endif // __%s_INTERFACEJOURNAL_HEADER", strings.ToUpper (NameSpace));
 	headerw.Writeln("");
@@ -2370,7 +2390,7 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 		return err
 	}
 	
-	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(C%sInterfaceJournal * pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle)", NameSpace, NameSpace, NameSpace, NameSpace);
+	implw.Writeln("C%sInterfaceJournalEntry::C%sInterfaceJournalEntry(P%sInterfaceJournal pJournal, std::string sClassName, std::string sMethodName, %sHandle pInstanceHandle)", NameSpace, NameSpace, NameSpace, NameSpace);
 	implw.Writeln("  : m_pJournal(pJournal), m_ErrorCode(%s_SUCCESS), m_sClassName(sClassName), m_sMethodName(sMethodName), m_nInitTimeStamp(0), m_nFinishTimeStamp(0)", strings.ToUpper(NameSpace))
 	implw.Writeln("{");
 	implw.Writeln("  if (pJournal == nullptr)");
@@ -2634,6 +2654,8 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("{");
 	implw.Writeln("  m_StartTime = std::chrono::high_resolution_clock::now();");
 	implw.Writeln("  m_Stream.open (sFileName, std::ios::out);");
+	implw.Writeln("  if (!m_Stream.is_open())");
+	implw.Writeln("    throw E%sInterfaceException (%s_ERROR_INVALIDPARAM);", NameSpace, strings.ToUpper (NameSpace));
 	implw.Writeln("  m_Stream << \"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\" ?>\\n\";");
 	implw.Writeln("  m_Stream << \"<journal library=\\\"%s\\\" version=\\\"%s\\\" xmlns=\\\"http://schemas.autodesk.com/components/%s/%s\\\">\\n\";",
 		NameSpace, component.Version, NameSpace, component.Version);
@@ -2650,12 +2672,12 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("");
 	implw.Writeln("P%sInterfaceJournalEntry C%sInterfaceJournal::beginClassMethod(const %sHandle pHandle, const std::string & sClassName, const std::string & sMethodName)", NameSpace, NameSpace, NameSpace);
 	implw.Writeln("{");
-	implw.Writeln("  return std::make_shared<C%sInterfaceJournalEntry>(this, sClassName, sMethodName, pHandle);", NameSpace);
+	implw.Writeln("  return std::make_shared<C%sInterfaceJournalEntry>(shared_from_this(), sClassName, sMethodName, pHandle);", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("P%sInterfaceJournalEntry C%sInterfaceJournal::beginStaticFunction(const std::string & sMethodName)", NameSpace, NameSpace);
 	implw.Writeln("{");
-	implw.Writeln("  return std::make_shared<C%sInterfaceJournalEntry>(this, \"\", sMethodName, nullptr);", NameSpace);
+	implw.Writeln("  return std::make_shared<C%sInterfaceJournalEntry>(shared_from_this(), \"\", sMethodName, nullptr);", NameSpace);
 	implw.Writeln("}");
 	implw.Writeln("");
 	implw.Writeln("void C%sInterfaceJournal::writeEntry (C%sInterfaceJournalEntry * pEntry)", NameSpace, NameSpace);
