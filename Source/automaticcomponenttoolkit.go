@@ -166,7 +166,7 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 					}
 
 					outputFolderExampleCppDynamic := ""
-					if !suppressExamples {
+					if !suppressExamples && !binding.SplitClasses {
 						outputFolderExampleCppDynamic = outputFolderExamples + "/CppDynamic"
 						err = os.MkdirAll(outputFolderExampleCppDynamic, os.ModePerm)
 						if err != nil {
@@ -180,8 +180,13 @@ func createComponent(component ComponentDefinition, outfolderBase string, bindin
 						return err
 					}
 
-					err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic,
-						outputFolderDocumentationCppExplicit, indentString, binding.ClassIdentifier)
+					if binding.SplitClasses {
+						log.Printf("Creating the split C++ dynamic binding (one header per class, one source file)")
+						err = BuildBindingCppSplit(component, outputFolderBindingCppDynamic, indentString, binding.ClassIdentifier)
+					} else {
+						err = BuildBindingCppExplicit(component, outputFolderBindingCppDynamic, outputFolderExampleCppDynamic,
+							outputFolderDocumentationCppExplicit, indentString, binding.ClassIdentifier)
+					}
 					if err != nil {
 						return err
 					}
@@ -685,7 +690,6 @@ func main() {
 			if os.Args[idx] == "-suppressexamples" {
 				suppressExamples = true
 			}
-
 			if os.Args[idx] == "-suppresscmake" {
 				suppressCmake = true
 			}

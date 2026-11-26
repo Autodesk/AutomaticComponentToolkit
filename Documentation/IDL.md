@@ -168,6 +168,7 @@ of type **CT\_Export**
 | indentation | **ST\_Indentation** | optional | 4spaces | Which string should be used to denote a single level of indentation in the generated source code files. |
 | stubidentifier | **ST\_StubIdentifier** | optional | "" | Generated sources files of this export will follow the naming schme "...${BaseName}_${stubidentifier}...". Only used in \<implementation> right now. |
 | classidentifier | **ST\_ClassIdentifier** | optional | "" | Generated classes of this export will follow the naming schme "...${ClassIdentifier}_${ClassName}...". The only binding that supports this are the C++-bindings.|
+| splitclasses | **xs:boolean** | optional | false | Split the generated source code by class: one header per class, the umbrella header keeps the usual name. In \<implementation> language="Cpp" this applies to the interface headers. In \<binding> language="CppDynamic" the method bodies, the function table and the polymorphic factory move into a single source file that has to be compiled and linked, so the output is no longer header-only. Ignored by all other languages. |
 
 ## 8. Global
 Element **\<global>** of type **CT\_Global**

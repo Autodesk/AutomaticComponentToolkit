@@ -163,6 +163,7 @@ type ComponentDefinitionBinding struct {
 	ClassIdentifier string `xml:"classidentifier,attr"`
 	Documentation string `xml:"documentation,attr"`
 	Version string `xml:"version,attr"`
+	SplitClasses bool `xml:"splitclasses,attr"`
 }
 
 // ComponentDefinitionImplementation definition of a specific languages for which bindings to the component's API will be generated
@@ -173,6 +174,7 @@ type ComponentDefinitionImplementation struct {
 	Indentation string `xml:"indentation,attr"`
 	ClassIdentifier string `xml:"classidentifier,attr"`
 	StubIdentifier string `xml:"stubidentifier,attr"`
+	SplitClasses bool `xml:"splitclasses,attr"`
 }
 
 // ComponentDefinitionEnumOption definition of an enum used in the component's API
