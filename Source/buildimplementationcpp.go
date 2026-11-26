@@ -47,7 +47,9 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 	forceRecreation := false
 
 	doJournal := len (component.Global.JournalMethod) > 0;
-	
+
+	splitClasses := implementation.SplitClasses
+
 	NameSpace := component.NameSpace;
 	ImplementationSubNameSpace := "Impl"
 	LibraryName := component.LibraryName;
@@ -86,6 +88,12 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 			return err
 		}
 
+		if splitClasses {
+			err = buildCPPInterfacesSplit(component, outputFolder, indentString, ImplementationSubNameSpace, implementation.ClassIdentifier)
+			if err != nil {
+				return err
+			}
+		} else {
 		IntfHeaderName := path.Join(outputFolder, BaseName+"_interfaces.hpp");
 		log.Printf("Creating \"%s\"", IntfHeaderName)
 		interfaceshppfile, err := CreateLanguageFile (IntfHeaderName, indentString)
@@ -98,6 +106,7 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 		err = buildCPPInterfaces(component, interfaceshppfile, ImplementationSubNameSpace, implementation.ClassIdentifier)
 		if err != nil {
 			return err
+		}
 		}
 
 		IntfWrapperImplName := path.Join(outputFolder, BaseName+"_interfacewrapper.cpp");
@@ -145,7 +154,7 @@ func BuildImplementationCPP(component ComponentDefinition, outputFolder string, 
 
 	if (!suppressStub) {
 
-		err := buildCPPStub(component, NameSpace, ImplementationSubNameSpace, implementation.ClassIdentifier, BaseName, stubOutputFolder, indentString, stubIdentifier, forceRecreation)
+		err := buildCPPStub(component, NameSpace, ImplementationSubNameSpace, implementation.ClassIdentifier, BaseName, stubOutputFolder, indentString, stubIdentifier, forceRecreation, splitClasses)
 		if err != nil {
 			return err
 		}
@@ -623,50 +632,10 @@ func buildCPPInterfaces(component ComponentDefinition, w LanguageWriter, NameSpa
 	writeParameterCacheDefinitions(component, w, NameSpaceImplementation, ClassIdentifier)
 
 	writeClassDefinitions(component, w, NameSpaceImplementation, ClassIdentifier)
-
-	w.Writeln("")
-	w.Writeln("/*************************************************************************************************************************")
-	w.Writeln(" Global functions declarations")
-	w.Writeln("**************************************************************************************************************************/")
-
-	w.Writeln("class C%sWrapper {", ClassIdentifier)
-	w.Writeln("public:")
-
-	if len(component.ImportedComponentDefinitions) > 0 {
-		w.Writeln("  // Injected Components")
-		for _, subComponent := range(component.ImportedComponentDefinitions) {
-			subNameSpace := subComponent.NameSpace
-			w.Writeln("  static %s::PWrapper sP%sWrapper;", subNameSpace, subNameSpace)
-		}
-		w.Writeln("")
+	err := writeCPPGlobalWrapperDeclaration(component, w, NameSpaceImplementation, ClassIdentifier)
+	if err != nil {
+		return err
 	}
-
-	global := component.Global;
-	for j := 0; j < len(global.Methods); j++ {
-		method := global.Methods[j]
-
-		// Omit special functions that are automatically implemented
-		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
-		if err != nil {
-			return err
-		}
-		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
-			(isSpecialFunction == eSpecialMethodSymbolLookup) {
-			continue
-		}
-
-		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
-		if err != nil {
-			return err
-		}
-		w.Writeln("%s;", methodstring)
-		w.Writeln("")
-	}
-	w.Writeln("};")
-	w.Writeln("")
-	
-	w.Writeln("%sResult %s_GetProcAddress (const char * pProcName, void ** ppProcAddress);", NameSpace, NameSpace)
-	w.Writeln("")
 	
 	w.Writeln("} // namespace %s", NameSpaceImplementation)
 	w.Writeln("} // namespace %s", NameSpace)
@@ -959,7 +928,6 @@ func buildCPPInterfaceWrapper(component ComponentDefinition, w LanguageWriter, N
 	return nil
 }
 
-
 func buildOutCacheTemplateParameters (method ComponentDefinitionMethod, NameSpace string, BaseClassName string, ClassIdentifier string) (string, error) {
 	result := "";
 	
@@ -1176,7 +1144,7 @@ func writeCImplementationMethod(component ComponentDefinition, method ComponentD
 }
 
 
-func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool) error {
+func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionClass, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool, splitClasses bool) error {
 		outClassName := "C" + ClassIdentifier + class.ClassName
 
 		StubHeaderFileName := path.Join(outputFolder, BaseName + stubIdentifier + "_" +strings.ToLower(class.ClassName)+".hpp");
@@ -1209,7 +1177,11 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 		stubheaderw.Writeln("#define __%s_%s", strings.ToUpper(NameSpace), strings.ToUpper(class.ClassName))
 		stubheaderw.Writeln("")
 
-		stubheaderw.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
+		if splitClasses {
+			stubheaderw.Writeln("#include \"%s\"", cppSplitInterfaceHeaderName(BaseName, class.ClassName))
+		} else {
+			stubheaderw.Writeln("#include \"%s_interfaces.hpp\"", BaseName)
+		}
 		if (component.isBaseClass(class)) {
 			stubheaderw.Writeln("#include <vector>")
 			stubheaderw.Writeln("#include <list>")
@@ -1384,11 +1356,11 @@ func buildCPPStubClass(component ComponentDefinition, class ComponentDefinitionC
 	return nil
 }
 
-func buildCPPStub(component ComponentDefinition, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool) error {
+func buildCPPStub(component ComponentDefinition, NameSpace string, NameSpaceImplementation string, ClassIdentifier string, BaseName string, outputFolder string, indentString string, stubIdentifier string, forceRecreation bool, splitClasses bool) error {
 
 	for i := 0; i < len(component.Classes); i++ {
 		class := component.Classes[i]
-		err :=  buildCPPStubClass(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString, stubIdentifier, forceRecreation)
+		err :=  buildCPPStubClass(component, class, NameSpace, NameSpaceImplementation, ClassIdentifier, BaseName, outputFolder, indentString, stubIdentifier, forceRecreation, splitClasses)
 		if err != nil {
 			return err
 		}
@@ -2530,5 +2502,58 @@ func buildJournalingCPP(component ComponentDefinition, headerw LanguageWriter, i
 	implw.Writeln("");
 	
 	return nil;
+}
+
+
+func writeCPPGlobalWrapperDeclaration(component ComponentDefinition, w LanguageWriter, NameSpaceImplementation string, ClassIdentifier string) error {
+	NameSpace := component.NameSpace
+	BaseName := component.BaseName
+
+
+	w.Writeln("")
+	w.Writeln("/*************************************************************************************************************************")
+	w.Writeln(" Global functions declarations")
+	w.Writeln("**************************************************************************************************************************/")
+
+	w.Writeln("class C%sWrapper {", ClassIdentifier)
+	w.Writeln("public:")
+
+	if len(component.ImportedComponentDefinitions) > 0 {
+		w.Writeln("  // Injected Components")
+		for _, subComponent := range(component.ImportedComponentDefinitions) {
+			subNameSpace := subComponent.NameSpace
+			w.Writeln("  static %s::PWrapper sP%sWrapper;", subNameSpace, subNameSpace)
+		}
+		w.Writeln("")
+	}
+
+	global := component.Global;
+	for j := 0; j < len(global.Methods); j++ {
+		method := global.Methods[j]
+
+		// Omit special functions that are automatically implemented
+		isSpecialFunction, err := CheckHeaderSpecialFunction(method, global);
+		if err != nil {
+			return err
+		}
+		if (isSpecialFunction == eSpecialMethodJournal) || (isSpecialFunction == eSpecialMethodInjection) ||
+			(isSpecialFunction == eSpecialMethodSymbolLookup) {
+			continue
+		}
+
+		methodstring, _, err := buildCPPInterfaceMethodDeclaration(method, BaseName, NameSpace, ClassIdentifier, "Wrapper", w.IndentString, true, false, true)
+		if err != nil {
+			return err
+		}
+		w.Writeln("%s;", methodstring)
+		w.Writeln("")
+	}
+	w.Writeln("};")
+	w.Writeln("")
+	
+	w.Writeln("%sResult %s_GetProcAddress (const char * pProcName, void ** ppProcAddress);", NameSpace, NameSpace)
+	w.Writeln("")
+
+	return nil
 }
 

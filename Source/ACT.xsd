@@ -79,6 +79,7 @@
 		<xs:attribute name="indentation" type="ST_Indentation" default="4spaces"/>
 		<xs:attribute name="classidentifier" type="ST_ClassIdentifier" use="optional"/>
 		<xs:attribute name="stubidentifier" type="ST_StubIdentifier" use="optional"/>
+		<xs:attribute name="splitclasses" type="xs:boolean" use="optional" default="false"/>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 	
